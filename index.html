@@ -139,6 +139,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h2 class="text-base font-bold text-white">Performance Chart</h2>
+          <p class="text-[11px] text-gray-400">Quarter-ends through 2025; Month-ends from 2026 onwards</p>
         </div>
         <div class="flex items-center space-x-3 text-xs">
           <span class="inline-flex items-center text-gray-300">
@@ -414,17 +415,33 @@
   <script>
     const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
     const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
+    const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 
     let transactions = [];
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
 
-    let marketPrices = {
+    // Load saved manual prices so they are remembered across refreshes
+    let savedManualPrices = {};
+    try {
+      savedManualPrices = JSON.parse(localStorage.getItem(MANUAL_PRICES_KEY)) || {};
+    } catch (e) {
+      savedManualPrices = {};
+    }
+
+    let marketPrices = Object.assign({
       'RELIANCE': { ltp: 2980.50, prevClose: 2950.00 },
       'TCS': { ltp: 4210.00, prevClose: 4185.00 },
       'HDFCBANK': { ltp: 1680.25, prevClose: 1675.00 },
       'INFY': { ltp: 1895.00, prevClose: 1910.00 }
-    };
+    }, savedManualPrices);
+
+    function persistManualPrice(symbol, price) {
+      if (!savedManualPrices) savedManualPrices = {};
+      savedManualPrices[symbol] = { ltp: price, prevClose: price };
+      marketPrices[symbol] = { ltp: price, prevClose: price };
+      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+    }
 
     function init() {
       lucide.createIcons();
@@ -672,7 +689,8 @@
           const totalCost = lots.reduce((acc, l) => acc + (l.qty * l.price), 0);
           const wap = totalCost / totalQty;
 
-          const liveData = marketPrices[stock] || { ltp: wap, prevClose: wap };
+          // Priority: 1. Live market quote / 2. Saved manual price / 3. WAP
+          const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
           const ltp = liveData.ltp;
           const prevClose = liveData.prevClose || ltp;
 
@@ -751,7 +769,7 @@
     }
 
     /* =====================================================================
-       LIVE PRICE FETCH ENGINE WITH AUTOMATIC SME / UNLISTED PROMPT
+       LIVE PRICE FETCH ENGINE WITH PERSISTED SME / UNLISTED QUOTES
        ===================================================================== */
     async function fetchLiveStockPrices() {
       const btn = document.getElementById('refreshBtn');
@@ -763,7 +781,6 @@
       txt.innerText = 'Refreshing...';
       btn.disabled = true;
 
-      // Extract only active holdings that currently have shares > 0
       const activeData = computeEngine();
       const activeSymbols = activeData.holdings.map(h => h.stock);
 
@@ -806,7 +823,7 @@
 
       const now = new Date();
       document.getElementById('lastSyncedTime').innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      syncStatus.innerText = `Fetched ${fetchedCount} quotes automatically. ${unverifiedSymbols.length} require manual input.`;
+      syncStatus.innerText = `Fetched ${fetchedCount} quotes automatically. ${unverifiedSymbols.length} manual / SME position(s).`;
 
       icon.classList.remove('animate-spin');
       txt.innerText = 'Live Prices';
@@ -814,20 +831,20 @@
 
       recalculateAndRender();
 
-      // If any stocks were not found (e.g. DANISH or other SME tickers), open the prompt
+      // Open modal for unlisted/SME stocks; pre-fills previous memorized manual price
       if (unverifiedSymbols.length > 0) {
         openMissingPricesModal(unverifiedSymbols, activeData.holdings);
       }
     }
 
-    /* Modal for Missing SME Stock Prices */
     function openMissingPricesModal(symbols, holdings) {
       const container = document.getElementById('missingStocksContainer');
       container.innerHTML = '';
 
       symbols.forEach(sym => {
         const h = holdings.find(item => item.stock === sym);
-        const currentPrice = marketPrices[sym] ? marketPrices[sym].ltp : (h ? h.wap : 0);
+        // Uses memorized manual price if available
+        const currentPrice = savedManualPrices[sym] ? savedManualPrices[sym].ltp : (marketPrices[sym] ? marketPrices[sym].ltp : (h ? h.wap : 0));
         const qty = h ? h.qty : 0;
 
         const row = document.createElement('div');
@@ -839,7 +856,7 @@
           </div>
           <div class="flex items-center space-x-1.5">
             <span class="text-xs text-gray-400">₹</span>
-            <input type="number" step="0.05" id="manualPrice_${sym}" value="${currentPrice.toFixed(2)}" class="w-28 bg-gray-900 border border-gray-600 rounded-lg p-1.5 text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500">
+            <input type="number" step="0.05" id="manualPrice_${sym}" value="${Number(currentPrice).toFixed(2)}" class="w-28 bg-gray-900 border border-gray-600 rounded-lg p-1.5 text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500">
           </div>
         `;
         container.appendChild(row);
@@ -858,10 +875,7 @@
         const sym = inp.id.replace('manualPrice_', '');
         const val = Number(inp.value);
         if (!isNaN(val) && val > 0) {
-          marketPrices[sym] = {
-            ltp: val,
-            prevClose: marketPrices[sym]?.prevClose || val
-          };
+          persistManualPrice(sym, val);
         }
       });
 
@@ -1065,56 +1079,107 @@
       });
     }
 
+    /* =====================================================================
+       PERIOD-SAMPLED PERFORMANCE CHART ENGINE
+       - Quarter ends from March 31, 2022 to December 31, 2025
+       - Month ends from 2026 onwards + Today
+       ===================================================================== */
     function renderChart(computed) {
       const ctx = document.getElementById('multiCurveChart').getContext('2d');
       if (multiChartInstance) multiChartInstance.destroy();
 
-      const dates = computed.sortedTx.map(t => t.date);
-      if (dates.length === 0) return;
+      if (computed.sortedTx.length === 0) return;
 
+      const startDate = new Date('2022-03-31');
+      const today = new Date();
+      const samplePoints = [];
+
+      // 1. Quarter ends: 2022-03-31 through 2025-12-31
+      for (let y = 2022; y <= 2025; y++) {
+        const qEnds = [
+          `${y}-03-31`,
+          `${y}-06-30`,
+          `${y}-09-30`,
+          `${y}-12-31`
+        ];
+        qEnds.forEach(dStr => {
+          const d = new Date(dStr);
+          if (d >= startDate && d <= today) {
+            samplePoints.push(dStr);
+          }
+        });
+      }
+
+      // 2. Month ends: 2026 onwards up to current month
+      const currentYear = today.getFullYear();
+      if (currentYear >= 2026) {
+        for (let y = 2026; y <= currentYear; y++) {
+          const maxMonth = (y === currentYear) ? today.getMonth() : 11;
+          for (let m = 0; m <= maxMonth; m++) {
+            const lastDay = new Date(y, m + 1, 0); // Last day of month
+            const dStr = lastDay.toISOString().split('T')[0];
+            if (lastDay <= today) {
+              samplePoints.push(dStr);
+            }
+          }
+        }
+      }
+
+      // 3. Current Live Point
+      const todayStr = today.toISOString().split('T')[0];
+      if (!samplePoints.includes(todayStr)) {
+        samplePoints.push(todayStr);
+      }
+
+      // Compute snapshots at each sample checkpoint
       const labels = [];
       const netWorthData = [];
       const investedData = [];
       const profitData = [];
 
-      let runningInvested = 0;
-      let runningPortfolio = 0;
-      let runningCash = 0;
+      samplePoints.forEach(targetDate => {
+        let runningInvested = 0;
+        let runningCash = 0;
+        let runningPortfolio = 0;
 
-      computed.sortedTx.forEach(t => {
-        labels.push(t.date);
-        const amt = Number(t.amount || 0);
+        computed.sortedTx.forEach(t => {
+          if (t.date <= targetDate) {
+            const amt = Number(t.amount || 0);
+            if (t.type === 'DEPOSIT') { runningInvested += amt; runningCash += amt; }
+            else if (t.type === 'WITHDRAWAL') { runningInvested -= amt; runningCash -= amt; }
+            else if (t.type === 'BUY') { runningCash -= amt; runningPortfolio += amt; }
+            else if (t.type === 'SELL') { runningCash += amt; runningPortfolio = Math.max(0, runningPortfolio - amt); }
+            else if (t.type === 'FEES') { runningCash -= amt; }
+          }
+        });
 
-        if (t.type === 'DEPOSIT') { runningInvested += amt; runningCash += amt; }
-        else if (t.type === 'WITHDRAWAL') { runningInvested -= amt; runningCash -= amt; }
-        else if (t.type === 'BUY') { runningCash -= amt; runningPortfolio += amt; }
-        else if (t.type === 'SELL') { runningCash += amt; runningPortfolio = Math.max(0, runningPortfolio - amt); }
-        else if (t.type === 'FEES') { runningCash -= amt; }
+        // Use live mark-to-market for the final today point
+        let totalWorth = runningPortfolio + runningCash;
+        if (targetDate === todayStr) {
+          totalWorth = computed.netWorth;
+          runningInvested = computed.netInvested;
+        }
 
-        const totalWorth = runningPortfolio + runningCash;
+        labels.push(targetDate === todayStr ? 'Today' : targetDate);
         netWorthData.push(totalWorth);
         investedData.push(runningInvested);
         profitData.push(totalWorth - runningInvested);
       });
-
-      labels.push('Today');
-      netWorthData.push(computed.netWorth);
-      investedData.push(computed.netInvested);
-      profitData.push(computed.lifetimePnL);
 
       multiChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
           datasets: [
-            { label: 'Net Worth', data: netWorthData, borderColor: '#3b82f6', fill: false, tension: 0.25, pointRadius: 1, borderWidth: 2.2 },
-            { label: 'My Capital', data: investedData, borderColor: '#ef4444', fill: false, tension: 0.2, pointRadius: 1, borderWidth: 2 },
-            { label: 'Profit', data: profitData, borderColor: '#10b981', fill: false, tension: 0.25, pointRadius: 1, borderWidth: 2.2 }
+            { label: 'Net Worth', data: netWorthData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', fill: true, tension: 0.25, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2.2 },
+            { label: 'My Capital', data: investedData, borderColor: '#ef4444', fill: false, tension: 0.2, pointRadius: 2.5, pointHoverRadius: 5, borderWidth: 2 },
+            { label: 'Profit', data: profitData, borderColor: '#10b981', fill: false, tension: 0.25, pointRadius: 2.5, pointHoverRadius: 5, borderWidth: 2.2 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -1130,12 +1195,10 @@
               ticks: {
                 color: '#9ca3af',
                 font: { size: 10 },
+                maxRotation: 45,
                 callback: function(val, index) {
                   const lbl = this.getLabelForValue(val);
-                  if (lbl.includes('-01-01') || lbl.includes('2023-01') || lbl.includes('2024-01') || lbl.includes('2025-01') || lbl.includes('2026-01') || lbl.includes('2027-01')) {
-                    return lbl.split('-')[0];
-                  }
-                  return '';
+                  return lbl;
                 }
               }
             },
@@ -1253,7 +1316,7 @@
     function manualOverridePrice(stock, cur) {
       const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
       if (p && !isNaN(Number(p))) {
-        marketPrices[stock] = { ltp: Number(p), prevClose: marketPrices[stock]?.prevClose || Number(p) };
+        persistManualPrice(stock, Number(p));
         recalculateAndRender();
       }
     }
