@@ -1079,97 +1079,125 @@
       });
     }
 
-    /* =====================================================================
-       PERIOD-SAMPLED PERFORMANCE CHART ENGINE
-       - Quarter ends from March 31, 2022 to December 31, 2025
+/* =====================================================================
+       PERIOD-SAMPLED PERFORMANCE CHART ENGINE (ACCURATE DATE PARSING)
+       - Quarter ends up to 2025-12-31
        - Month ends from 2026 onwards + Today
        ===================================================================== */
+    function parseDateToMidnight(dInput) {
+      if (!dInput) return new Date(0);
+      if (dInput instanceof Date) {
+        return new Date(dInput.getFullYear(), dInput.getMonth(), dInput.getDate());
+      }
+      var s = String(dInput).trim();
+      // Handle DD/MM/YYYY or DD-MM-YYYY formats
+      if (s.includes('/') || (s.includes('-') && s.split('-')[0].length <= 2)) {
+        var sep = s.includes('/') ? '/' : '-';
+        var parts = s.split(sep);
+        if (parts.length === 3) {
+          var day = parseInt(parts[0], 10);
+          var month = parseInt(parts[1], 10) - 1;
+          var year = parseInt(parts[2], 10);
+          if (year < 100) year += 2000;
+          return new Date(year, month, day);
+        }
+      }
+      var parsed = new Date(s);
+      return isNaN(parsed.getTime()) ? new Date(0) : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    }
+
     function renderChart(computed) {
-      const ctx = document.getElementById('multiCurveChart').getContext('2d');
+      var ctx = document.getElementById('multiCurveChart').getContext('2d');
       if (multiChartInstance) multiChartInstance.destroy();
 
-      if (computed.sortedTx.length === 0) return;
+      if (!computed.sortedTx || computed.sortedTx.length === 0) return;
 
-      const startDate = new Date('2022-03-31');
-      const today = new Date();
-      const samplePoints = [];
+      // Map transactions with parsed timestamps
+      var normalizedTx = computed.sortedTx.map(function(t) {
+        return {
+          dateObj: parseDateToMidnight(t.date),
+          type: t.type,
+          amount: Number(t.amount || 0)
+        };
+      }).sort(function(a, b) { return a.dateObj - b.dateObj; });
 
-      // 1. Quarter ends: 2022-03-31 through 2025-12-31
-      for (let y = 2022; y <= 2025; y++) {
-        const qEnds = [
-          `${y}-03-31`,
-          `${y}-06-30`,
-          `${y}-09-30`,
-          `${y}-12-31`
+      var firstTxDate = normalizedTx[0].dateObj;
+      var today = new Date();
+      var todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      var samplePoints = [];
+
+      // 1. Generate Quarter Ends: 2022 to 2025
+      for (var y = 2022; y <= 2025; y++) {
+        var qEnds = [
+          new Date(y, 2, 31),  // Mar 31
+          new Date(y, 5, 30),  // Jun 30
+          new Date(y, 8, 30),  // Sep 30
+          new Date(y, 11, 31)  // Dec 31
         ];
-        qEnds.forEach(dStr => {
-          const d = new Date(dStr);
-          if (d >= startDate && d <= today) {
-            samplePoints.push(dStr);
+        qEnds.forEach(function(d) {
+          if (d >= firstTxDate && d <= todayMidnight) {
+            samplePoints.push(d);
           }
         });
       }
 
-      // 2. Month ends: 2026 onwards up to current month
-      const currentYear = today.getFullYear();
+      // 2. Generate Month Ends: 2026 onwards
+      var currentYear = today.getFullYear();
       if (currentYear >= 2026) {
-        for (let y = 2026; y <= currentYear; y++) {
-          const maxMonth = (y === currentYear) ? today.getMonth() : 11;
-          for (let m = 0; m <= maxMonth; m++) {
-            const lastDay = new Date(y, m + 1, 0); // Last day of month
-            const dStr = lastDay.toISOString().split('T')[0];
-            if (lastDay <= today) {
-              samplePoints.push(dStr);
+        for (var yr = 2026; yr <= currentYear; yr++) {
+          var maxMonth = (yr === currentYear) ? today.getMonth() : 11;
+          for (var m = 0; m <= maxMonth; m++) {
+            var mEnd = new Date(yr, m + 1, 0); // Last day of month
+            if (mEnd >= firstTxDate && mEnd <= todayMidnight) {
+              samplePoints.push(mEnd);
             }
           }
         }
       }
 
-      // 3. Current Live Point
-      const todayStr = today.toISOString().split('T')[0];
-      if (!samplePoints.includes(todayStr)) {
-        samplePoints.push(todayStr);
-      }
+      // Sort unique sample timestamps
+      samplePoints.sort(function(a, b) { return a - b; });
 
-      // Compute snapshots at each sample checkpoint
-      const labels = [];
-      const netWorthData = [];
-      const investedData = [];
-      const profitData = [];
+      var labels = [];
+      var netWorthData = [];
+      var investedData = [];
+      var profitData = [];
 
-      samplePoints.forEach(targetDate => {
-        let runningInvested = 0;
-        let runningCash = 0;
-        let runningPortfolio = 0;
+      samplePoints.forEach(function(targetDateObj) {
+        var runningInvested = 0;
+        var runningCash = 0;
+        var runningPortfolio = 0;
 
-        computed.sortedTx.forEach(t => {
-          if (t.date <= targetDate) {
-            const amt = Number(t.amount || 0);
-            if (t.type === 'DEPOSIT') { runningInvested += amt; runningCash += amt; }
-            else if (t.type === 'WITHDRAWAL') { runningInvested -= amt; runningCash -= amt; }
-            else if (t.type === 'BUY') { runningCash -= amt; runningPortfolio += amt; }
-            else if (t.type === 'SELL') { runningCash += amt; runningPortfolio = Math.max(0, runningPortfolio - amt); }
-            else if (t.type === 'FEES') { runningCash -= amt; }
+        normalizedTx.forEach(function(t) {
+          if (t.dateObj <= targetDateObj) {
+            if (t.type === 'DEPOSIT') { runningInvested += t.amount; runningCash += t.amount; }
+            else if (t.type === 'WITHDRAWAL') { runningInvested -= t.amount; runningCash -= t.amount; }
+            else if (t.type === 'BUY') { runningCash -= t.amount; runningPortfolio += t.amount; }
+            else if (t.type === 'SELL') { runningCash += t.amount; runningPortfolio = Math.max(0, runningPortfolio - t.amount); }
+            else if (t.type === 'FEES') { runningCash -= t.amount; }
           }
         });
 
-        // Use live mark-to-market for the final today point
-        let totalWorth = runningPortfolio + runningCash;
-        if (targetDate === todayStr) {
-          totalWorth = computed.netWorth;
-          runningInvested = computed.netInvested;
-        }
+        var labelStr = targetDateObj.toISOString().split('T')[0];
+        var totalWorth = runningPortfolio + runningCash;
 
-        labels.push(targetDate === todayStr ? 'Today' : targetDate);
+        labels.push(labelStr);
         netWorthData.push(totalWorth);
         investedData.push(runningInvested);
         profitData.push(totalWorth - runningInvested);
       });
 
+      // Always append live "Today" mark-to-market checkpoint
+      labels.push('Today');
+      netWorthData.push(computed.netWorth);
+      investedData.push(computed.netInvested);
+      profitData.push(computed.lifetimePnL);
+
       multiChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels,
+          labels: labels,
           datasets: [
             { label: 'Net Worth', data: netWorthData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', fill: true, tension: 0.25, pointRadius: 3, pointHoverRadius: 5, borderWidth: 2.2 },
             { label: 'My Capital', data: investedData, borderColor: '#ef4444', fill: false, tension: 0.2, pointRadius: 2.5, pointHoverRadius: 5, borderWidth: 2 },
@@ -1184,30 +1212,24 @@
             legend: { display: false },
             tooltip: {
               callbacks: {
-                title: items => items[0].label,
-                label: c => `${c.dataset.label}: ${formatINR(c.raw)}`
+                title: function(items) { return items[0].label; },
+                label: function(c) { return c.dataset.label + ': ' + formatINR(c.raw); }
               }
             }
           },
           scales: {
             x: {
               grid: { color: 'rgba(255, 255, 255, 0.04)' },
-              ticks: {
-                color: '#9ca3af',
-                font: { size: 10 },
-                maxRotation: 45,
-                callback: function(val, index) {
-                  const lbl = this.getLabelForValue(val);
-                  return lbl;
-                }
-              }
+              ticks: { color: '#9ca3af', font: { size: 10 }, maxRotation: 45 }
             },
             y: {
               grid: { color: 'rgba(255, 255, 255, 0.04)' },
               ticks: {
                 color: '#9ca3af',
                 font: { size: 10 },
-                callback: val => val >= 100000 ? '₹' + (val / 100000).toFixed(1) + ' L' : '₹' + val
+                callback: function(val) {
+                  return val >= 100000 ? '₹' + (val / 100000).toFixed(1) + ' L' : '₹' + val;
+                }
               }
             }
           }
