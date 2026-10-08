@@ -308,7 +308,7 @@
       </div>
 
       <p class="text-xs text-gray-300">
-        Google and Yahoo Finance did not return quotes for the following holdings (common for NSE Emerge / BSE SME category). Please enter their current market price (LTP):
+        Live quotes were not returned automatically for the following holdings (common for NSE Emerge / BSE SME category). Enter their current market price (LTP):
       </p>
 
       <div id="missingStocksContainer" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
@@ -334,7 +334,7 @@
       </div>
 
       <div class="space-y-3 text-xs text-gray-300">
-        <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script below:</p>
+        <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script deployment below:</p>
         <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
       </div>
 
@@ -472,7 +472,10 @@
       document.getElementById('scriptUrlInput').value = cloudScriptUrl;
       document.getElementById('syncModal').classList.remove('hidden');
     }
-    function closeSyncModal() { document.getElementById('syncModal').classList.add('hidden'); }
+
+    function closeSyncModal() { 
+      document.getElementById('syncModal').classList.add('hidden'); 
+    }
 
     function updateSyncUI() {
       const btnText = document.getElementById('cloudSyncText');
@@ -486,7 +489,7 @@
       } else {
         btnText.innerText = 'Link Sheet';
         dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-        statusText.innerText = 'Operating on local device. Connect Google Sheet for cloud sync.';
+        statusText.innerText = 'Operating locally. Connect Google Sheet for cloud sync.';
       }
     }
 
@@ -509,25 +512,24 @@
       }
     }
 
+    /* Consolidated Single-Request Fetch to prevent rate limits & cold start blocks */
     async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
       statusText.innerText = 'Pulling rows from Google Sheet...';
 
       try {
-        // Fetch ledger and chart history in parallel
-        const [ledgerRes, chartRes] = await Promise.all([
-          fetch(cloudScriptUrl).then(r => r.json()).catch(err => { console.error('Ledger err:', err); return []; }),
-          fetch(`${cloudScriptUrl}?action=getChartData`).then(r => r.json()).catch(err => { console.error('Chart err:', err); return []; })
-        ]);
+        const res = await fetch(`${cloudScriptUrl}?action=getAll`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-        if (Array.isArray(chartRes) && chartRes.length > 0) {
-          chartHistoryRecords = chartRes;
+        if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
+          chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
-        if (Array.isArray(ledgerRes) && ledgerRes.length > 0) {
-          transactions = ledgerRes.map((item, idx) => ({
+        if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
+          transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
             date: item.date,
             type: item.type,
@@ -543,22 +545,23 @@
         recalculateAndRender();
         statusText.innerText = `Synced ${transactions.length} trades and ${chartHistoryRecords.length} historical graph checkpoints.`;
       } catch (err) {
-        console.error(err);
-        statusText.innerText = 'Could not load from Google Sheet. Check deployment URL.';
+        console.error('Fetch error:', err);
+        statusText.innerText = 'Could not load from Google Sheet. Verify your Web App deployment URL.';
       }
     }
 
+    /* Plain text POST avoids browser preflight (OPTIONS) blocking on Google Apps Script */
     async function appendToGoogleSheet(tx) {
       if (!cloudScriptUrl) return;
       try {
         await fetch(cloudScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(tx)
         });
       } catch (e) {
-        console.error(e);
+        console.error('Failed to append transaction to sheet:', e);
       }
     }
 
@@ -757,7 +760,9 @@
       if (cashFlows.length < 2) return 0;
 
       const d0 = cashFlows[0].date;
-      function npv(r) { return cashFlows.reduce((acc, c) => acc + c.amount / Math.pow(1 + r, (c.date - d0) / (365 * 86400000)), 0); }
+      function npv(r) { 
+        return cashFlows.reduce((acc, c) => acc + c.amount / Math.pow(1 + r, (c.date - d0) / (365 * 86400000)), 0); 
+      }
       function dNpv(r) {
         const msPerYear = 365 * 86400000;
         return cashFlows.reduce((acc, c) => {
@@ -830,7 +835,7 @@
 
       const now = new Date();
       document.getElementById('lastSyncedTime').innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      syncStatus.innerText = `Fetched ${fetchedCount} quotes automatically. ${unverifiedSymbols.length} manual / SME position(s).`;
+      syncStatus.innerText = `Fetched ${fetchedCount} quotes. ${unverifiedSymbols.length} manual / SME position(s).`;
 
       icon.classList.remove('animate-spin');
       txt.innerText = 'Live Prices';
@@ -1083,9 +1088,6 @@
       });
     }
 
-    /* =====================================================================
-       CHART ENGINE (READS PERFORMANCE_HISTORY + LIVE TODAY POINT)
-       ===================================================================== */
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
       if (!canvas) return;
@@ -1097,7 +1099,7 @@
       const investedData = [];
       const profitData = [];
 
-      // 1. Populate all milestones from Performance_History
+      // 1. Historical milestone points from Performance_History
       if (chartHistoryRecords && chartHistoryRecords.length > 0) {
         chartHistoryRecords.forEach(r => {
           labels.push(r.date);
@@ -1112,7 +1114,7 @@
         profitData.push(0);
       }
 
-      // 2. Append Live Today Point
+      // 2. Append Live Current Point
       labels.push('Today');
       netWorthData.push(computed ? computed.netWorth : 0);
       investedData.push(computed ? computed.netInvested : 0);
@@ -1126,7 +1128,7 @@
             {
               label: 'Net Worth',
               data: netWorthData,
-              borderColor: '#2563eb', // Royal Blue
+              borderColor: '#2563eb',
               backgroundColor: 'transparent',
               borderWidth: 2.5,
               tension: 0.35,
@@ -1137,7 +1139,7 @@
             {
               label: 'My Capital',
               data: investedData,
-              borderColor: '#dc2626', // Crimson Red
+              borderColor: '#dc2626',
               backgroundColor: 'transparent',
               borderWidth: 2.2,
               tension: 0.35,
@@ -1148,10 +1150,10 @@
             {
               label: 'Profit',
               data: profitData,
-              borderColor: '#16a34a', // Emerald Green
+              borderColor: '#16a34a',
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],     // Distinctive Dotted style
+              borderDash: [4, 4],
               tension: 0.35,
               pointRadius: 3,
               pointBackgroundColor: '#16a34a',
