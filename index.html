@@ -139,7 +139,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h2 class="text-base font-bold text-white">Performance Chart</h2>
-          <p class="text-[11px] text-gray-400">Quarter-ends through 2025; Month-ends from 2026 onwards</p>
+          <p class="text-[11px] text-gray-400">Continuous institutional history + Today mark-to-market</p>
         </div>
         <div class="flex items-center space-x-3 text-xs">
           <span class="inline-flex items-center text-gray-300">
@@ -416,13 +416,19 @@
     const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
     const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
     const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
+    const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
 
-   let transactions = [];
-    let chartHistoryRecords = []; // Stores Performance_History rows from Sheet
+    let transactions = [];
+    let chartHistoryRecords = [];
+    try {
+      chartHistoryRecords = JSON.parse(localStorage.getItem(CHART_HISTORY_KEY)) || [];
+    } catch (e) {
+      chartHistoryRecords = [];
+    }
+
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
 
-    // Load saved manual prices so they are remembered across refreshes
     let savedManualPrices = {};
     try {
       savedManualPrices = JSON.parse(localStorage.getItem(MANUAL_PRICES_KEY)) || {};
@@ -448,14 +454,17 @@
       lucide.createIcons();
       updateSyncUI();
 
+      const savedTx = localStorage.getItem(STORAGE_KEY);
+      if (savedTx) {
+        try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
+      }
+
+      // Fast immediate render from cached data
+      recalculateAndRender();
+
+      // Background cloud sync
       if (cloudScriptUrl) {
         fetchFromGoogleSheet();
-      } else {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          try { transactions = JSON.parse(saved); } catch (e) { transactions = []; }
-        }
-        recalculateAndRender();
       }
     }
 
@@ -505,21 +514,25 @@
       }
     }
 
-async function fetchFromGoogleSheet() {
+    async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
       statusText.innerText = 'Pulling rows from Google Sheet...';
 
       try {
-        // Fetch trade ledger
+        // 1. Fetch trade ledger rows
         const res = await fetch(cloudScriptUrl);
         const data = await res.json();
 
-        // Fetch pre-computed history for the chart
+        // 2. Fetch pre-computed history for the chart
         try {
           const chartRes = await fetch(`${cloudScriptUrl}?action=getChartData`);
           if (chartRes.ok) {
-            chartHistoryRecords = await chartRes.json();
+            const chartData = await chartRes.json();
+            if (Array.isArray(chartData) && chartData.length > 0) {
+              chartHistoryRecords = chartData;
+              localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
+            }
           }
         } catch (cErr) {
           console.warn('Could not fetch chart history:', cErr);
@@ -546,6 +559,7 @@ async function fetchFromGoogleSheet() {
         statusText.innerText = 'Could not load from Google Sheet. Check deployment URL.';
       }
     }
+
     async function appendToGoogleSheet(tx) {
       if (!cloudScriptUrl) return;
       try {
@@ -700,7 +714,6 @@ async function fetchFromGoogleSheet() {
           const totalCost = lots.reduce((acc, l) => acc + (l.qty * l.price), 0);
           const wap = totalCost / totalQty;
 
-          // Priority: 1. Live market quote / 2. Saved manual price / 3. WAP
           const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
           const ltp = liveData.ltp;
           const prevClose = liveData.prevClose || ltp;
@@ -842,7 +855,6 @@ async function fetchFromGoogleSheet() {
 
       recalculateAndRender();
 
-      // Open modal for unlisted/SME stocks; pre-fills previous memorized manual price
       if (unverifiedSymbols.length > 0) {
         openMissingPricesModal(unverifiedSymbols, activeData.holdings);
       }
@@ -854,7 +866,6 @@ async function fetchFromGoogleSheet() {
 
       symbols.forEach(sym => {
         const h = holdings.find(item => item.stock === sym);
-        // Uses memorized manual price if available
         const currentPrice = savedManualPrices[sym] ? savedManualPrices[sym].ltp : (marketPrices[sym] ? marketPrices[sym].ltp : (h ? h.wap : 0));
         const qty = h ? h.qty : 0;
 
@@ -1090,11 +1101,13 @@ async function fetchFromGoogleSheet() {
       });
     }
 
-/* =====================================================================
-       CHART ENGINE (DIRECT FROM PERFORMANCE_HISTORY SHEET)
+    /* =====================================================================
+       CHART ENGINE (SAFE DIRECT PERFORMANCE_HISTORY + FALLBACK)
        ===================================================================== */
     function renderChart(computed) {
-      const ctx = document.getElementById('multiCurveChart').getContext('2d');
+      const canvas = document.getElementById('multiCurveChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
       if (multiChartInstance) multiChartInstance.destroy();
 
       const labels = [];
@@ -1102,21 +1115,27 @@ async function fetchFromGoogleSheet() {
       const investedData = [];
       const profitData = [];
 
-      // 1. Populate from Performance_History rows
+      // 1. From Performance_History Sheet
       if (chartHistoryRecords && chartHistoryRecords.length > 0) {
         chartHistoryRecords.forEach(r => {
           labels.push(r.date);
-          netWorthData.push(r.portfolioValue);
-          investedData.push(r.netCapital);
-          profitData.push(r.profit);
+          netWorthData.push(Number(r.portfolioValue || 0));
+          investedData.push(Number(r.netCapital || 0));
+          profitData.push(Number(r.profit || 0));
         });
+      } else if (computed && computed.sortedTx && computed.sortedTx.length > 0) {
+        // Fallback if sheet tab is not yet loaded: use earliest date + today
+        labels.push(computed.sortedTx[0].date);
+        netWorthData.push(0);
+        investedData.push(0);
+        profitData.push(0);
       }
 
-      // 2. Append live mark-to-market snapshot as "Today"
+      // 2. Append Live "Today" point
       labels.push('Today');
-      netWorthData.push(computed.netWorth);
-      investedData.push(computed.netInvested);
-      profitData.push(computed.lifetimePnL);
+      netWorthData.push(computed ? computed.netWorth : 0);
+      investedData.push(computed ? computed.netInvested : 0);
+      profitData.push(computed ? computed.lifetimePnL : 0);
 
       multiChartInstance = new Chart(ctx, {
         type: 'line',
@@ -1129,7 +1148,7 @@ async function fetchFromGoogleSheet() {
               borderColor: '#2563eb', // Royal Blue
               backgroundColor: 'transparent',
               borderWidth: 2.5,
-              tension: 0.38,
+              tension: 0.35,
               pointRadius: 3.5,
               pointBackgroundColor: '#2563eb',
               pointHoverRadius: 6
@@ -1140,7 +1159,7 @@ async function fetchFromGoogleSheet() {
               borderColor: '#dc2626', // Crimson Red
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              tension: 0.38,
+              tension: 0.35,
               pointRadius: 3,
               pointBackgroundColor: '#dc2626',
               pointHoverRadius: 5
@@ -1151,8 +1170,8 @@ async function fetchFromGoogleSheet() {
               borderColor: '#16a34a', // Emerald Green
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],     // Dotted style matching reference
-              tension: 0.38,
+              borderDash: [4, 4],     // Dotted style
+              tension: 0.35,
               pointRadius: 3,
               pointBackgroundColor: '#16a34a',
               pointHoverRadius: 5
@@ -1186,27 +1205,20 @@ async function fetchFromGoogleSheet() {
               },
               ticks: {
                 color: '#94a3b8',
-                font: { size: 11 },
+                font: { size: 10 },
                 maxRotation: 0,
-                autoSkip: false,
-                callback: function(val, index) {
-                  const lbl = labels[index] || '';
-                  // Display only primary milestone labels (Year starts or final Today point)
-                  if (lbl.includes('Jan') || lbl.includes('31-Mar-2022') || index === labels.length - 1) {
-                    return lbl;
-                  }
-                  return '';
-                }
+                autoSkip: true,
+                maxTicksLimit: 6
               }
             },
             y: {
               grid: {
                 color: function(context) {
-                  if (context.tick.value === 0) return 'rgba(255, 255, 255, 0.4)';
+                  if (context.tick && context.tick.value === 0) return 'rgba(255, 255, 255, 0.4)';
                   return 'rgba(255, 255, 255, 0.05)';
                 },
                 lineWidth: function(context) {
-                  return context.tick.value === 0 ? 1.5 : 1;
+                  return (context.tick && context.tick.value === 0) ? 1.5 : 1;
                 },
                 drawBorder: false
               },
@@ -1222,6 +1234,7 @@ async function fetchFromGoogleSheet() {
         }
       });
     }
+
     /* Modal Triggers */
     function openPresetModal(type) {
       document.getElementById('txEditingId').value = '';
