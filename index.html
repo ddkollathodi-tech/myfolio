@@ -1,10 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyFolioAI - Portfolio Tracker Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -12,19 +17,20 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .mono-font { font-family: 'JetBrains Mono', monospace; }
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #111827; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .dark .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col antialiased custom-scroll">
+<body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
   <!-- TOP HEADER -->
-  <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3">
+  <header class="border-b border-slate-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3 transition-colors duration-200">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
       
       <div class="flex items-center space-x-3.5">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-b from-gray-900 to-gray-950 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-950/40 ring-1 ring-white/10">
-          <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <div class="h-10 w-10 rounded-xl bg-gradient-to-b from-slate-100 to-slate-200 dark:from-gray-900 dark:to-gray-950 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10 dark:shadow-emerald-950/40 ring-1 ring-black/5 dark:ring-white/10">
+          <svg class="w-6 h-6 text-emerald-500 dark:text-emerald-400" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
             <defs>
               <marker id="curveArrowTip" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                 <path d="M 1 2 L 8 5 L 1 8 z" fill="#10b981" />
@@ -35,48 +41,54 @@
         </div>
         <div>
           <div class="flex items-baseline">
-            <span class="text-xl font-bold tracking-tight text-white">MyFolio</span>
-            <span class="text-2xl font-black text-red-500 tracking-tight leading-none ml-0.5">AI</span>
+            <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">MyFolio</span>
+            <span class="text-2xl font-black text-rose-500 tracking-tight leading-none ml-0.5">AI</span>
           </div>
-          <p class="text-xs text-gray-400 tracking-wide">Portfolio Tracker &nbsp;Engine</p>
+          <p class="text-xs text-slate-500 dark:text-gray-400 tracking-wide">Portfolio Tracker &nbsp;Engine</p>
         </div>
       </div>
 
       <div class="flex items-center flex-wrap gap-2">
-        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 transition">
-          <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <!-- THEME TOGGLE BUTTON -->
+        <button onclick="toggleTheme()" id="themeToggleBtn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition" title="Toggle Light / Dark Mode">
+          <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+          <span id="themeText" class="hidden sm:inline">Light</span>
+        </button>
+
+        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
+          <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
           <span id="cloudSyncText">Cloud Sync</span>
         </button>
 
-        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition shadow-sm">
+        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition shadow-sm">
           <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span id="refreshBtnText">Live Prices</span>
         </button>
 
-        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition shadow-sm">
+        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition shadow-sm">
           <i data-lucide="camera" class="w-3.5 h-3.5"></i>
           <span>Take Snapshot</span>
         </button>
 
-        <div class="flex items-center bg-gray-900 p-1 rounded-lg border border-gray-800 gap-1">
-          <button onclick="openPresetModal('BUY')" class="px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 rounded border border-blue-500/30">+ Buy</button>
-          <button onclick="openPresetModal('SELL')" class="px-2.5 py-1 text-xs font-semibold bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 rounded border border-rose-500/30">- Sell</button>
-          <button onclick="openPresetModal('DEPOSIT')" class="px-2.5 py-1 text-xs font-semibold bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 rounded border border-emerald-500/30">+ Deposit</button>
-          <button onclick="openPresetModal('WITHDRAWAL')" class="px-2.5 py-1 text-xs font-semibold bg-amber-600/20 text-amber-300 hover:bg-amber-600/30 rounded border border-amber-500/30">- Withdraw</button>
-          <button onclick="openPresetModal('FEES')" class="px-2.5 py-1 text-xs font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 rounded border border-gray-600">+ Fee</button>
+        <div class="flex items-center bg-slate-100 dark:bg-gray-900 p-1 rounded-lg border border-slate-200 dark:border-gray-800 gap-1">
+          <button onclick="openPresetModal('BUY')" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 rounded border border-blue-200 dark:border-blue-500/30">+ Buy</button>
+          <button onclick="openPresetModal('SELL')" class="px-2.5 py-1 text-xs font-semibold bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 rounded border border-rose-200 dark:border-rose-500/30">- Sell</button>
+          <button onclick="openPresetModal('DEPOSIT')" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 rounded border border-emerald-200 dark:border-emerald-500/30">+ Deposit</button>
+          <button onclick="openPresetModal('WITHDRAWAL')" class="px-2.5 py-1 text-xs font-semibold bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-600/30 rounded border border-amber-200 dark:border-amber-500/30">- Withdraw</button>
+          <button onclick="openPresetModal('FEES')" class="px-2.5 py-1 text-xs font-semibold bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-gray-600 rounded border border-slate-300 dark:border-gray-600">+ Fee</button>
         </div>
       </div>
     </div>
   </header>
 
   <!-- SYNC STATUS BAR -->
-  <div class="bg-gray-900/60 border-b border-gray-800/80 px-4 lg:px-8 py-1 text-xs text-gray-400">
+  <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 px-4 lg:px-8 py-1.5 text-xs text-slate-500 dark:text-gray-400">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <div class="flex items-center space-x-2">
-        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
         <span id="syncStatus">Ready to track or refresh prices.</span>
       </div>
-      <div>Last Live Quote: <span id="lastSyncedTime" class="text-gray-200 font-medium">Not refreshed yet</span></div>
+      <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-medium">Not refreshed yet</span></div>
     </div>
   </div>
 
@@ -85,73 +97,73 @@
 
     <!-- KPI ROW -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800/80 p-4 rounded-xl border border-gray-800 shadow-sm col-span-2 md:col-span-1 lg:col-span-2">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium mb-1">
+      <div class="bg-gradient-to-br from-white to-slate-100 dark:from-gray-900 dark:to-gray-800/80 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm col-span-2 md:col-span-1 lg:col-span-2 transition-colors duration-200">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
           <span>TOTAL NET WORTH</span>
-          <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+          <i data-lucide="wallet" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
         </div>
-        <div id="kpiNetWorth" class="text-2xl lg:text-3xl font-extrabold text-white mono-font">₹0.00</div>
-        <div class="mt-2 text-xs flex items-center space-x-2 text-gray-400">
-          <span>Holdings: <b id="subPortfolioVal" class="text-gray-300">₹0</b></span>
+        <div id="kpiNetWorth" class="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white mono-font">₹0.00</div>
+        <div class="mt-2 text-xs flex items-center space-x-2 text-slate-500 dark:text-gray-400">
+          <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300">₹0</b></span>
           <span>•</span>
-          <span>Cash: <b id="subCashVal" class="text-gray-300">₹0</b></span>
+          <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300">₹0</b></span>
         </div>
       </div>
 
-      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
           <span>NET INVESTED</span>
-          <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+          <i data-lucide="layers" class="w-4 h-4 text-indigo-500 dark:text-indigo-400"></i>
         </div>
-        <div id="kpiNetInvested" class="text-xl font-bold text-white mono-font">₹0.00</div>
-        <div class="mt-2 text-[11px] text-gray-400">
-          In: <span id="kpiTotalDeposits" class="text-gray-300">₹0</span> | Out: <span id="kpiTotalWithdrawals" class="text-gray-300">₹0</span>
+        <div id="kpiNetInvested" class="text-xl font-bold text-slate-900 dark:text-white mono-font">₹0.00</div>
+        <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
+          In: <span id="kpiTotalDeposits" class="text-slate-700 dark:text-gray-300">₹0</span> | Out: <span id="kpiTotalWithdrawals" class="text-slate-700 dark:text-gray-300">₹0</span>
         </div>
       </div>
 
-      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
           <span>LIFETIME P&amp;L</span>
-          <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i>
+          <i data-lucide="award" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
         </div>
-        <div id="kpiLifetimePnL" class="text-xl font-bold mono-font text-emerald-400">₹0.00</div>
-        <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-400">+0.00%</div>
+        <div id="kpiLifetimePnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400">₹0.00</div>
+        <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
       </div>
 
-      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
           <span>CURRENT FY REALIZED</span>
-          <i data-lucide="calendar" class="w-4 h-4 text-teal-400"></i>
+          <i data-lucide="calendar" class="w-4 h-4 text-teal-500 dark:text-teal-400"></i>
         </div>
-        <div id="kpiCurrentFyPnL" class="text-xl font-bold mono-font text-emerald-400">₹0.00</div>
-        <div id="kpiCurrentFyLabel" class="mt-2 text-[11px] text-gray-400">Strict FIFO</div>
+        <div id="kpiCurrentFyPnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400">₹0.00</div>
+        <div id="kpiCurrentFyLabel" class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">Strict FIFO</div>
       </div>
 
-      <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 shadow-sm">
-        <div class="flex items-center justify-between text-xs text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
           <span>ANNUALIZED XIRR</span>
-          <i data-lucide="percent" class="w-4 h-4 text-purple-400"></i>
+          <i data-lucide="percent" class="w-4 h-4 text-purple-500 dark:text-purple-400"></i>
         </div>
-        <div id="kpiXIRR" class="text-xl font-bold mono-font text-purple-400">0.00%</div>
-        <div class="mt-2 text-[11px] text-gray-400">Cash Flow IRR</div>
+        <div id="kpiXIRR" class="text-xl font-bold mono-font text-purple-600 dark:text-purple-400">0.00%</div>
+        <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">Cash Flow IRR</div>
       </div>
     </div>
 
     <!-- PERFORMANCE CHART -->
-    <div class="bg-gray-900 rounded-2xl border border-gray-800 p-5 shadow-sm">
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-sm transition-colors duration-200">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h2 class="text-base font-bold text-white">Performance Chart</h2>
-          <p class="text-[11px] text-gray-400">Historical performance points synced directly from Performance_History tab</p>
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">Performance Chart</h2>
+          <p class="text-[11px] text-slate-500 dark:text-gray-400">Historical performance points synced directly from Performance_History tab</p>
         </div>
         <div class="flex items-center space-x-3 text-xs">
-          <span class="inline-flex items-center text-gray-300">
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
             <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-1.5"></span>Net Worth
           </span>
-          <span class="inline-flex items-center text-gray-300">
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
             <span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-1.5"></span>My Capital
           </span>
-          <span class="inline-flex items-center text-gray-300">
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span>Profit
           </span>
         </div>
@@ -162,24 +174,24 @@
     </div>
 
     <!-- TABS -->
-    <div class="flex border-b border-gray-800 space-x-2 overflow-x-auto">
-      <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-400 text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
+    <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
+      <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="briefcase" class="w-4 h-4"></i>
         <span>Active Holdings (WAP Basis)</span>
       </button>
-      <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+      <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="check-check" class="w-4 h-4"></i>
         <span>Closed Trades Book</span>
       </button>
-      <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+      <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="calendar-check" class="w-4 h-4"></i>
         <span>Financial Year P&amp;L (Strict FIFO)</span>
       </button>
-      <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+      <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="list" class="w-4 h-4"></i>
         <span>Tradebook &amp; Cash Ledger</span>
       </button>
-      <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+      <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="landmark" class="w-4 h-4"></i>
         <span>Bank Ledger</span>
       </button>
@@ -187,17 +199,17 @@
 
     <!-- TAB 1: ACTIVE HOLDINGS -->
     <div id="tabContent-holdings" class="space-y-4">
-      <div class="flex items-center justify-between bg-gray-900/50 p-3 rounded-xl border border-gray-800">
+      <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
         <div class="flex items-center space-x-2">
-          <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48">
-          <span class="text-xs text-gray-400" id="holdingsCount">0 Open Positions</span>
+          <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48">
+          <span class="text-xs text-slate-500 dark:text-gray-400" id="holdingsCount">0 Open Positions</span>
         </div>
-        <div class="text-xs text-gray-400">Click any <b>Live LTP</b> cell to manually override.</div>
+        <div class="text-xs text-slate-500 dark:text-gray-400">Click any <b>Live LTP</b> cell to manually override.</div>
       </div>
 
-      <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-800 shadow-sm">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-gray-950/60 uppercase tracking-wider text-[11px] text-gray-400 border-b border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Stock</th>
               <th class="py-3 px-3 text-right">Holding Qty</th>
@@ -210,16 +222,16 @@
               <th class="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
-          <tbody id="holdingsTableBody" class="divide-y divide-gray-800/80"></tbody>
+          <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
     </div>
 
     <!-- TAB 2: CLOSED TRADES BOOK -->
     <div id="tabContent-closedTrades" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-800 shadow-sm">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-gray-950/60 uppercase tracking-wider text-[11px] text-gray-400 border-b border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Stock</th>
               <th class="py-3 px-3 text-right">Total Qty Sold</th>
@@ -227,11 +239,11 @@
               <th class="py-3 px-3 text-right">Avg Sell Price</th>
               <th class="py-3 px-3 text-right">Total Cost Basis</th>
               <th class="py-3 px-3 text-right">Total Realized Proceeds</th>
-              <th class="py-3 px-4 text-right font-bold text-white">Net Realized P&amp;L</th>
+              <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net Realized P&amp;L</th>
               <th class="py-3 px-3 text-right">Return %</th>
             </tr>
           </thead>
-          <tbody id="closedTradesTableBody" class="divide-y divide-gray-800/80"></tbody>
+          <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
     </div>
@@ -239,60 +251,60 @@
     <!-- TAB 3: FY BREAKDOWN -->
     <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
-      <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-800 shadow-sm">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-gray-950/60 uppercase tracking-wider text-[11px] text-gray-400 border-b border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
               <th class="py-3 px-4 text-right">Realized Sell Value</th>
               <th class="py-3 px-4 text-right">FIFO Cost Basis</th>
               <th class="py-3 px-4 text-right">Realized Gain/Loss</th>
-              <th class="py-3 px-4 text-right font-bold text-white">Net FY Realized P&amp;L</th>
+              <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net FY Realized P&amp;L</th>
             </tr>
           </thead>
-          <tbody id="fySummaryTableBody" class="divide-y divide-gray-800/80"></tbody>
+          <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
     </div>
 
     <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
     <div id="tabContent-transactions" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-800 shadow-sm">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-gray-950/60 uppercase tracking-wider text-[11px] text-gray-400 border-b border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
               <th class="py-3 px-3">Type</th>
               <th class="py-3 px-3">Stock</th>
               <th class="py-3 px-3 text-right">Qty</th>
               <th class="py-3 px-3 text-right">Price</th>
-              <th class="py-3 px-3 text-right text-rose-400">Cash Out (₹)</th>
-              <th class="py-3 px-3 text-right text-emerald-400">Cash In (₹)</th>
-              <th class="py-3 px-3 text-right font-semibold text-white">Running Cash (₹)</th>
+              <th class="py-3 px-3 text-right text-rose-500 dark:text-rose-400">Cash Out (₹)</th>
+              <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Cash In (₹)</th>
+              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Running Cash (₹)</th>
               <th class="py-3 px-4">Remarks</th>
               <th class="py-3 px-3 text-center">Action</th>
             </tr>
           </thead>
-          <tbody id="txTableBody" class="divide-y divide-gray-800/80"></tbody>
+          <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
     </div>
 
     <!-- TAB 5: BANK LEDGER -->
     <div id="tabContent-bankLedger" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-800 shadow-sm">
-        <table class="w-full text-left text-xs text-gray-300">
-          <thead class="bg-gray-950/60 uppercase tracking-wider text-[11px] text-gray-400 border-b border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
               <th class="py-3 px-3">Type</th>
-              <th class="py-3 px-3 text-right text-emerald-400">Deposit In (₹)</th>
-              <th class="py-3 px-3 text-right text-amber-400">Withdrawal Out (₹)</th>
-              <th class="py-3 px-3 text-right font-semibold text-white">Net Contributed Corpus (₹)</th>
+              <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Deposit In (₹)</th>
+              <th class="py-3 px-3 text-right text-amber-500 dark:text-amber-400">Withdrawal Out (₹)</th>
+              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Contributed Corpus (₹)</th>
               <th class="py-3 px-4">Remarks</th>
             </tr>
           </thead>
-          <tbody id="bankLedgerTableBody" class="divide-y divide-gray-800/80"></tbody>
+          <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
     </div>
@@ -300,53 +312,53 @@
   </main>
 
   <!-- MODAL: MANUAL PRICE PROMPT FOR MISSING / SME STOCKS -->
-  <div id="missingPricesModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-900 border border-amber-500/40 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+  <div id="missingPricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-amber-500/40 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
         <div class="flex items-center space-x-2">
-          <i data-lucide="alert-circle" class="w-5 h-5 text-amber-400"></i>
-          <h3 class="text-base font-bold text-white">Update Unlisted / SME Stock Prices</h3>
+          <i data-lucide="alert-circle" class="w-5 h-5 text-amber-500 dark:text-amber-400"></i>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Update Unlisted / SME Stock Prices</h3>
         </div>
-        <button onclick="closeMissingModal()" class="text-gray-400 hover:text-gray-200">
+        <button onclick="closeMissingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-gray-300">
+      <p class="text-xs text-slate-600 dark:text-gray-300">
         Live quotes were not returned automatically for the following holdings (common for NSE Emerge / BSE SME category). Enter their current market price (LTP):
       </p>
 
       <div id="missingStocksContainer" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
 
-      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-gray-800">
-        <button type="button" onclick="closeMissingModal()" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs">Keep Existing</button>
+      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
+        <button type="button" onclick="closeMissingModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-medium">Keep Existing</button>
         <button type="button" onclick="saveManualSmePrices()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs">Update &amp; Recalculate</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL: GOOGLE SHEETS SYNC -->
-  <div id="syncModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+  <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
         <div class="flex items-center space-x-2">
-          <i data-lucide="cloud" class="w-5 h-5 text-emerald-400"></i>
-          <h3 class="text-base font-bold text-white">Google Sheets Cloud Sync</h3>
+          <i data-lucide="cloud" class="w-5 h-5 text-emerald-500 dark:text-emerald-400"></i>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Google Sheets Cloud Sync</h3>
         </div>
-        <button onclick="closeSyncModal()" class="text-gray-400 hover:text-gray-200">
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs text-gray-300">
+      <div class="space-y-3 text-xs text-slate-600 dark:text-gray-300">
         <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script deployment below:</p>
-        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
       </div>
 
-      <div class="flex items-center justify-between pt-3 border-t border-gray-800">
-        <button onclick="disconnectCloudSync()" class="text-xs text-rose-400 hover:text-rose-300">Disconnect</button>
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-gray-800">
+        <button onclick="disconnectCloudSync()" class="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300">Disconnect</button>
         <div class="flex items-center space-x-2">
-          <button onclick="closeSyncModal()" class="px-3.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs">Cancel</button>
+          <button onclick="closeSyncModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs">Cancel</button>
           <button onclick="saveAndFetchCloud()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs">Save &amp; Pull Data</button>
         </div>
       </div>
@@ -354,11 +366,11 @@
   </div>
 
   <!-- MODAL: ADD / EDIT TRANSACTION -->
-  <div id="txModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-gray-800 pb-3">
-        <h3 id="modalTitle" class="text-base font-bold text-white">Record Transaction</h3>
-        <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-gray-200">
+  <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Transaction</h3>
+        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -367,12 +379,12 @@
         <input type="hidden" id="txEditingId" value="">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-gray-400 mb-1">Date</label>
-            <input type="date" id="txDate" required class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white">
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Date</label>
+            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
           </div>
           <div>
-            <label class="block text-gray-400 mb-1">Type</label>
-            <select id="txType" onchange="toggleFormFields()" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white font-semibold">
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Type</label>
+            <select id="txType" onchange="toggleFormFields()" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
               <option value="BUY">BUY</option>
               <option value="SELL">SELL</option>
               <option value="DEPOSIT">DEPOSIT</option>
@@ -384,31 +396,31 @@
 
         <div id="stockFields" class="grid grid-cols-3 gap-3">
           <div>
-            <label class="block text-gray-400 mb-1">Stock Ticker</label>
-            <input type="text" id="txStock" placeholder="RELIANCE" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white uppercase">
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Stock Ticker</label>
+            <input type="text" id="txStock" placeholder="RELIANCE" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase">
           </div>
           <div>
-            <label class="block text-gray-400 mb-1">Quantity</label>
-            <input type="number" step="1" min="1" id="txQty" placeholder="10" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white" oninput="autoComputeAmount()">
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Quantity</label>
+            <input type="number" step="1" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white" oninput="autoComputeAmount()">
           </div>
           <div>
-            <label class="block text-gray-400 mb-1">Price / Share (₹)</label>
-            <input type="number" step="0.05" id="txPrice" placeholder="2500" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white" oninput="autoComputeAmount()">
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Price / Share (₹)</label>
+            <input type="number" step="0.05" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white" oninput="autoComputeAmount()">
           </div>
         </div>
 
         <div>
-          <label class="block text-gray-400 mb-1">Total Amount (₹)</label>
-          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white font-mono">
+          <label class="block text-slate-500 dark:text-gray-400 mb-1">Total Amount (₹)</label>
+          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-mono">
         </div>
 
         <div>
-          <label class="block text-gray-400 mb-1">Remarks</label>
-          <input type="text" id="txRemarks" placeholder="Note / Reference" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-white">
+          <label class="block text-slate-500 dark:text-gray-400 mb-1">Remarks</label>
+          <input type="text" id="txRemarks" placeholder="Note / Reference" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-gray-800">
-          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300">Cancel</button>
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
         </div>
       </form>
@@ -416,6 +428,7 @@
   </div>
 
   <script>
+    const THEME_KEY = 'MYFOLIOAI_THEME';
     const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
     const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
     const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
@@ -446,7 +459,49 @@
       'INFY': { ltp: 1895.00, prevClose: 1910.00 }
     }, savedManualPrices);
 
-    /* CROSS-DEVICE PERSISTENCE: Save locally AND broadcast to Google Sheet */
+    /* ---------------- Theme Engine ---------------- */
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const isDark = saved ? saved === 'dark' : true; // Default to dark mode
+      applyTheme(isDark);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(!isDark);
+    }
+
+    function applyTheme(isDark) {
+      const root = document.documentElement;
+      const themeText = document.getElementById('themeText');
+      const themeIcon = document.getElementById('themeIcon');
+
+      if (isDark) {
+        root.classList.add('dark');
+        localStorage.setItem(THEME_KEY, 'dark');
+        if (themeText) themeText.innerText = 'Dark';
+        if (themeIcon) {
+          themeIcon.setAttribute('data-lucide', 'moon');
+          themeIcon.className = 'w-4 h-4 text-indigo-400';
+        }
+      } else {
+        root.classList.remove('dark');
+        localStorage.setItem(THEME_KEY, 'light');
+        if (themeText) themeText.innerText = 'Light';
+        if (themeIcon) {
+          themeIcon.setAttribute('data-lucide', 'sun');
+          themeIcon.className = 'w-4 h-4 text-amber-500';
+        }
+      }
+      lucide.createIcons();
+
+      // Redraw chart with updated colors if instantiated
+      if (multiChartInstance) {
+        renderChart(computeEngine());
+      }
+    }
+
+    /* CROSS-DEVICE PERSISTENCE */
     async function persistManualPrice(symbol, price) {
       if (!savedManualPrices) savedManualPrices = {};
       savedManualPrices[symbol] = { ltp: price, prevClose: price };
@@ -471,7 +526,7 @@
     }
 
     function init() {
-      lucide.createIcons();
+      initTheme();
       updateSyncUI();
 
       const savedTx = localStorage.getItem(STORAGE_KEY);
@@ -506,11 +561,11 @@
 
       if (cloudScriptUrl) {
         btnText.innerText = 'Sheet Linked';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse';
         statusText.innerText = 'Synced with Google Sheet (MyFolio_DB)';
       } else {
         btnText.innerText = 'Link Sheet';
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        dot.className = 'w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400';
         statusText.innerText = 'Operating locally. Connect Google Sheet for cloud sync.';
       }
     }
@@ -534,7 +589,7 @@
       }
     }
 
-    /* Consolidated Single-Request Fetch (Pulls Trades + History + Cloud Saved Prices) */
+    /* Consolidated Single-Request Fetch */
     async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
@@ -545,20 +600,17 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // 1. Merge Cloud Prices (e.g., entered via desktop, pulled by mobile)
         if (data.customPrices && typeof data.customPrices === 'object') {
           Object.assign(savedManualPrices, data.customPrices);
           Object.assign(marketPrices, data.customPrices);
           localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
         }
 
-        // 2. Load Performance History Checkpoints
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
-        // 3. Load Tradebook Transactions
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -595,7 +647,7 @@
       }
     }
 
-    /* DIRECT FRONTEND SNAPSHOT PUSH (Priority 1) */
+    /* PRIORITY 1 FRONTEND SNAPSHOT PUSH */
     async function pushFrontendSnapshot() {
       if (!cloudScriptUrl) {
         alert('Please connect Google Sheet via Cloud Sync first.');
@@ -933,15 +985,15 @@
         const qty = h ? h.qty : 0;
 
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2.5 bg-gray-800/80 rounded-xl border border-gray-700/80';
+        row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800/80 rounded-xl border border-slate-200 dark:border-gray-700/80';
         row.innerHTML = `
           <div>
-            <div class="font-bold text-white">${sym}</div>
-            <div class="text-[11px] text-gray-400">Holding: ${qty} shares • Avg: ${formatINR(h ? h.wap : 0)}</div>
+            <div class="font-bold text-slate-900 dark:text-white">${sym}</div>
+            <div class="text-[11px] text-slate-500 dark:text-gray-400">Holding: ${qty} shares • Avg: ${formatINR(h ? h.wap : 0)}</div>
           </div>
           <div class="flex items-center space-x-1.5">
-            <span class="text-xs text-gray-400">₹</span>
-            <input type="number" step="0.05" id="manualPrice_${sym}" value="${Number(currentPrice).toFixed(2)}" class="w-28 bg-gray-900 border border-gray-600 rounded-lg p-1.5 text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500">
+            <span class="text-xs text-slate-500 dark:text-gray-400">₹</span>
+            <input type="number" step="0.05" id="manualPrice_${sym}" value="${Number(currentPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500">
           </div>
         `;
         container.appendChild(row);
@@ -970,7 +1022,6 @@
 
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
 
-      // Batch persist to Google Sheet
       if (cloudScriptUrl && Object.keys(batchPrices).length > 0) {
         try {
           await fetch(cloudScriptUrl, {
@@ -1001,17 +1052,17 @@
 
       const lifeEl = document.getElementById('kpiLifetimePnL');
       lifeEl.innerText = formatINR(data.lifetimePnL);
-      lifeEl.className = `text-xl font-bold mono-font ${data.lifetimePnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      lifeEl.className = `text-xl font-bold mono-font ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const lifePctEl = document.getElementById('kpiLifetimePnLPct');
       lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-      lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
       const curFyData = data.fyRealized[curFy] || { gain: 0 };
       const curFyEl = document.getElementById('kpiCurrentFyPnL');
       curFyEl.innerText = formatINR(curFyData.gain);
-      curFyEl.className = `text-xl font-bold mono-font ${curFyData.gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      curFyEl.className = `text-xl font-bold mono-font ${curFyData.gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
       document.getElementById('kpiCurrentFyLabel').innerText = `${curFy} Realized`;
 
       document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
@@ -1032,30 +1083,30 @@
       document.getElementById('holdingsCount').innerText = `${holdings.length} Open Positions`;
 
       if (holdings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-gray-500">No active stock positions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500">No active stock positions.</td></tr>`;
         return;
       }
 
       holdings.forEach(h => {
         const isPos = h.pnlVal >= 0;
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-800/40 border-b border-gray-800/60';
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-white">${h.stock}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
           <td class="py-3 px-3 text-right mono-font">${h.qty}</td>
-          <td class="py-3 px-3 text-right mono-font text-gray-300">${formatINR(h.wap)}</td>
-          <td class="py-3 px-3 text-right mono-font font-semibold text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})">${formatINR(h.ltp)}</td>
-          <td class="py-3 px-3 text-right mono-font text-gray-400">${formatINR(h.investedVal)}</td>
-          <td class="py-3 px-3 text-right mono-font font-semibold text-white">${formatINR(h.currentVal)}</td>
-          <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-400' : 'text-rose-400'}">
+          <td class="py-3 px-3 text-right mono-font text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
+          <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})">${formatINR(h.ltp)}</td>
+          <td class="py-3 px-3 text-right mono-font text-slate-500 dark:text-gray-400">${formatINR(h.investedVal)}</td>
+          <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(h.currentVal)}</td>
+          <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
             ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
             <span class="text-[10px] block opacity-80">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
           </td>
-          <td class="py-3 px-3 text-right mono-font ${h.dayPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+          <td class="py-3 px-3 text-right mono-font ${h.dayPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
             ${h.dayPnL >= 0 ? '+' : ''}${formatINR(h.dayPnL)}
           </td>
           <td class="py-3 px-4 text-center">
-            <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] rounded bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/30">Sell</button>
+            <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30">Sell</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1066,7 +1117,7 @@
       const tbody = document.getElementById('closedTradesTableBody');
       tbody.innerHTML = '';
       if (closedTrades.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-gray-500">No closed trades recorded yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500">No closed trades recorded yet.</td></tr>`;
         return;
       }
 
@@ -1077,16 +1128,16 @@
         const isPos = c.netPnL >= 0;
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-800/40 border-b border-gray-800/60';
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-white">${c.stock}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${c.stock}</td>
           <td class="py-3 px-3 text-right mono-font">${c.totalQty}</td>
-          <td class="py-3 px-3 text-right mono-font text-gray-400">${formatINR(avgBuy)}</td>
-          <td class="py-3 px-3 text-right mono-font text-gray-300">${formatINR(avgSell)}</td>
-          <td class="py-3 px-3 text-right mono-font text-gray-400">${formatINR(c.totalCostBasis)}</td>
+          <td class="py-3 px-3 text-right mono-font text-slate-500 dark:text-gray-400">${formatINR(avgBuy)}</td>
+          <td class="py-3 px-3 text-right mono-font text-slate-600 dark:text-gray-300">${formatINR(avgSell)}</td>
+          <td class="py-3 px-3 text-right mono-font text-slate-500 dark:text-gray-400">${formatINR(c.totalCostBasis)}</td>
           <td class="py-3 px-3 text-right mono-font">${formatINR(c.totalProceeds)}</td>
-          <td class="py-3 px-4 text-right mono-font font-bold ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-          <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+          <td class="py-3 px-4 text-right mono-font font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
+          <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1103,28 +1154,28 @@
         const isPos = item.gain >= 0;
 
         const card = document.createElement('div');
-        card.className = 'bg-gray-900 border border-gray-800 rounded-xl p-4';
+        card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-sm transition-colors';
         card.innerHTML = `
-          <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
-            <span class="font-bold text-white">${fy}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-300">FIFO</span>
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
+            <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
           </div>
-          <div class="text-lg font-bold mono-font ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${formatINR(item.gain)}</div>
-          <div class="mt-2 text-[11px] space-y-1 text-gray-400 border-t border-gray-800 pt-2">
-            <div class="flex justify-between"><span>Sales:</span> <span class="text-gray-200">${formatINR(item.sellProceeds)}</span></div>
-            <div class="flex justify-between"><span>Cost:</span> <span class="text-gray-200">${formatINR(item.costBasis)}</span></div>
+          <div class="text-lg font-bold mono-font ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</div>
+          <div class="mt-2 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
+            <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.sellProceeds)}</span></div>
+            <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.costBasis)}</span></div>
           </div>
         `;
         cards.appendChild(card);
 
         const tr = document.createElement('tr');
-        tr.className = 'border-b border-gray-800/60';
+        tr.className = 'border-b border-slate-100 dark:border-gray-800/60';
         tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-white">${fy}</td>
+          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${fy}</td>
           <td class="py-3 px-4 text-right mono-font">${formatINR(item.sellProceeds)}</td>
-          <td class="py-3 px-4 text-right mono-font text-gray-400">${formatINR(item.costBasis)}</td>
-          <td class="py-3 px-4 text-right mono-font ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${formatINR(item.gain)}</td>
-          <td class="py-3 px-4 text-right mono-font font-bold ${isPos ? 'text-emerald-400' : 'text-rose-400'}">${formatINR(item.gain)}</td>
+          <td class="py-3 px-4 text-right mono-font text-slate-500 dark:text-gray-400">${formatINR(item.costBasis)}</td>
+          <td class="py-3 px-4 text-right mono-font ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</td>
+          <td class="py-3 px-4 text-right mono-font font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1136,28 +1187,28 @@
 
       [...ledgerEntries].reverse().forEach(tx => {
         const badgeColors = {
-          'BUY': 'bg-blue-900/60 text-blue-300 border-blue-700/40',
-          'SELL': 'bg-rose-900/60 text-rose-300 border-rose-700/40',
-          'DEPOSIT': 'bg-emerald-900/60 text-emerald-300 border-emerald-700/40',
-          'WITHDRAWAL': 'bg-amber-900/60 text-amber-300 border-amber-700/40',
-          'FEES': 'bg-gray-800 text-gray-300 border-gray-700'
+          'BUY': 'bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/40',
+          'SELL': 'bg-rose-50 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40',
+          'DEPOSIT': 'bg-emerald-50 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40',
+          'WITHDRAWAL': 'bg-amber-50 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40',
+          'FEES': 'bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700'
         };
 
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-800/40 border-b border-gray-800/60';
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
-          <td class="py-2.5 px-4 mono-font text-gray-400">${tx.date}</td>
+          <td class="py-2.5 px-4 mono-font text-slate-500 dark:text-gray-400">${tx.date}</td>
           <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type]}">${tx.type}</span></td>
-          <td class="py-2.5 px-3 font-semibold text-white">${tx.stock || '—'}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
           <td class="py-2.5 px-3 text-right mono-font">${tx.qty || '—'}</td>
           <td class="py-2.5 px-3 text-right mono-font">${tx.price ? formatINR(tx.price) : '—'}</td>
-          <td class="py-2.5 px-3 text-right mono-font text-rose-400">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
-          <td class="py-2.5 px-3 text-right mono-font text-emerald-400">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
-          <td class="py-2.5 px-3 text-right mono-font font-semibold text-white">${formatINR(tx.runningCash)}</td>
-          <td class="py-2.5 px-4 text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
+          <td class="py-2.5 px-3 text-right mono-font text-rose-600 dark:text-rose-400">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
+          <td class="py-2.5 px-3 text-right mono-font text-emerald-600 dark:text-emerald-400">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
+          <td class="py-2.5 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(tx.runningCash)}</td>
+          <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
           <td class="py-2.5 px-3 text-center space-x-1">
-            <button onclick="editTransaction('${tx.id}')" class="text-gray-400 hover:text-white p-1" title="Edit"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deleteTransaction('${tx.id}')" class="text-gray-500 hover:text-rose-400 p-1" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="editTransaction('${tx.id}')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1" title="Edit"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-600 dark:text-gray-500 dark:hover:text-rose-400 p-1" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1170,35 +1221,39 @@
 
       [...bankEntries].reverse().forEach(b => {
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-gray-800/40 border-b border-gray-800/60';
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
-          <td class="py-2.5 px-4 mono-font text-gray-400">${b.date}</td>
-          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'}">${b.type}</span></td>
-          <td class="py-2.5 px-3 text-right mono-font text-emerald-400">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
-          <td class="py-2.5 px-3 text-right mono-font text-amber-400">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
-          <td class="py-2.5 px-3 text-right mono-font font-semibold text-white">${formatINR(b.corpus)}</td>
-          <td class="py-2.5 px-4 text-gray-400">${b.remarks || ''}</td>
+          <td class="py-2.5 px-4 mono-font text-slate-500 dark:text-gray-400">${b.date}</td>
+          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
+          <td class="py-2.5 px-3 text-right mono-font text-emerald-600 dark:text-emerald-400">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
+          <td class="py-2.5 px-3 text-right mono-font text-amber-600 dark:text-amber-400">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
+          <td class="py-2.5 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(b.corpus)}</td>
+          <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400">${b.remarks || ''}</td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    /* =====================================================================
-       CHART ENGINE: 3 Curves (Net Worth, My Capital, Profit)
-       Reads full history from Performance_History + Appends Live Today
-       ===================================================================== */
+    /* THEME-AWARE CHART ENGINE */
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (multiChartInstance) multiChartInstance.destroy();
 
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)';
+      const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.25)';
+      const tickColor = isDark ? '#94a3b8' : '#64748b';
+      const tooltipBg = isDark ? '#0f172a' : '#ffffff';
+      const tooltipText = isDark ? '#e2e8f0' : '#1e293b';
+      const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
+
       const labels = [];
       const netWorthData = [];
       const investedData = [];
       const profitData = [];
 
-      // Parse and sort history records from Performance_History
       if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
         const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -1211,7 +1266,6 @@
         });
       }
 
-      // Append live current day state computed by the engine
       if (computed) {
         labels.push('Today');
         netWorthData.push(Math.round(computed.netWorth || 0));
@@ -1235,7 +1289,7 @@
               label: 'Net Worth',
               data: netWorthData,
               borderColor: '#2563eb',
-              backgroundColor: 'rgba(37, 99, 235, 0.05)',
+              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.08)',
               borderWidth: 2.5,
               tension: 0.3,
               pointRadius: labels.length > 30 ? 2 : 4,
@@ -1275,12 +1329,13 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#0f172a',
-              titleColor: '#e2e8f0',
-              bodyColor: '#e2e8f0',
-              borderColor: '#334155',
+              backgroundColor: tooltipBg,
+              titleColor: tooltipText,
+              bodyColor: tooltipText,
+              borderColor: tooltipBorder,
               borderWidth: 1,
               padding: 10,
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
               callbacks: {
                 title: function(items) { return items[0].label; },
                 label: function(c) { return c.dataset.label + ': ' + formatINR(c.raw, 0); }
@@ -1290,11 +1345,11 @@
           scales: {
             x: {
               grid: {
-                color: 'rgba(255, 255, 255, 0.05)',
+                color: gridColor,
                 drawBorder: false
               },
               ticks: {
-                color: '#94a3b8',
+                color: tickColor,
                 font: { size: 10 },
                 maxRotation: 45,
                 autoSkip: true,
@@ -1304,8 +1359,8 @@
             y: {
               grid: {
                 color: function(context) {
-                  if (context.tick && context.tick.value === 0) return 'rgba(255, 255, 255, 0.4)';
-                  return 'rgba(255, 255, 255, 0.05)';
+                  if (context.tick && context.tick.value === 0) return zeroLineColor;
+                  return gridColor;
                 },
                 lineWidth: function(context) {
                   return (context.tick && context.tick.value === 0) ? 1.5 : 1;
@@ -1313,7 +1368,7 @@
                 drawBorder: false
               },
               ticks: {
-                color: '#94a3b8',
+                color: tickColor,
                 font: { size: 11 },
                 callback: function(val) {
                   return formatINR(val, 0);
@@ -1433,10 +1488,10 @@
     function switchTab(t) {
       ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger'].forEach(id => {
         document.getElementById(`tabContent-${id}`).classList.add('hidden');
-        document.getElementById(`tabBtn-${id}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap';
+        document.getElementById(`tabBtn-${id}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap';
       });
       document.getElementById(`tabContent-${t}`).classList.remove('hidden');
-      document.getElementById(`tabBtn-${t}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-400 text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
+      document.getElementById(`tabBtn-${t}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
     }
 
     function filterHoldingsTable() {
