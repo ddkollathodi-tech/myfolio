@@ -397,7 +397,16 @@
         <div id="stockFields" class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Stock Ticker</label>
-            <input type="text" id="txStock" placeholder="RELIANCE" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase">
+            <input 
+              type="text" 
+              id="txStock" 
+              list="stockSuggestionsList" 
+              placeholder="e.g. RELIANCE" 
+              autocomplete="off"
+              class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
+            >
+            <!-- Native Autocomplete Dropdown List -->
+            <datalist id="stockSuggestionsList"></datalist>
           </div>
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Quantity</label>
@@ -433,6 +442,7 @@
     const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
     const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
     const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
+    const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -440,6 +450,13 @@
       chartHistoryRecords = JSON.parse(localStorage.getItem(CHART_HISTORY_KEY)) || [];
     } catch (e) {
       chartHistoryRecords = [];
+    }
+
+    let stockMasterList = [];
+    try {
+      stockMasterList = JSON.parse(localStorage.getItem(STOCK_MASTER_KEY)) || [];
+    } catch (e) {
+      stockMasterList = [];
     }
 
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
@@ -462,7 +479,7 @@
     /* ---------------- Theme Engine ---------------- */
     function initTheme() {
       const saved = localStorage.getItem(THEME_KEY);
-      const isDark = saved ? saved === 'dark' : true; // Default to dark mode
+      const isDark = saved ? saved === 'dark' : true;
       applyTheme(isDark);
     }
 
@@ -495,13 +512,46 @@
       }
       lucide.createIcons();
 
-      // Redraw chart with updated colors if instantiated
       if (multiChartInstance) {
         renderChart(computeEngine());
       }
     }
 
-    /* CROSS-DEVICE PERSISTENCE */
+    /* ---------------- Autocomplete Engine ---------------- */
+    function updateStockAutocompleteOptions() {
+      const datalist = document.getElementById('stockSuggestionsList');
+      if (!datalist) return;
+      datalist.innerHTML = '';
+
+      const seen = new Set();
+
+      // 1. From Stock_Master Sheet
+      stockMasterList.forEach(item => {
+        const sym = (item.symbol || '').toUpperCase().trim();
+        if (sym && !seen.has(sym)) {
+          seen.add(sym);
+          const opt = document.createElement('option');
+          opt.value = sym;
+          opt.label = item.name ? `${item.name}` : sym;
+          datalist.appendChild(opt);
+        }
+      });
+
+      // 2. From historical Tradebook ledger
+      transactions.forEach(t => {
+        if (t.stock) {
+          const sym = t.stock.toUpperCase().trim();
+          if (sym && !seen.has(sym)) {
+            seen.add(sym);
+            const opt = document.createElement('option');
+            opt.value = sym;
+            datalist.appendChild(opt);
+          }
+        }
+      });
+    }
+
+    /* ---------------- Cross-Device Price Persistence ---------------- */
     async function persistManualPrice(symbol, price) {
       if (!savedManualPrices) savedManualPrices = {};
       savedManualPrices[symbol] = { ltp: price, prevClose: price };
@@ -534,6 +584,7 @@
         try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
       }
 
+      updateStockAutocompleteOptions();
       recalculateAndRender();
 
       if (cloudScriptUrl) {
@@ -600,17 +651,27 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
+        // 1. Stock Master Autocomplete List
+        if (data.stockMaster && Array.isArray(data.stockMaster)) {
+          stockMasterList = data.stockMaster;
+          localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
+          updateStockAutocompleteOptions();
+        }
+
+        // 2. Custom & SME Prices
         if (data.customPrices && typeof data.customPrices === 'object') {
           Object.assign(savedManualPrices, data.customPrices);
           Object.assign(marketPrices, data.customPrices);
           localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
         }
 
+        // 3. Performance History Milestones
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
+        // 4. Tradebook Ledger
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -623,10 +684,11 @@
             remarks: item.remarks || ''
           }));
           saveToStorage();
+          updateStockAutocompleteOptions();
         }
 
         recalculateAndRender();
-        statusText.innerText = `Synced ${transactions.length} trades, ${chartHistoryRecords.length} graph checkpoints & cloud prices.`;
+        statusText.innerText = `Synced ${transactions.length} trades, ${chartHistoryRecords.length} graph checkpoints & master tickers.`;
       } catch (err) {
         console.error('Fetch error:', err);
         statusText.innerText = 'Could not load from Google Sheet. Verify your Web App deployment URL.';
@@ -1234,7 +1296,7 @@
       });
     }
 
-    /* THEME-AWARE CHART ENGINE */
+    /* THEME-AWARE CHART ENGINE (REDUCED DOT SIZES) */
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
       if (!canvas) return;
@@ -1292,9 +1354,9 @@
               backgroundColor: isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.08)',
               borderWidth: 2.5,
               tension: 0.3,
-              pointRadius: labels.length > 30 ? 1.5 : 2,
+              pointRadius: 2,         // Subtle compact dot
+              pointHoverRadius: 4,    // Clean hover state
               pointBackgroundColor: '#2563eb',
-              pointHoverRadius: 3,
               fill: false
             },
             {
@@ -1304,9 +1366,9 @@
               backgroundColor: 'transparent',
               borderWidth: 2.2,
               tension: 0.3,
-              pointRadius: labels.length > 30 ? 1.5 : 2,
-              pointBackgroundColor: '#dc2626',
-              pointHoverRadius: 3
+              pointRadius: 2,         // Subtle compact dot
+              pointHoverRadius: 4,
+              pointBackgroundColor: '#dc2626'
             },
             {
               label: 'Profit',
@@ -1316,9 +1378,9 @@
               borderWidth: 2.2,
               borderDash: [4, 4],
               tension: 0.3,
-              pointRadius: labels.length > 30 ? 1.5 : 2,
-              pointBackgroundColor: '#16a34a',
-              pointHoverRadius: 3
+              pointRadius: 2,         // Subtle compact dot
+              pointHoverRadius: 4,
+              pointBackgroundColor: '#16a34a'
             }
           ]
         },
@@ -1438,6 +1500,7 @@
       }
 
       saveToStorage();
+      updateStockAutocompleteOptions();
       closeTransactionModal();
       recalculateAndRender();
     }
@@ -1464,6 +1527,7 @@
       if (confirm('Delete this transaction?')) {
         transactions = transactions.filter(t => t.id !== id);
         saveToStorage();
+        updateStockAutocompleteOptions();
         recalculateAndRender();
       }
     }
