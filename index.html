@@ -22,7 +22,6 @@
   <header class="border-b border-gray-800 bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
       
-      <!-- Brand & Polished Logo -->
       <div class="flex items-center space-x-3.5">
         <div class="h-10 w-10 rounded-xl bg-gradient-to-b from-gray-900 to-gray-950 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-950/40 ring-1 ring-white/10">
           <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
@@ -43,7 +42,6 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="flex items-center flex-wrap gap-2">
         <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 transition">
           <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -139,7 +137,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h2 class="text-base font-bold text-white">Performance Chart</h2>
-          <p class="text-[11px] text-gray-400">Continuous institutional history + Today mark-to-market</p>
+          <p class="text-[11px] text-gray-400">Historical performance points synced directly from Performance_History tab</p>
         </div>
         <div class="flex items-center space-x-3 text-xs">
           <span class="inline-flex items-center text-gray-300">
@@ -459,10 +457,8 @@
         try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
       }
 
-      // Fast immediate render from cached data
       recalculateAndRender();
 
-      // Background cloud sync
       if (cloudScriptUrl) {
         fetchFromGoogleSheet();
       }
@@ -472,7 +468,6 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
     }
 
-    /* Google Sheets Sync */
     function openSyncModal() {
       document.getElementById('scriptUrlInput').value = cloudScriptUrl;
       document.getElementById('syncModal').classList.remove('hidden');
@@ -520,26 +515,19 @@
       statusText.innerText = 'Pulling rows from Google Sheet...';
 
       try {
-        // 1. Fetch trade ledger rows
-        const res = await fetch(cloudScriptUrl);
-        const data = await res.json();
+        // Fetch ledger and chart history in parallel
+        const [ledgerRes, chartRes] = await Promise.all([
+          fetch(cloudScriptUrl).then(r => r.json()).catch(err => { console.error('Ledger err:', err); return []; }),
+          fetch(`${cloudScriptUrl}?action=getChartData`).then(r => r.json()).catch(err => { console.error('Chart err:', err); return []; })
+        ]);
 
-        // 2. Fetch pre-computed history for the chart
-        try {
-          const chartRes = await fetch(`${cloudScriptUrl}?action=getChartData`);
-          if (chartRes.ok) {
-            const chartData = await chartRes.json();
-            if (Array.isArray(chartData) && chartData.length > 0) {
-              chartHistoryRecords = chartData;
-              localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
-            }
-          }
-        } catch (cErr) {
-          console.warn('Could not fetch chart history:', cErr);
+        if (Array.isArray(chartRes) && chartRes.length > 0) {
+          chartHistoryRecords = chartRes;
+          localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
-        if (Array.isArray(data)) {
-          transactions = data.map((item, idx) => ({
+        if (Array.isArray(ledgerRes) && ledgerRes.length > 0) {
+          transactions = ledgerRes.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
             date: item.date,
             type: item.type,
@@ -549,11 +537,11 @@
             amount: Number(item.amount || 0),
             remarks: item.remarks || ''
           }));
-
           saveToStorage();
-          recalculateAndRender();
-          statusText.innerText = `Successfully loaded ${transactions.length} rows from Google Sheet`;
         }
+
+        recalculateAndRender();
+        statusText.innerText = `Synced ${transactions.length} trades and ${chartHistoryRecords.length} historical graph checkpoints.`;
       } catch (err) {
         console.error(err);
         statusText.innerText = 'Could not load from Google Sheet. Check deployment URL.';
@@ -574,7 +562,6 @@
       }
     }
 
-    /* Currency & Date Formatters */
     function formatINR(val, decimals = 2) {
       if (val === null || isNaN(val)) return '₹0.00';
       const isNegative = val < 0;
@@ -597,7 +584,6 @@
       return month >= 4 ? `FY ${year}-${String(year + 1).slice(-2)}` : `FY ${year - 1}-${String(year).slice(-2)}`;
     }
 
-    /* FIFO & WAP ENGINE */
     function computeEngine() {
       const sortedTx = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -792,9 +778,6 @@
       return isNaN(rate) ? 0 : rate * 100;
     }
 
-    /* =====================================================================
-       LIVE PRICE FETCH ENGINE WITH PERSISTED SME / UNLISTED QUOTES
-       ===================================================================== */
     async function fetchLiveStockPrices() {
       const btn = document.getElementById('refreshBtn');
       const icon = document.getElementById('refreshIcon');
@@ -905,7 +888,6 @@
       recalculateAndRender();
     }
 
-    /* Standard Renders */
     function recalculateAndRender() {
       const data = computeEngine();
 
@@ -1102,7 +1084,7 @@
     }
 
     /* =====================================================================
-       CHART ENGINE (SAFE DIRECT PERFORMANCE_HISTORY + FALLBACK)
+       CHART ENGINE (READS PERFORMANCE_HISTORY + LIVE TODAY POINT)
        ===================================================================== */
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
@@ -1115,7 +1097,7 @@
       const investedData = [];
       const profitData = [];
 
-      // 1. From Performance_History Sheet
+      // 1. Populate all milestones from Performance_History
       if (chartHistoryRecords && chartHistoryRecords.length > 0) {
         chartHistoryRecords.forEach(r => {
           labels.push(r.date);
@@ -1124,14 +1106,13 @@
           profitData.push(Number(r.profit || 0));
         });
       } else if (computed && computed.sortedTx && computed.sortedTx.length > 0) {
-        // Fallback if sheet tab is not yet loaded: use earliest date + today
         labels.push(computed.sortedTx[0].date);
         netWorthData.push(0);
         investedData.push(0);
         profitData.push(0);
       }
 
-      // 2. Append Live "Today" point
+      // 2. Append Live Today Point
       labels.push('Today');
       netWorthData.push(computed ? computed.netWorth : 0);
       investedData.push(computed ? computed.netInvested : 0);
@@ -1170,7 +1151,7 @@
               borderColor: '#16a34a', // Emerald Green
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],     // Dotted style
+              borderDash: [4, 4],     // Distinctive Dotted style
               tension: 0.35,
               pointRadius: 3,
               pointBackgroundColor: '#16a34a',
@@ -1208,7 +1189,7 @@
                 font: { size: 10 },
                 maxRotation: 0,
                 autoSkip: true,
-                maxTicksLimit: 6
+                maxTicksLimit: 7
               }
             },
             y: {
@@ -1235,7 +1216,6 @@
       });
     }
 
-    /* Modal Triggers */
     function openPresetModal(type) {
       document.getElementById('txEditingId').value = '';
       document.getElementById('txModal').classList.remove('hidden');
