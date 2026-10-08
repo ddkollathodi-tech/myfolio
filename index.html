@@ -53,6 +53,11 @@
           <span id="refreshBtnText">Live Prices</span>
         </button>
 
+        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition shadow-sm">
+          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+          <span>Take Snapshot</span>
+        </button>
+
         <div class="flex items-center bg-gray-900 p-1 rounded-lg border border-gray-800 gap-1">
           <button onclick="openPresetModal('BUY')" class="px-2.5 py-1 text-xs font-semibold bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 rounded border border-blue-500/30">+ Buy</button>
           <button onclick="openPresetModal('SELL')" class="px-2.5 py-1 text-xs font-semibold bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 rounded border border-rose-500/30">- Sell</button>
@@ -441,11 +446,28 @@
       'INFY': { ltp: 1895.00, prevClose: 1910.00 }
     }, savedManualPrices);
 
-    function persistManualPrice(symbol, price) {
+    /* CROSS-DEVICE PERSISTENCE: Save locally AND broadcast to Google Sheet */
+    async function persistManualPrice(symbol, price) {
       if (!savedManualPrices) savedManualPrices = {};
       savedManualPrices[symbol] = { ltp: price, prevClose: price };
       marketPrices[symbol] = { ltp: price, prevClose: price };
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+
+      if (cloudScriptUrl) {
+        try {
+          await fetch(cloudScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: "savePrices",
+              prices: { [symbol]: { ltp: price, prevClose: price } }
+            })
+          });
+        } catch (e) {
+          console.error('Failed to sync price to sheet:', e);
+        }
+      }
     }
 
     function init() {
@@ -512,7 +534,7 @@
       }
     }
 
-    /* Consolidated Single-Request Fetch to prevent rate limits & cold start blocks */
+    /* Consolidated Single-Request Fetch (Pulls Trades + History + Cloud Saved Prices) */
     async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
@@ -523,11 +545,20 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
+        // 1. Merge Cloud Prices (e.g., entered via desktop, pulled by mobile)
+        if (data.customPrices && typeof data.customPrices === 'object') {
+          Object.assign(savedManualPrices, data.customPrices);
+          Object.assign(marketPrices, data.customPrices);
+          localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+        }
+
+        // 2. Load Performance History Checkpoints
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
+        // 3. Load Tradebook Transactions
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -543,14 +574,13 @@
         }
 
         recalculateAndRender();
-        statusText.innerText = `Synced ${transactions.length} trades and ${chartHistoryRecords.length} historical graph checkpoints.`;
+        statusText.innerText = `Synced ${transactions.length} trades, ${chartHistoryRecords.length} graph checkpoints & cloud prices.`;
       } catch (err) {
         console.error('Fetch error:', err);
         statusText.innerText = 'Could not load from Google Sheet. Verify your Web App deployment URL.';
       }
     }
 
-    /* Plain text POST avoids browser preflight (OPTIONS) blocking on Google Apps Script */
     async function appendToGoogleSheet(tx) {
       if (!cloudScriptUrl) return;
       try {
@@ -562,6 +592,51 @@
         });
       } catch (e) {
         console.error('Failed to append transaction to sheet:', e);
+      }
+    }
+
+    /* DIRECT FRONTEND SNAPSHOT PUSH (Priority 1) */
+    async function pushFrontendSnapshot() {
+      if (!cloudScriptUrl) {
+        alert('Please connect Google Sheet via Cloud Sync first.');
+        return;
+      }
+
+      const data = computeEngine();
+      const dateStr = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }).replace(/ /g, '-');
+
+      const statusText = document.getElementById('syncStatus');
+      statusText.innerText = `Pushing live snapshot for ${dateStr}...`;
+
+      const snapshotPayload = {
+        action: "recordSnapshot",
+        date: dateStr,
+        netCapital: Math.round(data.netInvested),
+        cash: Math.round(data.cashBalance),
+        stockVal: Math.round(data.totalPortfolioVal),
+        portfolioVal: Math.round(data.netWorth),
+        profit: Math.round(data.lifetimePnL)
+      };
+
+      try {
+        await fetch(cloudScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(snapshotPayload)
+        });
+
+        statusText.innerText = `Snapshot saved for ${dateStr}! Syncing graph...`;
+        setTimeout(async () => {
+          await fetchFromGoogleSheet();
+        }, 1200);
+      } catch (e) {
+        console.error('Snapshot failed:', e);
+        statusText.innerText = 'Snapshot push failed. Check console.';
       }
     }
 
@@ -879,15 +954,35 @@
       document.getElementById('missingPricesModal').classList.add('hidden');
     }
 
-    function saveManualSmePrices() {
+    async function saveManualSmePrices() {
       const inputs = document.querySelectorAll('#missingStocksContainer input');
+      const batchPrices = {};
+
       inputs.forEach(inp => {
         const sym = inp.id.replace('manualPrice_', '');
         const val = Number(inp.value);
         if (!isNaN(val) && val > 0) {
-          persistManualPrice(sym, val);
+          batchPrices[sym] = { ltp: val, prevClose: val };
+          savedManualPrices[sym] = { ltp: val, prevClose: val };
+          marketPrices[sym] = { ltp: val, prevClose: val };
         }
       });
+
+      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+
+      // Batch persist to Google Sheet
+      if (cloudScriptUrl && Object.keys(batchPrices).length > 0) {
+        try {
+          await fetch(cloudScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: "savePrices", prices: batchPrices })
+          });
+        } catch (e) {
+          console.error('Batch price sync failed:', e);
+        }
+      }
 
       closeMissingModal();
       recalculateAndRender();
@@ -1124,7 +1219,6 @@
         profitData.push(Math.round(computed.lifetimePnL || 0));
       }
 
-      // Fallback if no records exist at all
       if (labels.length === 0) {
         labels.push('No History');
         netWorthData.push(0);
@@ -1140,7 +1234,7 @@
             {
               label: 'Net Worth',
               data: netWorthData,
-              borderColor: '#2563eb', // Royal Blue
+              borderColor: '#2563eb',
               backgroundColor: 'rgba(37, 99, 235, 0.05)',
               borderWidth: 2.5,
               tension: 0.3,
@@ -1152,7 +1246,7 @@
             {
               label: 'My Capital',
               data: investedData,
-              borderColor: '#dc2626', // Crimson Red
+              borderColor: '#dc2626',
               backgroundColor: 'transparent',
               borderWidth: 2.2,
               tension: 0.3,
@@ -1163,10 +1257,10 @@
             {
               label: 'Profit',
               data: profitData,
-              borderColor: '#16a34a', // Emerald Green
+              borderColor: '#16a34a',
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],     // Distinctive dashed curve
+              borderDash: [4, 4],
               tension: 0.3,
               pointRadius: labels.length > 30 ? 2 : 4,
               pointBackgroundColor: '#16a34a',
