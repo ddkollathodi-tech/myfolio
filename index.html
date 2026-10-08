@@ -417,7 +417,8 @@
     const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
     const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 
-    let transactions = [];
+   let transactions = [];
+    let chartHistoryRecords = []; // Stores Performance_History rows from Sheet
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
 
@@ -504,14 +505,25 @@
       }
     }
 
-    async function fetchFromGoogleSheet() {
+async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
       statusText.innerText = 'Pulling rows from Google Sheet...';
 
       try {
+        // Fetch trade ledger
         const res = await fetch(cloudScriptUrl);
         const data = await res.json();
+
+        // Fetch pre-computed history for the chart
+        try {
+          const chartRes = await fetch(`${cloudScriptUrl}?action=getChartData`);
+          if (chartRes.ok) {
+            chartHistoryRecords = await chartRes.json();
+          }
+        } catch (cErr) {
+          console.warn('Could not fetch chart history:', cErr);
+        }
 
         if (Array.isArray(data)) {
           transactions = data.map((item, idx) => ({
@@ -534,7 +546,6 @@
         statusText.innerText = 'Could not load from Google Sheet. Check deployment URL.';
       }
     }
-
     async function appendToGoogleSheet(tx) {
       if (!cloudScriptUrl) return;
       try {
@@ -1080,117 +1091,29 @@
     }
 
 /* =====================================================================
-       PREMIUM SMOOTH PERFORMANCE CHART (Clean Milestones + Spline Curves)
+       CHART ENGINE (DIRECT FROM PERFORMANCE_HISTORY SHEET)
        ===================================================================== */
-    function parseDateToMidnight(dInput) {
-      if (!dInput) return new Date(0);
-      if (dInput instanceof Date) {
-        return new Date(dInput.getFullYear(), dInput.getMonth(), dInput.getDate());
-      }
-      var s = String(dInput).trim();
-      if (s.includes('/') || (s.includes('-') && s.split('-')[0].length <= 2)) {
-        var sep = s.includes('/') ? '/' : '-';
-        var parts = s.split(sep);
-        if (parts.length === 3) {
-          var day = parseInt(parts[0], 10);
-          var month = parseInt(parts[1], 10) - 1;
-          var year = parseInt(parts[2], 10);
-          if (year < 100) year += 2000;
-          return new Date(year, month, day);
-        }
-      }
-      var parsed = new Date(s);
-      return isNaN(parsed.getTime()) ? new Date(0) : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-    }
-
     function renderChart(computed) {
-      var ctx = document.getElementById('multiCurveChart').getContext('2d');
+      const ctx = document.getElementById('multiCurveChart').getContext('2d');
       if (multiChartInstance) multiChartInstance.destroy();
 
-      if (!computed.sortedTx || computed.sortedTx.length === 0) return;
+      const labels = [];
+      const netWorthData = [];
+      const investedData = [];
+      const profitData = [];
 
-      var normalizedTx = computed.sortedTx.map(function(t) {
-        return {
-          dateObj: parseDateToMidnight(t.date),
-          type: t.type,
-          amount: Number(t.amount || 0)
-        };
-      }).sort(function(a, b) { return a.dateObj - b.dateObj; });
-
-      var firstTxDate = normalizedTx[0].dateObj;
-      var today = new Date();
-      var todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-      var samplePoints = [];
-
-      // 1. Quarter ends up to 2025-12-31
-      for (var y = 2022; y <= 2025; y++) {
-        var qEnds = [
-          new Date(y, 2, 31),
-          new Date(y, 5, 30),
-          new Date(y, 8, 30),
-          new Date(y, 11, 31)
-        ];
-        qEnds.forEach(function(d) {
-          if (d >= firstTxDate && d <= todayMidnight) samplePoints.push(d);
+      // 1. Populate from Performance_History rows
+      if (chartHistoryRecords && chartHistoryRecords.length > 0) {
+        chartHistoryRecords.forEach(r => {
+          labels.push(r.date);
+          netWorthData.push(r.portfolioValue);
+          investedData.push(r.netCapital);
+          profitData.push(r.profit);
         });
       }
 
-      // 2. Month ends from 2026 onwards
-      var currentYear = today.getFullYear();
-      if (currentYear >= 2026) {
-        for (var yr = 2026; yr <= currentYear; yr++) {
-          var maxMonth = (yr === currentYear) ? today.getMonth() : 11;
-          for (var m = 0; m <= maxMonth; m++) {
-            var mEnd = new Date(yr, m + 1, 0);
-            if (mEnd >= firstTxDate && mEnd <= todayMidnight) samplePoints.push(mEnd);
-          }
-        }
-      }
-
-      samplePoints.sort(function(a, b) { return a - b; });
-
-      var labels = [];
-      var fullDateStrings = [];
-      var netWorthData = [];
-      var investedData = [];
-      var profitData = [];
-
-      var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-      samplePoints.forEach(function(targetDateObj) {
-        var runningInvested = 0;
-        var runningCash = 0;
-        var runningPortfolio = 0;
-
-        normalizedTx.forEach(function(t) {
-          if (t.dateObj <= targetDateObj) {
-            if (t.type === 'DEPOSIT') { runningInvested += t.amount; runningCash += t.amount; }
-            else if (t.type === 'WITHDRAWAL') { runningInvested -= t.amount; runningCash -= t.amount; }
-            else if (t.type === 'BUY') { runningCash -= t.amount; runningPortfolio += t.amount; }
-            else if (t.type === 'SELL') { runningCash += t.amount; runningPortfolio = Math.max(0, runningPortfolio - t.amount); }
-            else if (t.type === 'FEES') { runningCash -= t.amount; }
-          }
-        });
-
-        var dd = String(targetDateObj.getDate()).padStart(2, '0');
-        var mmm = monthNames[targetDateObj.getMonth()];
-        var yyyy = targetDateObj.getFullYear();
-        var dateFormatted = dd + '-' + mmm + '-' + yyyy;
-
-        fullDateStrings.push(dateFormatted);
-        labels.push(dateFormatted);
-
-        var totalWorth = runningPortfolio + runningCash;
-        netWorthData.push(totalWorth);
-        investedData.push(runningInvested);
-        profitData.push(totalWorth - runningInvested);
-      });
-
-      // Today's live snapshot
-      var todayFormatted = String(today.getDate()).padStart(2, '0') + '-' + monthNames[today.getMonth()] + '-' + today.getFullYear();
-      labels.push(todayFormatted);
-      fullDateStrings.push(todayFormatted);
+      // 2. Append live mark-to-market snapshot as "Today"
+      labels.push('Today');
       netWorthData.push(computed.netWorth);
       investedData.push(computed.netInvested);
       profitData.push(computed.lifetimePnL);
@@ -1206,7 +1129,7 @@
               borderColor: '#2563eb', // Royal Blue
               backgroundColor: 'transparent',
               borderWidth: 2.5,
-              tension: 0.38,         // Smooth spline curvature
+              tension: 0.38,
               pointRadius: 3.5,
               pointBackgroundColor: '#2563eb',
               pointHoverRadius: 6
@@ -1228,7 +1151,7 @@
               borderColor: '#16a34a', // Emerald Green
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],     // Distinctive dotted curve matching reference
+              borderDash: [4, 4],     // Dotted style matching reference
               tension: 0.38,
               pointRadius: 3,
               pointBackgroundColor: '#16a34a',
@@ -1264,22 +1187,21 @@
               ticks: {
                 color: '#94a3b8',
                 font: { size: 11 },
-                maxRotation: 0,       // Strictly horizontal labels
+                maxRotation: 0,
                 autoSkip: false,
                 callback: function(val, index) {
-                  var rawLabel = labels[index] || '';
-                  // Display only primary milestone labels (Year starts or key quarterly markers)
-                  if (rawLabel.includes('01-Jan') || rawLabel.includes('31-Mar-2022') || index === labels.length - 1) {
-                    return rawLabel;
+                  const lbl = labels[index] || '';
+                  // Display only primary milestone labels (Year starts or final Today point)
+                  if (lbl.includes('Jan') || lbl.includes('31-Mar-2022') || index === labels.length - 1) {
+                    return lbl;
                   }
-                  return ''; // Keep interval point for hover tooltip while hiding label clutter
+                  return '';
                 }
               }
             },
             y: {
               grid: {
                 color: function(context) {
-                  // Highlights zero line prominently
                   if (context.tick.value === 0) return 'rgba(255, 255, 255, 0.4)';
                   return 'rgba(255, 255, 255, 0.05)';
                 },
@@ -1300,7 +1222,6 @@
         }
       });
     }
-
     /* Modal Triggers */
     function openPresetModal(type) {
       document.getElementById('txEditingId').value = '';
