@@ -1088,6 +1088,10 @@
       });
     }
 
+    /* =====================================================================
+       CHART ENGINE: 3 Curves (Net Worth, My Capital, Profit)
+       Reads full history from Performance_History + Appends Live Today
+       ===================================================================== */
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
       if (!canvas) return;
@@ -1099,26 +1103,34 @@
       const investedData = [];
       const profitData = [];
 
-      // 1. Historical milestone points from Performance_History
-      if (chartHistoryRecords && chartHistoryRecords.length > 0) {
-        chartHistoryRecords.forEach(r => {
+      // Parse and sort history records from Performance_History
+      if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
+        const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        sortedHistory.forEach(r => {
+          if (!r.date) return;
           labels.push(r.date);
           netWorthData.push(Number(r.portfolioValue || 0));
           investedData.push(Number(r.netCapital || 0));
           profitData.push(Number(r.profit || 0));
         });
-      } else if (computed && computed.sortedTx && computed.sortedTx.length > 0) {
-        labels.push(computed.sortedTx[0].date);
+      }
+
+      // Append live current day state computed by the engine
+      if (computed) {
+        labels.push('Today');
+        netWorthData.push(Math.round(computed.netWorth || 0));
+        investedData.push(Math.round(computed.netInvested || 0));
+        profitData.push(Math.round(computed.lifetimePnL || 0));
+      }
+
+      // Fallback if no records exist at all
+      if (labels.length === 0) {
+        labels.push('No History');
         netWorthData.push(0);
         investedData.push(0);
         profitData.push(0);
       }
-
-      // 2. Append Live Current Point
-      labels.push('Today');
-      netWorthData.push(computed ? computed.netWorth : 0);
-      investedData.push(computed ? computed.netInvested : 0);
-      profitData.push(computed ? computed.lifetimePnL : 0);
 
       multiChartInstance = new Chart(ctx, {
         type: 'line',
@@ -1128,34 +1140,35 @@
             {
               label: 'Net Worth',
               data: netWorthData,
-              borderColor: '#2563eb',
-              backgroundColor: 'transparent',
+              borderColor: '#2563eb', // Royal Blue
+              backgroundColor: 'rgba(37, 99, 235, 0.05)',
               borderWidth: 2.5,
-              tension: 0.35,
-              pointRadius: 3.5,
+              tension: 0.3,
+              pointRadius: labels.length > 30 ? 2 : 4,
               pointBackgroundColor: '#2563eb',
-              pointHoverRadius: 6
+              pointHoverRadius: 6,
+              fill: false
             },
             {
               label: 'My Capital',
               data: investedData,
-              borderColor: '#dc2626',
+              borderColor: '#dc2626', // Crimson Red
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              tension: 0.35,
-              pointRadius: 3,
+              tension: 0.3,
+              pointRadius: labels.length > 30 ? 2 : 4,
               pointBackgroundColor: '#dc2626',
               pointHoverRadius: 5
             },
             {
               label: 'Profit',
               data: profitData,
-              borderColor: '#16a34a',
+              borderColor: '#16a34a', // Emerald Green
               backgroundColor: 'transparent',
               borderWidth: 2.2,
-              borderDash: [4, 4],
-              tension: 0.35,
-              pointRadius: 3,
+              borderDash: [4, 4],     // Distinctive dashed curve
+              tension: 0.3,
+              pointRadius: labels.length > 30 ? 2 : 4,
               pointBackgroundColor: '#16a34a',
               pointHoverRadius: 5
             }
@@ -1176,7 +1189,7 @@
               padding: 10,
               callbacks: {
                 title: function(items) { return items[0].label; },
-                label: function(c) { return c.dataset.label + ': ' + formatINR(c.raw); }
+                label: function(c) { return c.dataset.label + ': ' + formatINR(c.raw, 0); }
               }
             }
           },
@@ -1189,9 +1202,9 @@
               ticks: {
                 color: '#94a3b8',
                 font: { size: 10 },
-                maxRotation: 0,
+                maxRotation: 45,
                 autoSkip: true,
-                maxTicksLimit: 7
+                maxTicksLimit: 12
               }
             },
             y: {
