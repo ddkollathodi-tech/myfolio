@@ -7,89 +7,129 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class'
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+          }
+        }
+      }
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
-    body { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .mono-font { font-family: 'JetBrains Mono', monospace; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    :root {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .mono-font, .tabular-nums {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: 'tnum';
+    }
+
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scroll::-webkit-scrollbar-track { background: transparent; }
     .dark .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    
     th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background-color: rgba(148, 163, 184, 0.1); }
+    th.sortable:hover { background-color: rgba(148, 163, 184, 0.08); }
+
+    /* Record Transaction Button Custom Tokens */
+    .btn-record-tx {
+      background-color: #EAF5F0;
+      border: 1px solid #CBE7D9;
+      color: #147653;
+    }
+    .btn-record-tx:hover {
+      background-color: #DEF0E7;
+      border-color: #B2DDC6;
+    }
+    .dark .btn-record-tx {
+      background-color: rgba(20, 118, 83, 0.16);
+      border-color: rgba(203, 231, 217, 0.22);
+      color: #34D399;
+    }
+    .dark .btn-record-tx:hover {
+      background-color: rgba(20, 118, 83, 0.26);
+      border-color: rgba(203, 231, 217, 0.35);
+    }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
   <!-- TOP HEADER -->
-  <header class="border-b border-slate-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3 transition-colors duration-200">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+  <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
+    <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
       
-      <!-- Brand Logo & Title -->
+      <!-- Brand Logo & Title (Option 1 Geometric Up-Arrow) -->
       <div class="flex items-center space-x-3.5">
-        <div class="h-10 w-10 rounded-xl bg-gradient-to-b from-slate-100 to-slate-200 dark:from-gray-900 dark:to-gray-950 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10 dark:shadow-emerald-950/40 ring-1 ring-black/5 dark:ring-white/10">
-          <svg class="w-6 h-6 text-emerald-500 dark:text-emerald-400" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-            <defs>
-              <marker id="curveArrowTip" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 1 2 L 8 5 L 1 8 z" fill="#10b981" />
-              </marker>
-            </defs>
-            <path d="M 4 23 C 10 20, 12 11, 16 16 C 20 20, 22 10, 27 6" marker-end="url(#curveArrowTip)"></path>
+        <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
+          <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
           </svg>
         </div>
-        <div>
-          <div class="flex items-baseline">
-            <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">MyFolio</span>
-            <span class="text-2xl font-black text-rose-500 tracking-tight leading-none ml-0.5">AI</span>
+        <div class="flex flex-col justify-center">
+          <div class="flex items-baseline leading-none">
+            <span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">MyFolio</span>
+            <span class="text-[20px] font-extrabold text-[#D81B60] tracking-tight ml-0.5">AI</span>
           </div>
-          <p class="text-xs text-slate-500 dark:text-gray-400 tracking-wide">Portfolio Tracker &nbsp;Engine</p>
+          <p class="text-[11.5px] font-medium text-slate-500 dark:text-gray-400 tracking-normal mt-0.5">Portfolio Tracker Engine</p>
         </div>
       </div>
 
       <!-- Action Cluster: Dropdown -> Live Prices -> Sheet Linked -> Snapshot -> Theme Toggle -->
       <div class="flex items-center flex-wrap gap-2.5">
         
-        <!-- 1. RECORD TRANSACTION DROPDOWN -->
+        <!-- 1. RECORD TRANSACTION DROPDOWN (Pale Green Styled) -->
         <div class="relative" id="txDropdownContainer">
           <button 
             id="txDropdownBtn" 
             onclick="toggleTxDropdown(event)" 
-            class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+            class="btn-record-tx flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-medium transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
           >
             <i data-lucide="file-pen-line" class="w-3.5 h-3.5"></i>
             <span>Record Transaction</span>
-            <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150"></i>
+            <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150 opacity-80"></i>
           </button>
 
           <!-- Dropdown Menu -->
           <div 
             id="txDropdownMenu" 
-            class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-xs"
+            class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
           >
-            <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+            <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
               <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
               <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
             </button>
-            <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+            <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
               <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
               <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
             </button>
             <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
-            <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+            <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
               <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
               <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
             </button>
-            <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+            <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
               <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
               <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
             </button>
             <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
-            <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+            <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
               <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
               <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
             </button>
@@ -97,19 +137,19 @@
         </div>
 
         <!-- 2. LIVE PRICES -->
-        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition shadow-sm">
+        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition shadow-2xs">
           <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span id="refreshBtnText">Live Prices</span>
         </button>
 
         <!-- 3. SHEET LINKED / CLOUD SYNC -->
-        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
+        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
           <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
           <span id="cloudSyncText">Cloud Sync</span>
         </button>
 
         <!-- 4. TAKE SNAPSHOT -->
-        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition shadow-sm">
+        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300/80 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition shadow-2xs">
           <i data-lucide="camera" class="w-3.5 h-3.5"></i>
           <span>Take Snapshot</span>
         </button>
@@ -124,8 +164,8 @@
   </header>
 
   <!-- SYNC STATUS BAR -->
-  <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 px-4 lg:px-8 py-1.5 text-xs text-slate-500 dark:text-gray-400">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+  <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
+    <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
         <span id="syncStatus">Ready to track or refresh prices.</span>
@@ -134,112 +174,110 @@
     </div>
   </div>
 
-  <!-- MAIN VIEW -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
+  <!-- MAIN VIEW CONTAINER (Max-width 1440px with responsive margins) -->
+  <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
-    <!-- KPI ROW -->
+    <!-- KPI ROW (StockScans-Calibrated Financial Metric Scales) -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-      <div class="bg-gradient-to-br from-white to-slate-100 dark:from-gray-900 dark:to-gray-800/80 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm col-span-2 md:col-span-1 lg:col-span-2 transition-colors duration-200">
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
+      <div class="bg-gradient-to-br from-white to-slate-100 dark:from-gray-900 dark:to-gray-800/80 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs col-span-2 md:col-span-1 lg:col-span-2 transition-colors duration-200">
+        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
           <span>TOTAL NET WORTH</span>
           <i data-lucide="wallet" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
         </div>
-        <div id="kpiNetWorth" class="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white mono-font">₹0.00</div>
-        <div class="mt-2 text-xs flex items-center space-x-2 text-slate-500 dark:text-gray-400">
-          <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300">₹0</b></span>
+        <div id="kpiNetWorth" class="text-2xl lg:text-[28px] font-bold text-slate-900 dark:text-white mono-font tracking-tight leading-none mt-1">₹0.00</div>
+        <div class="mt-2.5 text-xs flex items-center space-x-2 text-slate-500 dark:text-gray-400">
+          <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-medium">₹0</b></span>
           <span>•</span>
-          <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300">₹0</b></span>
+          <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-medium">₹0</b></span>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
           <span>NET INVESTED</span>
           <i data-lucide="layers" class="w-4 h-4 text-indigo-500 dark:text-indigo-400"></i>
         </div>
-        <div id="kpiNetInvested" class="text-xl font-bold text-slate-900 dark:text-white mono-font">₹0.00</div>
-        <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">
-          In: <span id="kpiTotalDeposits" class="text-slate-700 dark:text-gray-300">₹0</span> | Out: <span id="kpiTotalWithdrawals" class="text-slate-700 dark:text-gray-300">₹0</span>
+        <div id="kpiNetInvested" class="text-xl font-bold text-slate-900 dark:text-white mono-font leading-none mt-1">₹0.00</div>
+        <div class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400">
+          In: <span id="kpiTotalDeposits" class="text-slate-700 dark:text-gray-300 font-medium">₹0</span> | Out: <span id="kpiTotalWithdrawals" class="text-slate-700 dark:text-gray-300 font-medium">₹0</span>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
           <span>LIFETIME P&amp;L</span>
           <i data-lucide="award" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
         </div>
-        <div id="kpiLifetimePnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400">₹0.00</div>
-        <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
+        <div id="kpiLifetimePnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400 leading-none mt-1">₹0.00</div>
+        <div id="kpiLifetimePnLPct" class="mt-2.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
           <span>CURRENT FY REALIZED</span>
           <i data-lucide="calendar" class="w-4 h-4 text-teal-500 dark:text-teal-400"></i>
         </div>
-        <div id="kpiCurrentFyPnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400">₹0.00</div>
-        <div id="kpiCurrentFyLabel" class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">Strict FIFO</div>
+        <div id="kpiCurrentFyPnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400 leading-none mt-1">₹0.00</div>
+        <div id="kpiCurrentFyLabel" class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Strict FIFO</div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 font-medium mb-1">
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
           <span>ANNUALIZED XIRR</span>
           <i data-lucide="percent" class="w-4 h-4 text-purple-500 dark:text-purple-400"></i>
         </div>
-        <div id="kpiXIRR" class="text-xl font-bold mono-font text-purple-600 dark:text-purple-400">0.00%</div>
-        <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400">Cash Flow IRR</div>
+        <div id="kpiXIRR" class="text-xl font-bold mono-font text-purple-600 dark:text-purple-400 leading-none mt-1">0.00%</div>
+        <div class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Cash Flow IRR</div>
       </div>
     </div>
 
-    <!-- PERFORMANCE CHART (Height scaled 1.3x: h-[330px] with TTM vs All Range Toggle) -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-sm transition-colors duration-200">
+    <!-- PERFORMANCE CHART (Point 1: Subtitle Removed, Clean Segmented Control, 1.3x Height) -->
+    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div>
-          <div class="flex items-center space-x-3">
-            <h2 class="text-base font-bold text-slate-900 dark:text-white">Performance Chart</h2>
-            
-            <!-- TTM vs All Toggle Pill Button -->
-            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200 dark:border-gray-700 text-xs">
-              <button 
-                id="chartRangeBtn-TTM" 
-                onclick="setChartRange('TTM')" 
-                class="px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs"
-              >
-                TTM (12M)
-              </button>
-              <button 
-                id="chartRangeBtn-ALL" 
-                onclick="setChartRange('ALL')" 
-                class="px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
-              >
-                All Journey
-              </button>
-            </div>
+        
+        <!-- Heading & Segmented Pill Switcher -->
+        <div class="flex items-center space-x-3.5">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">Performance Chart</h2>
+          
+          <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
+            <button 
+              id="chartRangeBtn-TTM" 
+              onclick="setChartRange('TTM')" 
+              class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+            >
+              TTM
+            </button>
+            <button 
+              id="chartRangeBtn-ALL" 
+              onclick="setChartRange('ALL')" 
+              class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+            >
+              All Journey
+            </button>
           </div>
-          <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">Historical month-end checkpoints synced from Performance_History tab</p>
         </div>
 
-        <!-- Legend -->
-        <div class="flex items-center space-x-3 text-xs">
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-1.5"></span>Net Worth
+        <!-- Series Legend Indicators -->
+        <div class="flex items-center space-x-3.5 text-xs">
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+            <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
           </span>
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
-            <span class="w-2.5 h-2.5 rounded-full bg-red-500 mr-1.5"></span>My Capital
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+            <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
           </span>
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span>Profit
+          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+            <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
           </span>
         </div>
       </div>
 
       <!-- Canvas container with 1.3x height (~330px) -->
-      <div class="h-[330px] w-full">
+      <div class="h-[330px] w-full relative">
         <canvas id="multiCurveChart"></canvas>
       </div>
     </div>
 
-    <!-- TABS NAVIGATION -->
+    <!-- TABS NAVIGATION (Synchronized Grid Boundaries) -->
     <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
       <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="briefcase" class="w-4 h-4"></i>
@@ -267,15 +305,15 @@
     <div id="tabContent-holdings" class="space-y-4">
       <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
         <div class="flex items-center space-x-2">
-          <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48">
-          <span class="text-xs text-slate-500 dark:text-gray-400" id="holdingsCount">0 Open Positions</span>
+          <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48 font-medium">
+          <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
         </div>
         <div class="text-xs text-slate-500 dark:text-gray-400">Click headers to sort. Click any <b>Live LTP</b> cell to manually override.</div>
       </div>
 
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
                 <div class="flex items-center space-x-1">
@@ -308,16 +346,16 @@
               <th class="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
-          <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
         </table>
       </div>
     </div>
 
     <!-- TAB 2: CLOSED TRADES BOOK (SORTABLE) -->
     <div id="tabContent-closedTrades" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
                 <div class="flex items-center space-x-1">
@@ -354,7 +392,7 @@
               </th>
             </tr>
           </thead>
-          <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
         </table>
       </div>
     </div>
@@ -362,9 +400,9 @@
     <!-- TAB 3: FY BREAKDOWN -->
     <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
               <th class="py-3 px-4 text-right">Realized Sell Value</th>
@@ -378,11 +416,11 @@
       </div>
     </div>
 
-    <!-- TAB 4: TRADEBOOK & CASH LEDGER (ACTION COLUMN REMOVED) -->
+    <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
     <div id="tabContent-transactions" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
               <th class="py-3 px-3">Type</th>
@@ -402,9 +440,9 @@
 
     <!-- TAB 5: BANK LEDGER -->
     <div id="tabContent-bankLedger" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
-        <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
               <th class="py-3 px-3">Type</th>
@@ -519,17 +557,17 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Quantity</label>
-            <input type="number" step="1" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white" oninput="autoComputeAmount()">
+            <input type="number" step="1" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Price / Share (₹)</label>
-            <input type="number" step="0.05" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white" oninput="autoComputeAmount()">
+            <input type="number" step="0.05" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
           </div>
         </div>
 
         <div>
           <label class="block text-slate-500 dark:text-gray-400 mb-1">Total Amount (₹)</label>
-          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-mono">
+          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white mono-font">
         </div>
 
         <div>
@@ -538,7 +576,7 @@
         </div>
 
         <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
-          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">Cancel</button>
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
         </div>
       </form>
@@ -654,7 +692,6 @@
       openPresetModal(type);
     }
 
-    // Close dropdown on outside click
     window.addEventListener('click', function(e) {
       const dropdown = document.getElementById('txDropdownContainer');
       const menu = document.getElementById('txDropdownMenu');
@@ -796,27 +833,23 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // 1. Stock Master Autocomplete List
         if (data.stockMaster && Array.isArray(data.stockMaster)) {
           stockMasterList = data.stockMaster;
           localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
           updateStockAutocompleteOptions();
         }
 
-        // 2. Custom & SME Prices
         if (data.customPrices && typeof data.customPrices === 'object') {
           Object.assign(savedManualPrices, data.customPrices);
           Object.assign(marketPrices, data.customPrices);
           localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
         }
 
-        // 3. Performance History Milestones
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
-        // 4. Tradebook Ledger
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -1255,7 +1288,7 @@
         holdingsSort.dir = holdingsSort.dir === 'desc' ? 'asc' : 'desc';
       } else {
         holdingsSort.key = key;
-        holdingsSort.dir = 'desc'; // Default to descending on first click
+        holdingsSort.dir = 'desc';
       }
       renderHoldings(computeEngine().holdings);
     }
@@ -1265,7 +1298,7 @@
         closedSort.dir = closedSort.dir === 'desc' ? 'asc' : 'desc';
       } else {
         closedSort.key = key;
-        closedSort.dir = 'desc'; // Default to descending on first click
+        closedSort.dir = 'desc';
       }
       renderClosedTrades(computeEngine().closedTrades);
     }
@@ -1302,7 +1335,7 @@
 
       const lifePctEl = document.getElementById('kpiLifetimePnLPct');
       lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-      lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+      lifePctEl.className = `mt-2.5 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
       const curFyData = data.fyRealized[curFy] || { gain: 0 };
@@ -1331,11 +1364,10 @@
       updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
 
       if (holdings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500">No active stock positions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active stock positions.</td></tr>`;
         return;
       }
 
-      // Apply Interactive Sorting
       const sorted = [...holdings].sort((a, b) => {
         let valA = a[holdingsSort.key];
         let valB = b[holdingsSort.key];
@@ -1361,13 +1393,13 @@
           <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(h.currentVal)}</td>
           <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
             ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
-            <span class="text-[10px] block opacity-80">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
+            <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
           </td>
           <td class="py-3 px-3 text-right mono-font ${h.dayPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
             ${h.dayPnL >= 0 ? '+' : ''}${formatINR(h.dayPnL)}
           </td>
           <td class="py-3 px-4 text-center">
-            <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30">Sell</button>
+            <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1382,11 +1414,10 @@
       updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
       if (closedTrades.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500">No closed trades recorded yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No closed trades recorded yet.</td></tr>`;
         return;
       }
 
-      // Apply Interactive Sorting
       const sorted = [...closedTrades].sort((a, b) => {
         let valA = a[closedSort.key];
         let valB = b[closedSort.key];
@@ -1432,11 +1463,11 @@
         const isPos = item.gain >= 0;
 
         const card = document.createElement('div');
-        card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-sm transition-colors';
+        card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xs transition-colors';
         card.innerHTML = `
           <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
             <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
           </div>
           <div class="text-lg font-bold mono-font ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</div>
           <div class="mt-2 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
@@ -1508,17 +1539,21 @@
       });
     }
 
+    /* ---------------- PERFORMANCE CHART ENGINE (REFINED) ---------------- */
     function setChartRange(range) {
       currentChartRange = range;
       const ttmBtn = document.getElementById('chartRangeBtn-TTM');
       const allBtn = document.getElementById('chartRangeBtn-ALL');
 
+      const activeClasses = 'bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
+      const inactiveClasses = 'text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 font-medium';
+
       if (range === 'TTM') {
-        ttmBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs';
-        allBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200';
+        ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+        allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
       } else {
-        allBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs';
-        ttmBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200';
+        allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+        ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
       }
 
       renderChart(computeEngine());
@@ -1531,12 +1566,11 @@
       if (multiChartInstance) multiChartInstance.destroy();
 
       const isDark = document.documentElement.classList.contains('dark');
-      const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.06)';
-      const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.25)';
-      const tickColor = isDark ? '#94a3b8' : '#64748b';
-      const tooltipBg = isDark ? '#0f172a' : '#ffffff';
-      const tooltipText = isDark ? '#e2e8f0' : '#1e293b';
-      const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
+
+      // 1. Grid & Scale Styling: ultra-light horizontal grid, vertical grid removed
+      const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
+      const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
+      const tickColor = isDark ? '#94A3B8' : '#64748B';
 
       let allPoints = [];
 
@@ -1564,21 +1598,27 @@
 
       // Range Slicing: TTM renders previous 11 month-ends + current point (exactly 12 points)
       let displayPoints = allPoints;
-      if (currentChartRange === 'TTM') {
+      if (currentChartRange === 'TTM' && allPoints.length > 12) {
         displayPoints = allPoints.slice(-12);
       }
 
-      const labels = displayPoints.map(p => p.label);
-      const netWorthData = displayPoints.map(p => p.netWorth);
-      const investedData = displayPoints.map(p => p.invested);
-      const profitData = displayPoints.map(p => p.profit);
+      const labels = displayPoints.length > 0 ? displayPoints.map(p => p.label) : ['No Data'];
+      const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
+      const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
+      const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
 
-      if (labels.length === 0) {
-        labels.push('No History');
-        netWorthData.push(0);
-        investedData.push(0);
-        profitData.push(0);
-      }
+      // Smooth Gradient Area Fills (Behind curves, fading to 0%)
+      const chartHeight = canvas.parentElement.clientHeight || 330;
+
+      // Blue Gradient for Net Worth: ~15% opacity to 0%
+      const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+      blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
+      blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+
+      // Green Gradient for Profit: ~12% opacity to 0%
+      const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+      greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.16)' : 'rgba(22, 163, 74, 0.12)');
+      greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
 
       multiChartInstance = new Chart(ctx, {
         type: 'line',
@@ -1589,36 +1629,47 @@
               label: 'Net Worth',
               data: netWorthData,
               borderColor: '#2563eb',
-              backgroundColor: isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.08)',
-              borderWidth: 2.5,
+              backgroundColor: blueGradient,
+              fill: true,
+              borderWidth: 2.2,
               tension: 0.3,
-              pointRadius: 2.5,
-              pointHoverRadius: 4.5,
+              pointRadius: 3.5,              // ~30% reduced marker radius
+              pointHoverRadius: 5.5,         // Slightly larger hover marker
               pointBackgroundColor: '#2563eb',
-              fill: false
+              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+              pointBorderWidth: 1.5,
+              order: 1
             },
             {
               label: 'My Capital',
               data: investedData,
               borderColor: '#dc2626',
               backgroundColor: 'transparent',
-              borderWidth: 2.2,
+              fill: false,
+              borderWidth: 2.0,
               tension: 0.3,
-              pointRadius: 2.5,
-              pointHoverRadius: 4.5,
-              pointBackgroundColor: '#dc2626'
+              pointRadius: 3.5,
+              pointHoverRadius: 5.5,
+              pointBackgroundColor: '#dc2626',
+              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+              pointBorderWidth: 1.5,
+              order: 2
             },
             {
               label: 'Profit',
               data: profitData,
               borderColor: '#16a34a',
-              backgroundColor: 'transparent',
-              borderWidth: 2.2,
-              borderDash: [4, 4],
+              backgroundColor: greenGradient,
+              fill: true,
+              borderWidth: 2.0,
+              borderDash: [4, 4],             // Exact green dotted style preserved
               tension: 0.3,
-              pointRadius: 2.5,
-              pointHoverRadius: 4.5,
-              pointBackgroundColor: '#16a34a'
+              pointRadius: 3.5,
+              pointHoverRadius: 5.5,
+              pointBackgroundColor: '#16a34a',
+              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+              pointBorderWidth: 1.5,
+              order: 3
             }
           ]
         },
@@ -1629,47 +1680,64 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: tooltipBg,
-              titleColor: tooltipText,
-              bodyColor: tooltipText,
-              borderColor: tooltipBorder,
+              enabled: true,
+              usePointStyle: true,
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              titleColor: isDark ? '#e2e8f0' : '#0f172a',
+              bodyColor: isDark ? '#94a3b8' : '#334155',
+              borderColor: isDark ? '#334155' : '#e2e8f0',
               borderWidth: 1,
+              cornerRadius: 9,
               padding: 10,
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              boxPadding: 4,
+              caretPadding: 6,
+              titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
+              bodyFont: { family: "'JetBrains Mono', monospace", size: 12, weight: '500' },
+              boxWidth: 7,
+              boxHeight: 7,
               callbacks: {
                 title: function(items) { return items[0].label; },
-                label: function(c) { return c.dataset.label + ': ' + formatINR(c.raw, 0); }
+                labelPointStyle: function() {
+                  return { pointStyle: 'circle', rotation: 0 };
+                },
+                label: function(ctx) {
+                  const label = ctx.dataset.label || '';
+                  const val = formatINR(ctx.raw || 0, 0);
+                  return ` ${label.padEnd(11, ' ')} : ${val}`;
+                }
               }
             }
           },
           scales: {
             x: {
               grid: {
-                color: gridColor,
+                display: false,              // Clean vertical grid suppression
                 drawBorder: false
               },
               ticks: {
                 color: tickColor,
-                font: { size: 10 },
-                maxRotation: 45,
+                font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
+                maxRotation: 0,
                 autoSkip: true,
-                maxTicksLimit: 12
+                maxTicksLimit: 12,
+                padding: 6
               }
             },
             y: {
               grid: {
-                color: function(context) {
-                  if (context.tick && context.tick.value === 0) return zeroLineColor;
-                  return gridColor;
+                color: function(ctx) {
+                  if (ctx.tick && ctx.tick.value === 0) return zeroLineColor;
+                  return horizontalGridColor; // 0.6px #E9EDF3 horizontal lines
                 },
-                lineWidth: function(context) {
-                  return (context.tick && context.tick.value === 0) ? 1.5 : 1;
+                lineWidth: function(ctx) {
+                  return (ctx.tick && ctx.tick.value === 0) ? 1.2 : 0.6;
                 },
                 drawBorder: false
               },
               ticks: {
                 color: tickColor,
-                font: { size: 11 },
+                font: { family: "'JetBrains Mono', monospace", size: 11 },
+                padding: 8,
                 callback: function(val) {
                   return formatINR(val, 0);
                 }
