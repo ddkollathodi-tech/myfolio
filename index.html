@@ -20,6 +20,8 @@
     .custom-scroll::-webkit-scrollbar-track { background: transparent; }
     .dark .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background-color: rgba(148, 163, 184, 0.1); }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
@@ -28,6 +30,7 @@
   <header class="border-b border-slate-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur sticky top-0 z-40 px-4 lg:px-8 py-3 transition-colors duration-200">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
       
+      <!-- Brand Logo & Title -->
       <div class="flex items-center space-x-3.5">
         <div class="h-10 w-10 rounded-xl bg-gradient-to-b from-slate-100 to-slate-200 dark:from-gray-900 dark:to-gray-950 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10 dark:shadow-emerald-950/40 ring-1 ring-black/5 dark:ring-white/10">
           <svg class="w-6 h-6 text-emerald-500 dark:text-emerald-400" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
@@ -48,35 +51,74 @@
         </div>
       </div>
 
-      <div class="flex items-center flex-wrap gap-2">
-        <!-- THEME TOGGLE BUTTON -->
-        <button onclick="toggleTheme()" id="themeToggleBtn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition" title="Toggle Light / Dark Mode">
-          <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
-          <span id="themeText" class="hidden sm:inline">Light</span>
-        </button>
+      <!-- Action Cluster: Dropdown -> Live Prices -> Sheet Linked -> Snapshot -> Theme Toggle -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        
+        <!-- 1. RECORD TRANSACTION DROPDOWN -->
+        <div class="relative" id="txDropdownContainer">
+          <button 
+            id="txDropdownBtn" 
+            onclick="toggleTxDropdown(event)" 
+            class="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition"
+          >
+            <i data-lucide="file-pen-line" class="w-3.5 h-3.5"></i>
+            <span>Record Transaction</span>
+            <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150"></i>
+          </button>
 
-        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
-          <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
-          <span id="cloudSyncText">Cloud Sync</span>
-        </button>
+          <!-- Dropdown Menu -->
+          <div 
+            id="txDropdownMenu" 
+            class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-xs"
+          >
+            <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+              <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
+              <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
+            </button>
+            <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+              <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
+              <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
+            </button>
+            <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
+            <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
+              <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
+            </button>
+            <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+              <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
+              <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
+            </button>
+            <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
+            <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+              <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
+              <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
+            </button>
+          </div>
+        </div>
 
+        <!-- 2. LIVE PRICES -->
         <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition shadow-sm">
           <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span id="refreshBtnText">Live Prices</span>
         </button>
 
+        <!-- 3. SHEET LINKED / CLOUD SYNC -->
+        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
+          <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
+          <span id="cloudSyncText">Cloud Sync</span>
+        </button>
+
+        <!-- 4. TAKE SNAPSHOT -->
         <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition shadow-sm">
           <i data-lucide="camera" class="w-3.5 h-3.5"></i>
           <span>Take Snapshot</span>
         </button>
 
-        <div class="flex items-center bg-slate-100 dark:bg-gray-900 p-1 rounded-lg border border-slate-200 dark:border-gray-800 gap-1">
-          <button onclick="openPresetModal('BUY')" class="px-2.5 py-1 text-xs font-semibold bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-600/30 rounded border border-blue-200 dark:border-blue-500/30">+ Buy</button>
-          <button onclick="openPresetModal('SELL')" class="px-2.5 py-1 text-xs font-semibold bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 rounded border border-rose-200 dark:border-rose-500/30">- Sell</button>
-          <button onclick="openPresetModal('DEPOSIT')" class="px-2.5 py-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 rounded border border-emerald-200 dark:border-emerald-500/30">+ Deposit</button>
-          <button onclick="openPresetModal('WITHDRAWAL')" class="px-2.5 py-1 text-xs font-semibold bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-600/30 rounded border border-amber-200 dark:border-amber-500/30">- Withdraw</button>
-          <button onclick="openPresetModal('FEES')" class="px-2.5 py-1 text-xs font-semibold bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-gray-600 rounded border border-slate-300 dark:border-gray-600">+ Fee</button>
-        </div>
+        <!-- 5. THEME TOGGLE (MOON / SUN ICON) -->
+        <button onclick="toggleTheme()" id="themeToggleBtn" class="p-2 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition" title="Toggle Light / Dark Mode">
+          <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+        </button>
+
       </div>
     </div>
   </header>
@@ -149,13 +191,35 @@
       </div>
     </div>
 
-    <!-- PERFORMANCE CHART -->
+    <!-- PERFORMANCE CHART (Height scaled 1.3x: h-[330px] with TTM vs All Range Toggle) -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-sm transition-colors duration-200">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <h2 class="text-base font-bold text-slate-900 dark:text-white">Performance Chart</h2>
-          <p class="text-[11px] text-slate-500 dark:text-gray-400">Historical performance points synced directly from Performance_History tab</p>
+          <div class="flex items-center space-x-3">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white">Performance Chart</h2>
+            
+            <!-- TTM vs All Toggle Pill Button -->
+            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200 dark:border-gray-700 text-xs">
+              <button 
+                id="chartRangeBtn-TTM" 
+                onclick="setChartRange('TTM')" 
+                class="px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs"
+              >
+                TTM (12M)
+              </button>
+              <button 
+                id="chartRangeBtn-ALL" 
+                onclick="setChartRange('ALL')" 
+                class="px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+              >
+                All Journey
+              </button>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">Historical month-end checkpoints synced from Performance_History tab</p>
         </div>
+
+        <!-- Legend -->
         <div class="flex items-center space-x-3 text-xs">
           <span class="inline-flex items-center text-slate-600 dark:text-gray-300">
             <span class="w-2.5 h-2.5 rounded-full bg-blue-500 mr-1.5"></span>Net Worth
@@ -168,12 +232,14 @@
           </span>
         </div>
       </div>
-      <div class="h-64 w-full">
+
+      <!-- Canvas container with 1.3x height (~330px) -->
+      <div class="h-[330px] w-full">
         <canvas id="multiCurveChart"></canvas>
       </div>
     </div>
 
-    <!-- TABS -->
+    <!-- TABS NAVIGATION -->
     <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
       <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="briefcase" class="w-4 h-4"></i>
@@ -197,27 +263,47 @@
       </button>
     </div>
 
-    <!-- TAB 1: ACTIVE HOLDINGS -->
+    <!-- TAB 1: ACTIVE HOLDINGS (SORTABLE) -->
     <div id="tabContent-holdings" class="space-y-4">
       <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
         <div class="flex items-center space-x-2">
           <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48">
           <span class="text-xs text-slate-500 dark:text-gray-400" id="holdingsCount">0 Open Positions</span>
         </div>
-        <div class="text-xs text-slate-500 dark:text-gray-400">Click any <b>Live LTP</b> cell to manually override.</div>
+        <div class="text-xs text-slate-500 dark:text-gray-400">Click headers to sort. Click any <b>Live LTP</b> cell to manually override.</div>
       </div>
 
       <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
         <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
           <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
-              <th class="py-3 px-4">Stock</th>
+              <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
+                <div class="flex items-center space-x-1">
+                  <span>Stock</span>
+                  <span id="sortIcon-holdings-stock" class="text-slate-400"></span>
+                </div>
+              </th>
               <th class="py-3 px-3 text-right">Holding Qty</th>
               <th class="py-3 px-3 text-right">Avg Cost (WAP)</th>
               <th class="py-3 px-3 text-right">Live LTP (₹)</th>
-              <th class="py-3 px-3 text-right">Invested Value</th>
-              <th class="py-3 px-3 text-right">Current Value</th>
-              <th class="py-3 px-3 text-right">Unrealized P&amp;L</th>
+              <th onclick="handleHoldingsSort('investedVal')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Invested Value</span>
+                  <span id="sortIcon-holdings-investedVal" class="text-slate-400"></span>
+                </div>
+              </th>
+              <th onclick="handleHoldingsSort('currentVal')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Current Value</span>
+                  <span id="sortIcon-holdings-currentVal" class="text-slate-400"></span>
+                </div>
+              </th>
+              <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Unrealized P&amp;L</span>
+                  <span id="sortIcon-holdings-pnlVal" class="text-slate-400"></span>
+                </div>
+              </th>
               <th class="py-3 px-3 text-right">Day P&amp;L</th>
               <th class="py-3 px-4 text-center">Action</th>
             </tr>
@@ -227,20 +313,45 @@
       </div>
     </div>
 
-    <!-- TAB 2: CLOSED TRADES BOOK -->
+    <!-- TAB 2: CLOSED TRADES BOOK (SORTABLE) -->
     <div id="tabContent-closedTrades" class="space-y-4 hidden">
       <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
         <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
           <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11px] text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
-              <th class="py-3 px-4">Stock</th>
+              <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
+                <div class="flex items-center space-x-1">
+                  <span>Stock</span>
+                  <span id="sortIcon-closed-stock" class="text-slate-400"></span>
+                </div>
+              </th>
               <th class="py-3 px-3 text-right">Total Qty Sold</th>
               <th class="py-3 px-3 text-right">Avg Buy Price (FIFO)</th>
               <th class="py-3 px-3 text-right">Avg Sell Price</th>
-              <th class="py-3 px-3 text-right">Total Cost Basis</th>
-              <th class="py-3 px-3 text-right">Total Realized Proceeds</th>
-              <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net Realized P&amp;L</th>
-              <th class="py-3 px-3 text-right">Return %</th>
+              <th onclick="handleClosedSort('totalCostBasis')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Total Cost Basis</span>
+                  <span id="sortIcon-closed-totalCostBasis" class="text-slate-400"></span>
+                </div>
+              </th>
+              <th onclick="handleClosedSort('totalProceeds')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Total Realized Proceeds</span>
+                  <span id="sortIcon-closed-totalProceeds" class="text-slate-400"></span>
+                </div>
+              </th>
+              <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Net Realized P&amp;L</span>
+                  <span id="sortIcon-closed-netPnL" class="text-slate-400"></span>
+                </div>
+              </th>
+              <th onclick="handleClosedSort('retPct')" class="py-3 px-3 text-right sortable transition-colors">
+                <div class="flex items-center justify-end space-x-1">
+                  <span>Return %</span>
+                  <span id="sortIcon-closed-retPct" class="text-slate-400"></span>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
@@ -267,7 +378,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
+    <!-- TAB 4: TRADEBOOK & CASH LEDGER (ACTION COLUMN REMOVED) -->
     <div id="tabContent-transactions" class="space-y-4 hidden">
       <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-sm transition-colors duration-200">
         <table class="w-full text-left text-xs text-slate-700 dark:text-gray-300">
@@ -282,7 +393,6 @@
               <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Cash In (₹)</th>
               <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Running Cash (₹)</th>
               <th class="py-3 px-4">Remarks</th>
-              <th class="py-3 px-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
@@ -365,7 +475,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD / EDIT TRANSACTION -->
+  <!-- MODAL: ADD TRANSACTION -->
   <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -405,7 +515,6 @@
               autocomplete="off"
               class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
             >
-            <!-- Native Autocomplete Dropdown List -->
             <datalist id="stockSuggestionsList"></datalist>
           </div>
           <div>
@@ -462,6 +571,13 @@
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
 
+    // Chart Range Mode: 'TTM' (default, last 12 points) vs 'ALL'
+    let currentChartRange = 'TTM';
+
+    // 3-State Sort States (Defaulting to descending on first click)
+    let holdingsSort = { key: 'currentVal', dir: 'desc' };
+    let closedSort = { key: 'netPnL', dir: 'desc' };
+
     let savedManualPrices = {};
     try {
       savedManualPrices = JSON.parse(localStorage.getItem(MANUAL_PRICES_KEY)) || {};
@@ -490,13 +606,11 @@
 
     function applyTheme(isDark) {
       const root = document.documentElement;
-      const themeText = document.getElementById('themeText');
       const themeIcon = document.getElementById('themeIcon');
 
       if (isDark) {
         root.classList.add('dark');
         localStorage.setItem(THEME_KEY, 'dark');
-        if (themeText) themeText.innerText = 'Dark';
         if (themeIcon) {
           themeIcon.setAttribute('data-lucide', 'moon');
           themeIcon.className = 'w-4 h-4 text-indigo-400';
@@ -504,7 +618,6 @@
       } else {
         root.classList.remove('dark');
         localStorage.setItem(THEME_KEY, 'light');
-        if (themeText) themeText.innerText = 'Light';
         if (themeIcon) {
           themeIcon.setAttribute('data-lucide', 'sun');
           themeIcon.className = 'w-4 h-4 text-amber-500';
@@ -517,6 +630,41 @@
       }
     }
 
+    /* ---------------- Record Transaction Dropdown Controller ---------------- */
+    function toggleTxDropdown(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('txDropdownMenu');
+      const chevron = document.getElementById('txDropdownChevron');
+      const isHidden = menu.classList.contains('hidden');
+      
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      } else {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    }
+
+    function selectDropdownPreset(type) {
+      const menu = document.getElementById('txDropdownMenu');
+      const chevron = document.getElementById('txDropdownChevron');
+      if (menu) menu.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-180');
+      openPresetModal(type);
+    }
+
+    // Close dropdown on outside click
+    window.addEventListener('click', function(e) {
+      const dropdown = document.getElementById('txDropdownContainer');
+      const menu = document.getElementById('txDropdownMenu');
+      const chevron = document.getElementById('txDropdownChevron');
+      if (dropdown && !dropdown.contains(e.target) && menu && !menu.classList.contains('hidden')) {
+        menu.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    });
+
     /* ---------------- Autocomplete Engine ---------------- */
     function updateStockAutocompleteOptions() {
       const datalist = document.getElementById('stockSuggestionsList');
@@ -525,7 +673,6 @@
 
       const seen = new Set();
 
-      // 1. From Stock_Master Sheet
       stockMasterList.forEach(item => {
         const sym = (item.symbol || '').toUpperCase().trim();
         if (sym && !seen.has(sym)) {
@@ -537,7 +684,6 @@
         }
       });
 
-      // 2. From historical Tradebook ledger
       transactions.forEach(t => {
         if (t.stock) {
           const sym = t.stock.toUpperCase().trim();
@@ -640,7 +786,6 @@
       }
     }
 
-    /* Consolidated Single-Request Fetch */
     async function fetchFromGoogleSheet() {
       if (!cloudScriptUrl) return;
       const statusText = document.getElementById('syncStatus');
@@ -709,7 +854,6 @@
       }
     }
 
-    /* PRIORITY 1 FRONTEND SNAPSHOT PUSH */
     async function pushFrontendSnapshot() {
       if (!cloudScriptUrl) {
         alert('Please connect Google Sheet via Cloud Sync first.');
@@ -916,6 +1060,11 @@
       const lifetimePnLPct = netInvested > 0 ? (lifetimePnL / netInvested) * 100 : 0;
       const xirrValue = calculateXIRR(sortedTx, netWorth);
 
+      const closedTrades = Object.values(closedTradesMap).map(c => ({
+        ...c,
+        retPct: c.totalCostBasis > 0 ? (c.netPnL / c.totalCostBasis) * 100 : 0
+      }));
+
       return {
         cashBalance,
         totalDeposits,
@@ -929,7 +1078,7 @@
         xirrValue,
         holdings,
         fyRealized,
-        closedTrades: Object.values(closedTradesMap),
+        closedTrades,
         ledgerEntries,
         bankEntries,
         sortedTx
@@ -1101,6 +1250,41 @@
       recalculateAndRender();
     }
 
+    function handleHoldingsSort(key) {
+      if (holdingsSort.key === key) {
+        holdingsSort.dir = holdingsSort.dir === 'desc' ? 'asc' : 'desc';
+      } else {
+        holdingsSort.key = key;
+        holdingsSort.dir = 'desc'; // Default to descending on first click
+      }
+      renderHoldings(computeEngine().holdings);
+    }
+
+    function handleClosedSort(key) {
+      if (closedSort.key === key) {
+        closedSort.dir = closedSort.dir === 'desc' ? 'asc' : 'desc';
+      } else {
+        closedSort.key = key;
+        closedSort.dir = 'desc'; // Default to descending on first click
+      }
+      renderClosedTrades(computeEngine().closedTrades);
+    }
+
+    function updateSortHeaderIcons(prefix, currentSort, columns) {
+      columns.forEach(col => {
+        const el = document.getElementById(`sortIcon-${prefix}-${col}`);
+        if (!el) return;
+        if (currentSort.key === col) {
+          el.innerHTML = currentSort.dir === 'desc' 
+            ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-500 inline"></i>` 
+            : `<i data-lucide="chevron-up" class="w-3.5 h-3.5 text-emerald-500 inline"></i>`;
+        } else {
+          el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3 h-3 text-slate-400/60 inline opacity-40"></i>`;
+        }
+      });
+      lucide.createIcons();
+    }
+
     function recalculateAndRender() {
       const data = computeEngine();
 
@@ -1144,12 +1328,27 @@
       tbody.innerHTML = '';
       document.getElementById('holdingsCount').innerText = `${holdings.length} Open Positions`;
 
+      updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
+
       if (holdings.length === 0) {
         tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500">No active stock positions.</td></tr>`;
         return;
       }
 
-      holdings.forEach(h => {
+      // Apply Interactive Sorting
+      const sorted = [...holdings].sort((a, b) => {
+        let valA = a[holdingsSort.key];
+        let valB = b[holdingsSort.key];
+
+        if (typeof valA === 'string') {
+          return holdingsSort.dir === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
+        }
+        return holdingsSort.dir === 'asc' ? valA - valB : valB - valA;
+      });
+
+      sorted.forEach(h => {
         const isPos = h.pnlVal >= 0;
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
@@ -1157,7 +1356,7 @@
           <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
           <td class="py-3 px-3 text-right mono-font">${h.qty}</td>
           <td class="py-3 px-3 text-right mono-font text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
-          <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})">${formatINR(h.ltp)}</td>
+          <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
           <td class="py-3 px-3 text-right mono-font text-slate-500 dark:text-gray-400">${formatINR(h.investedVal)}</td>
           <td class="py-3 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(h.currentVal)}</td>
           <td class="py-3 px-3 text-right mono-font font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
@@ -1173,20 +1372,37 @@
         `;
         tbody.appendChild(tr);
       });
+      filterHoldingsTable();
     }
 
     function renderClosedTrades(closedTrades) {
       const tbody = document.getElementById('closedTradesTableBody');
       tbody.innerHTML = '';
+
+      updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
+
       if (closedTrades.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500">No closed trades recorded yet.</td></tr>`;
         return;
       }
 
-      closedTrades.forEach(c => {
+      // Apply Interactive Sorting
+      const sorted = [...closedTrades].sort((a, b) => {
+        let valA = a[closedSort.key];
+        let valB = b[closedSort.key];
+
+        if (typeof valA === 'string') {
+          return closedSort.dir === 'asc' 
+            ? valA.localeCompare(valB) 
+            : valB.localeCompare(valA);
+        }
+        return closedSort.dir === 'asc' ? valA - valB : valB - valA;
+      });
+
+      sorted.forEach(c => {
         const avgBuy = c.totalQty > 0 ? (c.totalCostBasis / c.totalQty) : 0;
         const avgSell = c.totalQty > 0 ? (c.totalProceeds / c.totalQty) : 0;
-        const retPct = c.totalCostBasis > 0 ? (c.netPnL / c.totalCostBasis) * 100 : 0;
+        const retPct = c.retPct;
         const isPos = c.netPnL >= 0;
 
         const tr = document.createElement('tr');
@@ -1268,10 +1484,6 @@
           <td class="py-2.5 px-3 text-right mono-font text-emerald-600 dark:text-emerald-400">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
           <td class="py-2.5 px-3 text-right mono-font font-semibold text-slate-900 dark:text-white">${formatINR(tx.runningCash)}</td>
           <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
-          <td class="py-2.5 px-3 text-center space-x-1">
-            <button onclick="editTransaction('${tx.id}')" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1" title="Edit"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-            <button onclick="deleteTransaction('${tx.id}')" class="text-slate-400 hover:text-rose-600 dark:text-gray-500 dark:hover:text-rose-400 p-1" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -1296,7 +1508,22 @@
       });
     }
 
-    /* THEME-AWARE CHART ENGINE (REDUCED DOT SIZES) */
+    function setChartRange(range) {
+      currentChartRange = range;
+      const ttmBtn = document.getElementById('chartRangeBtn-TTM');
+      const allBtn = document.getElementById('chartRangeBtn-ALL');
+
+      if (range === 'TTM') {
+        ttmBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs';
+        allBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200';
+      } else {
+        allBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-2xs';
+        ttmBtn.className = 'px-2.5 py-1 rounded-md font-semibold text-xs transition text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200';
+      }
+
+      renderChart(computeEngine());
+    }
+
     function renderChart(computed) {
       const canvas = document.getElementById('multiCurveChart');
       if (!canvas) return;
@@ -1311,29 +1538,40 @@
       const tooltipText = isDark ? '#e2e8f0' : '#1e293b';
       const tooltipBorder = isDark ? '#334155' : '#e2e8f0';
 
-      const labels = [];
-      const netWorthData = [];
-      const investedData = [];
-      const profitData = [];
+      let allPoints = [];
 
       if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
         const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-
         sortedHistory.forEach(r => {
           if (!r.date) return;
-          labels.push(r.date);
-          netWorthData.push(Number(r.portfolioValue || 0));
-          investedData.push(Number(r.netCapital || 0));
-          profitData.push(Number(r.profit || 0));
+          allPoints.push({
+            label: r.date,
+            netWorth: Number(r.portfolioValue || 0),
+            invested: Number(r.netCapital || 0),
+            profit: Number(r.profit || 0)
+          });
         });
       }
 
       if (computed) {
-        labels.push('Today');
-        netWorthData.push(Math.round(computed.netWorth || 0));
-        investedData.push(Math.round(computed.netInvested || 0));
-        profitData.push(Math.round(computed.lifetimePnL || 0));
+        allPoints.push({
+          label: 'Today',
+          netWorth: Math.round(computed.netWorth || 0),
+          invested: Math.round(computed.netInvested || 0),
+          profit: Math.round(computed.lifetimePnL || 0)
+        });
       }
+
+      // Range Slicing: TTM renders previous 11 month-ends + current point (exactly 12 points)
+      let displayPoints = allPoints;
+      if (currentChartRange === 'TTM') {
+        displayPoints = allPoints.slice(-12);
+      }
+
+      const labels = displayPoints.map(p => p.label);
+      const netWorthData = displayPoints.map(p => p.netWorth);
+      const investedData = displayPoints.map(p => p.invested);
+      const profitData = displayPoints.map(p => p.profit);
 
       if (labels.length === 0) {
         labels.push('No History');
@@ -1354,8 +1592,8 @@
               backgroundColor: isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.08)',
               borderWidth: 2.5,
               tension: 0.3,
-              pointRadius: 2,         // Subtle compact dot
-              pointHoverRadius: 4,    // Clean hover state
+              pointRadius: 2.5,
+              pointHoverRadius: 4.5,
               pointBackgroundColor: '#2563eb',
               fill: false
             },
@@ -1366,8 +1604,8 @@
               backgroundColor: 'transparent',
               borderWidth: 2.2,
               tension: 0.3,
-              pointRadius: 2,         // Subtle compact dot
-              pointHoverRadius: 4,
+              pointRadius: 2.5,
+              pointHoverRadius: 4.5,
               pointBackgroundColor: '#dc2626'
             },
             {
@@ -1378,8 +1616,8 @@
               borderWidth: 2.2,
               borderDash: [4, 4],
               tension: 0.3,
-              pointRadius: 2,         // Subtle compact dot
-              pointHoverRadius: 4,
+              pointRadius: 2.5,
+              pointHoverRadius: 4.5,
               pointBackgroundColor: '#16a34a'
             }
           ]
@@ -1452,6 +1690,7 @@
     }
 
     function closeTransactionModal() {
+      document.getElementById('txEditingId').value = '';
       document.getElementById('txModal').classList.add('hidden');
       document.getElementById('txForm').reset();
     }
@@ -1470,7 +1709,6 @@
 
     async function handleTransactionSubmit(e) {
       e.preventDefault();
-      const editingId = document.getElementById('txEditingId').value;
       const type = document.getElementById('txType').value;
       const stock = document.getElementById('txStock').value.trim().toUpperCase();
       const qty = Number(document.getElementById('txQty').value || 0);
@@ -1482,7 +1720,7 @@
       if ((type === 'BUY' || type === 'SELL') && !amount) amount = qty * price;
 
       const newEntry = {
-        id: editingId || Date.now().toString(),
+        id: Date.now().toString(),
         date,
         type,
         stock,
@@ -1492,44 +1730,13 @@
         remarks
       };
 
-      if (editingId) {
-        transactions = transactions.map(t => t.id === editingId ? newEntry : t);
-      } else {
-        transactions.push(newEntry);
-        appendToGoogleSheet(newEntry);
-      }
+      transactions.push(newEntry);
+      appendToGoogleSheet(newEntry);
 
       saveToStorage();
       updateStockAutocompleteOptions();
       closeTransactionModal();
       recalculateAndRender();
-    }
-
-    function editTransaction(id) {
-      const tx = transactions.find(t => t.id === id);
-      if (!tx) return;
-
-      document.getElementById('txEditingId').value = tx.id;
-      document.getElementById('txDate').value = tx.date;
-      document.getElementById('txType').value = tx.type;
-      document.getElementById('txStock').value = tx.stock || '';
-      document.getElementById('txQty').value = tx.qty || '';
-      document.getElementById('txPrice').value = tx.price || '';
-      document.getElementById('txAmount').value = tx.amount || '';
-      document.getElementById('txRemarks').value = tx.remarks || '';
-      document.getElementById('modalTitle').innerText = `Edit ${tx.type} Transaction`;
-
-      toggleFormFields();
-      document.getElementById('txModal').classList.remove('hidden');
-    }
-
-    function deleteTransaction(id) {
-      if (confirm('Delete this transaction?')) {
-        transactions = transactions.filter(t => t.id !== id);
-        saveToStorage();
-        updateStockAutocompleteOptions();
-        recalculateAndRender();
-      }
     }
 
     function quickSellModal(stock, maxQty, currentPrice) {
