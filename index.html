@@ -12,7 +12,7 @@
         extend: {
           fontFamily: {
             sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+            mono: ['Inter', 'ui-monospace', 'monospace']
           }
         }
       }
@@ -21,8 +21,9 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-    
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    /* Global typography with clean open zero glyphs & tabular numerals */
     :root {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
@@ -33,21 +34,23 @@
       font-family: 'Inter', sans-serif;
     }
 
+    /* Force all numeric displays to use clean Inter tabular numbers with un-slashed zeros */
     .mono-font, .tabular-nums {
-      font-family: 'JetBrains Mono', monospace;
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: 'tnum';
+      font-family: 'Inter', sans-serif;
+      font-variant-numeric: tabular-nums normal;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+      letter-spacing: -0.01em;
     }
 
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scroll::-webkit-scrollbar-track { background: transparent; }
     .dark .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    
+
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable:hover { background-color: rgba(148, 163, 184, 0.08); }
 
-    /* Record Transaction Button Custom Tokens */
+    /* Record Transaction Button: Restrained pale green styling */
     .btn-record-tx {
       background-color: #EAF5F0;
       border: 1px solid #CBE7D9;
@@ -70,14 +73,14 @@
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
-  <!-- TOP HEADER -->
+  <!-- TOP HEADER (StockScans-Inspired Ghost Action Bar) -->
   <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
     <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
       
-      <!-- Brand Logo & Title (Option 1 Geometric Up-Arrow) -->
+      <!-- Brand Logo & Title -->
       <div class="flex items-center space-x-3.5">
         <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
-          <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
             <polyline points="17 6 23 6 23 12"></polyline>
           </svg>
@@ -91,10 +94,10 @@
         </div>
       </div>
 
-      <!-- Action Cluster: Dropdown -> Live Prices -> Sheet Linked -> Snapshot -> Theme Toggle -->
-      <div class="flex items-center flex-wrap gap-2.5">
+      <!-- Action Cluster: Primary Pill Dropdown followed by Ghost Action Items -->
+      <div class="flex items-center flex-wrap gap-2 sm:gap-3">
         
-        <!-- 1. RECORD TRANSACTION DROPDOWN (Pale Green Styled) -->
+        <!-- 1. RECORD TRANSACTION DROPDOWN (Primary Anchored Pill) -->
         <div class="relative" id="txDropdownContainer">
           <button 
             id="txDropdownBtn" 
@@ -136,26 +139,42 @@
           </div>
         </div>
 
-        <!-- 2. LIVE PRICES -->
-        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-emerald-50 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-600/30 transition shadow-2xs">
-          <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        <!-- 2. LIVE PRICES (Ghost Button) -->
+        <button 
+          id="refreshBtn" 
+          onclick="fetchLiveStockPrices()" 
+          class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/70 dark:hover:bg-gray-800/60 transition"
+        >
+          <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
           <span id="refreshBtnText">Live Prices</span>
         </button>
 
-        <!-- 3. SHEET LINKED / CLOUD SYNC -->
-        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition">
+        <!-- 3. SHEET LINKED (Ghost Button with Live Status Dot) -->
+        <button 
+          onclick="openSyncModal()" 
+          id="cloudSyncBtn" 
+          class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-gray-800/60 transition"
+        >
           <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
           <span id="cloudSyncText">Cloud Sync</span>
         </button>
 
-        <!-- 4. TAKE SNAPSHOT -->
-        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-semibold bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300/80 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition shadow-2xs">
-          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+        <!-- 4. TAKE SNAPSHOT (Ghost Button) -->
+        <button 
+          onclick="pushFrontendSnapshot()" 
+          class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/70 dark:hover:bg-gray-800/60 transition"
+        >
+          <i data-lucide="camera" class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400"></i>
           <span>Take Snapshot</span>
         </button>
 
-        <!-- 5. THEME TOGGLE (MOON / SUN ICON) -->
-        <button onclick="toggleTheme()" id="themeToggleBtn" class="p-2 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 hover:bg-slate-200 dark:hover:bg-gray-700 transition" title="Toggle Light / Dark Mode">
+        <!-- 5. THEME TOGGLE (Ghost Icon Button) -->
+        <button 
+          onclick="toggleTheme()" 
+          id="themeToggleBtn" 
+          class="p-2 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-gray-800/60 transition" 
+          title="Toggle Light / Dark Mode"
+        >
           <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
         </button>
 
@@ -174,68 +193,174 @@
     </div>
   </div>
 
-  <!-- MAIN VIEW CONTAINER (Max-width 1440px with responsive margins) -->
+  <!-- MAIN VIEW -->
   <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
-    <!-- KPI ROW (StockScans-Calibrated Financial Metric Scales) -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-      <div class="bg-gradient-to-br from-white to-slate-100 dark:from-gray-900 dark:to-gray-800/80 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs col-span-2 md:col-span-1 lg:col-span-2 transition-colors duration-200">
-        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
-          <span>TOTAL NET WORTH</span>
-          <i data-lucide="wallet" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
+    <!-- KPI ROW (Point 4: 5 Cards with Back-Glows, Icon Targets & Progress Bars) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5">
+      
+      <!-- CARD 1: TOTAL NET WORTH (Blue Theme) -->
+      <div class="relative bg-white dark:bg-gray-900/90 rounded-2xl p-4 border border-blue-100/80 dark:border-blue-900/30 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-28 h-28 bg-blue-500/10 dark:bg-blue-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center space-x-2.5">
+            <button onclick="openTargetModal('netWorth')" class="relative h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/40 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:scale-105 transition" title="Click to set Net Worth Target">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+              <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-900 border border-blue-400 flex items-center justify-center text-[8px] text-blue-600">✎</span>
+            </button>
+            <div>
+              <div class="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Total Net Worth</div>
+              <div id="kpiNetWorth" class="text-[20px] font-extrabold text-slate-900 dark:text-white mono-font tracking-tight mt-0.5">₹0.00</div>
+            </div>
+          </div>
+          <div class="text-right cursor-pointer" onclick="openTargetModal('netWorth')" title="Click to edit Target">
+            <div class="text-[10.5px] font-medium text-slate-400 dark:text-gray-400 flex items-center justify-end space-x-1">
+              <span>Target</span>
+              <span class="text-[9px] text-blue-500">✎</span>
+            </div>
+            <div id="targetVal-netWorth" class="text-[12px] font-semibold text-slate-600 dark:text-slate-300 mono-font mt-0.5">₹1,00,00,000</div>
+          </div>
         </div>
-        <div id="kpiNetWorth" class="text-2xl lg:text-[28px] font-bold text-slate-900 dark:text-white mono-font tracking-tight leading-none mt-1">₹0.00</div>
-        <div class="mt-2.5 text-xs flex items-center space-x-2 text-slate-500 dark:text-gray-400">
-          <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-medium">₹0</b></span>
-          <span>•</span>
-          <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-medium">₹0</b></span>
+        <!-- Progress Bar & Percentage Pill -->
+        <div class="mt-4 flex items-center space-x-2.5">
+          <div class="flex-1 h-[6.5px] bg-blue-100/60 dark:bg-blue-950/80 rounded-full overflow-hidden">
+            <div id="progressBar-netWorth" class="h-full bg-gradient-to-r from-blue-600 to-sky-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <span id="progressPct-netWorth" class="text-[11.5px] font-bold text-blue-600 dark:text-blue-400 mono-font whitespace-nowrap">0.00%</span>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
-          <span>NET INVESTED</span>
-          <i data-lucide="layers" class="w-4 h-4 text-indigo-500 dark:text-indigo-400"></i>
+      <!-- CARD 2: NET INVESTED (Red / Rose Theme) -->
+      <div class="relative bg-white dark:bg-gray-900/90 rounded-2xl p-4 border border-rose-100/80 dark:border-rose-900/30 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-28 h-28 bg-rose-500/10 dark:bg-rose-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center space-x-2.5">
+            <button onclick="openTargetModal('netInvested')" class="relative h-9 w-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200/60 dark:border-rose-800/40 flex items-center justify-center text-rose-600 dark:text-rose-400 hover:scale-105 transition" title="Click to set Capital Target">
+              <i data-lucide="wallet" class="w-4 h-4"></i>
+              <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-900 border border-rose-400 flex items-center justify-center text-[8px] text-rose-600">✎</span>
+            </button>
+            <div>
+              <div class="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Net Invested</div>
+              <div id="kpiNetInvested" class="text-[20px] font-extrabold text-slate-900 dark:text-white mono-font tracking-tight mt-0.5">₹0.00</div>
+            </div>
+          </div>
+          <div class="text-right cursor-pointer" onclick="openTargetModal('netInvested')" title="Click to edit Target">
+            <div class="text-[10.5px] font-medium text-slate-400 dark:text-gray-400 flex items-center justify-end space-x-1">
+              <span>Target</span>
+              <span class="text-[9px] text-rose-500">✎</span>
+            </div>
+            <div id="targetVal-netInvested" class="text-[12px] font-semibold text-slate-600 dark:text-slate-300 mono-font mt-0.5">₹50,00,000</div>
+          </div>
         </div>
-        <div id="kpiNetInvested" class="text-xl font-bold text-slate-900 dark:text-white mono-font leading-none mt-1">₹0.00</div>
-        <div class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400">
-          In: <span id="kpiTotalDeposits" class="text-slate-700 dark:text-gray-300 font-medium">₹0</span> | Out: <span id="kpiTotalWithdrawals" class="text-slate-700 dark:text-gray-300 font-medium">₹0</span>
+        <!-- Progress Bar & Percentage Pill -->
+        <div class="mt-4 flex items-center space-x-2.5">
+          <div class="flex-1 h-[6.5px] bg-rose-100/60 dark:bg-rose-950/80 rounded-full overflow-hidden">
+            <div id="progressBar-netInvested" class="h-full bg-gradient-to-r from-rose-600 to-rose-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <span id="progressPct-netInvested" class="text-[11.5px] font-bold text-rose-600 dark:text-rose-400 mono-font whitespace-nowrap">0.00%</span>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
-          <span>LIFETIME P&amp;L</span>
-          <i data-lucide="award" class="w-4 h-4 text-emerald-500 dark:text-emerald-400"></i>
+      <!-- CARD 3: LIFETIME P&L (Green / Emerald Theme) -->
+      <div class="relative bg-white dark:bg-gray-900/90 rounded-2xl p-4 border border-emerald-100/80 dark:border-emerald-900/30 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-28 h-28 bg-emerald-500/10 dark:bg-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center space-x-2.5">
+            <button onclick="openTargetModal('lifetimePnL')" class="relative h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:scale-105 transition" title="Click to set Lifetime Profit Target">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+              <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-900 border border-emerald-400 flex items-center justify-center text-[8px] text-emerald-600">✎</span>
+            </button>
+            <div>
+              <div class="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Lifetime P&amp;L</div>
+              <div id="kpiLifetimePnL" class="text-[20px] font-extrabold text-emerald-600 dark:text-emerald-400 mono-font tracking-tight mt-0.5">₹0.00</div>
+            </div>
+          </div>
+          <div class="text-right cursor-pointer" onclick="openTargetModal('lifetimePnL')" title="Click to edit Target">
+            <div class="text-[10.5px] font-medium text-slate-400 dark:text-gray-400 flex items-center justify-end space-x-1">
+              <span>Target</span>
+              <span class="text-[9px] text-emerald-500">✎</span>
+            </div>
+            <div id="targetVal-lifetimePnL" class="text-[12px] font-semibold text-slate-600 dark:text-slate-300 mono-font mt-0.5">₹50,00,000</div>
+          </div>
         </div>
-        <div id="kpiLifetimePnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400 leading-none mt-1">₹0.00</div>
-        <div id="kpiLifetimePnLPct" class="mt-2.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
+        <!-- Progress Bar & Percentage Pill -->
+        <div class="mt-4 flex items-center space-x-2.5">
+          <div class="flex-1 h-[6.5px] bg-emerald-100/60 dark:bg-emerald-950/80 rounded-full overflow-hidden">
+            <div id="progressBar-lifetimePnL" class="h-full bg-gradient-to-r from-emerald-600 to-teal-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <span id="progressPct-lifetimePnL" class="text-[11.5px] font-bold text-emerald-600 dark:text-emerald-400 mono-font whitespace-nowrap">0.00%</span>
+        </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
-          <span>CURRENT FY REALIZED</span>
-          <i data-lucide="calendar" class="w-4 h-4 text-teal-500 dark:text-teal-400"></i>
+      <!-- CARD 4: CURRENT FY REALIZED (Orange / Amber Theme) -->
+      <div class="relative bg-white dark:bg-gray-900/90 rounded-2xl p-4 border border-amber-100/80 dark:border-amber-900/30 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-28 h-28 bg-amber-500/10 dark:bg-amber-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center space-x-2.5">
+            <button onclick="openTargetModal('currentFy')" class="relative h-9 w-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400 hover:scale-105 transition" title="Click to set Current FY Profit Target">
+              <i data-lucide="coins" class="w-4 h-4"></i>
+              <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-900 border border-amber-400 flex items-center justify-center text-[8px] text-amber-600">✎</span>
+            </button>
+            <div>
+              <div class="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Current FY Realized</div>
+              <div id="kpiCurrentFyPnL" class="text-[20px] font-extrabold text-amber-600 dark:text-amber-400 mono-font tracking-tight mt-0.5">₹0.00</div>
+            </div>
+          </div>
+          <div class="text-right cursor-pointer" onclick="openTargetModal('currentFy')" title="Click to edit Target">
+            <div class="text-[10.5px] font-medium text-slate-400 dark:text-gray-400 flex items-center justify-end space-x-1">
+              <span>Target</span>
+              <span class="text-[9px] text-amber-500">✎</span>
+            </div>
+            <div id="targetVal-currentFy" class="text-[12px] font-semibold text-slate-600 dark:text-slate-300 mono-font mt-0.5">₹40,00,000</div>
+          </div>
         </div>
-        <div id="kpiCurrentFyPnL" class="text-xl font-bold mono-font text-emerald-600 dark:text-emerald-400 leading-none mt-1">₹0.00</div>
-        <div id="kpiCurrentFyLabel" class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Strict FIFO</div>
+        <!-- Progress Bar & Percentage Pill -->
+        <div class="mt-4 flex items-center space-x-2.5">
+          <div class="flex-1 h-[6.5px] bg-amber-100/60 dark:bg-amber-950/80 rounded-full overflow-hidden">
+            <div id="progressBar-currentFy" class="h-full bg-gradient-to-r from-amber-600 to-orange-400 rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <span id="progressPct-currentFy" class="text-[11.5px] font-bold text-amber-600 dark:text-amber-400 mono-font whitespace-nowrap">0.00%</span>
+        </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <div class="flex items-center justify-between text-[11.5px] text-slate-500 dark:text-gray-400 font-semibold uppercase tracking-wider mb-1">
-          <span>ANNUALIZED XIRR</span>
-          <i data-lucide="percent" class="w-4 h-4 text-purple-500 dark:text-purple-400"></i>
+      <!-- CARD 5: ANNUALIZED XIRR (Slate / Gray Theme) -->
+      <div class="relative bg-white dark:bg-gray-900/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden group">
+        <div class="absolute -top-12 -right-12 w-28 h-28 bg-slate-500/10 dark:bg-slate-400/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex items-center space-x-2.5">
+            <button onclick="openTargetModal('xirr')" class="relative h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:scale-105 transition" title="Click to set XIRR Hurdle Target">
+              <i data-lucide="percent" class="w-4 h-4"></i>
+              <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-white dark:bg-gray-900 border border-slate-400 flex items-center justify-center text-[8px] text-slate-600 dark:text-slate-300">✎</span>
+            </button>
+            <div>
+              <div class="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Annualized XIRR</div>
+              <div id="kpiXIRR" class="text-[20px] font-extrabold text-slate-800 dark:text-slate-200 mono-font tracking-tight mt-0.5">0.00%</div>
+            </div>
+          </div>
+          <div class="text-right cursor-pointer" onclick="openTargetModal('xirr')" title="Click to edit Target">
+            <div class="text-[10.5px] font-medium text-slate-400 dark:text-gray-400 flex items-center justify-end space-x-1">
+              <span>Target</span>
+              <span class="text-[9px] text-slate-500">✎</span>
+            </div>
+            <div id="targetVal-xirr" class="text-[12px] font-semibold text-slate-600 dark:text-slate-300 mono-font mt-0.5">40.00%</div>
+          </div>
         </div>
-        <div id="kpiXIRR" class="text-xl font-bold mono-font text-purple-600 dark:text-purple-400 leading-none mt-1">0.00%</div>
-        <div class="mt-2.5 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Cash Flow IRR</div>
+        <!-- Progress Bar & Percentage Pill -->
+        <div class="mt-4 flex items-center space-x-2.5">
+          <div class="flex-1 h-[6.5px] bg-slate-200/80 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div id="progressBar-xirr" class="h-full bg-gradient-to-r from-slate-700 to-slate-400 dark:from-slate-500 dark:to-slate-300 rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+          <span id="progressPct-xirr" class="text-[11.5px] font-bold text-slate-700 dark:text-slate-300 mono-font whitespace-nowrap">0.00%</span>
+        </div>
       </div>
+
     </div>
 
-    <!-- PERFORMANCE CHART (Point 1: Subtitle Removed, Clean Segmented Control, 1.3x Height) -->
+    <!-- PERFORMANCE CHART (Monotone Cubic Spline with 3-Stop Gradients & Segmented Switcher) -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         
-        <!-- Heading & Segmented Pill Switcher -->
+        <!-- Heading & Segmented Switcher -->
         <div class="flex items-center space-x-3.5">
           <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">Performance Chart</h2>
           
@@ -277,7 +402,7 @@
       </div>
     </div>
 
-    <!-- TABS NAVIGATION (Synchronized Grid Boundaries) -->
+    <!-- TABS NAVIGATION -->
     <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
       <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
         <i data-lucide="briefcase" class="w-4 h-4"></i>
@@ -459,6 +584,37 @@
 
   </main>
 
+  <!-- MODAL: SET MILESTONE GOAL TARGET -->
+  <div id="targetGoalModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="target" class="w-5 h-5 text-blue-500"></i>
+          <h3 id="targetModalTitle" class="text-base font-bold text-slate-900 dark:text-white">Set Milestone Target</h3>
+        </div>
+        <button onclick="closeTargetModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 dark:text-gray-300">
+        <p id="targetModalDesc">Enter your aspirational goal to visualize real-time progress on your dashboard.</p>
+        <div>
+          <label class="block text-slate-500 dark:text-gray-400 mb-1 font-semibold" id="targetInputLabel">Target Value</label>
+          <div class="relative">
+            <span id="targetPrefix" class="absolute left-3 top-2.5 text-slate-400 font-semibold text-xs">₹</span>
+            <input type="number" id="targetInputValue" step="any" min="0" placeholder="e.g. 10000000" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl pl-8 pr-3 py-2 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-blue-500 font-semibold">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
+        <button type="button" onclick="closeTargetModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-medium">Cancel</button>
+        <button type="button" onclick="saveTargetGoal()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-sm">Save Target</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: MANUAL PRICE PROMPT FOR MISSING / SME STOCKS -->
   <div id="missingPricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-amber-500/40 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
@@ -583,6 +739,7 @@
     </div>
   </div>
 
+  <!-- SCRIPT ENGINE -->
   <script>
     const THEME_KEY = 'MYFOLIOAI_THEME';
     const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
@@ -590,6 +747,7 @@
     const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
     const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
     const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
+    const GOALS_KEY = 'MYFOLIOAI_GOALS';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -606,13 +764,31 @@
       stockMasterList = [];
     }
 
+    // Milestone Goals Default Configuration
+    let defaultGoals = {
+      netWorth: 10000000,   // ₹1.00 Cr
+      netInvested: 5000000, // ₹50.00 L
+      lifetimePnL: 5000000, // ₹50.00 L
+      currentFy: 4000000,   // ₹40.00 L
+      xirr: 40.0            // 40.00%
+    };
+
+    let targetGoals = Object.assign({}, defaultGoals);
+    try {
+      const savedGoals = JSON.parse(localStorage.getItem(GOALS_KEY));
+      if (savedGoals) Object.assign(targetGoals, savedGoals);
+    } catch (e) {
+      targetGoals = Object.assign({}, defaultGoals);
+    }
+
+    let activeGoalModalType = null;
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
 
     // Chart Range Mode: 'TTM' (default, last 12 points) vs 'ALL'
     let currentChartRange = 'TTM';
 
-    // 3-State Sort States (Defaulting to descending on first click)
+    // 3-State Sort States
     let holdingsSort = { key: 'currentVal', dir: 'desc' };
     let closedSort = { key: 'netPnL', dir: 'desc' };
 
@@ -665,6 +841,50 @@
 
       if (multiChartInstance) {
         renderChart(computeEngine());
+      }
+    }
+
+    /* ---------------- Milestone Target Modal Handler ---------------- */
+    function openTargetModal(type) {
+      activeGoalModalType = type;
+      const modal = document.getElementById('targetGoalModal');
+      const title = document.getElementById('targetModalTitle');
+      const desc = document.getElementById('targetModalDesc');
+      const prefix = document.getElementById('targetPrefix');
+      const input = document.getElementById('targetInputValue');
+
+      const meta = {
+        netWorth: { title: 'Set Total Net Worth Target', desc: 'Define your milestone net portfolio target (Holdings + Cash).', isPct: false },
+        netInvested: { title: 'Set Net Invested Target', desc: 'Define your targeted investment capital corpus limit.', isPct: false },
+        lifetimePnL: { title: 'Set Lifetime P&L Target', desc: 'Define your cumulative milestone net profit target.', isPct: false },
+        currentFy: { title: 'Set Current FY Realized Target', desc: 'Define your annualized realized profit target for the financial year.', isPct: false },
+        xirr: { title: 'Set Annualized XIRR Target', desc: 'Define your hurdle rate of return percentage.', isPct: true }
+      };
+
+      const c = meta[type] || meta.netWorth;
+      title.innerText = c.title;
+      desc.innerText = c.desc;
+      prefix.innerText = c.isPct ? '%' : '₹';
+      input.value = targetGoals[type] || 0;
+
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 50);
+    }
+
+    function closeTargetModal() {
+      document.getElementById('targetGoalModal').classList.add('hidden');
+      activeGoalModalType = null;
+    }
+
+    function saveTargetGoal() {
+      if (!activeGoalModalType) return;
+      const input = document.getElementById('targetInputValue');
+      const val = Number(input.value);
+      if (!isNaN(val) && val >= 0) {
+        targetGoals[activeGoalModalType] = val;
+        localStorage.setItem(GOALS_KEY, JSON.stringify(targetGoals));
+        closeTargetModal();
+        recalculateAndRender();
       }
     }
 
@@ -798,7 +1018,7 @@
         dot.className = 'w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse';
         statusText.innerText = 'Synced with Google Sheet (MyFolio_DB)';
       } else {
-        btnText.innerText = 'Link Sheet';
+        btnText.innerText = 'Cloud Sync';
         dot.className = 'w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400';
         statusText.innerText = 'Operating locally. Connect Google Sheet for cloud sync.';
       }
@@ -1318,33 +1538,43 @@
       lucide.createIcons();
     }
 
+    function updateGoalProgress(id, currentVal, targetVal, isPct = false) {
+      const targetLabel = document.getElementById(`targetVal-${id}`);
+      const progressBar = document.getElementById(`progressBar-${id}`);
+      const progressPct = document.getElementById(`progressPct-${id}`);
+      if (!targetLabel || !progressBar || !progressPct) return;
+
+      targetLabel.innerText = isPct ? `${Number(targetVal).toFixed(2)}%` : formatINR(targetVal);
+
+      let pct = 0;
+      if (targetVal > 0) {
+        pct = (currentVal / targetVal) * 100;
+      }
+      const cappedWidth = Math.min(Math.max(pct, 0), 100);
+      progressBar.style.width = `${cappedWidth}%`;
+      progressPct.innerText = `${pct.toFixed(2)}%`;
+    }
+
     function recalculateAndRender() {
       const data = computeEngine();
 
+      // Current values in the 5 cards
       document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
-      document.getElementById('subPortfolioVal').innerText = formatINR(data.totalPortfolioVal);
-      document.getElementById('subCashVal').innerText = formatINR(data.cashBalance);
-
       document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
-      document.getElementById('kpiTotalDeposits').innerText = formatINR(data.totalDeposits, 0);
-      document.getElementById('kpiTotalWithdrawals').innerText = formatINR(data.totalWithdrawals, 0);
-
-      const lifeEl = document.getElementById('kpiLifetimePnL');
-      lifeEl.innerText = formatINR(data.lifetimePnL);
-      lifeEl.className = `text-xl font-bold mono-font ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-
-      const lifePctEl = document.getElementById('kpiLifetimePnLPct');
-      lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-      lifePctEl.className = `mt-2.5 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+      document.getElementById('kpiLifetimePnL').innerText = formatINR(data.lifetimePnL);
 
       const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
       const curFyData = data.fyRealized[curFy] || { gain: 0 };
-      const curFyEl = document.getElementById('kpiCurrentFyPnL');
-      curFyEl.innerText = formatINR(curFyData.gain);
-      curFyEl.className = `text-xl font-bold mono-font ${curFyData.gain >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-      document.getElementById('kpiCurrentFyLabel').innerText = `${curFy} Realized`;
+      document.getElementById('kpiCurrentFyPnL').innerText = formatINR(curFyData.gain);
 
       document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
+
+      // Update Milestone Goal Progress Bars
+      updateGoalProgress('netWorth', data.netWorth, targetGoals.netWorth, false);
+      updateGoalProgress('netInvested', data.netInvested, targetGoals.netInvested, false);
+      updateGoalProgress('lifetimePnL', data.lifetimePnL, targetGoals.lifetimePnL, false);
+      updateGoalProgress('currentFy', curFyData.gain, targetGoals.currentFy, false);
+      updateGoalProgress('xirr', data.xirrValue, targetGoals.xirr, true);
 
       renderHoldings(data.holdings);
       renderClosedTrades(data.closedTrades);
@@ -1539,7 +1769,7 @@
       });
     }
 
-    /* ---------------- PERFORMANCE CHART ENGINE (REFINED) ---------------- */
+    /* ---------------- PERFORMANCE CHART ENGINE (Monotone Cubic Spline) ---------------- */
     function setChartRange(range) {
       currentChartRange = range;
       const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -1567,7 +1797,6 @@
 
       const isDark = document.documentElement.classList.contains('dark');
 
-      // 1. Grid & Scale Styling: ultra-light horizontal grid, vertical grid removed
       const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
       const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
       const tickColor = isDark ? '#94A3B8' : '#64748B';
@@ -1596,7 +1825,6 @@
         });
       }
 
-      // Range Slicing: TTM renders previous 11 month-ends + current point (exactly 12 points)
       let displayPoints = allPoints;
       if (currentChartRange === 'TTM' && allPoints.length > 12) {
         displayPoints = allPoints.slice(-12);
@@ -1607,17 +1835,18 @@
       const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
       const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
 
-      // Smooth Gradient Area Fills (Behind curves, fading to 0%)
       const chartHeight = canvas.parentElement.clientHeight || 330;
 
-      // Blue Gradient for Net Worth: ~15% opacity to 0%
+      // 3-stop vertical gradient for Net Worth: 14% -> 5% -> 0%
       const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-      blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
+      blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.14)');
+      blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.06)' : 'rgba(37, 99, 235, 0.05)');
       blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
 
-      // Green Gradient for Profit: ~12% opacity to 0%
+      // 3-stop vertical gradient for Profit: 12% -> 4% -> 0%
       const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
       greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.16)' : 'rgba(22, 163, 74, 0.12)');
+      greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.05)' : 'rgba(22, 163, 74, 0.04)');
       greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
 
       multiChartInstance = new Chart(ctx, {
@@ -1632,9 +1861,9 @@
               backgroundColor: blueGradient,
               fill: true,
               borderWidth: 2.2,
-              tension: 0.3,
-              pointRadius: 3.5,              // ~30% reduced marker radius
-              pointHoverRadius: 5.5,         // Slightly larger hover marker
+              cubicInterpolationMode: 'monotone', // Strict Monotone Cubic Spline (No artificial overshoots)
+              pointRadius: 3.5,
+              pointHoverRadius: 5.5,
               pointBackgroundColor: '#2563eb',
               pointBorderColor: isDark ? '#111827' : '#FFFFFF',
               pointBorderWidth: 1.5,
@@ -1647,7 +1876,7 @@
               backgroundColor: 'transparent',
               fill: false,
               borderWidth: 2.0,
-              tension: 0.3,
+              cubicInterpolationMode: 'monotone', // Strict Monotone Cubic Spline
               pointRadius: 3.5,
               pointHoverRadius: 5.5,
               pointBackgroundColor: '#dc2626',
@@ -1662,8 +1891,8 @@
               backgroundColor: greenGradient,
               fill: true,
               borderWidth: 2.0,
-              borderDash: [4, 4],             // Exact green dotted style preserved
-              tension: 0.3,
+              borderDash: [4, 4], // Authentic green dotted style preserved
+              cubicInterpolationMode: 'monotone', // Strict Monotone Cubic Spline
               pointRadius: 3.5,
               pointHoverRadius: 5.5,
               pointBackgroundColor: '#16a34a',
@@ -1692,7 +1921,7 @@
               boxPadding: 4,
               caretPadding: 6,
               titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
-              bodyFont: { family: "'JetBrains Mono', monospace", size: 12, weight: '500' },
+              bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
               boxWidth: 7,
               boxHeight: 7,
               callbacks: {
@@ -1711,7 +1940,7 @@
           scales: {
             x: {
               grid: {
-                display: false,              // Clean vertical grid suppression
+                display: false,
                 drawBorder: false
               },
               ticks: {
@@ -1727,7 +1956,7 @@
               grid: {
                 color: function(ctx) {
                   if (ctx.tick && ctx.tick.value === 0) return zeroLineColor;
-                  return horizontalGridColor; // 0.6px #E9EDF3 horizontal lines
+                  return horizontalGridColor;
                 },
                 lineWidth: function(ctx) {
                   return (ctx.tick && ctx.tick.value === 0) ? 1.2 : 0.6;
@@ -1736,7 +1965,7 @@
               },
               ticks: {
                 color: tickColor,
-                font: { family: "'JetBrains Mono', monospace", size: 11 },
+                font: { family: "'Inter', sans-serif", size: 11 },
                 padding: 8,
                 callback: function(val) {
                   return formatINR(val, 0);
