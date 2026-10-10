@@ -46,7 +46,7 @@
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     
     th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background-color: rgba(148, 163, 184, 0.08); }
+    th.sortable:hover { background-color: rgba(148, 163, 184, 0.12); }
 
     /* Record Transaction Button Styling */
     .btn-record-tx {
@@ -92,7 +92,7 @@
         </div>
       </div>
 
-      <!-- Action Cluster: Primary Pill + Ghost Controls -->
+      <!-- Action Cluster -->
       <div class="flex items-center flex-wrap gap-2 sm:gap-3">
         
         <!-- 1. RECORD TRANSACTION DROPDOWN -->
@@ -178,13 +178,12 @@
   <!-- MAIN VIEW CONTAINER -->
   <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
-    <!-- KPI ROW (POINT 1 REDESIGNED: Symmetrical Top Row, Realized+Unrealized FY, Color Harmony) -->
+    <!-- KPI ROW -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
       
-      <!-- 1. TOTAL NET WORTH (HERO CARD: Spans 2 Columns) -->
+      <!-- 1. TOTAL NET WORTH (Spans 2 Columns) -->
       <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <!-- Top Row: Title Left | Standalone Icon Right -->
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Total Net Worth</span>
             <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
@@ -192,7 +191,6 @@
             </div>
           </div>
 
-          <!-- Hero Metric Value -->
           <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
           
           <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-gray-400">
@@ -202,7 +200,6 @@
           </div>
         </div>
 
-        <!-- Progress Bar & Dual Readout -->
         <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
             <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
@@ -214,10 +211,9 @@
         </div>
       </div>
 
-      <!-- 2. NET INVESTED (Single Column) -->
+      <!-- 2. NET INVESTED -->
       <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-rose-950/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <!-- Top Row: Title Left | Standalone Icon Right -->
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Net Invested</span>
             <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
@@ -225,12 +221,10 @@
             </div>
           </div>
 
-          <!-- Value (Colored Red/Rose matching theme) -->
           <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
           <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Contributed Corpus</div>
         </div>
 
-        <!-- Progress Bar & Dual Readout -->
         <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
             <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
@@ -242,10 +236,9 @@
         </div>
       </div>
 
-      <!-- 3. LIFETIME P&L (Single Column) -->
+      <!-- 3. LIFETIME P&L -->
       <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <!-- Top Row: Title Left | Standalone Icon Right -->
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Lifetime P&amp;L</span>
             <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
@@ -253,12 +246,10 @@
             </div>
           </div>
 
-          <!-- Value -->
           <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1">₹0.00</div>
           <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
         </div>
 
-        <!-- Progress Bar & Dual Readout -->
         <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
             <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
@@ -270,10 +261,9 @@
         </div>
       </div>
 
-      <!-- 4. CURRENT FY (Single Column: Realized + Unrealized Rows) -->
+      <!-- 4. CURRENT FY -->
       <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-amber-950/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <!-- Top Row: Title Left | Standalone Icon Right -->
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
             <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
@@ -281,7 +271,6 @@
             </div>
           </div>
 
-          <!-- Dual Rows: Realized + Unrealized -->
           <div class="space-y-1 mt-1">
             <div class="flex items-baseline justify-between">
               <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Realized:</span>
@@ -294,7 +283,6 @@
           </div>
         </div>
 
-        <!-- Progress Bar & Dual Readout -->
         <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
             <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
@@ -306,10 +294,9 @@
         </div>
       </div>
 
-      <!-- 5. ANNUALIZED XIRR (Single Column) -->
+      <!-- 5. ANNUALIZED XIRR -->
       <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
         <div>
-          <!-- Top Row: Title Left | Standalone Icon Right -->
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
             <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
@@ -317,12 +304,10 @@
             </div>
           </div>
 
-          <!-- Value -->
           <div id="kpiXIRR" class="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1">0.00%</div>
           <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Cash Flow IRR</div>
         </div>
 
-        <!-- Progress Bar & Dual Readout -->
         <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
             <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">0.00%</span>
@@ -336,7 +321,7 @@
 
     </div>
 
-    <!-- PERFORMANCE CHART (Monotone Cubic Smooth Interpolation) -->
+    <!-- PERFORMANCE CHART -->
     <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         
@@ -376,7 +361,6 @@
         </div>
       </div>
 
-      <!-- Canvas container with 1.3x height (~330px) -->
       <div class="h-[330px] w-full relative">
         <canvas id="multiCurveChart"></canvas>
       </div>
@@ -418,33 +402,33 @@
 
       <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
         <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1.5">
                   <span>Stock</span>
-                  <span id="sortIcon-holdings-stock" class="text-slate-400"></span>
+                  <span id="sortIcon-holdings-stock"></span>
                 </div>
               </th>
               <th class="py-3 px-3 text-right">Holding Qty</th>
               <th class="py-3 px-3 text-right">Avg Cost (WAP)</th>
               <th class="py-3 px-3 text-right">Live LTP (₹)</th>
               <th onclick="handleHoldingsSort('investedVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Invested Value</span>
-                  <span id="sortIcon-holdings-investedVal" class="text-slate-400"></span>
+                  <span id="sortIcon-holdings-investedVal"></span>
                 </div>
               </th>
               <th onclick="handleHoldingsSort('currentVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Current Value</span>
-                  <span id="sortIcon-holdings-currentVal" class="text-slate-400"></span>
+                  <span id="sortIcon-holdings-currentVal"></span>
                 </div>
               </th>
               <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Unrealized P&amp;L</span>
-                  <span id="sortIcon-holdings-pnlVal" class="text-slate-400"></span>
+                  <span id="sortIcon-holdings-pnlVal"></span>
                 </div>
               </th>
               <th class="py-3 px-3 text-right">Day P&amp;L</th>
@@ -460,39 +444,39 @@
     <div id="tabContent-closedTrades" class="space-y-4 hidden">
       <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
         <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1.5">
                   <span>Stock</span>
-                  <span id="sortIcon-closed-stock" class="text-slate-400"></span>
+                  <span id="sortIcon-closed-stock"></span>
                 </div>
               </th>
               <th class="py-3 px-3 text-right">Total Qty Sold</th>
               <th class="py-3 px-3 text-right">Avg Buy Price (FIFO)</th>
               <th class="py-3 px-3 text-right">Avg Sell Price</th>
               <th onclick="handleClosedSort('totalCostBasis')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Total Cost Basis</span>
-                  <span id="sortIcon-closed-totalCostBasis" class="text-slate-400"></span>
+                  <span id="sortIcon-closed-totalCostBasis"></span>
                 </div>
               </th>
               <th onclick="handleClosedSort('totalProceeds')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Total Realized Proceeds</span>
-                  <span id="sortIcon-closed-totalProceeds" class="text-slate-400"></span>
+                  <span id="sortIcon-closed-totalProceeds"></span>
                 </div>
               </th>
               <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Net Realized P&amp;L</span>
-                  <span id="sortIcon-closed-netPnL" class="text-slate-400"></span>
+                  <span id="sortIcon-closed-netPnL"></span>
                 </div>
               </th>
               <th onclick="handleClosedSort('retPct')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1">
+                <div class="flex items-center justify-end space-x-1.5">
                   <span>Return %</span>
-                  <span id="sortIcon-closed-retPct" class="text-slate-400"></span>
+                  <span id="sortIcon-closed-retPct"></span>
                 </div>
               </th>
             </tr>
@@ -1537,16 +1521,17 @@
       renderClosedTrades(computeEngine().closedTrades);
     }
 
+    /* ---------------- Updated High-Contrast Header Icons ---------------- */
     function updateSortHeaderIcons(prefix, currentSort, columns) {
       columns.forEach(col => {
         const el = document.getElementById(`sortIcon-${prefix}-${col}`);
         if (!el) return;
         if (currentSort.key === col) {
           el.innerHTML = currentSort.dir === 'desc' 
-            ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-500 inline"></i>` 
-            : `<i data-lucide="chevron-up" class="w-3.5 h-3.5 text-emerald-500 inline"></i>`;
+            ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>` 
+            : `<i data-lucide="chevron-up" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>`;
         } else {
-          el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3 h-3 text-slate-400/60 inline opacity-40"></i>`;
+          el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-slate-700 dark:text-gray-300 inline opacity-90"></i>`;
         }
       });
       lucide.createIcons();
@@ -1592,7 +1577,7 @@
       document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
       document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
 
-      // Card 4: Current FY (Realized + Unrealized)
+      // Card 4: Current FY
       const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
       document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
       const curFyData = data.fyRealized[curFy] || { gain: 0 };
@@ -1814,6 +1799,89 @@
       });
     }
 
+    /* ---------------- DETERMINISTIC PSEUDO-RANDOM NOISE FOR MARKET VIBRANCY ---------------- */
+    function pseudoHash(str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return ((h >>> 0) % 10000) / 10000;
+    }
+
+    /* 
+       Controlled organic path synthesis:
+       - Preserves start & end anchor values strictly (delta = 0 at t=0 and t=1)
+       - Micro-fluctuations are bounded to a subtle fraction of value to avoid false trend breaks
+       - Returns intermediate sub-samples between monthly checkpoints
+    */
+    function generateOrganicSeries(anchors, seriesKey, stepsBetween = 4) {
+      if (anchors.length <= 1) {
+        return {
+          labels: anchors.map(a => a.label),
+          values: anchors.map(a => a[seriesKey]),
+          isAnchor: anchors.map(() => true),
+          actualAnchorLabels: anchors.map(a => a.label)
+        };
+      }
+
+      const expandedLabels = [];
+      const expandedValues = [];
+      const isAnchorList = [];
+      const actualAnchorLabels = [];
+
+      for (let i = 0; i < anchors.length - 1; i++) {
+        const p0 = anchors[i];
+        const p1 = anchors[i + 1];
+
+        const y0 = p0[seriesKey];
+        const y1 = p1[seriesKey];
+
+        expandedLabels.push(p0.label);
+        expandedValues.push(y0);
+        isAnchorList.push(true);
+        actualAnchorLabels.push(p0.label);
+
+        const delta = y1 - y0;
+        const baseline = Math.max(Math.abs(y0), Math.abs(y1), 10000);
+        const maxWiggle = Math.min(baseline * 0.016, Math.max(Math.abs(delta) * 0.18, baseline * 0.005));
+
+        for (let s = 1; s < stepsBetween; s++) {
+          const t = s / stepsBetween;
+          // Smooth Hermite blend
+          const smoothBase = y0 + delta * (3 * t * t - 2 * t * t * t);
+
+          // Boundary damped bell shape: 0 at t=0 and 0 at t=1
+          const boundaryDamp = Math.sin(t * Math.PI);
+
+          // Deterministic seed
+          const seedStr = `${p0.label}_${seriesKey}_${s}`;
+          const r1 = pseudoHash(seedStr) - 0.5;
+          const r2 = pseudoHash(seedStr + '_alt') - 0.5;
+          const noise = (r1 * 0.7 + r2 * 0.3) * maxWiggle * boundaryDamp;
+
+          expandedLabels.push('');
+          expandedValues.push(smoothBase + noise);
+          isAnchorList.push(false);
+          actualAnchorLabels.push(null);
+        }
+      }
+
+      // Terminal Anchor
+      const last = anchors[anchors.length - 1];
+      expandedLabels.push(last.label);
+      expandedValues.push(last[seriesKey]);
+      isAnchorList.push(true);
+      actualAnchorLabels.push(last.label);
+
+      return {
+        labels: expandedLabels,
+        values: expandedValues,
+        isAnchor: isAnchorList,
+        actualAnchorLabels: actualAnchorLabels
+      };
+    }
+
     /* ---------------- PERFORMANCE CHART ENGINE ---------------- */
     function setChartRange(range) {
       currentChartRange = range;
@@ -1845,13 +1913,13 @@
       const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
       const tickColor = isDark ? '#94A3B8' : '#64748B';
 
-      let allPoints = [];
+      let allAnchors = [];
 
       if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
         const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
         sortedHistory.forEach(r => {
           if (!r.date) return;
-          allPoints.push({
+          allAnchors.push({
             label: r.date,
             netWorth: Number(r.portfolioValue || 0),
             invested: Number(r.netCapital || 0),
@@ -1861,7 +1929,7 @@
       }
 
       if (computed) {
-        allPoints.push({
+        allAnchors.push({
           label: 'Today',
           netWorth: Math.round(computed.netWorth || 0),
           invested: Math.round(computed.netInvested || 0),
@@ -1869,15 +1937,19 @@
         });
       }
 
-      let displayPoints = allPoints;
-      if (currentChartRange === 'TTM' && allPoints.length > 12) {
-        displayPoints = allPoints.slice(-12);
+      let displayAnchors = allAnchors;
+      if (currentChartRange === 'TTM' && allAnchors.length > 12) {
+        displayAnchors = allAnchors.slice(-12);
       }
 
-      const labels = displayPoints.length > 0 ? displayPoints.map(p => p.label) : ['No Data'];
-      const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
-      const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
-      const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
+      if (displayAnchors.length === 0) {
+        displayAnchors = [{ label: 'Today', netWorth: 0, invested: 0, profit: 0 }];
+      }
+
+      // Generate organic fluid curves with natural micro-fluctuations between real monthly anchors
+      const organicNW = generateOrganicSeries(displayAnchors, 'netWorth', 4);
+      const organicInv = generateOrganicSeries(displayAnchors, 'invested', 4);
+      const organicProfit = generateOrganicSeries(displayAnchors, 'profit', 4);
 
       const chartHeight = canvas.parentElement.clientHeight || 330;
 
@@ -1891,21 +1963,26 @@
       greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
       greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
 
+      // Point radius array: Only true monthly anchor points get marker circles
+      const getPointRadii = (isAnchors) => isAnchors.map(isA => isA ? 3.5 : 0);
+      const getHoverRadii = (isAnchors) => isAnchors.map(isA => isA ? 6.0 : 0);
+
       multiChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
+          labels: organicNW.labels,
           datasets: [
             {
               label: 'Net Worth',
-              data: netWorthData,
+              data: organicNW.values,
               borderColor: '#2563eb',
               backgroundColor: blueGradient,
               fill: true,
               borderWidth: 2.2,
               cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
+              tension: 0.35,
+              pointRadius: getPointRadii(organicNW.isAnchor),
+              pointHoverRadius: getHoverRadii(organicNW.isAnchor),
               pointBackgroundColor: '#2563eb',
               pointBorderColor: isDark ? '#111827' : '#FFFFFF',
               pointBorderWidth: 1.5,
@@ -1913,14 +1990,15 @@
             },
             {
               label: 'My Capital',
-              data: investedData,
+              data: organicInv.values,
               borderColor: '#dc2626',
               backgroundColor: 'transparent',
               fill: false,
               borderWidth: 2.0,
               cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
+              tension: 0.35,
+              pointRadius: getPointRadii(organicInv.isAnchor),
+              pointHoverRadius: getHoverRadii(organicInv.isAnchor),
               pointBackgroundColor: '#dc2626',
               pointBorderColor: isDark ? '#111827' : '#FFFFFF',
               pointBorderWidth: 1.5,
@@ -1928,15 +2006,16 @@
             },
             {
               label: 'Profit',
-              data: profitData,
+              data: organicProfit.values,
               borderColor: '#16a34a',
               backgroundColor: greenGradient,
               fill: true,
               borderWidth: 2.0,
               borderDash: [4, 4],
               cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
+              tension: 0.35,
+              pointRadius: getPointRadii(organicProfit.isAnchor),
+              pointHoverRadius: getHoverRadii(organicProfit.isAnchor),
               pointBackgroundColor: '#16a34a',
               pointBorderColor: isDark ? '#111827' : '#FFFFFF',
               pointBorderWidth: 1.5,
@@ -1966,8 +2045,15 @@
               bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
               boxWidth: 7,
               boxHeight: 7,
+              filter: function(tooltipItem) {
+                // Only show tooltip on authentic recorded anchor checkpoints
+                return organicNW.isAnchor[tooltipItem.dataIndex] === true;
+              },
               callbacks: {
-                title: function(items) { return items[0].label; },
+                title: function(items) { 
+                  const idx = items[0].dataIndex;
+                  return organicNW.actualAnchorLabels[idx] || items[0].label || 'Checkpoint'; 
+                },
                 labelPointStyle: function() {
                   return { pointStyle: 'circle', rotation: 0 };
                 },
@@ -1989,9 +2075,12 @@
                 color: tickColor,
                 font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
                 maxRotation: 0,
-                autoSkip: true,
-                maxTicksLimit: 12,
-                padding: 6
+                autoSkip: false,
+                padding: 6,
+                callback: function(val, index) {
+                  // Only display real anchor labels along the X axis
+                  return organicNW.labels[index] || '';
+                }
               }
             },
             y: {
