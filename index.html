@@ -6,6 +6,16 @@
   <title>MyFolioAI - Portfolio Tracker Engine</title>
   <style>
     .hidden { display: none !important; }
+    /* Anti-FOUC Gatekeeper Law: Conceal entire dashboard until session unlock */
+    #app-root { display: none; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .shake-animation {
+      animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+    }
   </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -36,7 +46,6 @@
       font-family: 'Inter', sans-serif;
     }
 
-    /* Strict Clean Open Zeros without slashed or dotted center artifacts */
     .mono-font, .tabular-nums, table, [id^="kpi"] {
       font-family: 'Inter', -apple-system, sans-serif !important;
       font-variant-numeric: tabular-nums normal !important;
@@ -51,7 +60,6 @@
     th.sortable { cursor: pointer; user-select: none; }
     th.sortable:hover { background-color: rgba(148, 163, 184, 0.12); }
 
-    /* Record Transaction Button Styling */
     .btn-record-tx {
       background-color: #EAF5F0;
       border: 1px solid #CBE7D9;
@@ -74,604 +82,757 @@
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
-  <!-- TOP HEADER -->
-  <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
-    <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
+  <!-- ========================================================================= -->
+  <!-- MODIFICATION 2: FULL-SCREEN PIN GATEKEEPER OVERLAY (ZERO DATA LEAKAGE)     -->
+  <!-- ========================================================================= -->
+  <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-black/95 backdrop-blur-md p-4 transition-opacity duration-300">
+    <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-gray-800 shadow-2xl p-7 text-center space-y-6">
       
-      <!-- Brand Logo & Title -->
-      <div class="flex items-center space-x-3.5">
-        <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
-          <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-            <polyline points="17 6 23 6 23 12"></polyline>
-          </svg>
+      <div class="flex flex-col items-center space-y-2">
+        <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+          <i data-lucide="shield-lock" class="w-7 h-7"></i>
         </div>
-        <div class="flex flex-col justify-center">
-          <div class="flex items-baseline leading-none">
-            <span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">MyFolio</span>
-            <span class="text-[20px] font-extrabold text-[#D81B60] tracking-tight ml-0.5">AI</span>
-          </div>
-          <p class="text-[11.5px] font-medium text-slate-500 dark:text-gray-400 tracking-normal mt-0.5">Portfolio Tracker Engine</p>
-        </div>
+        <h2 id="pinTitle" class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Security Gatekeeper</h2>
+        <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Enter your 4-digit master PIN to unlock your portfolio</p>
       </div>
 
-      <!-- Action Cluster -->
-      <div class="flex items-center flex-wrap gap-2 sm:gap-3">
-        
-        <!-- 1. RECORD TRANSACTION DROPDOWN -->
-        <div class="relative" id="txDropdownContainer">
-          <button 
-            id="txDropdownBtn" 
-            onclick="toggleTxDropdown(event)" 
-            class="btn-record-tx flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-          >
-            <i data-lucide="file-pen-line" class="w-3.5 h-3.5"></i>
-            <span>Record Transaction</span>
-            <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150 opacity-80"></i>
-          </button>
-
-          <!-- Dropdown Menu -->
-          <div 
-            id="txDropdownMenu" 
-            class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
-          >
-            <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-              <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
-              <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
-            </button>
-            <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-              <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
-              <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
-            </button>
-            <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
-            <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
-              <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
-            </button>
-            <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-              <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
-              <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
-            </button>
-            <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
-            <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-              <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
-              <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. LIVE PRICES -->
-        <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-          <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span id="refreshBtnText">Live Prices</span>
-        </button>
-
-        <!-- 3. SHEET LINKED -->
-        <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-          <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
-          <span id="cloudSyncText">Cloud Sync</span>
-        </button>
-
-        <!-- 4. TAKE SNAPSHOT -->
-        <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-          <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-          <span>Take Snapshot</span>
-        </button>
-
-        <!-- 5. THEME TOGGLE -->
-        <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
-          <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
-        </button>
-
+      <!-- PIN Input Digits Display -->
+      <div class="flex justify-center items-center space-x-3.5 py-2">
+        <div id="pinDot-0" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150"></div>
+        <div id="pinDot-1" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150"></div>
+        <div id="pinDot-2" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150"></div>
+        <div id="pinDot-3" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150"></div>
       </div>
-    </div>
-  </header>
 
-  <!-- SYNC STATUS BAR -->
-  <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
-    <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-        <span id="syncStatus">Ready to track or refresh prices.</span>
+      <div id="pinStatusMsg" class="text-xs font-semibold h-4 text-rose-500 transition-opacity opacity-0">Incorrect PIN. Try again.</div>
+
+      <!-- Numeric Keypad -->
+      <div class="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
+        <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
+        <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
+        <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
+        <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
+        <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
+        <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
+        <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
+        <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
+        <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
+        <button onclick="clearPinInput()" class="h-13 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-gray-400 dark:hover:text-white transition">Clear</button>
+        <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-gray-800/80 dark:hover:bg-gray-700 text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
+        <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 transition active:scale-95">
+          <i data-lucide="delete" class="w-5 h-5"></i>
+        </button>
       </div>
-      <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-medium">Not refreshed yet</span></div>
+
+      <div class="text-[11px] text-slate-400 dark:text-gray-500 pt-2 border-t border-slate-100 dark:border-gray-800">
+        Emergency reset: clear <code class="font-mono bg-slate-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[10px]">pinHash</code> in your Google Sheet Settings tab.
+      </div>
     </div>
   </div>
 
-  <!-- MAIN VIEW CONTAINER -->
-  <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
+  <!-- ========================================================================= -->
+  <!-- MAIN APP ROOT (REVEALED ONLY AFTER SUCCESSFUL AUTHENTICATION)             -->
+  <!-- ========================================================================= -->
+  <div id="app-root" class="flex-1 flex flex-col">
 
-    <!-- KPI ROW -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-      
-      <!-- 1. TOTAL NET WORTH (Spans 2 Columns) -->
-      <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Total Net Worth</span>
-            <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
-              <i data-lucide="wallet" class="w-4 h-4"></i>
-            </div>
-          </div>
-
-          <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
-          
-          <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-gray-400">
-            <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹0</b></span>
-            <span>•</span>
-            <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹0</b></span>
-          </div>
-        </div>
-
-        <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-gray-800/80">
-          <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
-            <span id="kpiNetWorthRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
-          </div>
-          <div class="w-full bg-blue-100/70 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
-            <div id="kpiNetWorthBar" class="bg-gradient-to-r from-blue-600 to-blue-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. NET INVESTED -->
-      <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-rose-950/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Net Invested</span>
-            <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
-              <i data-lucide="layers" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-
-          <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
-          <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Contributed Corpus</div>
-        </div>
-
-        <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
-          <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
-            <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
-          </div>
-          <div class="w-full bg-rose-100/70 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
-            <div id="kpiNetInvestedBar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. LIFETIME P&L -->
-      <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Lifetime P&amp;L</span>
-            <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
-              <i data-lucide="award" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-
-          <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1">₹0.00</div>
-          <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
-        </div>
-
-        <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
-          <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
-            <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
-          </div>
-          <div class="w-full bg-emerald-100/70 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
-            <div id="kpiLifetimeBar" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. CURRENT FY -->
-      <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-amber-950/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
-            <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
-              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-
-          <div class="space-y-1 mt-1">
-            <div class="flex items-baseline justify-between">
-              <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Realized:</span>
-              <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">₹0.00</span>
-            </div>
-            <div class="flex items-baseline justify-between">
-              <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Unrealized:</span>
-              <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-gray-300">₹0.00</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
-          <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
-            <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
-          </div>
-          <div class="w-full bg-amber-100/70 dark:bg-amber-950/60 rounded-full h-1.5 overflow-hidden">
-            <div id="kpiCurrentFyBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. ANNUALIZED XIRR -->
-      <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
-            <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
-              <i data-lucide="percent" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-
-          <div id="kpiXIRR" class="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1">0.00%</div>
-          <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Cash Flow IRR</div>
-        </div>
-
-        <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
-          <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-            <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">0.00%</span>
-            <span id="kpiXirrRem" class="text-slate-500 dark:text-gray-400">0.00% left</span>
-          </div>
-          <div class="w-full bg-slate-200/80 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
-            <div id="kpiXirrBar" class="bg-gradient-to-r from-slate-600 to-slate-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- PERFORMANCE CHART (Original Monotone Cubic Smooth Interpolation) -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200">
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <!-- TOP HEADER -->
+    <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
+      <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
         
-        <!-- Heading & Segmented Switcher -->
+        <!-- Brand Logo & Title -->
         <div class="flex items-center space-x-3.5">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">Performance Chart</h2>
+          <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
+            <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+          </div>
+          <div class="flex flex-col justify-center">
+            <div class="flex items-baseline leading-none">
+              <span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">MyFolio</span>
+              <span class="text-[20px] font-extrabold text-[#D81B60] tracking-tight ml-0.5">AI</span>
+            </div>
+            <p class="text-[11.5px] font-medium text-slate-500 dark:text-gray-400 tracking-normal mt-0.5">Portfolio Tracker Engine</p>
+          </div>
+        </div>
+
+        <!-- Action Cluster -->
+        <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
+          <!-- 1. RECORD TRANSACTION DROPDOWN -->
+          <div class="relative" id="txDropdownContainer">
             <button 
-              id="chartRangeBtn-TTM" 
-              onclick="setChartRange('TTM')" 
-              class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+              id="txDropdownBtn" 
+              onclick="toggleTxDropdown(event)" 
+              class="btn-record-tx flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
             >
-              TTM
+              <i data-lucide="file-pen-line" class="w-3.5 h-3.5"></i>
+              <span>Record Transaction</span>
+              <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150 opacity-80"></i>
             </button>
-            <button 
-              id="chartRangeBtn-ALL" 
-              onclick="setChartRange('ALL')" 
-              class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+
+            <!-- Dropdown Menu -->
+            <div 
+              id="txDropdownMenu" 
+              class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
             >
-              All Journey
-            </button>
+              <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
+                <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
+              </button>
+              <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
+                <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
+              </button>
+              <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
+              <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
+              </button>
+              <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
+                <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
+              </button>
+              <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
+              <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
+                <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- Series Legend Indicators -->
-        <div class="flex items-center space-x-3.5 text-xs">
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-            <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
-          </span>
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-            <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
-          </span>
-          <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-            <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
-          </span>
+          <!-- 2. LIVE PRICES -->
+          <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
+            <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span id="refreshBtnText">Live Prices</span>
+          </button>
+
+          <!-- 3. SHEET LINKED -->
+          <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
+            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
+            <span id="cloudSyncText">Cloud Sync</span>
+          </button>
+
+          <!-- 4. TAKE SNAPSHOT -->
+          <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
+            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+            <span>Take Snapshot</span>
+          </button>
+
+          <!-- 5. THEME TOGGLE -->
+          <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
+            <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+          </button>
+
+          <!-- 6. ONE-CLICK GATEKEEPER LOCK BUTTON -->
+          <button onclick="lockApplicationNow()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 transition" title="Instant PIN Lock Screen">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
+            <span>Lock</span>
+          </button>
+
         </div>
       </div>
+    </header>
 
-      <div class="h-[330px] w-full relative">
-        <canvas id="multiCurveChart"></canvas>
-      </div>
-    </div>
-
-    <!-- TABS NAVIGATION -->
-    <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
-      <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="briefcase" class="w-4 h-4"></i>
-        <span>Active Holdings (WAP Basis)</span>
-      </button>
-      <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="check-check" class="w-4 h-4"></i>
-        <span>Closed Trades Book</span>
-      </button>
-      <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="calendar-check" class="w-4 h-4"></i>
-        <span>Financial Year P&amp;L (Strict FIFO)</span>
-      </button>
-      <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="list" class="w-4 h-4"></i>
-        <span>Tradebook &amp; Cash Ledger</span>
-      </button>
-      <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="landmark" class="w-4 h-4"></i>
-        <span>Bank Ledger</span>
-      </button>
-      <button onclick="switchTab('taxPnl')" id="tabBtn-taxPnl" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-        <i data-lucide="calculator" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
-        <span>Tax P&amp;L &amp; Advance Tax</span>
-      </button>
-    </div>
-
-    <!-- TAB 1: ACTIVE HOLDINGS (POINT 1: DAY P&L REMOVED) -->
-    <div id="tabContent-holdings" class="space-y-4">
-      <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+    <!-- SYNC STATUS BAR -->
+    <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
+      <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex items-center justify-between">
         <div class="flex items-center space-x-2">
-          <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48 font-medium">
-          <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+          <span id="syncStatus">Ready to track or refresh prices.</span>
         </div>
-        <div class="text-xs text-slate-500 dark:text-gray-400">Click headers to sort. Click any <b>Live LTP</b> cell to manually override.</div>
-      </div>
-
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
-                <div class="flex items-center space-x-1.5">
-                  <span>Stock</span>
-                  <span id="sortIcon-holdings-stock"></span>
-                </div>
-              </th>
-              <th class="py-3 px-3 text-right">Holding Qty</th>
-              <th class="py-3 px-3 text-right">Avg Cost (WAP)</th>
-              <th class="py-3 px-3 text-right">Live LTP (₹)</th>
-              <th onclick="handleHoldingsSort('investedVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Invested Value</span>
-                  <span id="sortIcon-holdings-investedVal"></span>
-                </div>
-              </th>
-              <th onclick="handleHoldingsSort('currentVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Current Value</span>
-                  <span id="sortIcon-holdings-currentVal"></span>
-                </div>
-              </th>
-              <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Unrealized P&amp;L</span>
-                  <span id="sortIcon-holdings-pnlVal"></span>
-                </div>
-              </th>
-              <th class="py-3 px-4 text-center">Action</th>
-            </tr>
-          </thead>
-          <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
-        </table>
+        <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-medium">Not refreshed yet</span></div>
       </div>
     </div>
 
-    <!-- TAB 2: CLOSED TRADES BOOK -->
-    <div id="tabContent-closedTrades" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
-                <div class="flex items-center space-x-1.5">
-                  <span>Stock</span>
-                  <span id="sortIcon-closed-stock"></span>
-                </div>
-              </th>
-              <th class="py-3 px-3 text-right">Total Qty Sold</th>
-              <th class="py-3 px-3 text-right">Avg Buy Price (FIFO)</th>
-              <th class="py-3 px-3 text-right">Avg Sell Price</th>
-              <th onclick="handleClosedSort('totalCostBasis')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Total Cost Basis</span>
-                  <span id="sortIcon-closed-totalCostBasis"></span>
-                </div>
-              </th>
-              <th onclick="handleClosedSort('totalProceeds')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Total Realized Proceeds</span>
-                  <span id="sortIcon-closed-totalProceeds"></span>
-                </div>
-              </th>
-              <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Net Realized P&amp;L</span>
-                  <span id="sortIcon-closed-netPnL"></span>
-                </div>
-              </th>
-              <th onclick="handleClosedSort('retPct')" class="py-3 px-3 text-right sortable transition-colors">
-                <div class="flex items-center justify-end space-x-1.5">
-                  <span>Return %</span>
-                  <span id="sortIcon-closed-retPct"></span>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
-        </table>
-      </div>
-    </div>
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
-    <!-- TAB 3: FY BREAKDOWN -->
-    <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
-              <th class="py-3 px-4 text-right">Realized Sell Value</th>
-              <th class="py-3 px-4 text-right">FIFO Cost Basis</th>
-              <th class="py-3 px-4 text-right">Realized Gain/Loss</th>
-              <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net FY Realized P&amp;L</th>
-            </tr>
-          </thead>
-          <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
-    <div id="tabContent-transactions" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th class="py-3 px-4">Date</th>
-              <th class="py-3 px-2">Account</th>
-              <th class="py-3 px-3">Type</th>
-              <th class="py-3 px-3">Stock</th>
-              <th class="py-3 px-3 text-right">Qty</th>
-              <th class="py-3 px-3 text-right">Price</th>
-              <th class="py-3 px-3 text-right text-rose-500 dark:text-rose-400">Cash Out (₹)</th>
-              <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Cash In (₹)</th>
-              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Running Cash (₹)</th>
-              <th class="py-3 px-4">Remarks</th>
-            </tr>
-          </thead>
-          <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 5: BANK LEDGER -->
-    <div id="tabContent-bankLedger" class="space-y-4 hidden">
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th class="py-3 px-4">Date</th>
-              <th class="py-3 px-2">Account</th>
-              <th class="py-3 px-3">Type</th>
-              <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Deposit In (₹)</th>
-              <th class="py-3 px-3 text-right text-amber-500 dark:text-amber-400">Withdrawal Out (₹)</th>
-              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Contributed Corpus (₹)</th>
-              <th class="py-3 px-4">Remarks</th>
-            </tr>
-          </thead>
-          <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 6: TAX P&L & ADVANCE TAX (POINT 3 & 4: DEDICATED TAX COCKPIT) -->
-    <div id="tabContent-taxPnl" class="space-y-5 hidden">
-      
-      <!-- Top Bar: Account Switcher & FY Selector -->
-      <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
-        <div>
-          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <span>Capital Gains Tax &amp; Advance Tax Schedule</span>
-            <span class="text-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full font-semibold">Post-July 2024 Regime</span>
-          </h3>
-          <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5">Section 111A (STCG @ 20.80%) • Section 112A (LTCG @ 13.00% above ₹1.25 Lakh exemption per PAN)</p>
-        </div>
-
-        <div class="flex items-center flex-wrap gap-2">
-          <!-- FY Selector -->
-          <div class="flex items-center space-x-1.5 text-xs">
-            <span class="text-slate-500 dark:text-gray-400 font-medium">FY:</span>
-            <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
-          </div>
-
-          <!-- Account Switcher Filter (All / Me / Wife / Mom / Brother / Unassigned) -->
-          <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
-            <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
-            <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Me</button>
-            <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
-            <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
-            <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
-            <button onclick="setTaxAccountFilter('Unassigned')" id="taxAcctBtn-Unassigned" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Legacy</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Stage 1: Tax Computation Matrix with Separate Loss Set-Off Columns -->
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
-        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
-            <tr>
-              <th class="py-3 px-4">Head of Capital Gain</th>
-              <th class="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Gross Realized Gains</th>
-              <th class="py-3 px-3 text-right text-rose-600 dark:text-rose-400">Gross Realized Losses</th>
-              <th class="py-3 px-3 text-right text-blue-600 dark:text-blue-400">Loss Set-Off Absorbed</th>
-              <th class="py-3 px-3 text-right text-amber-600 dark:text-amber-400">Statutory Exemption</th>
-              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Taxable Gains</th>
-              <th class="py-3 px-3 text-center">Effective Rate</th>
-              <th class="py-3 px-4 text-right font-bold text-rose-600 dark:text-rose-400">Net Tax Payable (₹)</th>
-            </tr>
-          </thead>
-          <tbody id="taxComputationTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
-        </table>
-      </div>
-
-      <!-- Stage 2: Section 234C Advance Tax Waterfall Schedule -->
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
-        <div class="flex items-center justify-between">
+      <!-- KPI ROW -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+        
+        <!-- 1. TOTAL NET WORTH (Spans 2 Columns) -->
+        <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
-            <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-              <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-500"></i>
-              <span>Quarterly Advance Tax Schedule (Sec 234C/234B Proviso)</span>
-            </h4>
-            <p class="text-[11.5px] text-slate-500 dark:text-gray-400">Click <b>Actual Tax Paid</b> to record your challans. Excess payments automatically roll over to offset subsequent quarters.</p>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Total Net Worth</span>
+              <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
+                <i data-lucide="wallet" class="w-4 h-4"></i>
+              </div>
+            </div>
+
+            <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
+            
+            <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-gray-400">
+              <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹0</b></span>
+              <span>•</span>
+              <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹0</b></span>
+            </div>
           </div>
-          <div id="advanceTaxSummaryBadge" class="text-xs font-bold px-3 py-1 rounded-lg"></div>
+
+          <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-gray-800/80">
+            <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+              <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
+              <span id="kpiNetWorthRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
+            </div>
+            <div class="w-full bg-blue-100/70 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
+              <div id="kpiNetWorthBar" class="bg-gradient-to-r from-blue-600 to-blue-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- 2. NET INVESTED -->
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-rose-950/20 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Net Invested</span>
+              <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+
+            <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1">₹0.00</div>
+            <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Contributed Corpus</div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
+            <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+              <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
+              <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
+            </div>
+            <div class="w-full bg-rose-100/70 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
+              <div id="kpiNetInvestedBar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. LIFETIME P&L -->
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Lifetime P&amp;L</span>
+              <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
+                <i data-lucide="award" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+
+            <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1">₹0.00</div>
+            <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
+            <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+              <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
+              <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
+            </div>
+            <div class="w-full bg-emerald-100/70 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+              <div id="kpiLifetimeBar" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. CURRENT FY -->
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-amber-950/20 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
+              <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+
+            <div class="space-y-1 mt-1">
+              <div class="flex items-baseline justify-between">
+                <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Realized:</span>
+                <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">₹0.00</span>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Unrealized:</span>
+                <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-gray-300">₹0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
+            <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+              <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
+              <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-gray-400">₹0 left</span>
+            </div>
+            <div class="w-full bg-amber-100/70 dark:bg-amber-950/60 rounded-full h-1.5 overflow-hidden">
+              <div id="kpiCurrentFyBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. ANNUALIZED XIRR -->
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
+              <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
+                <i data-lucide="percent" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+
+            <div id="kpiXIRR" class="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1">0.00%</div>
+            <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Cash Flow IRR</div>
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
+            <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+              <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">0.00%</span>
+              <span id="kpiXirrRem" class="text-slate-500 dark:text-gray-400">0.00% left</span>
+            </div>
+            <div class="w-full bg-slate-200/80 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+              <div id="kpiXirrBar" class="bg-gradient-to-r from-slate-600 to-slate-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PERFORMANCE CHART -->
+      <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          
+          <div class="flex items-center space-x-3.5">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">Performance Chart</h2>
+            
+            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
+              <button 
+                id="chartRangeBtn-TTM" 
+                onclick="setChartRange('TTM')" 
+                class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+              >
+                TTM
+              </button>
+              <button 
+                id="chartRangeBtn-ALL" 
+                onclick="setChartRange('ALL')" 
+                class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+              >
+                All Journey
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3.5 text-xs">
+            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+              <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
+            </span>
+            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+              <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
+            </span>
+            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
+            </span>
+          </div>
+        </div>
+
+        <div class="h-[330px] w-full relative">
+          <canvas id="multiCurveChart"></canvas>
+        </div>
+      </div>
+
+      <!-- TABS NAVIGATION -->
+      <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
+        <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="briefcase" class="w-4 h-4"></i>
+          <span>Active Holdings (WAP Basis)</span>
+        </button>
+        <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="check-check" class="w-4 h-4"></i>
+          <span>Closed Trades Book</span>
+        </button>
+        <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="calendar-check" class="w-4 h-4"></i>
+          <span>Financial Year P&amp;L (Strict FIFO)</span>
+        </button>
+        <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="list" class="w-4 h-4"></i>
+          <span>Tradebook &amp; Cash Ledger</span>
+        </button>
+        <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="landmark" class="w-4 h-4"></i>
+          <span>Bank Ledger</span>
+        </button>
+        <button onclick="switchTab('taxPnl')" id="tabBtn-taxPnl" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+          <i data-lucide="calculator" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
+          <span>Tax P&amp;L &amp; Planning Cockpit</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: ACTIVE HOLDINGS -->
+      <div id="tabContent-holdings" class="space-y-4">
+        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+          <div class="flex items-center space-x-2">
+            <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48 font-medium">
+            <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
+          </div>
+          <div class="text-xs text-slate-500 dark:text-gray-400">Click headers to sort. Click any <b>Live LTP</b> cell to manually override.</div>
+        </div>
+
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-            <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
               <tr>
-                <th class="py-2.5 px-3">Quarter</th>
-                <th class="py-2.5 px-3">Due Date Period</th>
-                <th class="py-2.5 px-3 text-right">Cumulative Tax Accrued</th>
-                <th class="py-2.5 px-3 text-center">Mandatory %</th>
-                <th class="py-2.5 px-3 text-right">Min Cumulative Due</th>
-                <th class="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-white">Actual Tax Paid (Challan)</th>
-                <th class="py-2.5 px-3 text-right">Quarter Due / Remaining</th>
-                <th class="py-2.5 px-4 text-center">Status</th>
+                <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
+                  <div class="flex items-center space-x-1.5">
+                    <span>Stock</span>
+                    <span id="sortIcon-holdings-stock"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-right">Holding Qty</th>
+                <th class="py-3 px-3 text-right">Avg Cost (WAP)</th>
+                <th class="py-3 px-3 text-right">Live LTP (₹)</th>
+                <th onclick="handleHoldingsSort('investedVal')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Invested Value</span>
+                    <span id="sortIcon-holdings-investedVal"></span>
+                  </div>
+                </th>
+                <th onclick="handleHoldingsSort('currentVal')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Current Value</span>
+                    <span id="sortIcon-holdings-currentVal"></span>
+                  </div>
+                </th>
+                <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Unrealized P&amp;L</span>
+                    <span id="sortIcon-holdings-pnlVal"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody id="advanceTaxTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+            <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
           </table>
         </div>
       </div>
 
-      <!-- Stage 3: Closed Trades Lot Audit with Holding Days & Tax Tag -->
-      <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
-        <div class="flex items-center justify-between">
-          <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
-            <span>Closed Trades Tax Audit Trail</span>
-          </h4>
-          <span class="text-xs text-slate-500 dark:text-gray-400" id="taxAuditCount">0 Lots</span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-gray-300">
-            <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+      <!-- TAB 2: CLOSED TRADES BOOK -->
+      <div id="tabContent-closedTrades" class="space-y-4 hidden">
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
               <tr>
-                <th class="py-2.5 px-3">Sell Date</th>
-                <th class="py-2.5 px-2">Account</th>
-                <th class="py-2.5 px-3">Stock</th>
-                <th class="py-2.5 px-2 text-right">Qty</th>
-                <th class="py-2.5 px-3 text-right">Buy Date (FIFO)</th>
-                <th class="py-2.5 px-2 text-right">Holding Days</th>
-                <th class="py-2.5 px-2 text-center">Class</th>
-                <th class="py-2.5 px-3 text-right">Cost Basis</th>
-                <th class="py-2.5 px-3 text-right">Proceeds</th>
-                <th class="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">Realized P&amp;L</th>
-                <th class="py-2.5 px-2 text-center">Quarter</th>
+                <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
+                  <div class="flex items-center space-x-1.5">
+                    <span>Stock</span>
+                    <span id="sortIcon-closed-stock"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-right">Total Qty Sold</th>
+                <th class="py-3 px-3 text-right">Avg Buy Price (FIFO)</th>
+                <th class="py-3 px-3 text-right">Avg Sell Price</th>
+                <th onclick="handleClosedSort('totalCostBasis')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Total Cost Basis</span>
+                    <span id="sortIcon-closed-totalCostBasis"></span>
+                  </div>
+                </th>
+                <th onclick="handleClosedSort('totalProceeds')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Total Realized Proceeds</span>
+                    <span id="sortIcon-closed-totalProceeds"></span>
+                  </div>
+                </th>
+                <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Net Realized P&amp;L</span>
+                    <span id="sortIcon-closed-netPnL"></span>
+                  </div>
+                </th>
+                <th onclick="handleClosedSort('retPct')" class="py-3 px-3 text-right sortable transition-colors">
+                  <div class="flex items-center justify-end space-x-1.5">
+                    <span>Return %</span>
+                    <span id="sortIcon-closed-retPct"></span>
+                  </div>
+                </th>
               </tr>
             </thead>
-            <tbody id="taxAuditTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+            <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80 font-normal"></tbody>
           </table>
         </div>
       </div>
 
-    </div>
+      <!-- TAB 3: FY BREAKDOWN -->
+      <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
+                <th class="py-3 px-4 text-right">Realized Sell Value</th>
+                <th class="py-3 px-4 text-right">FIFO Cost Basis</th>
+                <th class="py-3 px-4 text-right">Realized Gain/Loss</th>
+                <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net FY Realized P&amp;L</th>
+              </tr>
+            </thead>
+            <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+      </div>
 
-  </main>
+      <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
+      <div id="tabContent-transactions" class="space-y-4 hidden">
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-2">Account</th>
+                <th class="py-3 px-3">Type</th>
+                <th class="py-3 px-3">Stock</th>
+                <th class="py-3 px-3 text-right">Qty</th>
+                <th class="py-3 px-3 text-right">Price</th>
+                <th class="py-3 px-3 text-right text-rose-500 dark:text-rose-400">Cash Out (₹)</th>
+                <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Cash In (₹)</th>
+                <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Running Cash (₹)</th>
+                <th class="py-3 px-4">Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 5: BANK LEDGER -->
+      <div id="tabContent-bankLedger" class="space-y-4 hidden">
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-2">Account</th>
+                <th class="py-3 px-3">Type</th>
+                <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Deposit In (₹)</th>
+                <th class="py-3 px-3 text-right text-amber-500 dark:text-amber-400">Withdrawal Out (₹)</th>
+                <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Contributed Corpus (₹)</th>
+                <th class="py-3 px-4">Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- TAB 6: TAX P&L, EXEMPTION SHORTFALL & HARVESTING COCKPIT (MODIFICATION 1) -->
+      <!-- ========================================================================= -->
+      <div id="tabContent-taxPnl" class="space-y-5 hidden">
+        
+        <!-- Top Bar: Account Switcher & FY Selector -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+              <span>Capital Gains Tax &amp; Advance Tax Schedule</span>
+              <span class="text-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full font-semibold">Post-July 2024 Regime</span>
+            </h3>
+            <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5">Section 111A (STCG @ 20.80%) • Section 112A (LTCG @ 13.00% above ₹1.25 Lakh limit)</p>
+          </div>
+
+          <div class="flex items-center flex-wrap gap-2">
+            <!-- FY Selector -->
+            <div class="flex items-center space-x-1.5 text-xs">
+              <span class="text-slate-500 dark:text-gray-400 font-medium">FY:</span>
+              <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
+            </div>
+
+            <!-- Account Switcher Filter -->
+            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
+              <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
+              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Me</button>
+              <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
+              <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
+              <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
+              <button onclick="setTaxAccountFilter('Unassigned')" id="taxAcctBtn-Unassigned" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Legacy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ----------------------------------------------------------------- -->
+        <!-- MODIFICATION 1.1: ZERO / LOW OTHER INCOME (BASIC EXEMPTION TOGGLE) -->
+        <!-- ----------------------------------------------------------------- -->
+        <div id="basicExemptionBanner" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-slate-900 dark:text-white tracking-tight">Basic Exemption Shortfall Absorption (₹3,00,000 New Regime)</span>
+                <span id="taxToggleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Active</span>
+              </div>
+              <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5" id="taxToggleExplainer">
+                Non-earning member status absorbs up to ₹3L profit first against STCG (saving 20.80%) and remaining against LTCG (saving 13%).
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold text-slate-700 dark:text-gray-300">Income Status:</span>
+            <button 
+              id="taxLowIncomeToggleBtn" 
+              onclick="toggleCurrentAccountExemption()" 
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5"
+            >
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span id="taxLowIncomeToggleText">Zero / Low Income (< ₹3L)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ----------------------------------------------------------------- -->
+        <!-- MODIFICATION 1.2: TAX HARVESTING RADAR (REAL-TIME SCANNING PANEL) -->
+        <!-- ----------------------------------------------------------------- -->
+        <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-gray-800 pb-3">
+            <div class="flex items-center space-x-2.5">
+              <div class="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <i data-lucide="radar" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-bold text-slate-900 dark:text-white">Tax Harvesting Radar</h4>
+                <p class="text-[11px] text-slate-500 dark:text-gray-400">Real-time open portfolio scanner for Section 112A reset &amp; loss offsetting</p>
+              </div>
+            </div>
+
+            <!-- LTCG Exemption Tracker Pill -->
+            <div id="harvestLtcgTrackerPill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-xs font-semibold">
+              <span class="text-slate-500 dark:text-gray-400">₹1.25L LTCG Room:</span>
+              <span id="harvestLtcgRoomVal" class="text-emerald-600 dark:text-emerald-400 font-extrabold tabular-nums">₹1,25,000 available</span>
+            </div>
+          </div>
+
+          <!-- Radar Dual Grids: Profit Harvesting Candidates & Loss Harvesting Candidates -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- A. Long-Term Profit Harvest Candidates -->
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-950/40 border border-slate-200 dark:border-gray-800/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span>Long-Term Profit Harvest Candidates (>365 Days)</span>
+                </span>
+                <span id="profitHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">0 stocks</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-gray-400">Sell &amp; immediately re-buy to step-up purchase price without paying 13% tax.</p>
+              
+              <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- B. Loss Harvesting Radar (Paper Loss Offsetters) -->
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-950/40 border border-slate-200 dark:border-gray-800/80 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                  <span>Tax-Loss Harvesting Radar (Paper Losses)</span>
+                </span>
+                <span id="lossHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400">0 stocks</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-gray-400">Booking these unrealized losses before FY end neutralizes realized STCG/LTCG gains.</p>
+
+              <div id="lossHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Stage 1: Tax Computation Matrix with Shortfall & Loss Set-Off Columns -->
+        <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-3 px-4">Head of Capital Gain</th>
+                <th class="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Gross Realized Gains</th>
+                <th class="py-3 px-3 text-right text-rose-600 dark:text-rose-400">Gross Realized Losses</th>
+                <th class="py-3 px-3 text-right text-blue-600 dark:text-blue-400">Loss Set-Off Absorbed</th>
+                <th class="py-3 px-3 text-right text-purple-600 dark:text-purple-400">Basic Exemption Shortfall</th>
+                <th class="py-3 px-3 text-right text-amber-600 dark:text-amber-400">Sec 112A ₹1.25L Exemption</th>
+                <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Taxable Gains</th>
+                <th class="py-3 px-3 text-center">Effective Rate</th>
+                <th class="py-3 px-4 text-right font-bold text-rose-600 dark:text-rose-400">Net Tax Payable (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="taxComputationTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+
+        <!-- Stage 2: Section 234C Advance Tax Waterfall Schedule -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-500"></i>
+                <span>Quarterly Advance Tax Schedule (Sec 234C/234B Proviso)</span>
+              </h4>
+              <p class="text-[11.5px] text-slate-500 dark:text-gray-400">Click <b>Actual Tax Paid</b> to record your challans. Excess payments automatically roll over to offset subsequent quarters.</p>
+            </div>
+            <div id="advanceTaxSummaryBadge" class="text-xs font-bold px-3 py-1 rounded-lg"></div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+              <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+                <tr>
+                  <th class="py-2.5 px-3">Quarter</th>
+                  <th class="py-2.5 px-3">Due Date Period</th>
+                  <th class="py-2.5 px-3 text-right">Cumulative Tax Accrued</th>
+                  <th class="py-2.5 px-3 text-center">Mandatory %</th>
+                  <th class="py-2.5 px-3 text-right">Min Cumulative Due</th>
+                  <th class="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-white">Actual Tax Paid (Challan)</th>
+                  <th class="py-2.5 px-3 text-right">Quarter Due / Remaining</th>
+                  <th class="py-2.5 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="advanceTaxTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Stage 3: Closed Trades Lot Audit with Holding Days & Tax Tag -->
+        <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+              <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
+              <span>Closed Trades Tax Audit Trail</span>
+            </h4>
+            <span class="text-xs text-slate-500 dark:text-gray-400" id="taxAuditCount">0 Lots</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-gray-300">
+              <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+                <tr>
+                  <th class="py-2.5 px-3">Sell Date</th>
+                  <th class="py-2.5 px-2">Account</th>
+                  <th class="py-2.5 px-3">Stock</th>
+                  <th class="py-2.5 px-2 text-right">Qty</th>
+                  <th class="py-2.5 px-3 text-right">Buy Date (FIFO)</th>
+                  <th class="py-2.5 px-2 text-right">Holding Days</th>
+                  <th class="py-2.5 px-2 text-center">Class</th>
+                  <th class="py-2.5 px-3 text-right">Cost Basis</th>
+                  <th class="py-2.5 px-3 text-right">Proceeds</th>
+                  <th class="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">Realized P&amp;L</th>
+                  <th class="py-2.5 px-2 text-center">Quarter</th>
+                </tr>
+              </thead>
+              <tbody id="taxAuditTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
 
   <!-- MODAL: SET TARGET MILESTONE -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -690,7 +851,6 @@
 
       <div class="space-y-3 text-xs">
         <p class="text-slate-500 dark:text-gray-400" id="goalModalDesc">Enter your milestone goal. Targets sync across all devices via your linked Sheet.</p>
-        
         <div>
           <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1" id="goalInputLabel">Target Value</label>
           <div class="relative">
@@ -761,7 +921,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD TRANSACTION (POINT 4: ACCOUNT SELECTOR INCLUDED) -->
+  <!-- MODAL: ADD TRANSACTION -->
   <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -850,6 +1010,7 @@
     const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
     const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
     const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
+    const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -878,12 +1039,28 @@
       if (localGoals) Object.assign(milestoneGoals, localGoals);
     } catch (e) {}
 
+    let appSettings = {
+      pinHash: '',
+      taxToggle_Me: 'false',
+      taxToggle_Wife: 'true',
+      taxToggle_Mom: 'true',
+      taxToggle_Brother: 'false'
+    };
+    try {
+      const localSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+      if (localSettings) Object.assign(appSettings, localSettings);
+    } catch (e) {}
+
     let taxPaidChallans = {};
     try {
       taxPaidChallans = JSON.parse(localStorage.getItem(TAX_PAID_KEY)) || {};
     } catch (e) {
       taxPaidChallans = {};
     }
+
+    let enteredPin = '';
+    let isSettingUpNewPin = false;
+    let tempPinForSetup = '';
 
     let currentEditingGoalKey = null;
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
@@ -908,7 +1085,160 @@
       'INFY': { ltp: 1895.00, prevClose: 1910.00 }
     }, savedManualPrices);
 
-    /* ---------------- Compact Indian Currency Formatter (Cr & L) ---------------- */
+    /* ---------------- SHA-256 Web Crypto Cryptographic Hash ---------------- */
+    async function sha256Hex(str) {
+      const buf = new TextEncoder().encode(str);
+      const digest = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    /* ---------------- GATEKEEPER ENGINE (MODIFICATION 2) ---------------- */
+    function checkGatekeeperState() {
+      // In-memory tab session unlock check (never stored in localStorage)
+      const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
+      const overlay = document.getElementById('pinGatekeeperOverlay');
+      const root = document.getElementById('app-root');
+
+      if (isSessionUnlocked) {
+        overlay.classList.add('hidden');
+        root.style.display = 'flex';
+      } else {
+        root.style.display = 'none';
+        overlay.classList.remove('hidden');
+        renderPinUI();
+      }
+    }
+
+    function renderPinUI() {
+      const title = document.getElementById('pinTitle');
+      const subtitle = document.getElementById('pinSubtitle');
+
+      if (!appSettings.pinHash) {
+        isSettingUpNewPin = true;
+        title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
+        subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio cross-device';
+      } else {
+        isSettingUpNewPin = false;
+        title.innerText = 'Security Gatekeeper';
+        subtitle.innerText = 'Enter your 4-digit master PIN to unlock your portfolio';
+      }
+      updatePinDots();
+    }
+
+    function updatePinDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`pinDot-${i}`);
+        if (i < enteredPin.length) {
+          dot.className = 'w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-500 scale-110 transition-all duration-150';
+        } else {
+          dot.className = 'w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150';
+        }
+      }
+    }
+
+    async function pressPinDigit(digit) {
+      if (enteredPin.length >= 4) return;
+      enteredPin += digit;
+      updatePinDots();
+
+      if (enteredPin.length === 4) {
+        await handlePinVerification();
+      }
+    }
+
+    function backspacePinDigit() {
+      if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        updatePinDots();
+        hidePinError();
+      }
+    }
+
+    function clearPinInput() {
+      enteredPin = '';
+      updatePinDots();
+      hidePinError();
+    }
+
+    function showPinError(msg) {
+      const err = document.getElementById('pinStatusMsg');
+      const card = document.getElementById('pinCard');
+      err.innerText = msg;
+      err.classList.remove('opacity-0');
+      card.classList.add('shake-animation');
+      setTimeout(() => {
+        card.classList.remove('shake-animation');
+      }, 400);
+      enteredPin = '';
+      updatePinDots();
+    }
+
+    function hidePinError() {
+      const err = document.getElementById('pinStatusMsg');
+      err.classList.add('opacity-0');
+    }
+
+    async function handlePinVerification() {
+      // 1. PIN Setup Mode (When no PIN exists in Settings)
+      if (isSettingUpNewPin) {
+        if (!tempPinForSetup) {
+          tempPinForSetup = enteredPin;
+          enteredPin = '';
+          renderPinUI();
+          return;
+        } else {
+          if (enteredPin === tempPinForSetup) {
+            const hash = await sha256Hex(enteredPin);
+            appSettings.pinHash = hash;
+            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+            
+            // Persist centrally to Google Sheet Settings tab
+            if (cloudScriptUrl) {
+              try {
+                fetch(cloudScriptUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ action: "setPinHash", pinHash: hash })
+                });
+              } catch (e) {}
+            }
+
+            tempPinForSetup = '';
+            enteredPin = '';
+            sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
+            checkGatekeeperState();
+            recalculateAndRender();
+            return;
+          } else {
+            showPinError('PINs do not match. Restarting setup.');
+            tempPinForSetup = '';
+            enteredPin = '';
+            setTimeout(renderPinUI, 800);
+            return;
+          }
+        }
+      }
+
+      // 2. Regular Verification Mode
+      const candidateHash = await sha256Hex(enteredPin);
+      if (candidateHash === appSettings.pinHash) {
+        sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
+        enteredPin = '';
+        checkGatekeeperState();
+        recalculateAndRender();
+      } else {
+        showPinError('Incorrect PIN. Please re-enter.');
+      }
+    }
+
+    function lockApplicationNow() {
+      sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
+      enteredPin = '';
+      checkGatekeeperState();
+    }
+
+    /* ---------------- Compact Indian Currency Formatter ---------------- */
     function formatCompactIndian(val) {
       if (val === null || isNaN(val)) return '₹0';
       const absVal = Math.abs(val);
@@ -1122,10 +1452,12 @@
       }
 
       updateStockAutocompleteOptions();
-      recalculateAndRender();
+      checkGatekeeperState();
 
       if (cloudScriptUrl) {
         fetchFromGoogleSheet();
+      } else {
+        recalculateAndRender();
       }
     }
 
@@ -1187,28 +1519,40 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
+        // 1. Settings & PIN Hash Sync
+        if (data.settings && typeof data.settings === 'object') {
+          Object.assign(appSettings, data.settings);
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+          checkGatekeeperState();
+        }
+
+        // 2. Goals Sync
         if (data.goals && typeof data.goals === 'object') {
           Object.assign(milestoneGoals, data.goals);
           localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
         }
 
+        // 3. Master Autocomplete List
         if (data.stockMaster && Array.isArray(data.stockMaster)) {
           stockMasterList = data.stockMaster;
           localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
           updateStockAutocompleteOptions();
         }
 
+        // 4. Custom Override Prices
         if (data.customPrices && typeof data.customPrices === 'object') {
           Object.assign(savedManualPrices, data.customPrices);
           Object.assign(marketPrices, data.customPrices);
           localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
         }
 
+        // 5. Chart History Checkpoints
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
+        // 6. Tradebook Rows
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -1315,16 +1659,12 @@
 
     function getTaxQuarter(dateStr) {
       const d = new Date(dateStr);
-      const m = d.getMonth() + 1; // 1 to 12
+      const m = d.getMonth() + 1;
       const day = d.getDate();
 
-      // Q1: Apr 1 - Jun 15
       if ((m === 4) || (m === 5) || (m === 6 && day <= 15)) return 'Q1';
-      // Q2: Jun 16 - Sep 15
       if ((m === 6 && day > 15) || (m === 7) || (m === 8) || (m === 9 && day <= 15)) return 'Q2';
-      // Q3: Sep 16 - Dec 15
       if ((m === 9 && day > 15) || (m === 10) || (m === 11) || (m === 12 && day <= 15)) return 'Q3';
-      // Q4: Dec 16 - Mar 31
       return 'Q4';
     }
 
@@ -1336,7 +1676,6 @@
       let totalDeposits = 0;
       let totalWithdrawals = 0;
 
-      // Lot inventory segmented by account and stock to prevent cross-account FIFO pollution
       const inventory = {};
       const fyRealized = {};
       const closedTradesMap = {};
@@ -1383,9 +1722,9 @@
             inventory[invKey].push({ 
               qty: Number(tx.qty), 
               price: Number(tx.price), 
-              date: tx.date,
-              account: acct,
-              stock: tx.stock
+              date: tx.date, 
+              account: acct, 
+              stock: tx.stock 
             });
             break;
 
@@ -1404,7 +1743,6 @@
                 const lotProceeds = consumedQty * sellPrice;
                 const lotGain = lotProceeds - lotCost;
 
-                // Holding period evaluation
                 const buyD = new Date(oldestLot.date);
                 const sellD = new Date(tx.date);
                 const diffTime = Math.abs(sellD - buyD);
@@ -1471,13 +1809,15 @@
         });
       });
 
-      // Aggregate Active Open Holdings across accounts for unified view
+      // Open lots array retained with buy dates for Tax Harvesting Radar scan
+      const openLots = [];
       const stockAggregateMap = {};
 
       Object.keys(inventory).forEach(key => {
         const lots = inventory[key];
         lots.forEach(lot => {
           if (lot.qty > 0) {
+            openLots.push(lot);
             if (!stockAggregateMap[lot.stock]) {
               stockAggregateMap[lot.stock] = { totalQty: 0, totalCost: 0 };
             }
@@ -1535,6 +1875,7 @@
         lifetimePnLPct,
         xirrValue,
         holdings,
+        openLots,
         fyRealized,
         closedTrades,
         ledgerEntries,
@@ -1825,7 +2166,6 @@
       lucide.createIcons();
     }
 
-    /* ---------------- RENDER ACTIVE HOLDINGS (POINT 1: DAY P&L REMOVED) ---------------- */
     function renderHoldings(holdings) {
       const tbody = document.getElementById('holdingsTableBody');
       tbody.innerHTML = '';
@@ -2008,7 +2348,7 @@
       });
     }
 
-    /* ---------------- TAX P&L COCKPIT ENGINE (POINT 3 & 4) ---------------- */
+    /* ---------------- TAX PLANNING COCKPIT (MODIFICATION 1) ---------------- */
     function populateTaxFyOptions(fyRealized) {
       const select = document.getElementById('taxFyFilter');
       if (!select) return;
@@ -2046,6 +2386,32 @@
       renderTaxView();
     }
 
+    function toggleCurrentAccountExemption() {
+      const acct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
+      const key = `taxToggle_${acct}`;
+      const isCurrentlyLow = appSettings[key] === 'true';
+      const newVal = isCurrentlyLow ? 'false' : 'true';
+
+      appSettings[key] = newVal;
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+
+      if (cloudScriptUrl) {
+        try {
+          fetch(cloudScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: "saveSettings",
+              settings: { [key]: newVal }
+            })
+          });
+        } catch (e) {}
+      }
+
+      renderTaxView();
+    }
+
     function recordTaxChallan(fy, acct, qKey, currentPaid) {
       const input = prompt(`Enter total advance tax challan amount paid for ${qKey} (${fy} - ${acct}):`, currentPaid || 0);
       if (input !== null && !isNaN(Number(input))) {
@@ -2069,13 +2435,36 @@
         lots = lots.filter(l => l.account === currentTaxAccountFilter);
       }
 
-      // 1. Separate calculation buckets for STCG and LTCG
+      // Check Exemption Shortfall Toggle Status
+      const activeAcct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
+      const isLowIncome = appSettings[`taxToggle_${activeAcct}`] === 'true';
+
+      // Update Exemption Toggle Button UI
+      const toggleBtn = document.getElementById('taxLowIncomeToggleBtn');
+      const toggleText = document.getElementById('taxLowIncomeToggleText');
+      const toggleBadge = document.getElementById('taxToggleBadge');
+      const explainer = document.getElementById('taxToggleExplainer');
+
+      if (isLowIncome) {
+        toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
+        toggleText.innerText = 'Zero / Low Income (< ₹3L)';
+        toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+        toggleBadge.innerText = 'Active (₹3L Absorbed)';
+        explainer.innerText = `Absorbs up to ₹3,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
+      } else {
+        toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300';
+        toggleText.innerText = 'Regular Salary / Income';
+        toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 border border-slate-200 dark:border-gray-700';
+        toggleBadge.innerText = 'Standard Regime';
+        explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
+      }
+
+      // 1. Accumulate Realized STCG & LTCG
       let stcgGrossGain = 0;
       let stcgGrossLoss = 0;
       let ltcgGrossGain = 0;
       let ltcgGrossLoss = 0;
 
-      // Quarterly gain accumulation for Advance Tax
       const quarterGains = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
 
       lots.forEach(lot => {
@@ -2090,37 +2479,49 @@
       });
 
       // 2. Strict Indian Tax Loss Set-Off Algorithm
-      // Step A: STCL first offsets STCG
-      let stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
+      const stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
       let netStcgAfterInternal = stcgGrossGain - stclOffsetAgainstStcg;
       let remainingStcl = stcgGrossLoss - stclOffsetAgainstStcg;
 
-      // Step B: LTCL can only offset LTCG
-      let ltclOffsetAgainstLtcg = Math.min(ltcgGrossGain, ltcgGrossLoss);
+      const ltclOffsetAgainstLtcg = Math.min(ltcgGrossGain, ltcgGrossLoss);
       let netLtcgAfterInternal = ltcgGrossGain - ltclOffsetAgainstLtcg;
       let remainingLtcl = ltcgGrossLoss - ltclOffsetAgainstLtcg;
 
-      // Step C: Remaining STCL can also offset remaining LTCG
-      let stclOffsetAgainstLtcg = Math.min(netLtcgAfterInternal, remainingStcl);
+      const stclOffsetAgainstLtcg = Math.min(netLtcgAfterInternal, remainingStcl);
       netLtcgAfterInternal -= stclOffsetAgainstLtcg;
       remainingStcl -= stclOffsetAgainstLtcg;
 
       const totalStclOffset = stclOffsetAgainstStcg + stclOffsetAgainstLtcg;
       const totalLtclOffset = ltclOffsetAgainstLtcg;
 
-      // Step D: Apply Section 112A ₹1,25,000 exemption limit per legal entity
-      // If Combined is selected, up to 4 family PAN exemptions can be claimed (max ₹5,00,000)
-      const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
-      const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterInternal);
-      const taxableLtcg = Math.max(0, netLtcgAfterInternal - exemptionClaimed);
-      const taxableStcg = Math.max(0, netStcgAfterInternal);
+      // 3. Basic Exemption Shortfall Absorption Logic (₹3,00,000)
+      let stcgShortfallAbsorbed = 0;
+      let ltcgShortfallAbsorbed = 0;
 
-      // Statutory tax computation: 20.80% for STCG, 13.00% for LTCG
+      if (isLowIncome) {
+        const totalShortfallCapacity = 300000;
+        // Priority 1: Absorb against STCG (saving 20.80%)
+        stcgShortfallAbsorbed = Math.min(netStcgAfterInternal, totalShortfallCapacity);
+        const remainingShortfall = totalShortfallCapacity - stcgShortfallAbsorbed;
+        // Priority 2: Absorb remaining balance against LTCG (saving 13%)
+        ltcgShortfallAbsorbed = Math.min(netLtcgAfterInternal, remainingShortfall);
+      }
+
+      const netStcgAfterShortfall = Math.max(0, netStcgAfterInternal - stcgShortfallAbsorbed);
+      const netLtcgAfterShortfall = Math.max(0, netLtcgAfterInternal - ltcgShortfallAbsorbed);
+
+      // 4. Section 112A ₹1,25,000 Annual Exemption
+      const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
+      const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterShortfall);
+      const taxableLtcg = Math.max(0, netLtcgAfterShortfall - exemptionClaimed);
+      const taxableStcg = netStcgAfterShortfall;
+
+      // Statutory Flat Tax Rates: 20.80% for STCG, 13.00% for LTCG
       const stcgTax = taxableStcg * 0.2080;
       const ltcgTax = taxableLtcg * 0.1300;
       const totalTaxLiability = Math.round(stcgTax + ltcgTax);
 
-      // Render Stage 1: Tax Computation Matrix Table
+      // 5. Render Stage 1: Tax Computation Matrix Table
       const matrixTbody = document.getElementById('taxComputationTableBody');
       matrixTbody.innerHTML = `
         <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
@@ -2131,6 +2532,7 @@
           <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(stcgGrossGain)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(stcgGrossLoss)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalStclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(stcgShortfallAbsorbed)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-slate-400">₹0.00</td>
           <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableStcg)}</td>
           <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">20.80%</span></td>
@@ -2144,6 +2546,7 @@
           <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(ltcgGrossGain)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(ltcgGrossLoss)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalLtclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(ltcgShortfallAbsorbed)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-semibold">-${formatINR(exemptionClaimed)}</td>
           <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableLtcg)}</td>
           <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">13.00%</span></td>
@@ -2154,6 +2557,7 @@
           <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${formatINR(stcgGrossGain + ltcgGrossGain)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${formatINR(stcgGrossLoss + ltcgGrossLoss)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400">${formatINR(totalStclOffset + totalLtclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(stcgShortfallAbsorbed + ltcgShortfallAbsorbed)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">-${formatINR(exemptionClaimed)}</td>
           <td class="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-white">${formatINR(taxableStcg + taxableLtcg)}</td>
           <td class="py-3 px-3 text-center text-slate-400 text-xs">—</td>
@@ -2161,7 +2565,10 @@
         </tr>
       `;
 
-      // Render Stage 2: Advance Tax Waterfall Schedule Table (Q1–Q4)
+      // 6. Render Tax Harvesting Radar Panel (Modification 1.2)
+      renderTaxHarvestingRadar(data, exemptionClaimed);
+
+      // 7. Render Stage 2: Advance Tax Waterfall Schedule Table (Q1–Q4)
       const advTbody = document.getElementById('advanceTaxTableBody');
       advTbody.innerHTML = '';
 
@@ -2176,8 +2583,7 @@
       let cumulativePaid = 0;
       let totalPaidAllQuarters = 0;
 
-      quarterConfig.forEach((q, idx) => {
-        // Under Sec 234C proviso, tax accrued progressively matches gains realized up to that quarter
+      quarterConfig.forEach(q => {
         const qGains = Math.max(0, quarterGains[q.key]);
         const approxQTax = (qGains / Math.max(1, (stcgGrossGain + ltcgGrossGain))) * totalTaxLiability;
         cumulativeTaxAccrued = Math.min(totalTaxLiability, cumulativeTaxAccrued + approxQTax);
@@ -2233,7 +2639,7 @@
         summaryBadge.innerText = `Net Pending Tax: ${formatINR(netYearBalance)}`;
       }
 
-      // Render Stage 3: Audit Trail Lots
+      // 8. Render Stage 3: Closed Trades Lots
       const auditTbody = document.getElementById('taxAuditTableBody');
       auditTbody.innerHTML = '';
       document.getElementById('taxAuditCount').innerText = `${lots.length} Closed Lots`;
@@ -2264,7 +2670,117 @@
       });
     }
 
-    /* ---------------- CLEAN REVERTED PERFORMANCE CHART (POINT 2) ---------------- */
+    /* ---------------- TAX HARVESTING RADAR ENGINE (MODIFICATION 1.2) ---------------- */
+    function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
+      const maxExemptionRoom = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
+      const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
+
+      document.getElementById('harvestLtcgRoomVal').innerText = `${formatINR(unusedRoom, 0)} available`;
+
+      // Filter active open lots matching current account filter
+      let openLots = data.openLots;
+      if (currentTaxAccountFilter !== 'ALL') {
+        openLots = openLots.filter(l => l.account === currentTaxAccountFilter);
+      }
+
+      const today = new Date();
+      const profitCandidates = [];
+      const lossCandidates = [];
+
+      openLots.forEach(lot => {
+        const livePrice = (marketPrices[lot.stock] ? marketPrices[lot.stock].ltp : null) || (savedManualPrices[lot.stock] ? savedManualPrices[lot.stock].ltp : lot.price);
+        const lotCost = lot.qty * lot.price;
+        const currentVal = lot.qty * livePrice;
+        const unrealized = currentVal - lotCost;
+
+        const buyD = new Date(lot.date);
+        const diffDays = Math.ceil(Math.abs(today - buyD) / (1000 * 60 * 60 * 24));
+        const isLtcg = diffDays > 365;
+
+        if (unrealized > 0 && isLtcg) {
+          profitCandidates.push({
+            stock: lot.stock,
+            qty: lot.qty,
+            cost: lot.price,
+            ltp: livePrice,
+            gain: unrealized,
+            days: diffDays,
+            account: lot.account
+          });
+        } else if (unrealized < 0) {
+          lossCandidates.push({
+            stock: lot.stock,
+            qty: lot.qty,
+            cost: lot.price,
+            ltp: livePrice,
+            loss: Math.abs(unrealized),
+            days: diffDays,
+            isLtcg: isLtcg,
+            account: lot.account
+          });
+        }
+      });
+
+      // Render Long-Term Profit Harvest Candidates
+      const profitList = document.getElementById('profitHarvestList');
+      const profitBadge = document.getElementById('profitHarvestCountBadge');
+      profitList.innerHTML = '';
+      profitBadge.innerText = `${profitCandidates.length} lot(s)`;
+
+      if (profitCandidates.length === 0) {
+        profitList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
+      } else {
+        profitCandidates.sort((a, b) => b.gain - a.gain).forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+          row.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                <span>${c.stock}</span>
+                <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
+              </div>
+              <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">+${formatINR(c.gain, 0)}</span>
+              <span class="block text-[10px] text-slate-400">Tax-Free Room</span>
+            </div>
+          `;
+          profitList.appendChild(row);
+        });
+      }
+
+      // Render Loss Harvesting Candidates
+      const lossList = document.getElementById('lossHarvestList');
+      const lossBadge = document.getElementById('lossHarvestCountBadge');
+      lossList.innerHTML = '';
+      lossBadge.innerText = `${lossCandidates.length} lot(s)`;
+
+      if (lossCandidates.length === 0) {
+        lossList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
+      } else {
+        lossCandidates.sort((a, b) => b.loss - a.loss).forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+          row.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                <span>${c.stock}</span>
+                <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
+              </div>
+              <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">-${formatINR(c.loss, 0)}</span>
+              <span class="block text-[10px] text-slate-400">Offset Capacity</span>
+            </div>
+          `;
+          lossList.appendChild(row);
+        });
+      }
+    }
+
+    /* ---------------- CLEAN PERFORMANCE CHART ---------------- */
     function setChartRange(range) {
       currentChartRange = range;
       const ttmBtn = document.getElementById('chartRangeBtn-TTM');
