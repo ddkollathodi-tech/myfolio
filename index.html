@@ -83,7 +83,7 @@
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
   <!-- ========================================================================= -->
-  <!-- MODIFICATION 2: FULL-SCREEN PIN GATEKEEPER OVERLAY (ZERO DATA LEAKAGE)     -->
+  <!-- MODIFICATION 2 / POINT 1: PIN GATEKEEPER OVERLAY (CLEAN COPY & INFO POPOVER) -->
   <!-- ========================================================================= -->
   <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-black/95 backdrop-blur-md p-4 transition-opacity duration-300">
     <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-gray-800 shadow-2xl p-7 text-center space-y-6">
@@ -93,7 +93,7 @@
           <i data-lucide="shield-lock" class="w-7 h-7"></i>
         </div>
         <h2 id="pinTitle" class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Security Gatekeeper</h2>
-        <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Enter your 4-digit master PIN to unlock your portfolio</p>
+        <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-gray-400">Enter your PIN to unlock</p>
       </div>
 
       <!-- PIN Input Digits Display -->
@@ -124,8 +124,17 @@
         </button>
       </div>
 
-      <div class="text-[11px] text-slate-400 dark:text-gray-500 pt-2 border-t border-slate-100 dark:border-gray-800">
-        Emergency reset: clear <code class="font-mono bg-slate-100 dark:bg-gray-800 px-1 py-0.5 rounded text-[10px]">pinHash</code> in your Google Sheet Settings tab.
+      <!-- Point 1: Emergency reset text with inline (i) popover -->
+      <div class="text-[11.5px] text-slate-400 dark:text-gray-500 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-center space-x-1.5">
+        <span>Emergency reset:</span>
+        <div class="relative inline-flex items-center group">
+          <button type="button" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition focus:outline-none" title="Emergency Reset Info">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i>
+          </button>
+          <div class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col w-52 p-2.5 bg-slate-900 dark:bg-gray-800 text-white text-[10.5px] rounded-xl shadow-xl border border-slate-700 z-50 text-left leading-normal">
+            Clear <code class="font-mono text-emerald-400 bg-black/40 px-1 py-0.5 rounded">pinHash</code> row in your Google Sheet <b>Settings</b> tab to reset your PIN.
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -156,7 +165,7 @@
           </div>
         </div>
 
-        <!-- Action Cluster -->
+        <!-- Action Cluster (Point 2: Snapshot Removed. Point 3: Live Prices retained. Point 4: Cloud Sync moved below) -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
           <!-- 1. RECORD TRANSACTION DROPDOWN -->
@@ -201,30 +210,18 @@
             </div>
           </div>
 
-          <!-- 2. LIVE PRICES -->
-          <button id="refreshBtn" onclick="fetchLiveStockPrices()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
+          <!-- 2. LIVE PRICES (Point 3: Kept icon & label, opens manual LTP entry modal) -->
+          <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
-          <!-- 3. SHEET LINKED -->
-          <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
-            <span id="cloudSyncText">Cloud Sync</span>
-          </button>
-
-          <!-- 4. TAKE SNAPSHOT -->
-          <button onclick="pushFrontendSnapshot()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
-            <span>Take Snapshot</span>
-          </button>
-
-          <!-- 5. THEME TOGGLE -->
+          <!-- 3. THEME TOGGLE -->
           <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
             <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
           </button>
 
-          <!-- 6. ONE-CLICK GATEKEEPER LOCK BUTTON -->
+          <!-- 4. ONE-CLICK GATEKEEPER LOCK BUTTON -->
           <button onclick="lockApplicationNow()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
             <span>Lock</span>
@@ -234,14 +231,20 @@
       </div>
     </header>
 
-    <!-- SYNC STATUS BAR -->
+    <!-- SYNC STATUS BAR (Point 4: Sheet Linked relocated here. Point 6: Persistent dd-mm-yy, hh:mm) -->
     <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
-      <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex items-center justify-between">
-        <div class="flex items-center space-x-2">
-          <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-          <span id="syncStatus">Ready to track or refresh prices.</span>
+      <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center flex-wrap gap-2.5">
+          <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11.5px] font-semibold text-slate-700 dark:text-gray-200 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition">
+            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
+            <span id="cloudSyncText">Sheet Linked</span>
+          </button>
+          <div class="flex items-center space-x-2">
+            <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+            <span id="syncStatus">Ready to track.</span>
+          </div>
         </div>
-        <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-medium">Not refreshed yet</span></div>
+        <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
       </div>
     </div>
 
@@ -557,7 +560,7 @@
         </div>
       </div>
 
-      <!-- TAB 3: FY BREAKDOWN -->
+      <!-- TAB 3: FY BREAKDOWN (Point 7: Cards & Table Return % aligned) -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs transition-colors duration-200">
@@ -567,8 +570,8 @@
                 <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
                 <th class="py-3 px-4 text-right">Realized Sell Value</th>
                 <th class="py-3 px-4 text-right">FIFO Cost Basis</th>
-                <th class="py-3 px-4 text-right">Realized Gain/Loss</th>
-                <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Net FY Realized P&amp;L</th>
+                <th class="py-3 px-4 text-right">Realized Gain / Loss (₹)</th>
+                <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Realized Return (%)</th>
               </tr>
             </thead>
             <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
@@ -620,11 +623,11 @@
       </div>
 
       <!-- ========================================================================= -->
-      <!-- TAB 6: TAX P&L, EXEMPTION SHORTFALL & HARVESTING COCKPIT (MODIFICATION 1) -->
+      <!-- TAB 6: TAX P&L, EXEMPTION SHORTFALL & HARVESTING COCKPIT                   -->
       <!-- ========================================================================= -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         
-        <!-- Top Bar: Account Switcher & FY Selector -->
+        <!-- Top Bar: Account Switcher & FY Selector (Point 5: Legacy removed. Point 8: Defaults to Me) -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <div>
             <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -641,21 +644,18 @@
               <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
             </div>
 
-            <!-- Account Switcher Filter -->
+            <!-- Account Switcher Filter: Me, Wife, Mom, Brother, Combined (Legacy Removed) -->
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
-              <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
-              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Me</button>
+              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Me</button>
               <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
               <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
               <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
-              <button onclick="setTaxAccountFilter('Unassigned')" id="taxAcctBtn-Unassigned" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Legacy</button>
+              <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Combined</button>
             </div>
           </div>
         </div>
 
-        <!-- ----------------------------------------------------------------- -->
-        <!-- MODIFICATION 1.1: ZERO / LOW OTHER INCOME (BASIC EXEMPTION TOGGLE) -->
-        <!-- ----------------------------------------------------------------- -->
+        <!-- BASIC EXEMPTION SHORTFALL BANNER -->
         <div id="basicExemptionBanner" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center space-x-3">
             <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -667,7 +667,7 @@
                 <span id="taxToggleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Active</span>
               </div>
               <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5" id="taxToggleExplainer">
-                Non-earning member status absorbs up to ₹3L profit first against STCG (saving 20.80%) and remaining against LTCG (saving 13%).
+                Absorbs up to ₹3L profit first against STCG (saving 20.80%) and remaining against LTCG (saving 13%).
               </p>
             </div>
           </div>
@@ -685,9 +685,7 @@
           </div>
         </div>
 
-        <!-- ----------------------------------------------------------------- -->
-        <!-- MODIFICATION 1.2: TAX HARVESTING RADAR (REAL-TIME SCANNING PANEL) -->
-        <!-- ----------------------------------------------------------------- -->
+        <!-- TAX HARVESTING RADAR (REAL-TIME SCANNING PANEL) -->
         <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-gray-800 pb-3">
             <div class="flex items-center space-x-2.5">
@@ -707,7 +705,6 @@
             </div>
           </div>
 
-          <!-- Radar Dual Grids: Profit Harvesting Candidates & Loss Harvesting Candidates -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             
             <!-- A. Long-Term Profit Harvest Candidates -->
@@ -721,12 +718,10 @@
               </div>
               <p class="text-[11px] text-slate-500 dark:text-gray-400">Sell &amp; immediately re-buy to step-up purchase price without paying 13% tax.</p>
               
-              <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
-                <!-- Injected via JS -->
-              </div>
+              <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
 
-            <!-- B. Loss Harvesting Radar (Paper Loss Offsetters) -->
+            <!-- B. Loss Harvesting Radar -->
             <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-950/40 border border-slate-200 dark:border-gray-800/80 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
@@ -737,15 +732,13 @@
               </div>
               <p class="text-[11px] text-slate-500 dark:text-gray-400">Booking these unrealized losses before FY end neutralizes realized STCG/LTCG gains.</p>
 
-              <div id="lossHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
-                <!-- Injected via JS -->
-              </div>
+              <div id="lossHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
 
           </div>
         </div>
 
-        <!-- Stage 1: Tax Computation Matrix with Shortfall & Loss Set-Off Columns -->
+        <!-- Stage 1: Tax Computation Matrix Table -->
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
             <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
@@ -834,6 +827,88 @@
     </main>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL: AUTOMATIC MONTH-END REVIEW MODAL (POINT 2)                         -->
+  <!-- ========================================================================= -->
+  <div id="monthEndReviewModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <i data-lucide="calendar-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Month-End Valuation Review</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400" id="monthEndModalSubtitle">Provide closing prices as of month-end date</p>
+          </div>
+        </div>
+        <button onclick="closeMonthEndModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 dark:text-gray-300">
+        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
+      </p>
+
+      <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
+
+      <!-- Real-Time Computed Milestone Summary Footer -->
+      <div class="bg-slate-50 dark:bg-gray-950 p-3 rounded-2xl border border-slate-200 dark:border-gray-800 text-xs space-y-1.5">
+        <div class="flex justify-between text-slate-500 dark:text-gray-400">
+          <span>Total Stock Value:</span>
+          <b id="meModalStockVal" class="text-slate-900 dark:text-white font-bold tabular-nums">₹0.00</b>
+        </div>
+        <div class="flex justify-between text-slate-500 dark:text-gray-400">
+          <span>Cash Balance + Net Capital:</span>
+          <span class="text-slate-700 dark:text-gray-300 tabular-nums"><b id="meModalCash">₹0</b> / <b id="meModalNetCap">₹0</b></span>
+        </div>
+        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-gray-800 font-bold text-slate-900 dark:text-white">
+          <span>Computed Month-End Net Worth &amp; Profit:</span>
+          <span class="text-emerald-600 dark:text-emerald-400 tabular-nums"><span id="meModalPortVal">₹0.00</span> (<span id="meModalProfit">₹0.00</span>)</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-gray-800">
+        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-semibold">Remind Me Later</button>
+        <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs">Confirm &amp; Record Month-End</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: MANUAL LTP PRICES ENTRY MODAL (POINT 3)                            -->
+  <!-- ========================================================================= -->
+  <div id="livePricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Update Current Stock Prices (LTP)</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400">Enter current market prices to refresh your live portfolio value</p>
+          </div>
+        </div>
+        <button onclick="closeLivePricesModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 dark:text-gray-300">
+        Enter the latest closing/market price for your active holdings. Values sync across devices via the <b>Prices</b> sheet.
+      </p>
+
+      <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+
+      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
+        <button type="button" onclick="closeLivePricesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-semibold">Cancel</button>
+        <button type="button" onclick="saveAllLivePrices()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-xs">Save &amp; Recalculate</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: SET TARGET MILESTONE -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
@@ -867,32 +942,6 @@
     </div>
   </div>
 
-  <!-- MODAL: MANUAL PRICE PROMPT FOR MISSING / SME STOCKS -->
-  <div id="missingPricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-gray-900 border border-amber-500/40 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="alert-circle" class="w-5 h-5 text-amber-500 dark:text-amber-400"></i>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Update Unlisted / SME Stock Prices</h3>
-        </div>
-        <button onclick="closeMissingModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <p class="text-xs text-slate-600 dark:text-gray-300">
-        Live quotes were not returned automatically for the following holdings (common for NSE Emerge / BSE SME category). Enter their current market price (LTP):
-      </p>
-
-      <div id="missingStocksContainer" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
-
-      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
-        <button type="button" onclick="closeMissingModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-medium">Keep Existing</button>
-        <button type="button" onclick="saveManualSmePrices()" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs">Update &amp; Recalculate</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: GOOGLE SHEETS SYNC -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
@@ -921,7 +970,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD TRANSACTION -->
+  <!-- MODAL: ADD TRANSACTION (Point 5: Unassigned removed) -->
   <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -940,12 +989,12 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Account</label>
+            <!-- Strictly Me, Wife, Mom, Brother -->
             <select id="txAccount" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
               <option value="Me">Me</option>
               <option value="Wife">Wife</option>
               <option value="Mom">Mom</option>
               <option value="Brother">Brother</option>
-              <option value="Unassigned">Unassigned</option>
             </select>
           </div>
           <div>
@@ -1011,6 +1060,7 @@
     const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
     const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
     const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
+    const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -1066,7 +1116,8 @@
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
     let currentChartRange = 'TTM';
-    let currentTaxAccountFilter = 'ALL';
+    // Point 8: Tax account filter defaults to "Me"
+    let currentTaxAccountFilter = 'Me';
 
     let holdingsSort = { key: 'currentVal', dir: 'desc' };
     let closedSort = { key: 'netPnL', dir: 'desc' };
@@ -1092,9 +1143,8 @@
       return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    /* ---------------- GATEKEEPER ENGINE (MODIFICATION 2) ---------------- */
+    /* ---------------- GATEKEEPER ENGINE (MODIFICATION 2 & POINT 1) ---------------- */
     function checkGatekeeperState() {
-      // In-memory tab session unlock check (never stored in localStorage)
       const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
       const overlay = document.getElementById('pinGatekeeperOverlay');
       const root = document.getElementById('app-root');
@@ -1102,6 +1152,7 @@
       if (isSessionUnlocked) {
         overlay.classList.add('hidden');
         root.style.display = 'flex';
+        checkPendingMonthEndSnapshot();
       } else {
         root.style.display = 'none';
         overlay.classList.remove('hidden');
@@ -1116,11 +1167,12 @@
       if (!appSettings.pinHash) {
         isSettingUpNewPin = true;
         title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
-        subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio cross-device';
+        subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio';
       } else {
         isSettingUpNewPin = false;
         title.innerText = 'Security Gatekeeper';
-        subtitle.innerText = 'Enter your 4-digit master PIN to unlock your portfolio';
+        // Point 1: Exact minimal text
+        subtitle.innerText = 'Enter your PIN to unlock';
       }
       updatePinDots();
     }
@@ -1179,7 +1231,6 @@
     }
 
     async function handlePinVerification() {
-      // 1. PIN Setup Mode (When no PIN exists in Settings)
       if (isSettingUpNewPin) {
         if (!tempPinForSetup) {
           tempPinForSetup = enteredPin;
@@ -1192,7 +1243,6 @@
             appSettings.pinHash = hash;
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
             
-            // Persist centrally to Google Sheet Settings tab
             if (cloudScriptUrl) {
               try {
                 fetch(cloudScriptUrl, {
@@ -1220,7 +1270,6 @@
         }
       }
 
-      // 2. Regular Verification Mode
       const candidateHash = await sha256Hex(enteredPin);
       if (candidateHash === appSettings.pinHash) {
         sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
@@ -1236,6 +1285,28 @@
       sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
       enteredPin = '';
       checkGatekeeperState();
+    }
+
+    /* ---------------- POINT 6: PERSISTENT FORMATTED TIMESTAMP (dd-mm-yy, hh:mm) ---------------- */
+    function recordPriceUpdateTimestamp(customDate) {
+      const d = customDate || new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = String(d.getFullYear()).slice(-2);
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+
+      const formatted = `${day}-${month}-${year}, ${hours}:${mins}`;
+      localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
+      renderLastPriceTimestamp();
+    }
+
+    function renderLastPriceTimestamp() {
+      const val = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
+      const el = document.getElementById('lastSyncedTime');
+      if (el) {
+        el.innerText = val || 'Not refreshed yet';
+      }
     }
 
     /* ---------------- Compact Indian Currency Formatter ---------------- */
@@ -1424,6 +1495,7 @@
       savedManualPrices[symbol] = { ltp: price, prevClose: price };
       marketPrices[symbol] = { ltp: price, prevClose: price };
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+      recordPriceUpdateTimestamp();
 
       if (cloudScriptUrl) {
         try {
@@ -1445,6 +1517,7 @@
     function init() {
       initTheme();
       updateSyncUI();
+      renderLastPriceTimestamp();
 
       const savedTx = localStorage.getItem(STORAGE_KEY);
       if (savedTx) {
@@ -1519,40 +1592,34 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // 1. Settings & PIN Hash Sync
         if (data.settings && typeof data.settings === 'object') {
           Object.assign(appSettings, data.settings);
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
           checkGatekeeperState();
         }
 
-        // 2. Goals Sync
         if (data.goals && typeof data.goals === 'object') {
           Object.assign(milestoneGoals, data.goals);
           localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
         }
 
-        // 3. Master Autocomplete List
         if (data.stockMaster && Array.isArray(data.stockMaster)) {
           stockMasterList = data.stockMaster;
           localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
           updateStockAutocompleteOptions();
         }
 
-        // 4. Custom Override Prices
         if (data.customPrices && typeof data.customPrices === 'object') {
           Object.assign(savedManualPrices, data.customPrices);
           Object.assign(marketPrices, data.customPrices);
           localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
         }
 
-        // 5. Chart History Checkpoints
         if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
           chartHistoryRecords = data.chartHistory;
           localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
         }
 
-        // 6. Tradebook Rows
         if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
@@ -1588,50 +1655,6 @@
         });
       } catch (e) {
         console.error('Failed to append transaction to sheet:', e);
-      }
-    }
-
-    async function pushFrontendSnapshot() {
-      if (!cloudScriptUrl) {
-        alert('Please connect Google Sheet via Cloud Sync first.');
-        return;
-      }
-
-      const data = computeEngine();
-      const dateStr = new Date().toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-      }).replace(/ /g, '-');
-
-      const statusText = document.getElementById('syncStatus');
-      statusText.innerText = `Pushing live snapshot for ${dateStr}...`;
-
-      const snapshotPayload = {
-        action: "recordSnapshot",
-        date: dateStr,
-        netCapital: Math.round(data.netInvested),
-        cash: Math.round(data.cashBalance),
-        stockVal: Math.round(data.totalPortfolioVal),
-        portfolioVal: Math.round(data.netWorth),
-        profit: Math.round(data.lifetimePnL)
-      };
-
-      try {
-        await fetch(cloudScriptUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(snapshotPayload)
-        });
-
-        statusText.innerText = `Snapshot saved for ${dateStr}! Syncing graph...`;
-        setTimeout(async () => {
-          await fetchFromGoogleSheet();
-        }, 1200);
-      } catch (e) {
-        console.error('Snapshot failed:', e);
-        statusText.innerText = 'Snapshot push failed. Check console.';
       }
     }
 
@@ -1809,7 +1832,6 @@
         });
       });
 
-      // Open lots array retained with buy dates for Tax Harvesting Radar scan
       const openLots = [];
       const stockAggregateMap = {};
 
@@ -1921,108 +1943,49 @@
       return isNaN(rate) ? 0 : rate * 100;
     }
 
-    async function fetchLiveStockPrices() {
-      const btn = document.getElementById('refreshBtn');
-      const icon = document.getElementById('refreshIcon');
-      const txt = document.getElementById('refreshBtnText');
-      const syncStatus = document.getElementById('syncStatus');
-
-      icon.classList.add('animate-spin');
-      txt.innerText = 'Refreshing...';
-      btn.disabled = true;
-
-      const activeData = computeEngine();
-      const activeSymbols = activeData.holdings.map(h => h.stock);
-
-      if (activeSymbols.length === 0) {
-        syncStatus.innerText = 'No open positions to refresh.';
-        icon.classList.remove('animate-spin');
-        txt.innerText = 'Live Prices';
-        btn.disabled = false;
-        return;
-      }
-
-      let fetchedCount = 0;
-      const unverifiedSymbols = [];
-
-      if (cloudScriptUrl) {
-        try {
-          const targetUrl = `${cloudScriptUrl}?action=getQuotes&symbols=${encodeURIComponent(activeSymbols.join(','))}`;
-          const res = await fetch(targetUrl);
-          if (res.ok) {
-            const quotes = await res.json();
-            activeSymbols.forEach(sym => {
-              if (quotes[sym] && quotes[sym].ltp > 0) {
-                marketPrices[sym] = {
-                  ltp: quotes[sym].ltp,
-                  prevClose: quotes[sym].prevClose || quotes[sym].ltp
-                };
-                fetchedCount++;
-              } else {
-                unverifiedSymbols.push(sym);
-              }
-            });
-          }
-        } catch (e) {
-          console.error(e);
-          unverifiedSymbols.push(...activeSymbols);
-        }
-      } else {
-        unverifiedSymbols.push(...activeSymbols);
-      }
-
-      const now = new Date();
-      document.getElementById('lastSyncedTime').innerText = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      syncStatus.innerText = `Fetched ${fetchedCount} quotes. ${unverifiedSymbols.length} manual / SME position(s).`;
-
-      icon.classList.remove('animate-spin');
-      txt.innerText = 'Live Prices';
-      btn.disabled = false;
-
-      recalculateAndRender();
-
-      if (unverifiedSymbols.length > 0) {
-        openMissingPricesModal(unverifiedSymbols, activeData.holdings);
-      }
-    }
-
-    function openMissingPricesModal(symbols, holdings) {
-      const container = document.getElementById('missingStocksContainer');
+    /* ---------------- POINT 3: MANUAL LTP UPDATE MODAL (NO SCRAPERS) ---------------- */
+    function openLivePricesModal() {
+      const modal = document.getElementById('livePricesModal');
+      const container = document.getElementById('livePricesContainer');
       container.innerHTML = '';
 
-      symbols.forEach(sym => {
-        const h = holdings.find(item => item.stock === sym);
-        const currentPrice = savedManualPrices[sym] ? savedManualPrices[sym].ltp : (marketPrices[sym] ? marketPrices[sym].ltp : (h ? h.wap : 0));
-        const qty = h ? h.qty : 0;
+      const data = computeEngine();
+      const openHoldings = data.holdings;
 
-        const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800/80 rounded-xl border border-slate-200 dark:border-gray-700/80';
-        row.innerHTML = `
-          <div>
-            <div class="font-bold text-slate-900 dark:text-white">${sym}</div>
-            <div class="text-[11px] text-slate-500 dark:text-gray-400">Holding: ${qty} shares • Avg: ${formatINR(h ? h.wap : 0)}</div>
-          </div>
-          <div class="flex items-center space-x-1.5">
-            <span class="text-xs text-slate-500 dark:text-gray-400">₹</span>
-            <input type="number" step="0.05" id="manualPrice_${sym}" value="${Number(currentPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500">
-          </div>
-        `;
-        container.appendChild(row);
-      });
+      if (openHoldings.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-4 text-center">No open holdings available to update.</div>`;
+      } else {
+        openHoldings.forEach(h => {
+          const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : h.ltp;
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800/80 rounded-xl border border-slate-200 dark:border-gray-700/80';
+          row.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
+              <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty: ${h.qty} • Cost: ${formatINR(h.wap)}</div>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-xs text-slate-500 dark:text-gray-400">₹</span>
+              <input type="number" step="0.05" id="livePriceInp_${h.stock}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500 font-bold">
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
 
-      document.getElementById('missingPricesModal').classList.remove('hidden');
+      modal.classList.remove('hidden');
     }
 
-    function closeMissingModal() {
-      document.getElementById('missingPricesModal').classList.add('hidden');
+    function closeLivePricesModal() {
+      document.getElementById('livePricesModal').classList.add('hidden');
     }
 
-    async function saveManualSmePrices() {
-      const inputs = document.querySelectorAll('#missingStocksContainer input');
+    async function saveAllLivePrices() {
+      const inputs = document.querySelectorAll('#livePricesContainer input');
       const batchPrices = {};
 
       inputs.forEach(inp => {
-        const sym = inp.id.replace('manualPrice_', '');
+        const sym = inp.id.replace('livePriceInp_', '');
         const val = Number(inp.value);
         if (!isNaN(val) && val > 0) {
           batchPrices[sym] = { ltp: val, prevClose: val };
@@ -2032,6 +1995,7 @@
       });
 
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+      recordPriceUpdateTimestamp();
 
       if (cloudScriptUrl && Object.keys(batchPrices).length > 0) {
         try {
@@ -2046,7 +2010,211 @@
         }
       }
 
-      closeMissingModal();
+      closeLivePricesModal();
+      recalculateAndRender();
+    }
+
+    /* ---------------- POINT 2: AUTOMATIC MONTH-END RECONCILIATION ENGINE ---------------- */
+    let currentPendingMonthEndDateStr = null;
+
+    function getPrecedingMonthEndDate() {
+      const today = new Date();
+      // First day of current month minus 1 day = last day of preceding month
+      const lastDayOfPrevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      return lastDayOfPrevMonth;
+    }
+
+    function formatToSheetDateStr(d) {
+      return UtilitiesFormatDate(d);
+    }
+
+    function UtilitiesFormatDate(d) {
+      const day = String(d.getDate()).padStart(2, '0');
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    }
+
+    function checkPendingMonthEndSnapshot() {
+      if (!transactions || transactions.length === 0) return;
+
+      const lastMonthEnd = getPrecedingMonthEndDate();
+      const targetDateStr = formatToSheetDateStr(lastMonthEnd);
+
+      const alreadyExists = chartHistoryRecords.some(r => {
+        const checkD = String(r.date || '').trim();
+        return checkD.toLowerCase() === targetDateStr.toLowerCase();
+      });
+
+      if (!alreadyExists) {
+        openMonthEndReviewModal(lastMonthEnd, targetDateStr);
+      }
+    }
+
+    function openMonthEndReviewModal(cutoffDate, targetDateStr) {
+      currentPendingMonthEndDateStr = targetDateStr;
+      document.getElementById('monthEndDateDisplay').innerText = targetDateStr;
+      document.getElementById('monthEndModalSubtitle').innerText = `Provide closing prices as of ${targetDateStr}`;
+
+      const cutoffTime = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate(), 23, 59, 59);
+      const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
+
+      const inv = {};
+      let netCap = 0;
+      let cash = 0;
+
+      pastTxs.forEach(t => {
+        const amt = Number(t.amount || 0);
+        if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
+        else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
+        else if (t.type === 'FEES') { cash -= amt; }
+        else if (t.type === 'BUY') {
+          cash -= amt;
+          if (!inv[t.stock]) inv[t.stock] = 0;
+          inv[t.stock] += Number(t.qty || 0);
+        } else if (t.type === 'SELL') {
+          cash += amt;
+          if (!inv[t.stock]) inv[t.stock] = 0;
+          inv[t.stock] -= Number(t.qty || 0);
+        }
+      });
+
+      const openHoldings = Object.keys(inv).filter(s => inv[s] > 0).map(s => ({ stock: s, qty: inv[s] }));
+      const container = document.getElementById('monthEndHoldingsContainer');
+      container.innerHTML = '';
+
+      if (openHoldings.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 py-3 text-center">No open positions as of ${targetDateStr}.</div>`;
+      } else {
+        openHoldings.forEach(h => {
+          const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : (marketPrices[h.stock] ? marketPrices[h.stock].ltp : 0);
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700';
+          row.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
+              <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty at month-end: ${h.qty} shares</div>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span class="text-xs text-slate-500">₹</span>
+              <input type="number" step="0.05" id="mePrice_${h.stock}" data-qty="${h.qty}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-blue-500 font-bold" oninput="recalcMonthEndModal(${netCap}, ${cash})">
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      recalcMonthEndModal(netCap, cash);
+      document.getElementById('monthEndReviewModal').classList.remove('hidden');
+    }
+
+    function recalcMonthEndModal(netCap, cash) {
+      let stockVal = 0;
+      document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
+        const qty = Number(inp.getAttribute('data-qty') || 0);
+        const p = Number(inp.value || 0);
+        stockVal += (qty * p);
+      });
+
+      const portVal = cash + stockVal;
+      const profit = portVal - netCap;
+
+      document.getElementById('meModalStockVal').innerText = formatINR(stockVal);
+      document.getElementById('meModalCash').innerText = formatCompactIndian(cash);
+      document.getElementById('meModalNetCap').innerText = formatCompactIndian(netCap);
+      document.getElementById('meModalPortVal').innerText = formatINR(portVal);
+      document.getElementById('meModalProfit').innerText = formatINR(profit);
+    }
+
+    function closeMonthEndModal() {
+      document.getElementById('monthEndReviewModal').classList.add('hidden');
+    }
+
+    async function commitMonthEndSnapshot() {
+      if (!currentPendingMonthEndDateStr) return;
+
+      const dateStr = currentPendingMonthEndDateStr;
+      const lastMonthEnd = getPrecedingMonthEndDate();
+      const cutoffTime = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59);
+      const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
+
+      let netCap = 0;
+      let cash = 0;
+      pastTxs.forEach(t => {
+        const amt = Number(t.amount || 0);
+        if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
+        else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
+        else if (t.type === 'FEES') { cash -= amt; }
+        else if (t.type === 'BUY') { cash -= amt; }
+        else if (t.type === 'SELL') { cash += amt; }
+      });
+
+      let stockVal = 0;
+      const batchPrices = {};
+
+      document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
+        const sym = inp.id.replace('mePrice_', '');
+        const qty = Number(inp.getAttribute('data-qty') || 0);
+        const p = Number(inp.value || 0);
+        stockVal += (qty * p);
+
+        if (p > 0) {
+          batchPrices[sym] = { ltp: p, prevClose: p };
+          savedManualPrices[sym] = { ltp: p, prevClose: p };
+          marketPrices[sym] = { ltp: p, prevClose: p };
+        }
+      });
+
+      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+      recordPriceUpdateTimestamp();
+
+      const portVal = cash + stockVal;
+      const profit = portVal - netCap;
+
+      const snapshotPayload = {
+        action: "recordSnapshot",
+        date: dateStr,
+        netCapital: Math.round(netCap),
+        cash: Math.round(cash),
+        stockVal: Math.round(stockVal),
+        portfolioVal: Math.round(portVal),
+        profit: Math.round(profit)
+      };
+
+      if (cloudScriptUrl) {
+        try {
+          await fetch(cloudScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(snapshotPayload)
+          });
+
+          if (Object.keys(batchPrices).length > 0) {
+            await fetch(cloudScriptUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: "savePrices", prices: batchPrices })
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      chartHistoryRecords.push({
+        date: dateStr,
+        netCapital: Math.round(netCap),
+        cash: Math.round(cash),
+        stocks: Math.round(stockVal),
+        portfolioValue: Math.round(portVal),
+        profit: Math.round(profit)
+      });
+      localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
+
+      closeMonthEndModal();
       recalculateAndRender();
     }
 
@@ -2259,6 +2427,7 @@
       });
     }
 
+    /* ---------------- POINT 7: FY SUMMARY POLISH (CARDS & TABLE) ---------------- */
     function renderFY(fyRealized) {
       const cards = document.getElementById('fyCardsContainer');
       const tbody = document.getElementById('fySummaryTableBody');
@@ -2268,7 +2437,9 @@
       Object.keys(fyRealized).sort().reverse().forEach(fy => {
         const item = fyRealized[fy];
         const isPos = item.gain >= 0;
+        const retPct = item.costBasis > 0 ? (item.gain / item.costBasis) * 100 : 0;
 
+        // Card displaying return percentage alongside P&L in the same font & color
         const card = document.createElement('div');
         card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xs transition-colors';
         card.innerHTML = `
@@ -2276,22 +2447,26 @@
             <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
             <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
           </div>
-          <div class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</div>
-          <div class="mt-2 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
+          <div class="flex items-baseline space-x-2 mt-1">
+            <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(item.gain)}</span>
+            <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : ''}${retPct.toFixed(2)}%)</span>
+          </div>
+          <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
             <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.sellProceeds)}</span></div>
             <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.costBasis)}</span></div>
           </div>
         `;
         cards.appendChild(card);
 
+        // Table with Realized Return (%) column
         const tr = document.createElement('tr');
         tr.className = 'border-b border-slate-100 dark:border-gray-800/60';
         tr.innerHTML = `
           <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${fy}</td>
           <td class="py-3 px-4 text-right tabular-nums">${formatINR(item.sellProceeds)}</td>
           <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(item.costBasis)}</td>
-          <td class="py-3 px-4 text-right tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</td>
-          <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${formatINR(item.gain)}</td>
+          <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
+          <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
         `;
         tbody.appendChild(tr);
       });
@@ -2348,7 +2523,7 @@
       });
     }
 
-    /* ---------------- TAX PLANNING COCKPIT (MODIFICATION 1) ---------------- */
+    /* ---------------- TAX PLANNING COCKPIT (MODIFICATION 1, POINT 5 & 8) ---------------- */
     function populateTaxFyOptions(fyRealized) {
       const select = document.getElementById('taxFyFilter');
       if (!select) return;
@@ -2374,7 +2549,7 @@
 
     function setTaxAccountFilter(acct) {
       currentTaxAccountFilter = acct;
-      ['ALL', 'Me', 'Wife', 'Mom', 'Brother', 'Unassigned'].forEach(key => {
+      ['Me', 'Wife', 'Mom', 'Brother', 'ALL'].forEach(key => {
         const btn = document.getElementById(`taxAcctBtn-${key}`);
         if (!btn) return;
         if (key === acct) {
@@ -2435,11 +2610,9 @@
         lots = lots.filter(l => l.account === currentTaxAccountFilter);
       }
 
-      // Check Exemption Shortfall Toggle Status
       const activeAcct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
       const isLowIncome = appSettings[`taxToggle_${activeAcct}`] === 'true';
 
-      // Update Exemption Toggle Button UI
       const toggleBtn = document.getElementById('taxLowIncomeToggleBtn');
       const toggleText = document.getElementById('taxLowIncomeToggleText');
       const toggleBadge = document.getElementById('taxToggleBadge');
@@ -2459,7 +2632,6 @@
         explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
       }
 
-      // 1. Accumulate Realized STCG & LTCG
       let stcgGrossGain = 0;
       let stcgGrossLoss = 0;
       let ltcgGrossGain = 0;
@@ -2478,7 +2650,6 @@
         }
       });
 
-      // 2. Strict Indian Tax Loss Set-Off Algorithm
       const stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
       let netStcgAfterInternal = stcgGrossGain - stclOffsetAgainstStcg;
       let remainingStcl = stcgGrossLoss - stclOffsetAgainstStcg;
@@ -2494,34 +2665,28 @@
       const totalStclOffset = stclOffsetAgainstStcg + stclOffsetAgainstLtcg;
       const totalLtclOffset = ltclOffsetAgainstLtcg;
 
-      // 3. Basic Exemption Shortfall Absorption Logic (₹3,00,000)
       let stcgShortfallAbsorbed = 0;
       let ltcgShortfallAbsorbed = 0;
 
       if (isLowIncome) {
         const totalShortfallCapacity = 300000;
-        // Priority 1: Absorb against STCG (saving 20.80%)
         stcgShortfallAbsorbed = Math.min(netStcgAfterInternal, totalShortfallCapacity);
         const remainingShortfall = totalShortfallCapacity - stcgShortfallAbsorbed;
-        // Priority 2: Absorb remaining balance against LTCG (saving 13%)
         ltcgShortfallAbsorbed = Math.min(netLtcgAfterInternal, remainingShortfall);
       }
 
       const netStcgAfterShortfall = Math.max(0, netStcgAfterInternal - stcgShortfallAbsorbed);
       const netLtcgAfterShortfall = Math.max(0, netLtcgAfterInternal - ltcgShortfallAbsorbed);
 
-      // 4. Section 112A ₹1,25,000 Annual Exemption
       const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
       const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterShortfall);
       const taxableLtcg = Math.max(0, netLtcgAfterShortfall - exemptionClaimed);
       const taxableStcg = netStcgAfterShortfall;
 
-      // Statutory Flat Tax Rates: 20.80% for STCG, 13.00% for LTCG
       const stcgTax = taxableStcg * 0.2080;
       const ltcgTax = taxableLtcg * 0.1300;
       const totalTaxLiability = Math.round(stcgTax + ltcgTax);
 
-      // 5. Render Stage 1: Tax Computation Matrix Table
       const matrixTbody = document.getElementById('taxComputationTableBody');
       matrixTbody.innerHTML = `
         <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
@@ -2565,10 +2730,8 @@
         </tr>
       `;
 
-      // 6. Render Tax Harvesting Radar Panel (Modification 1.2)
       renderTaxHarvestingRadar(data, exemptionClaimed);
 
-      // 7. Render Stage 2: Advance Tax Waterfall Schedule Table (Q1–Q4)
       const advTbody = document.getElementById('advanceTaxTableBody');
       advTbody.innerHTML = '';
 
@@ -2623,7 +2786,6 @@
         advTbody.appendChild(tr);
       });
 
-      // Update Top Summary Badge
       const summaryBadge = document.getElementById('advanceTaxSummaryBadge');
       const netYearBalance = totalTaxLiability - totalPaidAllQuarters;
       if (netYearBalance <= 0 && totalTaxLiability > 0) {
@@ -2639,7 +2801,6 @@
         summaryBadge.innerText = `Net Pending Tax: ${formatINR(netYearBalance)}`;
       }
 
-      // 8. Render Stage 3: Closed Trades Lots
       const auditTbody = document.getElementById('taxAuditTableBody');
       auditTbody.innerHTML = '';
       document.getElementById('taxAuditCount').innerText = `${lots.length} Closed Lots`;
@@ -2670,14 +2831,13 @@
       });
     }
 
-    /* ---------------- TAX HARVESTING RADAR ENGINE (MODIFICATION 1.2) ---------------- */
+    /* ---------------- TAX HARVESTING RADAR ENGINE ---------------- */
     function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
       const maxExemptionRoom = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
       const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
 
       document.getElementById('harvestLtcgRoomVal').innerText = `${formatINR(unusedRoom, 0)} available`;
 
-      // Filter active open lots matching current account filter
       let openLots = data.openLots;
       if (currentTaxAccountFilter !== 'ALL') {
         openLots = openLots.filter(l => l.account === currentTaxAccountFilter);
@@ -2721,7 +2881,6 @@
         }
       });
 
-      // Render Long-Term Profit Harvest Candidates
       const profitList = document.getElementById('profitHarvestList');
       const profitBadge = document.getElementById('profitHarvestCountBadge');
       profitList.innerHTML = '';
@@ -2750,7 +2909,6 @@
         });
       }
 
-      // Render Loss Harvesting Candidates
       const lossList = document.getElementById('lossHarvestList');
       const lossBadge = document.getElementById('lossHarvestCountBadge');
       lossList.innerHTML = '';
@@ -3074,7 +3232,8 @@
       document.getElementById(`tabBtn-${t}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
 
       if (t === 'taxPnl') {
-        renderTaxView();
+        // Point 8: Ensure view renders defaulting to "Me"
+        setTaxAccountFilter(currentTaxAccountFilter || 'Me');
       }
     }
 
