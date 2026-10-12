@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyFolioAI - Portfolio Tracker Engine</title>
+  <style>
+    .hidden { display: none !important; }
+  </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -361,7 +364,6 @@
         </div>
       </div>
 
-      <!-- Canvas container with 1.3x height (~330px) -->
       <div class="h-[330px] w-full relative">
         <canvas id="multiCurveChart"></canvas>
       </div>
@@ -389,9 +391,13 @@
         <i data-lucide="landmark" class="w-4 h-4"></i>
         <span>Bank Ledger</span>
       </button>
+      <button onclick="switchTab('taxPnl')" id="tabBtn-taxPnl" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+        <i data-lucide="calculator" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
+        <span>Tax P&amp;L &amp; Advance Tax</span>
+      </button>
     </div>
 
-    <!-- TAB 1: ACTIVE HOLDINGS -->
+    <!-- TAB 1: ACTIVE HOLDINGS (POINT 1: DAY P&L REMOVED) -->
     <div id="tabContent-holdings" class="space-y-4">
       <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
         <div class="flex items-center space-x-2">
@@ -432,7 +438,6 @@
                   <span id="sortIcon-holdings-pnlVal"></span>
                 </div>
               </th>
-              <th class="py-3 px-3 text-right">Day P&amp;L</th>
               <th class="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
@@ -513,6 +518,7 @@
           <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
+              <th class="py-3 px-2">Account</th>
               <th class="py-3 px-3">Type</th>
               <th class="py-3 px-3">Stock</th>
               <th class="py-3 px-3 text-right">Qty</th>
@@ -535,6 +541,7 @@
           <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
             <tr>
               <th class="py-3 px-4">Date</th>
+              <th class="py-3 px-2">Account</th>
               <th class="py-3 px-3">Type</th>
               <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Deposit In (₹)</th>
               <th class="py-3 px-3 text-right text-amber-500 dark:text-amber-400">Withdrawal Out (₹)</th>
@@ -545,6 +552,123 @@
           <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- TAB 6: TAX P&L & ADVANCE TAX (POINT 3 & 4: DEDICATED TAX COCKPIT) -->
+    <div id="tabContent-taxPnl" class="space-y-5 hidden">
+      
+      <!-- Top Bar: Account Switcher & FY Selector -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <span>Capital Gains Tax &amp; Advance Tax Schedule</span>
+            <span class="text-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full font-semibold">Post-July 2024 Regime</span>
+          </h3>
+          <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5">Section 111A (STCG @ 20.80%) • Section 112A (LTCG @ 13.00% above ₹1.25 Lakh exemption per PAN)</p>
+        </div>
+
+        <div class="flex items-center flex-wrap gap-2">
+          <!-- FY Selector -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <span class="text-slate-500 dark:text-gray-400 font-medium">FY:</span>
+            <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
+          </div>
+
+          <!-- Account Switcher Filter (All / Me / Wife / Mom / Brother / Unassigned) -->
+          <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
+            <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
+            <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Me</button>
+            <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
+            <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
+            <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
+            <button onclick="setTaxAccountFilter('Unassigned')" id="taxAcctBtn-Unassigned" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Legacy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage 1: Tax Computation Matrix with Separate Loss Set-Off Columns -->
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
+        <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+          <thead class="bg-slate-100 dark:bg-gray-950/60 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800">
+            <tr>
+              <th class="py-3 px-4">Head of Capital Gain</th>
+              <th class="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Gross Realized Gains</th>
+              <th class="py-3 px-3 text-right text-rose-600 dark:text-rose-400">Gross Realized Losses</th>
+              <th class="py-3 px-3 text-right text-blue-600 dark:text-blue-400">Loss Set-Off Absorbed</th>
+              <th class="py-3 px-3 text-right text-amber-600 dark:text-amber-400">Statutory Exemption</th>
+              <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Taxable Gains</th>
+              <th class="py-3 px-3 text-center">Effective Rate</th>
+              <th class="py-3 px-4 text-right font-bold text-rose-600 dark:text-rose-400">Net Tax Payable (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="taxComputationTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+        </table>
+      </div>
+
+      <!-- Stage 2: Section 234C Advance Tax Waterfall Schedule -->
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+              <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-500"></i>
+              <span>Quarterly Advance Tax Schedule (Sec 234C/234B Proviso)</span>
+            </h4>
+            <p class="text-[11.5px] text-slate-500 dark:text-gray-400">Click <b>Actual Tax Paid</b> to record your challans. Excess payments automatically roll over to offset subsequent quarters.</p>
+          </div>
+          <div id="advanceTaxSummaryBadge" class="text-xs font-bold px-3 py-1 rounded-lg"></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-2.5 px-3">Quarter</th>
+                <th class="py-2.5 px-3">Due Date Period</th>
+                <th class="py-2.5 px-3 text-right">Cumulative Tax Accrued</th>
+                <th class="py-2.5 px-3 text-center">Mandatory %</th>
+                <th class="py-2.5 px-3 text-right">Min Cumulative Due</th>
+                <th class="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-white">Actual Tax Paid (Challan)</th>
+                <th class="py-2.5 px-3 text-right">Quarter Due / Remaining</th>
+                <th class="py-2.5 px-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="advanceTaxTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Stage 3: Closed Trades Lot Audit with Holding Days & Tax Tag -->
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+            <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
+            <span>Closed Trades Tax Audit Trail</span>
+          </h4>
+          <span class="text-xs text-slate-500 dark:text-gray-400" id="taxAuditCount">0 Lots</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-gray-300">
+            <thead class="bg-slate-50 dark:bg-gray-950/40 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800">
+              <tr>
+                <th class="py-2.5 px-3">Sell Date</th>
+                <th class="py-2.5 px-2">Account</th>
+                <th class="py-2.5 px-3">Stock</th>
+                <th class="py-2.5 px-2 text-right">Qty</th>
+                <th class="py-2.5 px-3 text-right">Buy Date (FIFO)</th>
+                <th class="py-2.5 px-2 text-right">Holding Days</th>
+                <th class="py-2.5 px-2 text-center">Class</th>
+                <th class="py-2.5 px-3 text-right">Cost Basis</th>
+                <th class="py-2.5 px-3 text-right">Proceeds</th>
+                <th class="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">Realized P&amp;L</th>
+                <th class="py-2.5 px-2 text-center">Quarter</th>
+              </tr>
+            </thead>
+            <tbody id="taxAuditTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -637,7 +761,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD TRANSACTION -->
+  <!-- MODAL: ADD TRANSACTION (POINT 4: ACCOUNT SELECTOR INCLUDED) -->
   <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -649,10 +773,20 @@
 
       <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="txEditingId" value="">
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Date</label>
             <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Account</label>
+            <select id="txAccount" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+              <option value="Me">Me</option>
+              <option value="Wife">Wife</option>
+              <option value="Mom">Mom</option>
+              <option value="Brother">Brother</option>
+              <option value="Unassigned">Unassigned</option>
+            </select>
           </div>
           <div>
             <label class="block text-slate-500 dark:text-gray-400 mb-1">Type</label>
@@ -715,6 +849,7 @@
     const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
     const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
     const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
+    const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -743,10 +878,18 @@
       if (localGoals) Object.assign(milestoneGoals, localGoals);
     } catch (e) {}
 
+    let taxPaidChallans = {};
+    try {
+      taxPaidChallans = JSON.parse(localStorage.getItem(TAX_PAID_KEY)) || {};
+    } catch (e) {
+      taxPaidChallans = {};
+    }
+
     let currentEditingGoalKey = null;
     let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
     let multiChartInstance = null;
     let currentChartRange = 'TTM';
+    let currentTaxAccountFilter = 'ALL';
 
     let holdingsSort = { key: 'currentVal', dir: 'desc' };
     let closedSort = { key: 'netPnL', dir: 'desc' };
@@ -1070,6 +1213,7 @@
           transactions = data.ledger.map((item, idx) => ({
             id: (Date.now() + idx).toString(),
             date: item.date,
+            account: item.account || 'Unassigned',
             type: item.type,
             stock: item.stock,
             qty: Number(item.qty || 0),
@@ -1169,6 +1313,22 @@
       return month >= 4 ? `FY ${year}-${String(year + 1).slice(-2)}` : `FY ${year - 1}-${String(year).slice(-2)}`;
     }
 
+    function getTaxQuarter(dateStr) {
+      const d = new Date(dateStr);
+      const m = d.getMonth() + 1; // 1 to 12
+      const day = d.getDate();
+
+      // Q1: Apr 1 - Jun 15
+      if ((m === 4) || (m === 5) || (m === 6 && day <= 15)) return 'Q1';
+      // Q2: Jun 16 - Sep 15
+      if ((m === 6 && day > 15) || (m === 7) || (m === 8) || (m === 9 && day <= 15)) return 'Q2';
+      // Q3: Sep 16 - Dec 15
+      if ((m === 9 && day > 15) || (m === 10) || (m === 11) || (m === 12 && day <= 15)) return 'Q3';
+      // Q4: Dec 16 - Mar 31
+      return 'Q4';
+    }
+
+    /* ---------------- MAIN CALCULATION ENGINE ---------------- */
     function computeEngine() {
       const sortedTx = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -1176,15 +1336,20 @@
       let totalDeposits = 0;
       let totalWithdrawals = 0;
 
+      // Lot inventory segmented by account and stock to prevent cross-account FIFO pollution
       const inventory = {};
       const fyRealized = {};
       const closedTradesMap = {};
 
       const ledgerEntries = [];
       const bankEntries = [];
+      const taxClosedLots = [];
 
       sortedTx.forEach(tx => {
         const fy = getFinancialYear(tx.date);
+        const acct = tx.account || 'Unassigned';
+        const invKey = `${acct}__${tx.stock}`;
+
         if (!fyRealized[fy]) fyRealized[fy] = { sellProceeds: 0, costBasis: 0, gain: 0 };
 
         const amt = Number(tx.amount || 0);
@@ -1196,14 +1361,14 @@
             cashIn = amt;
             cashBalance += amt;
             totalDeposits += amt;
-            bankEntries.push({ date: tx.date, type: 'DEPOSIT', deposit: amt, withdrawal: 0, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
+            bankEntries.push({ date: tx.date, account: acct, type: 'DEPOSIT', deposit: amt, withdrawal: 0, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
             break;
 
           case 'WITHDRAWAL':
             cashOut = amt;
             cashBalance -= amt;
             totalWithdrawals += amt;
-            bankEntries.push({ date: tx.date, type: 'WITHDRAWAL', deposit: 0, withdrawal: amt, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
+            bankEntries.push({ date: tx.date, account: acct, type: 'WITHDRAWAL', deposit: 0, withdrawal: amt, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
             break;
 
           case 'FEES':
@@ -1214,8 +1379,14 @@
           case 'BUY':
             cashOut = amt;
             cashBalance -= amt;
-            if (!inventory[tx.stock]) inventory[tx.stock] = [];
-            inventory[tx.stock].push({ qty: Number(tx.qty), price: Number(tx.price), date: tx.date });
+            if (!inventory[invKey]) inventory[invKey] = [];
+            inventory[invKey].push({ 
+              qty: Number(tx.qty), 
+              price: Number(tx.price), 
+              date: tx.date,
+              account: acct,
+              stock: tx.stock
+            });
             break;
 
           case 'SELL': {
@@ -1225,17 +1396,44 @@
             const sellPrice = Number(tx.price);
             let costOfSoldShares = 0;
 
-            if (inventory[tx.stock]) {
-              while (qtyToSell > 0 && inventory[tx.stock].length > 0) {
-                const oldestLot = inventory[tx.stock][0];
-                if (oldestLot.qty <= qtyToSell) {
-                  costOfSoldShares += oldestLot.qty * oldestLot.price;
-                  qtyToSell -= oldestLot.qty;
-                  inventory[tx.stock].shift();
-                } else {
-                  costOfSoldShares += qtyToSell * oldestLot.price;
-                  oldestLot.qty -= qtyToSell;
-                  qtyToSell = 0;
+            if (inventory[invKey]) {
+              while (qtyToSell > 0 && inventory[invKey].length > 0) {
+                const oldestLot = inventory[invKey][0];
+                const consumedQty = Math.min(qtyToSell, oldestLot.qty);
+                const lotCost = consumedQty * oldestLot.price;
+                const lotProceeds = consumedQty * sellPrice;
+                const lotGain = lotProceeds - lotCost;
+
+                // Holding period evaluation
+                const buyD = new Date(oldestLot.date);
+                const sellD = new Date(tx.date);
+                const diffTime = Math.abs(sellD - buyD);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const isLtcg = diffDays > 365;
+
+                taxClosedLots.push({
+                  sellDate: tx.date,
+                  buyDate: oldestLot.date,
+                  account: acct,
+                  stock: tx.stock,
+                  qty: consumedQty,
+                  buyPrice: oldestLot.price,
+                  sellPrice: sellPrice,
+                  costBasis: lotCost,
+                  proceeds: lotProceeds,
+                  gain: lotGain,
+                  days: diffDays,
+                  isLtcg: isLtcg,
+                  fy: fy,
+                  quarter: getTaxQuarter(tx.date)
+                });
+
+                costOfSoldShares += lotCost;
+                qtyToSell -= consumedQty;
+                oldestLot.qty -= consumedQty;
+
+                if (oldestLot.qty <= 0) {
+                  inventory[invKey].shift();
                 }
               }
             }
@@ -1261,6 +1459,7 @@
         ledgerEntries.push({
           id: tx.id,
           date: tx.date,
+          account: acct,
           type: tx.type,
           stock: tx.stock,
           qty: tx.qty,
@@ -1272,34 +1471,42 @@
         });
       });
 
+      // Aggregate Active Open Holdings across accounts for unified view
+      const stockAggregateMap = {};
+
+      Object.keys(inventory).forEach(key => {
+        const lots = inventory[key];
+        lots.forEach(lot => {
+          if (lot.qty > 0) {
+            if (!stockAggregateMap[lot.stock]) {
+              stockAggregateMap[lot.stock] = { totalQty: 0, totalCost: 0 };
+            }
+            stockAggregateMap[lot.stock].totalQty += lot.qty;
+            stockAggregateMap[lot.stock].totalCost += (lot.qty * lot.price);
+          }
+        });
+      });
+
       const holdings = [];
       let totalPortfolioVal = 0;
       let totalPortfolioInvested = 0;
-      let totalTodayGain = 0;
 
-      Object.keys(inventory).forEach(stock => {
-        const lots = inventory[stock];
-        const totalQty = lots.reduce((acc, l) => acc + l.qty, 0);
-
-        if (totalQty > 0) {
-          const totalCost = lots.reduce((acc, l) => acc + (l.qty * l.price), 0);
-          const wap = totalCost / totalQty;
-
+      Object.keys(stockAggregateMap).forEach(stock => {
+        const item = stockAggregateMap[stock];
+        if (item.totalQty > 0) {
+          const wap = item.totalCost / item.totalQty;
           const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
           const ltp = liveData.ltp;
-          const prevClose = liveData.prevClose || ltp;
 
-          const currentVal = totalQty * ltp;
-          const investedVal = totalCost;
+          const currentVal = item.totalQty * ltp;
+          const investedVal = item.totalCost;
           const pnlVal = currentVal - investedVal;
           const pnlPct = investedVal > 0 ? (pnlVal / investedVal) * 100 : 0;
-          const dayPnL = (ltp - prevClose) * totalQty;
 
           totalPortfolioVal += currentVal;
           totalPortfolioInvested += investedVal;
-          totalTodayGain += dayPnL;
 
-          holdings.push({ stock, qty: totalQty, wap, ltp, investedVal, currentVal, pnlVal, pnlPct, dayPnL });
+          holdings.push({ stock, qty: item.totalQty, wap, ltp, investedVal, currentVal, pnlVal, pnlPct });
         }
       });
 
@@ -1326,13 +1533,13 @@
         netWorth,
         lifetimePnL,
         lifetimePnLPct,
-        totalTodayGain,
         xirrValue,
         holdings,
         fyRealized,
         closedTrades,
         ledgerEntries,
         bankEntries,
+        taxClosedLots,
         sortedTx
       };
     }
@@ -1522,7 +1729,6 @@
       renderClosedTrades(computeEngine().closedTrades);
     }
 
-    /* ---------------- Updated High-Contrast Header Icons ---------------- */
     function updateSortHeaderIcons(prefix, currentSort, columns) {
       columns.forEach(col => {
         const el = document.getElementById(`sortIcon-${prefix}-${col}`);
@@ -1612,11 +1818,14 @@
       renderFY(data.fyRealized);
       renderLedger(data.ledgerEntries);
       renderBankLedger(data.bankEntries);
+      populateTaxFyOptions(data.fyRealized);
+      renderTaxView();
       renderChart(data);
 
       lucide.createIcons();
     }
 
+    /* ---------------- RENDER ACTIVE HOLDINGS (POINT 1: DAY P&L REMOVED) ---------------- */
     function renderHoldings(holdings) {
       const tbody = document.getElementById('holdingsTableBody');
       tbody.innerHTML = '';
@@ -1625,7 +1834,7 @@
       updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
 
       if (holdings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active stock positions.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active stock positions.</td></tr>`;
         return;
       }
 
@@ -1655,9 +1864,6 @@
           <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
             ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
             <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
-          </td>
-          <td class="py-3 px-3 text-right tabular-nums ${h.dayPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${h.dayPnL >= 0 ? '+' : ''}${formatINR(h.dayPnL)}
           </td>
           <td class="py-3 px-4 text-center">
             <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
@@ -1768,6 +1974,7 @@
         tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
           <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${tx.date}</td>
+          <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
           <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type]}">${tx.type}</span></td>
           <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
           <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
@@ -1790,6 +1997,7 @@
         tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
           <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${b.date}</td>
+          <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${b.account || 'Unassigned'}</span></td>
           <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
           <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
           <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
@@ -1800,7 +2008,263 @@
       });
     }
 
-    /* ---------------- ORIGINAL PERFORMANCE CHART ENGINE ---------------- */
+    /* ---------------- TAX P&L COCKPIT ENGINE (POINT 3 & 4) ---------------- */
+    function populateTaxFyOptions(fyRealized) {
+      const select = document.getElementById('taxFyFilter');
+      if (!select) return;
+      const currentSelected = select.value;
+      select.innerHTML = '';
+
+      const currentFy = getFinancialYear(new Date().toISOString().split('T')[0]);
+      const availableFys = new Set([currentFy, ...Object.keys(fyRealized)]);
+
+      Array.from(availableFys).sort().reverse().forEach(fy => {
+        const opt = document.createElement('option');
+        opt.value = fy;
+        opt.innerText = fy;
+        select.appendChild(opt);
+      });
+
+      if (currentSelected && availableFys.has(currentSelected)) {
+        select.value = currentSelected;
+      } else {
+        select.value = currentFy;
+      }
+    }
+
+    function setTaxAccountFilter(acct) {
+      currentTaxAccountFilter = acct;
+      ['ALL', 'Me', 'Wife', 'Mom', 'Brother', 'Unassigned'].forEach(key => {
+        const btn = document.getElementById(`taxAcctBtn-${key}`);
+        if (!btn) return;
+        if (key === acct) {
+          btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
+        }
+      });
+      renderTaxView();
+    }
+
+    function recordTaxChallan(fy, acct, qKey, currentPaid) {
+      const input = prompt(`Enter total advance tax challan amount paid for ${qKey} (${fy} - ${acct}):`, currentPaid || 0);
+      if (input !== null && !isNaN(Number(input))) {
+        const val = Math.max(0, Number(input));
+        const key = `${fy}__${acct}__${qKey}`;
+        taxPaidChallans[key] = val;
+        localStorage.setItem(TAX_PAID_KEY, JSON.stringify(taxPaidChallans));
+        renderTaxView();
+      }
+    }
+
+    function renderTaxView() {
+      const fySelect = document.getElementById('taxFyFilter');
+      if (!fySelect) return;
+      const targetFy = fySelect.value || getFinancialYear(new Date().toISOString().split('T')[0]);
+
+      const data = computeEngine();
+      let lots = data.taxClosedLots.filter(l => l.fy === targetFy);
+
+      if (currentTaxAccountFilter !== 'ALL') {
+        lots = lots.filter(l => l.account === currentTaxAccountFilter);
+      }
+
+      // 1. Separate calculation buckets for STCG and LTCG
+      let stcgGrossGain = 0;
+      let stcgGrossLoss = 0;
+      let ltcgGrossGain = 0;
+      let ltcgGrossLoss = 0;
+
+      // Quarterly gain accumulation for Advance Tax
+      const quarterGains = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+
+      lots.forEach(lot => {
+        quarterGains[lot.quarter] += lot.gain;
+        if (lot.isLtcg) {
+          if (lot.gain > 0) ltcgGrossGain += lot.gain;
+          else ltcgGrossLoss += Math.abs(lot.gain);
+        } else {
+          if (lot.gain > 0) stcgGrossGain += lot.gain;
+          else stcgGrossLoss += Math.abs(lot.gain);
+        }
+      });
+
+      // 2. Strict Indian Tax Loss Set-Off Algorithm
+      // Step A: STCL first offsets STCG
+      let stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
+      let netStcgAfterInternal = stcgGrossGain - stclOffsetAgainstStcg;
+      let remainingStcl = stcgGrossLoss - stclOffsetAgainstStcg;
+
+      // Step B: LTCL can only offset LTCG
+      let ltclOffsetAgainstLtcg = Math.min(ltcgGrossGain, ltcgGrossLoss);
+      let netLtcgAfterInternal = ltcgGrossGain - ltclOffsetAgainstLtcg;
+      let remainingLtcl = ltcgGrossLoss - ltclOffsetAgainstLtcg;
+
+      // Step C: Remaining STCL can also offset remaining LTCG
+      let stclOffsetAgainstLtcg = Math.min(netLtcgAfterInternal, remainingStcl);
+      netLtcgAfterInternal -= stclOffsetAgainstLtcg;
+      remainingStcl -= stclOffsetAgainstLtcg;
+
+      const totalStclOffset = stclOffsetAgainstStcg + stclOffsetAgainstLtcg;
+      const totalLtclOffset = ltclOffsetAgainstLtcg;
+
+      // Step D: Apply Section 112A ₹1,25,000 exemption limit per legal entity
+      // If Combined is selected, up to 4 family PAN exemptions can be claimed (max ₹5,00,000)
+      const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
+      const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterInternal);
+      const taxableLtcg = Math.max(0, netLtcgAfterInternal - exemptionClaimed);
+      const taxableStcg = Math.max(0, netStcgAfterInternal);
+
+      // Statutory tax computation: 20.80% for STCG, 13.00% for LTCG
+      const stcgTax = taxableStcg * 0.2080;
+      const ltcgTax = taxableLtcg * 0.1300;
+      const totalTaxLiability = Math.round(stcgTax + ltcgTax);
+
+      // Render Stage 1: Tax Computation Matrix Table
+      const matrixTbody = document.getElementById('taxComputationTableBody');
+      matrixTbody.innerHTML = `
+        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
+          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+            <span>Short-Term Capital Gains (STCG)</span>
+            <span class="block text-[11px] text-slate-500 font-normal">Holding period &le; 365 Days (Sec 111A)</span>
+          </td>
+          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(stcgGrossGain)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(stcgGrossLoss)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalStclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-slate-400">₹0.00</td>
+          <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableStcg)}</td>
+          <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">20.80%</span></td>
+          <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(stcgTax)}</td>
+        </tr>
+        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
+          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+            <span>Long-Term Capital Gains (LTCG)</span>
+            <span class="block text-[11px] text-slate-500 font-normal">Holding period &gt; 365 Days (Sec 112A)</span>
+          </td>
+          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(ltcgGrossGain)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(ltcgGrossLoss)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalLtclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-semibold">-${formatINR(exemptionClaimed)}</td>
+          <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableLtcg)}</td>
+          <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">13.00%</span></td>
+          <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(ltcgTax)}</td>
+        </tr>
+        <tr class="bg-slate-50/70 dark:bg-gray-950/60 font-bold border-t border-slate-200 dark:border-gray-700">
+          <td class="py-3 px-4 text-slate-900 dark:text-white uppercase tracking-wider text-xs">Total Net Position</td>
+          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${formatINR(stcgGrossGain + ltcgGrossGain)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${formatINR(stcgGrossLoss + ltcgGrossLoss)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400">${formatINR(totalStclOffset + totalLtclOffset)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">-${formatINR(exemptionClaimed)}</td>
+          <td class="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-white">${formatINR(taxableStcg + taxableLtcg)}</td>
+          <td class="py-3 px-3 text-center text-slate-400 text-xs">—</td>
+          <td class="py-3 px-4 text-right tabular-nums text-base text-rose-600 dark:text-rose-400">${formatINR(totalTaxLiability)}</td>
+        </tr>
+      `;
+
+      // Render Stage 2: Advance Tax Waterfall Schedule Table (Q1–Q4)
+      const advTbody = document.getElementById('advanceTaxTableBody');
+      advTbody.innerHTML = '';
+
+      const quarterConfig = [
+        { key: 'Q1', title: 'Q1 (Apr 1 – Jun 15)', pct: 0.15 },
+        { key: 'Q2', title: 'Q2 (Jun 16 – Sep 15)', pct: 0.45 },
+        { key: 'Q3', title: 'Q3 (Sep 16 – Dec 15)', pct: 0.75 },
+        { key: 'Q4', title: 'Q4 (Dec 16 – Mar 15)', pct: 1.00 }
+      ];
+
+      let cumulativeTaxAccrued = 0;
+      let cumulativePaid = 0;
+      let totalPaidAllQuarters = 0;
+
+      quarterConfig.forEach((q, idx) => {
+        // Under Sec 234C proviso, tax accrued progressively matches gains realized up to that quarter
+        const qGains = Math.max(0, quarterGains[q.key]);
+        const approxQTax = (qGains / Math.max(1, (stcgGrossGain + ltcgGrossGain))) * totalTaxLiability;
+        cumulativeTaxAccrued = Math.min(totalTaxLiability, cumulativeTaxAccrued + approxQTax);
+
+        const statutoryMinDue = Math.round(totalTaxLiability * q.pct);
+        const challanKey = `${targetFy}__${currentTaxAccountFilter}__${q.key}`;
+        const actualPaid = taxPaidChallans[challanKey] || 0;
+        totalPaidAllQuarters += actualPaid;
+        cumulativePaid += actualPaid;
+
+        const remainingToPay = Math.max(0, statutoryMinDue - cumulativePaid);
+        const excessPaid = Math.max(0, cumulativePaid - statutoryMinDue);
+
+        let statusBadge = '';
+        if (totalTaxLiability === 0) {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
+        } else if (remainingToPay === 0) {
+          statusBadge = excessPaid > 0 
+            ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+₹${formatCompactIndian(excessPaid)} Rolled Over</span>`
+            : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200">₹${formatINR(remainingToPay, 0)} Due</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${q.key}</td>
+          <td class="py-2.5 px-3 text-slate-500 dark:text-gray-400 text-xs">${q.title}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(cumulativeTaxAccrued)}</td>
+          <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded font-mono text-[11px] bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 font-bold">${Math.round(q.pct * 100)}%</span></td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(statutoryMinDue)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" onclick="recordTaxChallan('${targetFy}', '${currentTaxAccountFilter}', '${q.key}', ${actualPaid})" title="Click to update challan">${formatINR(actualPaid)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold ${remainingToPay > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}">${formatINR(remainingToPay)}</td>
+          <td class="py-2.5 px-4 text-center">${statusBadge}</td>
+        `;
+        advTbody.appendChild(tr);
+      });
+
+      // Update Top Summary Badge
+      const summaryBadge = document.getElementById('advanceTaxSummaryBadge');
+      const netYearBalance = totalTaxLiability - totalPaidAllQuarters;
+      if (netYearBalance <= 0 && totalTaxLiability > 0) {
+        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
+        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability 
+          ? `Surplus Advance Tax: +${formatINR(totalPaidAllQuarters - totalTaxLiability)} (Refundable at ITR)`
+          : `Advance Tax 100% Cleared`;
+      } else if (totalTaxLiability === 0) {
+        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300';
+        summaryBadge.innerText = 'No Tax Liability for this Financial Year';
+      } else {
+        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
+        summaryBadge.innerText = `Net Pending Tax: ${formatINR(netYearBalance)}`;
+      }
+
+      // Render Stage 3: Audit Trail Lots
+      const auditTbody = document.getElementById('taxAuditTableBody');
+      auditTbody.innerHTML = '';
+      document.getElementById('taxAuditCount').innerText = `${lots.length} Closed Lots`;
+
+      if (lots.length === 0) {
+        auditTbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No sales recorded for ${targetFy} in this account filter.</td></tr>`;
+        return;
+      }
+
+      [...lots].reverse().forEach(lot => {
+        const isPos = lot.gain >= 0;
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+        tr.innerHTML = `
+          <td class="py-2 px-3 tabular-nums text-slate-500 dark:text-gray-400">${lot.sellDate}</td>
+          <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${lot.account}</span></td>
+          <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">${lot.stock}</td>
+          <td class="py-2 px-2 text-right tabular-nums">${lot.qty}</td>
+          <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${lot.buyDate}</td>
+          <td class="py-2 px-2 text-right tabular-nums text-slate-600 dark:text-gray-300 font-mono">${lot.days}d</td>
+          <td class="py-2 px-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${lot.isLtcg ? 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800'}">${lot.isLtcg ? 'LTCG' : 'STCG'}</span></td>
+          <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(lot.costBasis)}</td>
+          <td class="py-2 px-3 text-right tabular-nums">${formatINR(lot.proceeds)}</td>
+          <td class="py-2 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(lot.gain)}</td>
+          <td class="py-2 px-2 text-center font-bold text-slate-500">${lot.quarter}</td>
+        `;
+        auditTbody.appendChild(tr);
+      });
+    }
+
+    /* ---------------- CLEAN REVERTED PERFORMANCE CHART (POINT 2) ---------------- */
     function setChartRange(range) {
       currentChartRange = range;
       const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -2005,11 +2469,13 @@
       });
     }
 
+    /* ---------------- TRANSACTION MODAL HANDLERS ---------------- */
     function openPresetModal(type) {
       document.getElementById('txEditingId').value = '';
       document.getElementById('txModal').classList.remove('hidden');
       document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('txType').value = type;
+      document.getElementById('txAccount').value = 'Me';
       document.getElementById('modalTitle').innerText = `Add ${type} Transaction`;
       toggleFormFields();
     }
@@ -2035,6 +2501,7 @@
     async function handleTransactionSubmit(e) {
       e.preventDefault();
       const type = document.getElementById('txType').value;
+      const account = document.getElementById('txAccount').value;
       const stock = document.getElementById('txStock').value.trim().toUpperCase();
       const qty = Number(document.getElementById('txQty').value || 0);
       const price = Number(document.getElementById('txPrice').value || 0);
@@ -2047,6 +2514,7 @@
       const newEntry = {
         id: Date.now().toString(),
         date,
+        account,
         type,
         stock,
         qty,
@@ -2082,12 +2550,16 @@
     }
 
     function switchTab(t) {
-      ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger'].forEach(id => {
+      ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(id => {
         document.getElementById(`tabContent-${id}`).classList.add('hidden');
         document.getElementById(`tabBtn-${id}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap';
       });
       document.getElementById(`tabContent-${t}`).classList.remove('hidden');
       document.getElementById(`tabBtn-${t}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
+
+      if (t === 'taxPnl') {
+        renderTaxView();
+      }
     }
 
     function filterHoldingsTable() {
