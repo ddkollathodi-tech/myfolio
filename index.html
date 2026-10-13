@@ -110,7 +110,7 @@
         <!-- Action Cluster -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- RECORD TRANSACTION DROPDOWN (WITH CORPORATE ACTIONS) -->
+          <!-- RECORD TRANSACTION DROPDOWN (WITH CLEAN NESTED CORPORATE ACTIONS) -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
@@ -144,26 +144,44 @@
                 <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
                 <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
               </button>
+              <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
               <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
                 <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
                 <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
               </button>
 
-              <!-- Corporate Actions Section -->
+              <!-- Single Line Corporate Actions Expandable Menu -->
               <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
-              <div class="px-3.5 py-1 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Corporate Actions</div>
-              <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-                <span class="w-2 h-2 rounded-full bg-purple-500 mr-2.5"></span>
-                <span class="font-semibold text-purple-600 dark:text-purple-400 mr-1.5">+</span> Bonus Issue (₹0 Cost)
-              </button>
-              <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-                <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
-                <span class="font-semibold text-indigo-600 dark:text-indigo-400 mr-1.5">⚡</span> Stock Split (Ratio)
-              </button>
-              <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
-                <span class="w-2 h-2 rounded-full bg-cyan-500 mr-2.5"></span>
-                <span class="font-semibold text-cyan-600 dark:text-cyan-400 mr-1.5">✂</span> Demerger Cost Adjust
-              </button>
+              <div class="relative">
+                <button 
+                  type="button" 
+                  onclick="toggleCorpActionSubmenu(event)" 
+                  class="w-full flex items-center justify-between px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium text-left"
+                >
+                  <span class="flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
+                    <span>Corporate Actions</span>
+                  </span>
+                  <i data-lucide="chevron-right" id="corpSubmenuChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150"></i>
+                </button>
+
+                <!-- Sub-Menu items (Bonus, Split, Demerger) -->
+                <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-gray-800/40 border-y border-slate-100 dark:border-gray-800">
+                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
+                    <span>Bonus Issue (₹0 Cost)</span>
+                  </button>
+                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
+                    <span>Stock Split (Ratio)</span>
+                  </button>
+                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2"></span>
+                    <span>Demerger Cost Adjust</span>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -1021,7 +1039,7 @@
       </div>
 
       <p class="text-xs text-slate-600 dark:text-gray-300">
-        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet.
+        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet[cite: 1, 2].
       </p>
 
       <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
@@ -1132,7 +1150,7 @@
             <span>Master Gatekeeper PIN</span>
           </span>
           <p class="text-[11px] text-slate-500 dark:text-gray-400 leading-relaxed">
-            Update your 4-digit numeric PIN used to unlock your dashboard session across devices.
+            Update your 4-digit numeric PIN used to unlock your dashboard session across devices[cite: 2].
           </p>
         </div>
 
@@ -1166,7 +1184,7 @@
             <span>Baseline Cash Calibration Engine</span>
           </span>
           <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
-            Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. Saved to the <b>Cash_Calibration</b> sheet.
+            Compensates for historical unassigned transactions without modifying legacy records[cite: 2]. Enter the <b>actual cash balance</b> each account currently holds[cite: 2]. Saved to the <b>Cash_Calibration</b> sheet[cite: 2].
           </p>
         </div>
 
@@ -1200,7 +1218,7 @@
       </div>
 
       <p class="text-xs text-slate-600 dark:text-gray-300">
-        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
+        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>[cite: 2]:
       </p>
 
       <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
