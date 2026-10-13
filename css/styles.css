@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* Base Font & Typographic Feature Flags */
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Tabular Numerics for Financial Tables & KPI Figures */
+.mono-font, 
+.tabular-nums, 
+table, 
+[id^="kpi"] {
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  font-variant-numeric: tabular-nums normal !important;
+  font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0 !important;
+}
+
+/* Visibility Utilities */
+.hidden { 
+  display: none !important; 
+}
+
+/* Anti-FOUC Gatekeeper Law: Conceals dashboard until master PIN unlock */
+#app-root { 
+  display: none; 
+}
+
+/* PIN Card Error Shake Animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.shake-animation {
+  animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+/* Gaussian Privacy Mask Utility */
+.privacy-blurred {
+  filter: blur(8px) !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar { 
+  width: 5px; 
+  height: 5px; 
+}
+
+.custom-scroll::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+
+.custom-scroll::-webkit-scrollbar-thumb { 
+  background: #cbd5e1; 
+  border-radius: 4px; 
+}
+
+.dark .custom-scroll::-webkit-scrollbar-thumb { 
+  background: #374151; 
+  border-radius: 4px; 
+}
+
+/* Interactive Table Headers */
+th.sortable { 
+  cursor: pointer; 
+  user-select: none; 
+}
+
+th.sortable:hover { 
+  background-color: rgba(148, 163, 184, 0.12); 
+}
+
+/* Record Transaction Dropdown Button */
+.btn-record-tx {
+  background-color: #EAF5F0;
+  border: 1px solid #CBE7D9;
+  color: #147653;
+}
+
+.btn-record-tx:hover {
+  background-color: #DEF0E7;
+  border-color: #B2DDC6;
+}
+
+.dark .btn-record-tx {
+  background-color: rgba(20, 118, 83, 0.16);
+  border-color: rgba(203, 231, 217, 0.22);
+  color: #34D399;
+}
+
+.dark .btn-record-tx:hover {
+  background-color: rgba(20, 118, 83, 0.26);
+  border-color: rgba(203, 231, 217, 0.35);
+}
