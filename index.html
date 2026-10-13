@@ -5,27 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyFolioAI - Portfolio Tracker Engine</title>
   
-  <style>
-    .hidden { display: none !important; }
-    /* Anti-FOUC Gatekeeper Law: Conceal entire dashboard until session unlock */
-    #app-root { display: none; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-8px); }
-      40%, 80% { transform: translateX(8px); }
-    }
-    .shake-animation {
-      animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
-    }
-    /* Modern Gaussian Privacy Mask Utility */
-    .privacy-blurred {
-      filter: blur(8px) !important;
-      user-select: none !important;
-      pointer-events: none !important;
-      transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-  </style>
-
+  <!-- External CDNs -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -44,55 +24,12 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    
-    :root {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-      -webkit-font-smoothing: antialiased;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-
-    .mono-font, .tabular-nums, table, [id^="kpi"] {
-      font-family: 'Inter', -apple-system, sans-serif !important;
-      font-variant-numeric: tabular-nums normal !important;
-      font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0 !important;
-    }
-
-    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
-    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-    .dark .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    
-    th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { background-color: rgba(148, 163, 184, 0.12); }
-
-    .btn-record-tx {
-      background-color: #EAF5F0;
-      border: 1px solid #CBE7D9;
-      color: #147653;
-    }
-    .btn-record-tx:hover {
-      background-color: #DEF0E7;
-      border-color: #B2DDC6;
-    }
-    .dark .btn-record-tx {
-      background-color: rgba(20, 118, 83, 0.16);
-      border-color: rgba(203, 231, 217, 0.22);
-      color: #34D399;
-    }
-    .dark .btn-record-tx:hover {
-      background-color: rgba(20, 118, 83, 0.26);
-      border-color: rgba(203, 231, 217, 0.35);
-    }
-  </style>
+  <!-- Modular Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
+  <!-- PIN GATEKEEPER OVERLAY -->
   <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-black/95 backdrop-blur-md p-4 transition-opacity duration-300">
     <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-gray-800 shadow-2xl p-7 text-center space-y-6">
       
@@ -132,7 +69,6 @@
         </button>
       </div>
 
-      <!-- Point 5: Keyboard and emergency reset info popover -->
       <div class="text-[11.5px] text-slate-400 dark:text-gray-500 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-center space-x-1.5">
         <span>Type on keyboard or keypad. Reset:</span>
         <details class="relative inline-block text-left">
@@ -147,6 +83,7 @@
     </div>
   </div>
 
+  <!-- APPLICATION ROOT -->
   <div id="app-root" class="flex-1 flex flex-col">
 
     <!-- TOP HEADER -->
@@ -173,7 +110,7 @@
         <!-- Action Cluster -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- 1. RECORD TRANSACTION DROPDOWN -->
+          <!-- RECORD TRANSACTION DROPDOWN (WITH CORPORATE ACTIONS) -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
@@ -188,7 +125,7 @@
             <!-- Dropdown Menu -->
             <div 
               id="txDropdownMenu" 
-              class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
+              class="hidden absolute right-0 mt-2 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
             >
               <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
                 <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
@@ -207,31 +144,46 @@
                 <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
                 <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
               </button>
-              <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
               <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
                 <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
                 <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
               </button>
+
+              <!-- Corporate Actions Section -->
+              <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
+              <div class="px-3.5 py-1 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Corporate Actions</div>
+              <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-purple-500 mr-2.5"></span>
+                <span class="font-semibold text-purple-600 dark:text-purple-400 mr-1.5">+</span> Bonus Issue (₹0 Cost)
+              </button>
+              <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
+                <span class="font-semibold text-indigo-600 dark:text-indigo-400 mr-1.5">⚡</span> Stock Split (Ratio)
+              </button>
+              <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition">
+                <span class="w-2 h-2 rounded-full bg-cyan-500 mr-2.5"></span>
+                <span class="font-semibold text-cyan-600 dark:text-cyan-400 mr-1.5">✂</span> Demerger Cost Adjust
+              </button>
             </div>
           </div>
 
-          <!-- 2. LIVE PRICES -->
+          <!-- LIVE PRICES (MANUAL MODAL) -->
           <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
-          <!-- 3. THEME TOGGLE -->
+          <!-- THEME TOGGLE -->
           <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
             <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
           </button>
 
-          <!-- 3.5 SETTINGS TRIGGER -->
+          <!-- SETTINGS TRIGGER -->
           <button onclick="openSettingsModal()" id="settingsModalBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Platform Settings">
             <i data-lucide="settings" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. ONE-CLICK GATEKEEPER LOCK BUTTON -->
+          <!-- INSTANT PIN LOCK -->
           <button onclick="lockApplicationNow()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
             <span>Lock</span>
@@ -254,16 +206,17 @@
             <span id="syncStatus">Ready to track.</span>
           </div>
         </div>
-        <div>Last Live Quote: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
+        <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
       </div>
     </div>
 
     <!-- MAIN VIEW CONTAINER -->
     <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
+      <!-- KPI METRIC CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         
-        <!-- 1. TOTAL NET WORTH (Spans 2 Columns) -->
+        <!-- 1. TOTAL NET WORTH -->
         <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -278,7 +231,6 @@
               </div>
             </div>
 
-            <!-- Value container with individual Gaussian blur hook -->
             <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
             
             <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-gray-400">
@@ -397,7 +349,7 @@
           </div>
         </div>
 
-        <!-- 5. ANNUALIZED XIRR (Always Unmasked, No Eye Button) -->
+        <!-- 5. ANNUALIZED XIRR -->
         <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -424,6 +376,7 @@
 
       </div>
 
+      <!-- PERFORMANCE CHART CARD -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
@@ -465,7 +418,7 @@
           <canvas id="multiCurveChart"></canvas>
         </div>
 
-        <!-- Collapsible TTM P&L Accordion Below Graph -->
+        <!-- Trailing 12 Months Accordion -->
         <div class="pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <button 
             type="button" 
@@ -499,6 +452,7 @@
 
       </div>
 
+      <!-- TABS NAVIGATION BAR -->
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 gap-2">
         <div class="flex space-x-2 overflow-x-auto custom-scroll flex-1 py-0.5">
           <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
@@ -527,7 +481,7 @@
           </button>
         </div>
 
-        <!-- Point 3: Anchored Multi-Tab Excel Export Button -->
+        <!-- Multi-Tab Excel Export Button -->
         <button 
           onclick="exportPortfolioToExcel()" 
           class="shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-500/30 transition shadow-2xs mb-1" 
@@ -538,9 +492,10 @@
         </button>
       </div>
 
+      <!-- TAB 1: ACTIVE HOLDINGS -->
       <div id="tabContent-holdings" class="space-y-4">
         
-        <!-- Win / Loss Ratio Health Bar -->
+        <!-- Win / Loss Bar -->
         <div id="holdingsRatioBarContainer" class="bg-white dark:bg-gray-900 p-3 rounded-xl border border-slate-200 dark:border-gray-800 space-y-2">
           <div class="flex items-center justify-between text-xs font-semibold">
             <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
@@ -559,9 +514,8 @@
           </div>
         </div>
 
-        <!-- Point 4: Account Filter Switcher + Search Input + Prominent Liquid Cash Badge -->
+        <!-- Account Filter & Cash Badge -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
-          
           <div class="flex items-center flex-wrap gap-2.5">
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
               <button onclick="setHoldingsAccountFilter('ALL')" id="holdingsAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
@@ -581,7 +535,6 @@
             <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
             <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
           </div>
-
         </div>
 
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -624,6 +577,7 @@
         </div>
       </div>
 
+      <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
@@ -668,7 +622,7 @@
           </table>
         </div>
 
-        <!-- Point 2: Pagination Footer for Closed Trades (12 rows per page) -->
+        <!-- Pagination Footer -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -679,6 +633,7 @@
         </div>
       </div>
 
+      <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -697,13 +652,14 @@
         </div>
       </div>
 
+      <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="flex items-center space-x-2">
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="ledgerCountBadge">0 Entries</span>
           </div>
-          <div class="text-xs text-slate-500">12 rows per page • Log new entries via Record Transaction</div>
+          <div class="text-xs text-slate-500">12 rows per page • Log trades or corporate actions above</div>
         </div>
 
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -726,7 +682,7 @@
           </table>
         </div>
 
-        <!-- Point 2: Pagination Footer for Ledger (12 rows per page) -->
+        <!-- Pagination Footer -->
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -737,6 +693,7 @@
         </div>
       </div>
 
+      <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
@@ -755,7 +712,7 @@
           </table>
         </div>
 
-        <!-- Point 2: Pagination Footer for Bank Ledger (12 rows per page) -->
+        <!-- Pagination Footer -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -766,6 +723,7 @@
         </div>
       </div>
 
+      <!-- TAB 6: TAX PLANNING COCKPIT -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
@@ -793,6 +751,7 @@
           </div>
         </div>
 
+        <!-- Basic Exemption Limit Shortfall Banner -->
         <div id="basicExemptionBanner" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center space-x-3">
             <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -822,6 +781,7 @@
           </div>
         </div>
 
+        <!-- Tax Harvesting Radar -->
         <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-gray-800 pb-3">
             <div class="flex items-center space-x-2.5">
@@ -850,7 +810,7 @@
                 </span>
                 <span id="profitHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">0 stocks</span>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-gray-400">Sell &amp; immediately re-buy to step-up purchase price without paying 13% tax.</p>
+              <p class="text-[11px] text-slate-500 dark:text-gray-400">Sell &amp; re-buy to step-up purchase price without paying tax within exemption limit.</p>
               
               <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
@@ -863,7 +823,7 @@
                 </span>
                 <span id="lossHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400">0 stocks</span>
               </div>
-              <p class="text-[11px] text-slate-500 dark:text-gray-400">Booking these unrealized losses before FY end neutralizes realized STCG/LTCG gains.</p>
+              <p class="text-[11px] text-slate-500 dark:text-gray-400">Booking these unrealized losses before FY end neutralizes realized gains.</p>
 
               <div id="lossHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
@@ -871,6 +831,7 @@
           </div>
         </div>
 
+        <!-- Tax Matrix -->
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
             <thead class="bg-slate-100/95 dark:bg-gray-950/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
@@ -890,6 +851,7 @@
           </table>
         </div>
 
+        <!-- Advance Tax Schedule Table -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -897,7 +859,7 @@
                 <i data-lucide="calendar-clock" class="w-4 h-4 text-amber-500"></i>
                 <span>Quarterly Advance Tax Schedule (Sec 234C/234B Proviso)</span>
               </h4>
-              <p class="text-[11.5px] text-slate-500 dark:text-gray-400">Click <b>Actual Tax Paid</b> to record your challans. Excess payments automatically roll over to offset subsequent quarters.</p>
+              <p class="text-[11.5px] text-slate-500 dark:text-gray-400">Click <b>Actual Tax Paid</b> to record your challans. Excess payments automatically roll over.</p>
             </div>
             <div id="advanceTaxSummaryBadge" class="text-xs font-bold px-3 py-1 rounded-lg"></div>
           </div>
@@ -921,6 +883,7 @@
           </div>
         </div>
 
+        <!-- Tax Audit Lots Table -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -957,53 +920,89 @@
     </main>
   </div>
 
-  <!-- MODAL: AUTOMATIC MONTH-END REVIEW MODAL -->
-  <div id="monthEndReviewModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-gray-900 border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
+  <!-- MODAL: RECORD TRANSACTION & CORPORATE ACTIONS -->
+  <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <i data-lucide="calendar-check" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Month-End Valuation Review</h3>
-            <p class="text-[11px] text-slate-500 dark:text-gray-400" id="monthEndModalSubtitle">Provide closing prices as of month-end date</p>
-          </div>
-        </div>
-        <button onclick="closeMonthEndModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Transaction</h3>
+        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-600 dark:text-gray-300">
-        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
-      </p>
-
-      <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
-
-      <div class="bg-slate-50 dark:bg-gray-950 p-3 rounded-2xl border border-slate-200 dark:border-gray-800 text-xs space-y-1.5">
-        <div class="flex justify-between text-slate-500 dark:text-gray-400">
-          <span>Total Stock Value:</span>
-          <b id="meModalStockVal" class="text-slate-900 dark:text-white font-bold tabular-nums">₹0.00</b>
+      <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="space-y-3.5 text-xs">
+        <input type="hidden" id="txEditingId" value="">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Date</label>
+            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Account</label>
+            <select id="txAccount" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+              <option value="Me">Me</option>
+              <option value="Wife">Wife</option>
+              <option value="Mom">Mom</option>
+              <option value="Brother">Brother</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1">Type</label>
+            <select id="txType" onchange="toggleFormFields()" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+              <option value="BUY">BUY</option>
+              <option value="SELL">SELL</option>
+              <option value="DEPOSIT">DEPOSIT</option>
+              <option value="WITHDRAWAL">WITHDRAWAL</option>
+              <option value="FEES">FEES</option>
+              <option value="BONUS">BONUS (Corporate Action)</option>
+              <option value="SPLIT">SPLIT (Corporate Action)</option>
+              <option value="DEMERGER">DEMERGER (Corporate Action)</option>
+            </select>
+          </div>
         </div>
-        <div class="flex justify-between text-slate-500 dark:text-gray-400">
-          <span>Cash Balance + Net Capital:</span>
-          <span class="text-slate-700 dark:text-gray-300 tabular-nums"><b id="meModalCash">₹0</b> / <b id="meModalNetCap">₹0</b></span>
-        </div>
-        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-gray-800 font-bold text-slate-900 dark:text-white">
-          <span>Computed Month-End Net Worth &amp; Profit:</span>
-          <span class="text-emerald-600 dark:text-emerald-400 tabular-nums"><span id="meModalPortVal">₹0.00</span> (<span id="meModalProfit">₹0.00</span>)</span>
-        </div>
-      </div>
 
-      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-gray-800">
-        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-semibold">Remind Me Later</button>
-        <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs">Confirm &amp; Record Month-End</button>
-      </div>
+        <div id="stockFields" class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1" id="txStockLabel">Stock Ticker</label>
+            <input 
+              type="text" 
+              id="txStock" 
+              list="stockSuggestionsList" 
+              placeholder="e.g. RELIANCE" 
+              autocomplete="off"
+              class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
+            >
+            <datalist id="stockSuggestionsList"></datalist>
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1" id="txQtyLabel">Quantity / New Factor</label>
+            <input type="number" step="any" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
+          </div>
+          <div>
+            <label class="block text-slate-500 dark:text-gray-400 mb-1" id="txPriceLabel">Price / Old Factor</label>
+            <input type="number" step="any" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
+          </div>
+        </div>
+
+        <div id="txAmountFieldGroup">
+          <label class="block text-slate-500 dark:text-gray-400 mb-1">Total Amount (₹)</label>
+          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white mono-font">
+        </div>
+
+        <div>
+          <label class="block text-slate-500 dark:text-gray-400 mb-1">Remarks</label>
+          <input type="text" id="txRemarks" placeholder="Note / Reference / Corporate Action Details" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
+        </div>
+
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- MODAL: MANUAL LTP PRICES ENTRY MODAL -->
+  <!-- MODAL: MANUAL LTP ENTRY -->
   <div id="livePricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1022,7 +1021,7 @@
       </div>
 
       <p class="text-xs text-slate-600 dark:text-gray-300">
-        Enter the latest closing/market price for your active holdings. Values sync across devices via the <b>Prices</b> sheet.
+        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet.
       </p>
 
       <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
@@ -1034,7 +1033,7 @@
     </div>
   </div>
 
-  <!-- MODAL: SET TARGET MILESTONE -->
+  <!-- MODAL: SET TARGET MILESTONES -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1095,90 +1094,10 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD TRANSACTION -->
-  <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
-        <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Transaction</h3>
-        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="space-y-3.5 text-xs">
-        <input type="hidden" id="txEditingId" value="">
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Date</label>
-            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Account</label>
-            <select id="txAccount" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
-              <option value="Me">Me</option>
-              <option value="Wife">Wife</option>
-              <option value="Mom">Mom</option>
-              <option value="Brother">Brother</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Type</label>
-            <select id="txType" onchange="toggleFormFields()" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
-              <option value="DEPOSIT">DEPOSIT</option>
-              <option value="WITHDRAWAL">WITHDRAWAL</option>
-              <option value="FEES">FEES</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="stockFields" class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Stock Ticker</label>
-            <input 
-              type="text" 
-              id="txStock" 
-              list="stockSuggestionsList" 
-              placeholder="e.g. RELIANCE" 
-              autocomplete="off"
-              class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
-            >
-            <datalist id="stockSuggestionsList"></datalist>
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Quantity</label>
-            <input type="number" step="1" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-gray-400 mb-1">Price / Share (₹)</label>
-            <input type="number" step="0.05" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-slate-500 dark:text-gray-400 mb-1">Total Amount (₹)</label>
-          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white mono-font">
-        </div>
-
-        <div>
-          <label class="block text-slate-500 dark:text-gray-400 mb-1">Remarks</label>
-          <input type="text" id="txRemarks" placeholder="Note / Reference" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white">
-        </div>
-
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-gray-800">
-          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: PLATFORM SETTINGS (EXPANDABLE MULTI-TAB COCKPIT) -->
+  <!-- MODAL: PLATFORM SETTINGS & CASH CALIBRATION -->
   <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       
-      <!-- Modal Header -->
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-200 flex items-center justify-center shadow-2xs">
@@ -1194,7 +1113,6 @@
         </button>
       </div>
 
-      <!-- Settings Sub-Tabs Navigation -->
       <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2">
         <button onclick="switchSettingsTab('security')" id="settingsTabBtn-security" class="px-3 py-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
           <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
@@ -1206,7 +1124,7 @@
         </button>
       </div>
 
-      <!-- TAB 1: PIN MANAGEMENT -->
+      <!-- Tab 1: PIN Security -->
       <div id="settingsTabContent-security" class="space-y-4 text-xs">
         <div class="p-3 bg-slate-50 dark:bg-gray-950 rounded-2xl border border-slate-200 dark:border-gray-800 space-y-1">
           <span class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
@@ -1240,7 +1158,7 @@
         </div>
       </div>
 
-      <!-- TAB 2: CASH CALIBRATION (stored in the Cash_Calibration sheet) -->
+      <!-- Tab 2: Cash Calibration -->
       <div id="settingsTabContent-cashCalibrate" class="space-y-4 text-xs hidden">
         <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-500/30 space-y-1">
           <span class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5">
@@ -1248,13 +1166,11 @@
             <span>Baseline Cash Calibration Engine</span>
           </span>
           <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
-            Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. The baseline is saved to the <b>Cash_Calibration</b> sheet (synced across devices) and is used <b>only</b> for the per-account "Cash Available" badge in Active Holdings. Combined cash, KPI cards, ledgers and history are never affected.
+            Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. Saved to the <b>Cash_Calibration</b> sheet.
           </p>
         </div>
 
-        <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1" id="cashCalibrateRows">
-          <!-- Dynamically populated for Me, Wife, Mom, Brother -->
-        </div>
+        <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1" id="cashCalibrateRows"></div>
 
         <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-gray-800">
           <button type="button" onclick="closeSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
@@ -1265,2998 +1181,58 @@
     </div>
   </div>
 
-  <script>
-    const THEME_KEY = 'MYFOLIOAI_THEME';
-    const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
-    const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
-    const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
-    const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
-    const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
-    const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
-    const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
-    const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
-    const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
-    const KPI_MASK_STATES_KEY = 'MYFOLIOAI_KPI_MASK_STATES';
-    // NEW: dedicated local cache for the Cash_Calibration sheet data
-    const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
-    const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
-
-    let transactions = [];
-    let chartHistoryRecords = [];
-    try {
-      chartHistoryRecords = JSON.parse(localStorage.getItem(CHART_HISTORY_KEY)) || [];
-    } catch (e) {
-      chartHistoryRecords = [];
-    }
-
-    let stockMasterList = [];
-    try {
-      stockMasterList = JSON.parse(localStorage.getItem(STOCK_MASTER_KEY)) || [];
-    } catch (e) {
-      stockMasterList = [];
-    }
-
-    let milestoneGoals = {
-      netWorth: 10000000,
-      netInvested: 5000000,
-      lifetimePnL: 2500000,
-      currentFyPnL: 1000000,
-      xirr: 25
-    };
-    try {
-      const localGoals = JSON.parse(localStorage.getItem(GOALS_STORAGE_KEY));
-      if (localGoals) Object.assign(milestoneGoals, localGoals);
-    } catch (e) {}
-
-    let appSettings = {
-      pinHash: '',
-      taxToggle_Me: 'false',
-      taxToggle_Wife: 'true',
-      taxToggle_Mom: 'true',
-      taxToggle_Brother: 'false'
-    };
-    try {
-      const localSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
-      if (localSettings) {
-        Object.assign(appSettings, localSettings);
-        // Cash calibration no longer lives in Settings: drop any legacy / corrupted value
-        delete appSettings.cashOffsets;
-      }
-    } catch (e) {}
-
-    // ---- CASH CALIBRATION STATE (source of truth: Cash_Calibration sheet) ----
-    // offsets : { Me: 0, Wife: 0, Mom: 0, Brother: 0 }
-    // records : { Me: { date, calibratedCash, rawTaggedCash, offset }, ... }
-    let cashCalibration = { offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 }, records: {} };
-    try {
-      const localCalib = JSON.parse(localStorage.getItem(CASH_CALIB_KEY));
-      if (localCalib && typeof localCalib === 'object') {
-        if (localCalib.offsets && typeof localCalib.offsets === 'object') {
-          Object.assign(cashCalibration.offsets, localCalib.offsets);
-        }
-        if (localCalib.records && typeof localCalib.records === 'object') {
-          cashCalibration.records = localCalib.records;
-        }
-      }
-    } catch (e) {}
-
-    function getCalibOffset(acct) {
-      const v = Number(cashCalibration.offsets && cashCalibration.offsets[acct]);
-      return isNaN(v) ? 0 : v;
-    }
-
-    let taxPaidChallans = {};
-    try {
-      taxPaidChallans = JSON.parse(localStorage.getItem(TAX_PAID_KEY)) || {};
-    } catch (e) {
-      taxPaidChallans = {};
-    }
-
-    // Default privacy mask state: all 4 cards start masked on each session entry
-    let kpiMaskStates = {
-      netWorth: true,
-      netInvested: true,
-      lifetimePnL: true,
-      currentFy: true
-    };
-
-    function resetKpiMasksToDefault() {
-      kpiMaskStates = {
-        netWorth: true,
-        netInvested: true,
-        lifetimePnL: true,
-        currentFy: true
-      };
-      applyAllKpiMasks();
-    }
-
-    // Point 2: 12-Row Unified Pagination across all 3 ledgers
-    const PAGE_SIZE = 12;
-    let closedTradesCurrentPage = 1;
-    let ledgerCurrentPage = 1;
-    let bankLedgerCurrentPage = 1;
-    let ledgerSearchTerm = '';
-
-    // Point 4: Account Filter inside Active Holdings tab ('ALL' = Combined default)
-    let currentHoldingsAccountFilter = 'ALL';
-
-    let enteredPin = '';
-    let isSettingUpNewPin = false;
-    let tempPinForSetup = '';
-
-    let currentEditingGoalKey = null;
-    let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
-    let multiChartInstance = null;
-    let currentChartRange = 'TTM';
-    let currentTaxAccountFilter = 'Me';
-
-    let holdingsSort = { key: 'currentVal', dir: 'desc' };
-    let closedSort = { key: 'netPnL', dir: 'desc' };
-
-    let savedManualPrices = {};
-    try {
-      savedManualPrices = JSON.parse(localStorage.getItem(MANUAL_PRICES_KEY)) || {};
-    } catch (e) {
-      savedManualPrices = {};
-    }
-
-    let marketPrices = Object.assign({
-      'RELIANCE': { ltp: 2980.50, prevClose: 2950.00 },
-      'TCS': { ltp: 4210.00, prevClose: 4185.00 },
-      'HDFCBANK': { ltp: 1680.25, prevClose: 1675.00 },
-      'INFY': { ltp: 1895.00, prevClose: 1910.00 }
-    }, savedManualPrices);
-
-    /* ---------------- Cryptographic Hash ---------------- */
-    async function sha256Hex(str) {
-      const buf = new TextEncoder().encode(str);
-      const digest = await crypto.subtle.digest('SHA-256', buf);
-      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    /* ---------------- POINT 5: PHYSICAL KEYBOARD INPUT LISTENER ---------------- */
-    function initKeyboardPinListener() {
-      window.addEventListener('keydown', (e) => {
-        const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
-        if (isSessionUnlocked) return; // Do not intercept if unlocked
-
-        // Number keys 0 - 9
-        if (e.key >= '0' && e.key <= '9') {
-          e.preventDefault();
-          pressPinDigit(e.key);
-        } else if (e.key === 'Backspace') {
-          e.preventDefault();
-          backspacePinDigit();
-        } else if (e.key === 'Escape' || e.key === 'Delete') {
-          e.preventDefault();
-          clearPinInput();
-        }
-      });
-    }
-
-    /* ---------------- GATEKEEPER & 10-MIN AUTO-LOCK ENGINE ---------------- */
-    let lastActiveTimestamp = Date.now();
-    const AUTO_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-
-    function resetActivityTimer() {
-      lastActiveTimestamp = Date.now();
-    }
-
-    function initAutoLockEngine() {
-      ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
-        window.addEventListener(evt, resetActivityTimer, { passive: true });
-      });
-
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true') {
-          if (Date.now() - lastActiveTimestamp >= AUTO_LOCK_TIMEOUT_MS) {
-            lockApplicationNow();
-          }
-        }
-      });
-
-      setInterval(() => {
-        if (sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true') {
-          if (Date.now() - lastActiveTimestamp >= AUTO_LOCK_TIMEOUT_MS) {
-            lockApplicationNow();
-          }
-        }
-      }, 30000);
-    }
-
-    function checkGatekeeperState() {
-      const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
-      const overlay = document.getElementById('pinGatekeeperOverlay');
-      const root = document.getElementById('app-root');
-
-      if (isSessionUnlocked) {
-        overlay.classList.add('hidden');
-        root.style.display = 'flex';
-        checkPendingMonthEndSnapshot();
-      } else {
-        root.style.display = 'none';
-        overlay.classList.remove('hidden');
-        renderPinUI();
-      }
-    }
-
-    function renderPinUI() {
-      const title = document.getElementById('pinTitle');
-      const subtitle = document.getElementById('pinSubtitle');
-
-      if (!appSettings.pinHash) {
-        isSettingUpNewPin = true;
-        title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
-        subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio';
-      } else {
-        isSettingUpNewPin = false;
-        title.innerText = 'Security Gatekeeper';
-        subtitle.innerText = 'Enter your PIN to unlock';
-      }
-      updatePinDots();
-    }
-
-    function updatePinDots() {
-      for (let i = 0; i < 4; i++) {
-        const dot = document.getElementById(`pinDot-${i}`);
-        if (i < enteredPin.length) {
-          dot.className = 'w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-500 scale-110 transition-all duration-150';
-        } else {
-          dot.className = 'w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150';
-        }
-      }
-    }
-
-    async function pressPinDigit(digit) {
-      if (enteredPin.length >= 4) return;
-      enteredPin += digit;
-      updatePinDots();
-
-      if (enteredPin.length === 4) {
-        await handlePinVerification();
-      }
-    }
-
-    function backspacePinDigit() {
-      if (enteredPin.length > 0) {
-        enteredPin = enteredPin.slice(0, -1);
-        updatePinDots();
-        hidePinError();
-      }
-    }
-
-    function clearPinInput() {
-      enteredPin = '';
-      updatePinDots();
-      hidePinError();
-    }
-
-    function showPinError(msg) {
-      const err = document.getElementById('pinStatusMsg');
-      const card = document.getElementById('pinCard');
-      err.innerText = msg;
-      err.classList.remove('opacity-0');
-      card.classList.add('shake-animation');
-      setTimeout(() => {
-        card.classList.remove('shake-animation');
-      }, 400);
-      enteredPin = '';
-      updatePinDots();
-    }
-
-    function hidePinError() {
-      const err = document.getElementById('pinStatusMsg');
-      err.classList.add('opacity-0');
-    }
-
-    async function handlePinVerification() {
-      if (isSettingUpNewPin) {
-        if (!tempPinForSetup) {
-          tempPinForSetup = enteredPin;
-          enteredPin = '';
-          renderPinUI();
-          return;
-        } else {
-          if (enteredPin === tempPinForSetup) {
-            const hash = await sha256Hex(enteredPin);
-            appSettings.pinHash = hash;
-            localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-            
-            if (cloudScriptUrl) {
-              try {
-                fetch(cloudScriptUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                  body: JSON.stringify({ action: "setPinHash", pinHash: hash })
-                });
-              } catch (e) {}
-            }
-
-            tempPinForSetup = '';
-            enteredPin = '';
-            sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
-            resetActivityTimer();
-            resetKpiMasksToDefault();
-            checkGatekeeperState();
-            recalculateAndRender();
-            return;
-          } else {
-            showPinError('PINs do not match. Restarting setup.');
-            tempPinForSetup = '';
-            enteredPin = '';
-            setTimeout(renderPinUI, 800);
-            return;
-          }
-        }
-      }
-
-      const candidateHash = await sha256Hex(enteredPin);
-      if (candidateHash === appSettings.pinHash) {
-        sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
-        resetActivityTimer();
-        enteredPin = '';
-        resetKpiMasksToDefault();
-        checkGatekeeperState();
-        recalculateAndRender();
-      } else {
-        showPinError('Incorrect PIN. Please re-enter.');
-      }
-    }
-
-    function lockApplicationNow() {
-      sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
-      enteredPin = '';
-      resetKpiMasksToDefault();
-      checkGatekeeperState();
-    }
-
-    /* ---------------- POINT 1: INDEPENDENT GAUSSIAN BLUR MASK CONTROLLER ---------------- */
-    function toggleSingleKpiMask(cardKey) {
-      if (kpiMaskStates.hasOwnProperty(cardKey)) {
-        kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
-        updateSingleMaskUI(cardKey);
-      }
-    }
-
-    function updateSingleMaskUI(cardKey) {
-      const isMasked = kpiMaskStates[cardKey];
-      const icon = document.getElementById(`maskToggleIcon-${cardKey}`);
-      if (icon) {
-        icon.setAttribute('data-lucide', isMasked ? 'eye-off' : 'eye');
-      }
-
-      const targetsMap = {
-        netWorth: ['kpiNetWorth', 'subPortfolioVal', 'subCashVal', 'kpiNetWorthRem'],
-        netInvested: ['kpiNetInvested', 'kpiNetInvestedRem'],
-        lifetimePnL: ['kpiLifetimePnL', 'kpiLifetimeTargetRem'],
-        currentFy: ['kpiCurrentFyPnL', 'kpiCurrentFyUnrealized', 'kpiCurrentFyRem']
-      };
-
-      (targetsMap[cardKey] || []).forEach(elemId => {
-        const el = document.getElementById(elemId);
-        if (el) {
-          if (isMasked) el.classList.add('privacy-blurred');
-          else el.classList.remove('privacy-blurred');
-        }
-      });
-
-      lucide.createIcons();
-    }
-
-    function applyAllKpiMasks() {
-      ['netWorth', 'netInvested', 'lifetimePnL', 'currentFy'].forEach(key => updateSingleMaskUI(key));
-    }
-
-    /* ---------------- PERSISTENT FORMATTED TIMESTAMP (dd-mm-yy, hh:mm) ---------------- */
-    function recordPriceUpdateTimestamp(customDate) {
-      const d = customDate || new Date();
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = String(d.getFullYear()).slice(-2);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const mins = String(d.getMinutes()).padStart(2, '0');
-
-      const formatted = `${day}-${month}-${year}, ${hours}:${mins}`;
-      localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
-      renderLastPriceTimestamp();
-    }
-
-    function renderLastPriceTimestamp() {
-      const val = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
-      const el = document.getElementById('lastSyncedTime');
-      if (el) {
-        el.innerText = val || 'Not refreshed yet';
-      }
-    }
-
-    /* ---------------- Compact Indian Currency Formatter ---------------- */
-    function formatCompactIndian(val) {
-      if (val === null || isNaN(val)) return '₹0';
-      const absVal = Math.abs(val);
-      const isNeg = val < 0;
-      let formatted = '';
-
-      if (absVal >= 10000000) {
-        formatted = (absVal / 10000000).toFixed(2) + ' Cr';
-      } else if (absVal >= 100000) {
-        formatted = (absVal / 100000).toFixed(2) + ' L';
-      } else {
-        formatted = formatINR(absVal, 0).replace('₹', '');
-      }
-
-      return (isNeg ? '-₹' : '₹') + formatted;
-    }
-
-    /* ---------------- Theme Engine ---------------- */
-    function initTheme() {
-      const saved = localStorage.getItem(THEME_KEY);
-      const isDark = saved ? saved === 'dark' : true;
-      applyTheme(isDark);
-    }
-
-    function toggleTheme() {
-      const isDark = document.documentElement.classList.contains('dark');
-      applyTheme(!isDark);
-    }
-
-    function applyTheme(isDark) {
-      const root = document.documentElement;
-      const themeIcon = document.getElementById('themeIcon');
-
-      if (isDark) {
-        root.classList.add('dark');
-        localStorage.setItem(THEME_KEY, 'dark');
-        if (themeIcon) {
-          themeIcon.setAttribute('data-lucide', 'moon');
-          themeIcon.className = 'w-4 h-4 text-indigo-400';
-        }
-      } else {
-        root.classList.remove('dark');
-        localStorage.setItem(THEME_KEY, 'light');
-        if (themeIcon) {
-          themeIcon.setAttribute('data-lucide', 'sun');
-          themeIcon.className = 'w-4 h-4 text-amber-500';
-        }
-      }
-      lucide.createIcons();
-
-      if (multiChartInstance) {
-        renderChart(computeEngine());
-      }
-    }
-
-    /* ---------------- Dropdown Controller ---------------- */
-    function toggleTxDropdown(e) {
-      if (e) e.stopPropagation();
-      const menu = document.getElementById('txDropdownMenu');
-      const chevron = document.getElementById('txDropdownChevron');
-      const isHidden = menu.classList.contains('hidden');
-      
-      if (isHidden) {
-        menu.classList.remove('hidden');
-        if (chevron) chevron.classList.add('rotate-180');
-      } else {
-        menu.classList.add('hidden');
-        if (chevron) chevron.classList.remove('rotate-180');
-      }
-    }
-
-    function selectDropdownPreset(type) {
-      const menu = document.getElementById('txDropdownMenu');
-      const chevron = document.getElementById('txDropdownChevron');
-      if (menu) menu.classList.add('hidden');
-      if (chevron) chevron.classList.remove('rotate-180');
-      openPresetModal(type);
-    }
-
-    window.addEventListener('click', function(e) {
-      const dropdown = document.getElementById('txDropdownContainer');
-      const menu = document.getElementById('txDropdownMenu');
-      const chevron = document.getElementById('txDropdownChevron');
-      if (dropdown && !dropdown.contains(e.target) && menu && !menu.classList.contains('hidden')) {
-        menu.classList.add('hidden');
-        if (chevron) chevron.classList.remove('rotate-180');
-      }
-    });
-
-    /* ---------------- Milestone Goals Modal Engine ---------------- */
-    const GOAL_CONFIGS = {
-      netWorth: { title: 'Net Worth Target', desc: 'Set your total portfolio net worth target milestone.', prefix: '₹', isCurrency: true },
-      netInvested: { title: 'Net Invested Target', desc: 'Set your target total contributed capital corpus.', prefix: '₹', isCurrency: true },
-      lifetimePnL: { title: 'Lifetime Profit Target', desc: 'Set your all-time cumulative portfolio profit target.', prefix: '₹', isCurrency: true },
-      currentFyPnL: { title: 'Current FY Realized Profit Target', desc: 'Set your strict FIFO realized profit target for the current financial year.', prefix: '₹', isCurrency: true },
-      xirr: { title: 'Annualized XIRR Target', desc: 'Set your target annualized cash-flow hurdle percentage.', prefix: '%', isCurrency: false }
-    };
-
-    function openGoalModal(key) {
-      const config = GOAL_CONFIGS[key];
-      if (!config) return;
-      currentEditingGoalKey = key;
-
-      document.getElementById('goalModalTitle').innerText = config.title;
-      document.getElementById('goalModalDesc').innerText = config.desc;
-      document.getElementById('goalInputPrefix').innerText = config.prefix;
-      document.getElementById('goalModalInput').value = milestoneGoals[key] || 0;
-
-      document.getElementById('goalModal').classList.remove('hidden');
-    }
-
-    function closeGoalModal() {
-      document.getElementById('goalModal').classList.add('hidden');
-      currentEditingGoalKey = null;
-    }
-
-    async function saveGoalMilestone() {
-      if (!currentEditingGoalKey) return;
-      const val = Number(document.getElementById('goalModalInput').value);
-      if (isNaN(val) || val <= 0) {
-        return;
-      }
-
-      milestoneGoals[currentEditingGoalKey] = val;
-      localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
-
-      if (cloudScriptUrl) {
-        try {
-          fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "saveGoals",
-              goals: { [currentEditingGoalKey]: val }
-            })
-          });
-        } catch (e) {
-          console.error('Failed to sync goals to sheet:', e);
-        }
-      }
-
-      closeGoalModal();
-      recalculateAndRender();
-    }
-
-    /* ---------------- Autocomplete Engine ---------------- */
-    function updateStockAutocompleteOptions() {
-      const datalist = document.getElementById('stockSuggestionsList');
-      if (!datalist) return;
-      datalist.innerHTML = '';
-
-      const seen = new Set();
-
-      stockMasterList.forEach(item => {
-        const sym = (item.symbol || '').toUpperCase().trim();
-        if (sym && !seen.has(sym)) {
-          seen.add(sym);
-          const opt = document.createElement('option');
-          opt.value = sym;
-          opt.label = item.name ? `${item.name}` : sym;
-          datalist.appendChild(opt);
-        }
-      });
-
-      transactions.forEach(t => {
-        if (t.stock) {
-          const sym = t.stock.toUpperCase().trim();
-          if (sym && !seen.has(sym)) {
-            seen.add(sym);
-            const opt = document.createElement('option');
-            opt.value = sym;
-            datalist.appendChild(opt);
-          }
-        }
-      });
-    }
-
-    /* ---------------- Price Persistence ---------------- */
-    async function persistManualPrice(symbol, price) {
-      if (!savedManualPrices) savedManualPrices = {};
-      savedManualPrices[symbol] = { ltp: price, prevClose: price };
-      marketPrices[symbol] = { ltp: price, prevClose: price };
-      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-      recordPriceUpdateTimestamp();
-
-      if (cloudScriptUrl) {
-        try {
-          await fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "savePrices",
-              prices: { [symbol]: { ltp: price, prevClose: price } }
-            })
-          });
-        } catch (e) {
-          console.error('Failed to sync price to sheet:', e);
-        }
-      }
-    }
-
-    function init() {
-      initTheme();
-      updateSyncUI();
-      renderLastPriceTimestamp();
-      initAutoLockEngine();
-      initKeyboardPinListener(); // Point 5
-      resetKpiMasksToDefault(); // Always start in masked state
-
-      const savedTx = localStorage.getItem(STORAGE_KEY);
-      if (savedTx) {
-        try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
-      }
-
-      updateStockAutocompleteOptions();
-      checkGatekeeperState();
-
-      if (cloudScriptUrl) {
-        fetchFromGoogleSheet();
-      } else {
-        recalculateAndRender();
-      }
-    }
-
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-    }
-
-    function openSyncModal() {
-      document.getElementById('scriptUrlInput').value = cloudScriptUrl;
-      document.getElementById('syncModal').classList.remove('hidden');
-    }
-
-    function closeSyncModal() { 
-      document.getElementById('syncModal').classList.add('hidden'); 
-    }
-
-    function updateSyncUI() {
-      const btnText = document.getElementById('cloudSyncText');
-      const dot = document.getElementById('syncDot');
-      const statusText = document.getElementById('syncStatus');
-
-      if (cloudScriptUrl) {
-        btnText.innerText = 'Sheet Linked';
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse';
-        statusText.innerText = 'Synced with Google Sheet (MyFolio_DB)';
-      } else {
-        btnText.innerText = 'Link Sheet';
-        dot.className = 'w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400';
-        statusText.innerText = 'Operating locally. Connect Google Sheet for cloud sync.';
-      }
-    }
-
-    async function saveAndFetchCloud() {
-      const url = document.getElementById('scriptUrlInput').value.trim();
-      if (!url) return;
-      cloudScriptUrl = url;
-      localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
-      closeSyncModal();
-      updateSyncUI();
-      await fetchFromGoogleSheet();
-    }
-
-    function disconnectCloudSync() {
-      cloudScriptUrl = '';
-      localStorage.removeItem(SCRIPT_URL_KEY);
-      closeSyncModal();
-      updateSyncUI();
-    }
-
-    async function fetchFromGoogleSheet() {
-      if (!cloudScriptUrl) return;
-      const statusText = document.getElementById('syncStatus');
-      statusText.innerText = 'Pulling rows from Google Sheet...';
-
-      try {
-        const res = await fetch(`${cloudScriptUrl}?action=getAll`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
-        if (data.settings && typeof data.settings === 'object') {
-          // Never let a stray "cashOffsets" row in the Settings sheet overwrite calibration data
-          const cleanSettings = Object.assign({}, data.settings);
-          delete cleanSettings.cashOffsets;
-          Object.assign(appSettings, cleanSettings);
-          delete appSettings.cashOffsets;
-          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-          checkGatekeeperState();
-        }
-
-        // NEW: Cash calibration now comes from the dedicated Cash_Calibration sheet
-        if (data.cashCalibration && typeof data.cashCalibration === 'object') {
-          const sheetOffsets = data.cashCalibration.offsets || {};
-          const sheetRecords = data.cashCalibration.records || {};
-          const newOffsets = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
-          Object.keys(sheetOffsets).forEach(acct => {
-            const n = Number(sheetOffsets[acct]);
-            newOffsets[acct] = isNaN(n) ? 0 : n;
-          });
-          cashCalibration = { offsets: newOffsets, records: sheetRecords };
-          localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
-        }
-
-        if (data.goals && typeof data.goals === 'object') {
-          Object.assign(milestoneGoals, data.goals);
-          localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
-        }
-
-        if (data.stockMaster && Array.isArray(data.stockMaster)) {
-          stockMasterList = data.stockMaster;
-          localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
-          updateStockAutocompleteOptions();
-        }
-
-        if (data.customPrices && typeof data.customPrices === 'object') {
-          Object.assign(savedManualPrices, data.customPrices);
-          Object.assign(marketPrices, data.customPrices);
-          localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-        }
-
-        if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
-          chartHistoryRecords = data.chartHistory;
-          localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
-        }
-
-        if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
-          transactions = data.ledger.map((item, idx) => ({
-            id: (Date.now() + idx).toString(),
-            date: item.date,
-            account: item.account || 'Unassigned',
-            type: item.type,
-            stock: item.stock,
-            qty: Number(item.qty || 0),
-            price: Number(item.price || 0),
-            amount: Number(item.amount || 0),
-            remarks: item.remarks || ''
-          }));
-          saveToStorage();
-          updateStockAutocompleteOptions();
-        }
-
-        recalculateAndRender();
-        statusText.innerText = `Synced ${transactions.length} trades, ${chartHistoryRecords.length} graph checkpoints & master tickers.`;
-      } catch (err) {
-        console.error('Fetch error:', err);
-        statusText.innerText = 'Could not load from Google Sheet. Verify your Web App deployment URL.';
-      }
-    }
-
-    async function appendToGoogleSheet(tx) {
-      if (!cloudScriptUrl) return;
-      try {
-        await fetch(cloudScriptUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(tx)
-        });
-      } catch (e) {
-        console.error('Failed to append transaction to sheet:', e);
-      }
-    }
-
-    function formatINR(val, decimals = 2) {
-      if (val === null || isNaN(val)) return '₹0.00';
-      const isNegative = val < 0;
-      const absVal = Math.abs(val);
-      const parts = absVal.toFixed(decimals).split('.');
-      let integerPart = parts[0];
-      const decimalPart = parts[1] ? '.' + parts[1] : '';
-
-      let lastThree = integerPart.substring(integerPart.length - 3);
-      let otherNumbers = integerPart.substring(0, integerPart.length - 3);
-      if (otherNumbers !== '') lastThree = ',' + lastThree;
-      const formatted = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
-      return (isNegative ? '-₹' : '₹') + formatted + decimalPart;
-    }
-
-    function getFinancialYear(dateStr) {
-      const d = new Date(dateStr);
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1;
-      return month >= 4 ? `FY ${year}-${String(year + 1).slice(-2)}` : `FY ${year - 1}-${String(year).slice(-2)}`;
-    }
-
-    function getTaxQuarter(dateStr) {
-      const d = new Date(dateStr);
-      const m = d.getMonth() + 1;
-      const day = d.getDate();
-
-      if ((m === 4) || (m === 5) || (m === 6 && day <= 15)) return 'Q1';
-      if ((m === 6 && day > 15) || (m === 7) || (m === 8) || (m === 9 && day <= 15)) return 'Q2';
-      if ((m === 9 && day > 15) || (m === 10) || (m === 11) || (m === 12 && day <= 15)) return 'Q3';
-      return 'Q4';
-    }
-
-    /* ---------------- MAIN CALCULATION ENGINE ---------------- */
-    function computeEngine() {
-      const sortedTx = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      let cashBalance = 0;
-      let totalDeposits = 0;
-      let totalWithdrawals = 0;
-
-      // Track liquid cash balances per account (Point 4)
-      const accountCashMap = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
-
-      const inventory = {};
-      const fyRealized = {};
-      const closedTradesMap = {};
-
-      const ledgerEntries = [];
-      const bankEntries = [];
-      const taxClosedLots = [];
-
-      sortedTx.forEach(tx => {
-        const fy = getFinancialYear(tx.date);
-        const acct = tx.account || 'Unassigned';
-        const invKey = `${acct}__${tx.stock}`;
-
-        if (!fyRealized[fy]) fyRealized[fy] = { sellProceeds: 0, costBasis: 0, gain: 0 };
-        if (!accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] = 0;
-
-        const amt = Number(tx.amount || 0);
-        let cashIn = 0;
-        let cashOut = 0;
-
-        switch (tx.type) {
-          case 'DEPOSIT':
-            cashIn = amt;
-            cashBalance += amt;
-            if (accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] += amt;
-            totalDeposits += amt;
-            bankEntries.push({ date: tx.date, account: acct, type: 'DEPOSIT', deposit: amt, withdrawal: 0, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
-            break;
-
-          case 'WITHDRAWAL':
-            cashOut = amt;
-            cashBalance -= amt;
-            if (accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] -= amt;
-            totalWithdrawals += amt;
-            bankEntries.push({ date: tx.date, account: acct, type: 'WITHDRAWAL', deposit: 0, withdrawal: amt, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
-            break;
-
-          case 'FEES':
-            cashOut = amt;
-            cashBalance -= amt;
-            if (accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] -= amt;
-            break;
-
-          case 'BUY':
-            cashOut = amt;
-            cashBalance -= amt;
-            if (accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] -= amt;
-            if (!inventory[invKey]) inventory[invKey] = [];
-            inventory[invKey].push({ 
-              qty: Number(tx.qty), 
-              price: Number(tx.price), 
-              date: tx.date, 
-              account: acct, 
-              stock: tx.stock 
-            });
-            break;
-
-          case 'SELL': {
-            cashIn = amt;
-            cashBalance += amt;
-            if (accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] += amt;
-            let qtyToSell = Number(tx.qty);
-            const sellPrice = Number(tx.price);
-            let costOfSoldShares = 0;
-
-            if (inventory[invKey]) {
-              while (qtyToSell > 0 && inventory[invKey].length > 0) {
-                const oldestLot = inventory[invKey][0];
-                const consumedQty = Math.min(qtyToSell, oldestLot.qty);
-                const lotCost = consumedQty * oldestLot.price;
-                const lotProceeds = consumedQty * sellPrice;
-                const lotGain = lotProceeds - lotCost;
-
-                const buyD = new Date(oldestLot.date);
-                const sellD = new Date(tx.date);
-                const diffTime = Math.abs(sellD - buyD);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const isLtcg = diffDays > 365;
-
-                taxClosedLots.push({
-                  sellDate: tx.date,
-                  buyDate: oldestLot.date,
-                  account: acct,
-                  stock: tx.stock,
-                  qty: consumedQty,
-                  buyPrice: oldestLot.price,
-                  sellPrice: sellPrice,
-                  costBasis: lotCost,
-                  proceeds: lotProceeds,
-                  gain: lotGain,
-                  days: diffDays,
-                  isLtcg: isLtcg,
-                  fy: fy,
-                  quarter: getTaxQuarter(tx.date)
-                });
-
-                costOfSoldShares += lotCost;
-                qtyToSell -= consumedQty;
-                oldestLot.qty -= consumedQty;
-
-                if (oldestLot.qty <= 0) {
-                  inventory[invKey].shift();
-                }
-              }
-            }
-
-            const realizedProceeds = Number(tx.qty) * sellPrice;
-            const realizedGain = realizedProceeds - costOfSoldShares;
-
-            fyRealized[fy].sellProceeds += realizedProceeds;
-            fyRealized[fy].costBasis += costOfSoldShares;
-            fyRealized[fy].gain += realizedGain;
-
-            if (!closedTradesMap[tx.stock]) {
-              closedTradesMap[tx.stock] = { stock: tx.stock, totalQty: 0, totalCostBasis: 0, totalProceeds: 0, netPnL: 0 };
-            }
-            closedTradesMap[tx.stock].totalQty += Number(tx.qty);
-            closedTradesMap[tx.stock].totalCostBasis += costOfSoldShares;
-            closedTradesMap[tx.stock].totalProceeds += realizedProceeds;
-            closedTradesMap[tx.stock].netPnL += realizedGain;
-            break;
-          }
-        }
-
-        ledgerEntries.push({
-          id: tx.id,
-          date: tx.date,
-          account: acct,
-          type: tx.type,
-          stock: tx.stock,
-          qty: tx.qty,
-          price: tx.price,
-          cashOut,
-          cashIn,
-          runningCash: cashBalance,
-          remarks: tx.remarks
-        });
-      });
-
-      const openLots = [];
-      const stockAggregateMap = {};
-
-      Object.keys(inventory).forEach(key => {
-        const lots = inventory[key];
-        lots.forEach(lot => {
-          if (lot.qty > 0) {
-            openLots.push(lot);
-            if (!stockAggregateMap[lot.stock]) {
-              stockAggregateMap[lot.stock] = { totalQty: 0, totalCost: 0 };
-            }
-            stockAggregateMap[lot.stock].totalQty += lot.qty;
-            stockAggregateMap[lot.stock].totalCost += (lot.qty * lot.price);
-          }
-        });
-      });
-
-      let totalPortfolioVal = 0;
-      let totalPortfolioInvested = 0;
-
-      Object.keys(stockAggregateMap).forEach(stock => {
-        const item = stockAggregateMap[stock];
-        if (item.totalQty > 0) {
-          const wap = item.totalCost / item.totalQty;
-          const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
-          totalPortfolioVal += (item.totalQty * liveData.ltp);
-          totalPortfolioInvested += item.totalCost;
-        }
-      });
-
-      const holdings = [];
-      Object.keys(stockAggregateMap).forEach(stock => {
-        const item = stockAggregateMap[stock];
-        if (item.totalQty > 0) {
-          const wap = item.totalCost / item.totalQty;
-          const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
-          const ltp = liveData.ltp;
-
-          const currentVal = item.totalQty * ltp;
-          const investedVal = item.totalCost;
-          const pnlVal = currentVal - investedVal;
-          const pnlPct = investedVal > 0 ? (pnlVal / investedVal) * 100 : 0;
-          const weightPct = totalPortfolioVal > 0 ? (currentVal / totalPortfolioVal) * 100 : 0;
-
-          holdings.push({ stock, qty: item.totalQty, wap, ltp, investedVal, currentVal, pnlVal, pnlPct, weightPct });
-        }
-      });
-
-      const totalUnrealizedPnL = totalPortfolioVal - totalPortfolioInvested;
-      // Raw per-account cash straight from the ledger (no calibration applied)
-      const rawAccountCashMap = { ...accountCashMap };
-
-      // Calibrated per-account cash = raw tagged cash + stored offset (from Cash_Calibration sheet).
-      // Used ONLY by the per-account "Cash Available" badge in Active Holdings.
-      const calibratedAccountCashMap = {};
-      CALIB_ACCOUNTS.forEach(acct => {
-        calibratedAccountCashMap[acct] = (rawAccountCashMap[acct] || 0) + getCalibOffset(acct);
-      });
-
-      const netInvested = totalDeposits - totalWithdrawals;
-      const netWorth = totalPortfolioVal + cashBalance;
-      const lifetimePnL = netWorth - netInvested;
-      const lifetimePnLPct = netInvested > 0 ? (lifetimePnL / netInvested) * 100 : 0;
-      const xirrValue = calculateXIRR(sortedTx, netWorth);
-
-      const closedTrades = Object.values(closedTradesMap).map(c => ({
-        ...c,
-        retPct: c.totalCostBasis > 0 ? (c.netPnL / c.totalCostBasis) * 100 : 0
-      }));
-
-      return {
-        cashBalance,
-        rawAccountCashMap,
-        accountCashMap: calibratedAccountCashMap, // calibrated: badge only
-        totalDeposits,
-        totalWithdrawals,
-        netInvested,
-        totalPortfolioVal,
-        totalPortfolioInvested,
-        totalUnrealizedPnL,
-        netWorth,
-        lifetimePnL,
-        lifetimePnLPct,
-        xirrValue,
-        holdings,
-        openLots,
-        fyRealized,
-        closedTrades,
-        ledgerEntries,
-        bankEntries,
-        taxClosedLots,
-        sortedTx
-      };
-    }
-
-    function calculateXIRR(sortedTx, terminalNetWorth) {
-      const cashFlows = [];
-      sortedTx.forEach(tx => {
-        const d = new Date(tx.date);
-        const amt = Number(tx.amount || 0);
-        if (tx.type === 'DEPOSIT') cashFlows.push({ date: d, amount: -amt });
-        else if (tx.type === 'WITHDRAWAL') cashFlows.push({ date: d, amount: amt });
-      });
-
-      if (terminalNetWorth > 0) cashFlows.push({ date: new Date(), amount: terminalNetWorth });
-      if (cashFlows.length < 2) return 0;
-
-      const d0 = cashFlows[0].date;
-      function npv(r) { 
-        return cashFlows.reduce((acc, c) => acc + c.amount / Math.pow(1 + r, (c.date - d0) / (365 * 86400000)), 0); 
-      }
-      function dNpv(r) {
-        const msPerYear = 365 * 86400000;
-        return cashFlows.reduce((acc, c) => {
-          const t = (c.date - d0) / msPerYear;
-          return acc - (t * c.amount) / Math.pow(1 + r, t + 1);
-        }, 0);
-      }
-
-      let rate = 0.12;
-      for (let i = 0; i < 40; i++) {
-        const f = npv(rate);
-        const df = dNpv(rate);
-        if (Math.abs(df) < 1e-7) break;
-        const next = rate - f / df;
-        if (Math.abs(next - rate) < 1e-5) return next * 100;
-        rate = next;
-      }
-      return isNaN(rate) ? 0 : rate * 100;
-    }
-
-    /* ---------------- MANUAL LTP UPDATE MODAL ---------------- */
-    function openLivePricesModal() {
-      const modal = document.getElementById('livePricesModal');
-      const container = document.getElementById('livePricesContainer');
-      container.innerHTML = '';
-
-      const data = computeEngine();
-      const openHoldings = data.holdings;
-
-      if (openHoldings.length === 0) {
-        container.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-4 text-center">No open holdings available to update.</div>`;
-      } else {
-        openHoldings.forEach(h => {
-          const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : h.ltp;
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800/80 rounded-xl border border-slate-200 dark:border-gray-700/80';
-          row.innerHTML = `
-            <div>
-              <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
-              <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty: ${h.qty} • Cost: ${formatINR(h.wap)}</div>
-            </div>
-            <div class="flex items-center space-x-1.5">
-              <span class="text-xs text-slate-500 dark:text-gray-400">₹</span>
-              <input type="number" step="0.05" id="livePriceInp_${h.stock}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500 font-bold">
-            </div>
-          `;
-          container.appendChild(row);
-        });
-      }
-
-      modal.classList.remove('hidden');
-    }
-
-    function closeLivePricesModal() {
-      document.getElementById('livePricesModal').classList.add('hidden');
-    }
-
-    async function saveAllLivePrices() {
-      const inputs = document.querySelectorAll('#livePricesContainer input');
-      const batchPrices = {};
-
-      inputs.forEach(inp => {
-        const sym = inp.id.replace('livePriceInp_', '');
-        const val = Number(inp.value);
-        if (!isNaN(val) && val > 0) {
-          batchPrices[sym] = { ltp: val, prevClose: val };
-          savedManualPrices[sym] = { ltp: val, prevClose: val };
-          marketPrices[sym] = { ltp: val, prevClose: val };
-        }
-      });
-
-      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-      recordPriceUpdateTimestamp();
-
-      if (cloudScriptUrl && Object.keys(batchPrices).length > 0) {
-        try {
-          await fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: "savePrices", prices: batchPrices })
-          });
-        } catch (e) {
-          console.error('Batch price sync failed:', e);
-        }
-      }
-
-      closeLivePricesModal();
-      recalculateAndRender();
-    }
-
-    /* ---------------- AUTOMATIC MONTH-END RECONCILIATION ENGINE ---------------- */
-    let currentPendingMonthEndDateStr = null;
-
-    function getPrecedingMonthEndDate() {
-      const today = new Date();
-      return new Date(today.getFullYear(), today.getMonth(), 0);
-    }
-
-    function formatToSheetDateStr(d) {
-      const day = String(d.getDate()).padStart(2, '0');
-      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      const month = months[d.getMonth()];
-      const year = d.getFullYear();
-      return `${day}-${month}-${year}`;
-    }
-
-    function checkPendingMonthEndSnapshot() {
-      if (!transactions || transactions.length === 0) return;
-
-      const lastMonthEnd = getPrecedingMonthEndDate();
-      const targetDateStr = formatToSheetDateStr(lastMonthEnd);
-
-      const alreadyExists = chartHistoryRecords.some(r => {
-        const checkD = String(r.date || '').trim();
-        return checkD.toLowerCase() === targetDateStr.toLowerCase();
-      });
-
-      if (!alreadyExists) {
-        openMonthEndReviewModal(lastMonthEnd, targetDateStr);
-      }
-    }
-
-    function openMonthEndReviewModal(cutoffDate, targetDateStr) {
-      currentPendingMonthEndDateStr = targetDateStr;
-      document.getElementById('monthEndDateDisplay').innerText = targetDateStr;
-      document.getElementById('monthEndModalSubtitle').innerText = `Provide closing prices as of ${targetDateStr}`;
-
-      const cutoffTime = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate(), 23, 59, 59);
-      const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
-
-      const inv = {};
-      let netCap = 0;
-      let cash = 0;
-
-      pastTxs.forEach(t => {
-        const amt = Number(t.amount || 0);
-        if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
-        else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
-        else if (t.type === 'FEES') { cash -= amt; }
-        else if (t.type === 'BUY') {
-          cash -= amt;
-          if (!inv[t.stock]) inv[t.stock] = 0;
-          inv[t.stock] += Number(t.qty || 0);
-        } else if (t.type === 'SELL') {
-          cash += amt;
-          if (!inv[t.stock]) inv[t.stock] = 0;
-          inv[t.stock] += Number(t.qty || 0);
-        }
-      });
-
-      const openHoldings = Object.keys(inv).filter(s => inv[s] > 0).map(s => ({ stock: s, qty: inv[s] }));
-      const container = document.getElementById('monthEndHoldingsContainer');
-      container.innerHTML = '';
-
-      if (openHoldings.length === 0) {
-        container.innerHTML = `<div class="text-slate-400 py-3 text-center">No open positions as of ${targetDateStr}.</div>`;
-      } else {
-        openHoldings.forEach(h => {
-          const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : (marketPrices[h.stock] ? marketPrices[h.stock].ltp : 0);
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700';
-          row.innerHTML = `
-            <div>
-              <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
-              <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty at month-end: ${h.qty} shares</div>
-            </div>
-            <div class="flex items-center space-x-1.5">
-              <span class="text-xs text-slate-500">₹</span>
-              <input type="number" step="0.05" id="mePrice_${h.stock}" data-qty="${h.qty}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-blue-500 font-bold" oninput="recalcMonthEndModal(${netCap}, ${cash})">
-            </div>
-          `;
-          container.appendChild(row);
-        });
-      }
-
-      recalcMonthEndModal(netCap, cash);
-      document.getElementById('monthEndReviewModal').classList.remove('hidden');
-    }
-
-    function recalcMonthEndModal(netCap, cash) {
-      let stockVal = 0;
-      document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
-        const qty = Number(inp.getAttribute('data-qty') || 0);
-        const p = Number(inp.value || 0);
-        stockVal += (qty * p);
-      });
-
-      const portVal = cash + stockVal;
-      const profit = portVal - netCap;
-
-      document.getElementById('meModalStockVal').innerText = formatINR(stockVal);
-      document.getElementById('meModalCash').innerText = formatCompactIndian(cash);
-      document.getElementById('meModalNetCap').innerText = formatCompactIndian(netCap);
-      document.getElementById('meModalPortVal').innerText = formatINR(portVal);
-      document.getElementById('meModalProfit').innerText = formatINR(profit);
-    }
-
-    function closeMonthEndModal() {
-      document.getElementById('monthEndReviewModal').classList.add('hidden');
-    }
-
-    async function commitMonthEndSnapshot() {
-      if (!currentPendingMonthEndDateStr) return;
-
-      const dateStr = currentPendingMonthEndDateStr;
-      const lastMonthEnd = getPrecedingMonthEndDate();
-      const cutoffTime = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59);
-      const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
-
-      let netCap = 0;
-      let cash = 0;
-      pastTxs.forEach(t => {
-        const amt = Number(t.amount || 0);
-        if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
-        else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
-        else if (t.type === 'FEES') { cash -= amt; }
-        else if (t.type === 'BUY') { cash -= amt; }
-        else if (t.type === 'SELL') { cash += amt; }
-      });
-
-      let stockVal = 0;
-      const batchPrices = {};
-
-      document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
-        const sym = inp.id.replace('mePrice_', '');
-        const qty = Number(inp.getAttribute('data-qty') || 0);
-        const p = Number(inp.value || 0);
-        stockVal += (qty * p);
-
-        if (p > 0) {
-          batchPrices[sym] = { ltp: p, prevClose: p };
-          savedManualPrices[sym] = { ltp: p, prevClose: p };
-          marketPrices[sym] = { ltp: p, prevClose: p };
-        }
-      });
-
-      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-      recordPriceUpdateTimestamp();
-
-      const portVal = cash + stockVal;
-      const profit = portVal - netCap;
-
-      const snapshotPayload = {
-        action: "recordSnapshot",
-        date: dateStr,
-        netCapital: Math.round(netCap),
-        cash: Math.round(cash),
-        stockVal: Math.round(stockVal),
-        portfolioVal: Math.round(portVal),
-        profit: Math.round(profit)
-      };
-
-      if (cloudScriptUrl) {
-        try {
-          await fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(snapshotPayload)
-          });
-
-          if (Object.keys(batchPrices).length > 0) {
-            await fetch(cloudScriptUrl, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: "savePrices", prices: batchPrices })
-            });
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      chartHistoryRecords.push({
-        date: dateStr,
-        netCapital: Math.round(netCap),
-        cash: Math.round(cash),
-        stocks: Math.round(stockVal),
-        portfolioValue: Math.round(portVal),
-        profit: Math.round(profit)
-      });
-      localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
-
-      closeMonthEndModal();
-      recalculateAndRender();
-    }
-
-    function handleHoldingsSort(key) {
-      if (holdingsSort.key === key) {
-        holdingsSort.dir = holdingsSort.dir === 'desc' ? 'asc' : 'desc';
-      } else {
-        holdingsSort.key = key;
-        holdingsSort.dir = 'desc';
-      }
-      renderHoldings(computeEngine());
-    }
-
-    function handleClosedSort(key) {
-      if (closedSort.key === key) {
-        closedSort.dir = closedSort.dir === 'desc' ? 'asc' : 'desc';
-      } else {
-        closedSort.key = key;
-        closedSort.dir = 'desc';
-      }
-      closedTradesCurrentPage = 1;
-      renderClosedTrades(computeEngine().closedTrades);
-    }
-
-    function updateSortHeaderIcons(prefix, currentSort, columns) {
-      columns.forEach(col => {
-        const el = document.getElementById(`sortIcon-${prefix}-${col}`);
-        if (!el) return;
-        if (currentSort.key === col) {
-          el.innerHTML = currentSort.dir === 'desc' 
-            ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>` 
-            : `<i data-lucide="chevron-up" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>`;
-        } else {
-          el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-slate-700 dark:text-gray-300 inline opacity-90"></i>`;
-        }
-      });
-      lucide.createIcons();
-    }
-
-    /* ---------------- MASTER RECALCULATE & RENDER ---------------- */
-    function recalculateAndRender() {
-      const data = computeEngine();
-
-      // Card 1: Net Worth
-      document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
-      document.getElementById('subPortfolioVal').innerText = formatCompactIndian(data.totalPortfolioVal);
-      document.getElementById('subCashVal').innerText = formatCompactIndian(data.cashBalance);
-
-      const nwTarget = milestoneGoals.netWorth || 10000000;
-      const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
-      const nwRem = Math.max(0, nwTarget - data.netWorth);
-      document.getElementById('kpiNetWorthPct').innerText = `${nwPct.toFixed(2)}%`;
-      document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
-      document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
-
-      // Card 2: Net Invested
-      document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
-      const invTarget = milestoneGoals.netInvested || 5000000;
-      const invPct = invTarget > 0 ? Math.min(100, Math.max(0, (data.netInvested / invTarget) * 100)) : 0;
-      const invRem = Math.max(0, invTarget - data.netInvested);
-      document.getElementById('kpiNetInvestedPct').innerText = `${invPct.toFixed(2)}%`;
-      document.getElementById('kpiNetInvestedRem').innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
-      document.getElementById('kpiNetInvestedBar').style.width = `${invPct}%`;
-
-      // Card 3: Lifetime P&L
-      const lifeEl = document.getElementById('kpiLifetimePnL');
-      lifeEl.innerText = formatINR(data.lifetimePnL);
-      lifeEl.className = `text-xl font-bold tabular-nums transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-
-      const lifePctEl = document.getElementById('kpiLifetimePnLPct');
-      lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-      lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-
-      const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
-      const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
-      const lifeRem = Math.max(0, pnlTarget - data.lifetimePnL);
-      document.getElementById('kpiLifetimeTargetPct').innerText = `${lifeTargetPct.toFixed(2)}%`;
-      document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
-      document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
-
-      // Card 4: Current FY
-      const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
-      document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
-      const curFyData = data.fyRealized[curFy] || { gain: 0 };
-      
-      const curFyEl = document.getElementById('kpiCurrentFyPnL');
-      curFyEl.innerText = formatINR(curFyData.gain);
-      curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
-
-      const curFyUnrealEl = document.getElementById('kpiCurrentFyUnrealized');
-      curFyUnrealEl.innerText = formatINR(data.totalUnrealizedPnL);
-      curFyUnrealEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-
-      const fyTarget = milestoneGoals.currentFyPnL || 1000000;
-      const fyPct = fyTarget > 0 ? Math.min(100, Math.max(0, (curFyData.gain / fyTarget) * 100)) : 0;
-      const fyRem = Math.max(0, fyTarget - curFyData.gain);
-      document.getElementById('kpiCurrentFyPct').innerText = `${fyPct.toFixed(2)}%`;
-      document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
-      document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
-
-      // Card 5: Annualized XIRR (Always unmasked)
-      document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
-      const xirrTarget = milestoneGoals.xirr || 25;
-      const xirrProgress = xirrTarget > 0 ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
-      const xirrRem = Math.max(0, xirrTarget - data.xirrValue);
-      document.getElementById('kpiXirrPct').innerText = `${xirrProgress.toFixed(2)}%`;
-      document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
-      document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
-
-      // Apply independent Gaussian blur filters
-      applyAllKpiMasks();
-
-      renderHoldings(data);
-      renderClosedTrades(data.closedTrades);
-      renderFY(data.fyRealized);
-      renderLedger(data.ledgerEntries);
-      renderBankLedger(data.bankEntries);
-      populateTaxFyOptions(data.fyRealized);
-      renderTaxView();
-      renderChart(data);
-      renderTtmTable(data);
-
-      lucide.createIcons();
-    }
-
-    /* ---------------- POINT 4: ACCOUNT-FILTERED HOLDINGS & CASH BADGE ---------------- */
-    function setHoldingsAccountFilter(acct) {
-      currentHoldingsAccountFilter = acct;
-      ['ALL', 'Me', 'Wife', 'Mom', 'Brother'].forEach(key => {
-        const btn = document.getElementById(`holdingsAcctBtn-${key}`);
-        if (!btn) return;
-        if (key === acct) {
-          btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
-        } else {
-          btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
-        }
-      });
-      renderHoldings(computeEngine());
-    }
-
-    function renderHoldings(data) {
-      const tbody = document.getElementById('holdingsTableBody');
-      tbody.innerHTML = '';
-
-      // Filter relevant open lots based on selected account
-      let relevantLots = data.openLots;
-      if (currentHoldingsAccountFilter !== 'ALL') {
-        relevantLots = relevantLots.filter(l => l.account === currentHoldingsAccountFilter);
-      }
-
-      // Aggregate filtered positions
-      const aggMap = {};
-      let totalFilteredPortVal = 0;
-      let totalFilteredInvested = 0;
-
-      relevantLots.forEach(lot => {
-        if (!aggMap[lot.stock]) {
-          aggMap[lot.stock] = { totalQty: 0, totalCost: 0 };
-        }
-        aggMap[lot.stock].totalQty += lot.qty;
-        aggMap[lot.stock].totalCost += (lot.qty * lot.price);
-      });
-
-      const filteredHoldings = [];
-      Object.keys(aggMap).forEach(stock => {
-        const item = aggMap[stock];
-        if (item.totalQty > 0) {
-          const wap = item.totalCost / item.totalQty;
-          const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
-          const ltp = liveData.ltp;
-          const curVal = item.totalQty * ltp;
-          const invVal = item.totalCost;
-          const pnlVal = curVal - invVal;
-          const pnlPct = invVal > 0 ? (pnlVal / invVal) * 100 : 0;
-
-          totalFilteredPortVal += curVal;
-          totalFilteredInvested += invVal;
-
-          filteredHoldings.push({
-            stock,
-            qty: item.totalQty,
-            wap,
-            ltp,
-            investedVal: invVal,
-            currentVal: curVal,
-            pnlVal,
-            pnlPct
-          });
-        }
-      });
-
-      // Compute weight % relative to current filtered equity
-      filteredHoldings.forEach(h => {
-        h.weightPct = totalFilteredPortVal > 0 ? (h.currentVal / totalFilteredPortVal) * 100 : 0;
-      });
-
-      document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
-
-      // Update liquid cash badge
-      // Combined  -> raw ledger cash (always correct)
-      // Per-account -> calibrated cash (raw tagged cash + offset from Cash_Calibration sheet)
-      const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
-      const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
-      const cashBadgeContainer = document.getElementById('holdingsCashBadge');
-      
-      let cashAmt = 0;
-      if (currentHoldingsAccountFilter === 'ALL') {
-        cashAmt = data.cashBalance;
-        cashBadgeLabel.innerText = 'Cash Available (Combined):';
-        cashBadgeContainer.removeAttribute('title');
-      } else {
-        const acct = currentHoldingsAccountFilter;
-        cashAmt = data.accountCashMap[acct] || 0;
-        cashBadgeLabel.innerText = `Cash Available (${acct}):`;
-
-        const rec = cashCalibration.records && cashCalibration.records[acct];
-        if (rec && rec.date) {
-          cashBadgeContainer.title = `Calibrated baseline • last calibrated on ${rec.date}`;
-        } else {
-          cashBadgeContainer.title = 'Not calibrated yet • showing raw tagged cash. Use Settings → Cash Calibrate.';
-        }
-      }
-
-      cashBadgeVal.innerText = formatINR(cashAmt);
-      if (cashAmt >= 0) {
-        cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs';
-        cashBadgeVal.className = 'tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm';
-      } else {
-        cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/30 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs';
-        cashBadgeVal.className = 'tabular-nums font-extrabold text-rose-600 dark:text-rose-400 text-sm';
-      }
-
-      // Win / Loss bar
-      const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
-      const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
-      const profitSum = profitPositions.reduce((acc, h) => acc + h.pnlVal, 0);
-      const lossSum = lossPositions.reduce((acc, h) => acc + h.pnlVal, 0);
-      const totalCount = filteredHoldings.length;
-      const winRate = totalCount > 0 ? Math.round((profitPositions.length / totalCount) * 100) : 0;
-
-      document.getElementById('holdingsProfitSummary').innerText = `${profitPositions.length} Green (+${formatCompactIndian(profitSum)})`;
-      document.getElementById('holdingsLossSummary').innerText = `${lossPositions.length} Red (${formatCompactIndian(lossSum)})`;
-      document.getElementById('holdingsWinRateBadge').innerText = `Win Rate: ${winRate}%`;
-      document.getElementById('holdingsWinBar').style.width = `${winRate}%`;
-      document.getElementById('holdingsLossBar').style.width = `${100 - winRate}%`;
-
-      updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
-
-      if (filteredHoldings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active holdings for ${currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : currentHoldingsAccountFilter}.</td></tr>`;
-        return;
-      }
-
-      const sorted = [...filteredHoldings].sort((a, b) => {
-        let valA = a[holdingsSort.key];
-        let valB = b[holdingsSort.key];
-
-        if (typeof valA === 'string') {
-          return holdingsSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-        return holdingsSort.dir === 'asc' ? valA - valB : valB - valA;
-      });
-
-      sorted.forEach(h => {
-        const isPos = h.pnlVal >= 0;
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
-          <td class="py-3 px-3 text-right tabular-nums">${h.qty}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
-          <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(h.investedVal)}</td>
-          <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(h.currentVal)}</td>
-          <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300">
-            <span>${h.weightPct.toFixed(1)}%</span>
-            <div class="w-full bg-slate-200 dark:bg-gray-700 h-1 rounded-full mt-1">
-              <div class="bg-blue-600 h-1 rounded-full" style="width: ${Math.min(100, h.weightPct)}%"></div>
-            </div>
-          </td>
-          <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
-            <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
-          </td>
-          <td class="py-3 px-4 text-center">
-            <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-      filterHoldingsTable();
-    }
-
-    /* ---------------- POINT 2: 12-ROW PAGINATION: CLOSED TRADES ---------------- */
-    function renderClosedTrades(closedTrades) {
-      const tbody = document.getElementById('closedTradesTableBody');
-      tbody.innerHTML = '';
-
-      updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
-
-      if (closedTrades.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No closed trades recorded yet.</td></tr>`;
-        document.getElementById('closedPaginationContainer').classList.add('hidden');
-        return;
-      }
-      document.getElementById('closedPaginationContainer').classList.remove('hidden');
-
-      const sorted = [...closedTrades].sort((a, b) => {
-        let valA = a[closedSort.key];
-        let valB = b[closedSort.key];
-
-        if (typeof valA === 'string') {
-          return closedSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-        return closedSort.dir === 'asc' ? valA - valB : valB - valA;
-      });
-
-      const totalItems = sorted.length;
-      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-      if (closedTradesCurrentPage > totalPages) closedTradesCurrentPage = totalPages;
-
-      const startIndex = (closedTradesCurrentPage - 1) * PAGE_SIZE;
-      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-      const pageSlice = sorted.slice(startIndex, endIndex);
-
-      document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-      document.getElementById('closedPageNumbers').innerText = `Page ${closedTradesCurrentPage} of ${totalPages}`;
-      document.getElementById('closedPrevBtn').disabled = closedTradesCurrentPage <= 1;
-      document.getElementById('closedNextBtn').disabled = closedTradesCurrentPage >= totalPages;
-
-      pageSlice.forEach(c => {
-        const avgBuy = c.totalQty > 0 ? (c.totalCostBasis / c.totalQty) : 0;
-        const avgSell = c.totalQty > 0 ? (c.totalProceeds / c.totalQty) : 0;
-        const retPct = c.retPct;
-        const isPos = c.netPnL >= 0;
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${c.stock}</td>
-          <td class="py-3 px-3 text-right tabular-nums">${c.totalQty}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(avgBuy)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(avgSell)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(c.totalCostBasis)}</td>
-          <td class="py-3 px-3 text-right tabular-nums">${formatINR(c.totalProceeds)}</td>
-          <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-          <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function prevClosedPage() {
-      if (closedTradesCurrentPage > 1) {
-        closedTradesCurrentPage--;
-        renderClosedTrades(computeEngine().closedTrades);
-      }
-    }
-
-    function nextClosedPage() {
-      const totalPages = Math.ceil(computeEngine().closedTrades.length / PAGE_SIZE);
-      if (closedTradesCurrentPage < totalPages) {
-        closedTradesCurrentPage++;
-        renderClosedTrades(computeEngine().closedTrades);
-      }
-    }
-
-    /* ---------------- FY SUMMARY CARDS (JUSTIFY-BETWEEN) ---------------- */
-    function renderFY(fyRealized) {
-      const cards = document.getElementById('fyCardsContainer');
-      const tbody = document.getElementById('fySummaryTableBody');
-      cards.innerHTML = '';
-      tbody.innerHTML = '';
-
-      Object.keys(fyRealized).sort().reverse().forEach(fy => {
-        const item = fyRealized[fy];
-        const isPos = item.gain >= 0;
-        const retPct = item.costBasis > 0 ? (item.gain / item.costBasis) * 100 : 0;
-
-        const card = document.createElement('div');
-        card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xs transition-colors';
-        card.innerHTML = `
-          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
-            <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
+  <!-- MODAL: AUTOMATIC MONTH-END REVIEW -->
+  <div id="monthEndReviewModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <i data-lucide="calendar-check" class="w-5 h-5"></i>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-              ${isPos ? '+' : ''}${formatINR(item.gain)}
-            </span>
-            <span class="text-base font-bold tabular-nums text-right ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-              ${isPos ? '+' : ''}${retPct.toFixed(2)}%
-            </span>
-          </div>
-          <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
-            <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.sellProceeds)}</span></div>
-            <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.costBasis)}</span></div>
-          </div>
-        `;
-        cards.appendChild(card);
-
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-slate-100 dark:border-gray-800/60';
-        tr.innerHTML = `
-          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${fy}</td>
-          <td class="py-3 px-4 text-right tabular-nums">${formatINR(item.sellProceeds)}</td>
-          <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(item.costBasis)}</td>
-          <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
-          <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    /* ---------------- POINT 2: 12-ROW PAGINATION: TRADEBOOK ---------------- */
-    function handleLedgerSearch() {
-      ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
-      ledgerCurrentPage = 1;
-      renderLedger(computeEngine().ledgerEntries);
-    }
-
-    function renderLedger(ledgerEntries) {
-      const tbody = document.getElementById('txTableBody');
-      tbody.innerHTML = '';
-
-      let list = [...ledgerEntries].reverse();
-      if (ledgerSearchTerm) {
-        list = list.filter(tx => 
-          (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-          (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-          (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-          (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-        );
-      }
-
-      document.getElementById('ledgerCountBadge').innerText = `${list.length} Entries`;
-
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 font-medium">No matching transactions found.</td></tr>`;
-        document.getElementById('ledgerPaginationContainer').classList.add('hidden');
-        return;
-      }
-      document.getElementById('ledgerPaginationContainer').classList.remove('hidden');
-
-      const totalItems = list.length;
-      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-      if (ledgerCurrentPage > totalPages) ledgerCurrentPage = totalPages;
-
-      const startIndex = (ledgerCurrentPage - 1) * PAGE_SIZE;
-      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-      const pageSlice = list.slice(startIndex, endIndex);
-
-      document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-      document.getElementById('ledgerPageNumbers').innerText = `Page ${ledgerCurrentPage} of ${totalPages}`;
-      document.getElementById('ledgerPrevBtn').disabled = ledgerCurrentPage <= 1;
-      document.getElementById('ledgerNextBtn').disabled = ledgerCurrentPage >= totalPages;
-
-      const badgeColors = {
-        'BUY': 'bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/40',
-        'SELL': 'bg-rose-50 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40',
-        'DEPOSIT': 'bg-emerald-50 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40',
-        'WITHDRAWAL': 'bg-amber-50 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40',
-        'FEES': 'bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700'
-      };
-
-      pageSlice.forEach(tx => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-        tr.innerHTML = `
-          <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${tx.date}</td>
-          <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
-          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type]}">${tx.type}</span></td>
-          <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(tx.runningCash)}</td>
-          <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function prevLedgerPage() {
-      if (ledgerCurrentPage > 1) {
-        ledgerCurrentPage--;
-        renderLedger(computeEngine().ledgerEntries);
-      }
-    }
-
-    function nextLedgerPage() {
-      const filteredCount = computeEngine().ledgerEntries.length;
-      const totalPages = Math.ceil(filteredCount / PAGE_SIZE);
-      if (ledgerCurrentPage < totalPages) {
-        ledgerCurrentPage++;
-        renderLedger(computeEngine().ledgerEntries);
-      }
-    }
-
-    /* ---------------- POINT 2: 12-ROW PAGINATION: BANK LEDGER ---------------- */
-    function renderBankLedger(bankEntries) {
-      const tbody = document.getElementById('bankLedgerTableBody');
-      tbody.innerHTML = '';
-
-      const list = [...bankEntries].reverse();
-
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">No bank ledger transactions recorded yet.</td></tr>`;
-        document.getElementById('bankLedgerPaginationContainer').classList.add('hidden');
-        return;
-      }
-      document.getElementById('bankLedgerPaginationContainer').classList.remove('hidden');
-
-      const totalItems = list.length;
-      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-      if (bankLedgerCurrentPage > totalPages) bankLedgerCurrentPage = totalPages;
-
-      const startIndex = (bankLedgerCurrentPage - 1) * PAGE_SIZE;
-      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-      const pageSlice = list.slice(startIndex, endIndex);
-
-      document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-      document.getElementById('bankLedgerPageNumbers').innerText = `Page ${bankLedgerCurrentPage} of ${totalPages}`;
-      document.getElementById('bankLedgerPrevBtn').disabled = bankLedgerCurrentPage <= 1;
-      document.getElementById('bankLedgerNextBtn').disabled = bankLedgerCurrentPage >= totalPages;
-
-      pageSlice.forEach(b => {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-        tr.innerHTML = `
-          <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${b.date}</td>
-          <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${b.account || 'Unassigned'}</span></td>
-          <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(b.corpus)}</td>
-          <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400">${b.remarks || ''}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function prevBankLedgerPage() {
-      if (bankLedgerCurrentPage > 1) {
-        bankLedgerCurrentPage--;
-        renderBankLedger(computeEngine().bankEntries);
-      }
-    }
-
-    function nextBankLedgerPage() {
-      const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE);
-      if (bankLedgerCurrentPage < totalPages) {
-        bankLedgerCurrentPage++;
-        renderBankLedger(computeEngine().bankEntries);
-      }
-    }
-
-    /* ---------------- TTM BREAKDOWN ACCORDION & TABLE ---------------- */
-    function toggleTtmTableAccordion() {
-      const container = document.getElementById('ttmTableContainer');
-      const chevron = document.getElementById('ttmAccordionChevron');
-      const isHidden = container.classList.contains('hidden');
-
-      if (isHidden) {
-        container.classList.remove('hidden');
-        chevron.classList.add('rotate-180');
-      } else {
-        container.classList.add('hidden');
-        chevron.classList.remove('rotate-180');
-      }
-    }
-
-    function renderTtmTable(computed) {
-      const tbody = document.getElementById('ttmTableBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      let history = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-      if (computed) {
-        history.push({
-          date: 'Current',
-          portfolioValue: computed.netWorth,
-          netCapital: computed.netInvested,
-          profit: computed.lifetimePnL
-        });
-      }
-
-      if (history.length < 2) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
-        return;
-      }
-
-      const ttmRecords = history.slice(-13);
-      const rows = [];
-
-      for (let i = 1; i < ttmRecords.length; i++) {
-        const curr = ttmRecords[i];
-        const prev = ttmRecords[i - 1];
-
-        const deltaProfit = Number(curr.profit || 0) - Number(prev.profit || 0);
-        const prevPortVal = Number(prev.portfolioValue || 0);
-        const monthlyReturnPct = prevPortVal > 0 ? (deltaProfit / prevPortVal) * 100 : 0;
-        
-        const currNetCap = Number(curr.netCapital || 0);
-        const currCumProfit = Number(curr.profit || 0);
-        const cumReturnOnCapPct = currNetCap > 0 ? (currCumProfit / currNetCap) * 100 : 0;
-
-        rows.push({
-          date: curr.date,
-          portVal: curr.portfolioValue,
-          netCap: currNetCap,
-          deltaProfit,
-          monthlyReturnPct,
-          cumProfit: currCumProfit,
-          cumReturnOnCapPct
-        });
-      }
-
-      rows.reverse().forEach(r => {
-        const isPos = r.deltaProfit >= 0;
-        const isCumPos = r.cumProfit >= 0;
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
-        tr.innerHTML = `
-          <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums">${formatINR(r.portVal, 0)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.netCap, 0)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
-          </td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
-          </td>
-          <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
-          </td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-            ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    /* ---------------- POINT 3: MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
-    function exportPortfolioToExcel() {
-      if (typeof XLSX === 'undefined') {
-        return;
-      }
-
-      const data = computeEngine();
-      const wb = XLSX.utils.book_new();
-
-      // Tab 1: Holdings
-      const holdingsRows = data.holdings.map(h => ({
-        "Stock Ticker": h.stock,
-        "Quantity": h.qty,
-        "Average Cost (WAP)": h.wap,
-        "Current LTP": h.ltp,
-        "Invested Value": h.investedVal,
-        "Current Value": h.currentVal,
-        "Weight (%)": Number(h.weightPct.toFixed(2)),
-        "Unrealized P&L": h.pnlVal,
-        "Return (%)": Number(h.pnlPct.toFixed(2))
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(holdingsRows), "Active Holdings");
-
-      // Tab 2: Closed Trades
-      const closedRows = data.closedTrades.map(c => ({
-        "Stock Ticker": c.stock,
-        "Total Sold Qty": c.totalQty,
-        "Total Cost Basis": c.totalCostBasis,
-        "Total Proceeds": c.totalProceeds,
-        "Net Realized P&L": c.netPnL,
-        "Realized Return (%)": Number(c.retPct.toFixed(2))
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(closedRows), "Closed Trades");
-
-      // Tab 3: Tradebook
-      const tradebookRows = data.ledgerEntries.map(l => ({
-        "Date": l.date,
-        "Account": l.account,
-        "Type": l.type,
-        "Stock": l.stock,
-        "Qty": l.qty,
-        "Price": l.price,
-        "Cash Out": l.cashOut,
-        "Cash In": l.cashIn,
-        "Running Cash Balance": l.runningCash,
-        "Remarks": l.remarks
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tradebookRows), "Tradebook & Ledger");
-
-      // Tab 4: Tax Audit
-      const taxRows = data.taxClosedLots.map(t => ({
-        "Sell Date": t.sellDate,
-        "Buy Date (FIFO)": t.buyDate,
-        "Account": t.account,
-        "Stock": t.stock,
-        "Qty": t.qty,
-        "Holding Days": t.days,
-        "Tax Class": t.isLtcg ? 'LTCG' : 'STCG',
-        "Cost Basis": t.costBasis,
-        "Proceeds": t.proceeds,
-        "Realized Gain/Loss": t.gain,
-        "Quarter": t.quarter,
-        "Financial Year": t.fy
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taxRows), "Tax Audit Trail");
-
-      // Tab 5: Bank Ledger
-      const bankRows = data.bankEntries.map(b => ({
-        "Date": b.date,
-        "Account": b.account,
-        "Type": b.type,
-        "Deposit In": b.deposit,
-        "Withdrawal Out": b.withdrawal,
-        "Net Contributed Corpus": b.corpus,
-        "Remarks": b.remarks
-      }));
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), "Bank Ledger");
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
-    }
-
-    /* ---------------- TAX PLANNING COCKPIT ---------------- */
-    function populateTaxFyOptions(fyRealized) {
-      const select = document.getElementById('taxFyFilter');
-      if (!select) return;
-      const currentSelected = select.value;
-      select.innerHTML = '';
-
-      const currentFy = getFinancialYear(new Date().toISOString().split('T')[0]);
-      const availableFys = new Set([currentFy, ...Object.keys(fyRealized)]);
-
-      Array.from(availableFys).sort().reverse().forEach(fy => {
-        const opt = document.createElement('option');
-        opt.value = fy;
-        opt.innerText = fy;
-        select.appendChild(opt);
-      });
-
-      if (currentSelected && availableFys.has(currentSelected)) {
-        select.value = currentSelected;
-      } else {
-        select.value = currentFy;
-      }
-    }
-
-    function setTaxAccountFilter(acct) {
-      currentTaxAccountFilter = acct;
-      ['Me', 'Wife', 'Mom', 'Brother', 'ALL'].forEach(key => {
-        const btn = document.getElementById(`taxAcctBtn-${key}`);
-        if (!btn) return;
-        if (key === acct) {
-          btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
-        } else {
-          btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
-        }
-      });
-      renderTaxView();
-    }
-
-    function toggleCurrentAccountExemption() {
-      const acct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
-      const key = `taxToggle_${acct}`;
-      const isCurrentlyLow = appSettings[key] === 'true';
-      const newVal = isCurrentlyLow ? 'false' : 'true';
-
-      appSettings[key] = newVal;
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-
-      if (cloudScriptUrl) {
-        try {
-          fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "saveSettings",
-              settings: { [key]: newVal }
-            })
-          });
-        } catch (e) {}
-      }
-
-      renderTaxView();
-    }
-
-    function recordTaxChallan(fy, acct, qKey, currentPaid) {
-      const input = prompt(`Enter total advance tax challan amount paid for ${qKey} (${fy} - ${acct}):`, currentPaid || 0);
-      if (input !== null && !isNaN(Number(input))) {
-        const val = Math.max(0, Number(input));
-        const key = `${fy}__${acct}__${qKey}`;
-        taxPaidChallans[key] = val;
-        localStorage.setItem(TAX_PAID_KEY, JSON.stringify(taxPaidChallans));
-        renderTaxView();
-      }
-    }
-
-    function renderTaxView() {
-      const fySelect = document.getElementById('taxFyFilter');
-      if (!fySelect) return;
-      const targetFy = fySelect.value || getFinancialYear(new Date().toISOString().split('T')[0]);
-
-      const data = computeEngine();
-      let lots = data.taxClosedLots.filter(l => l.fy === targetFy);
-
-      if (currentTaxAccountFilter !== 'ALL') {
-        lots = lots.filter(l => l.account === currentTaxAccountFilter);
-      }
-
-      const activeAcct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
-      const isLowIncome = appSettings[`taxToggle_${activeAcct}`] === 'true';
-
-      const toggleBtn = document.getElementById('taxLowIncomeToggleBtn');
-      const toggleText = document.getElementById('taxLowIncomeToggleText');
-      const toggleBadge = document.getElementById('taxToggleBadge');
-      const explainer = document.getElementById('taxToggleExplainer');
-
-      if (isLowIncome) {
-        toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
-        toggleText.innerText = 'Zero / Low Income (< ₹3L)';
-        toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-        toggleBadge.innerText = 'Active (₹3L Absorbed)';
-        explainer.innerText = `Absorbs up to ₹3,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
-      } else {
-        toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300';
-        toggleText.innerText = 'Regular Salary / Income';
-        toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 border border-slate-200 dark:border-gray-700';
-        toggleBadge.innerText = 'Standard Regime';
-        explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
-      }
-
-      let stcgGrossGain = 0;
-      let stcgGrossLoss = 0;
-      let ltcgGrossGain = 0;
-      let ltcgGrossLoss = 0;
-
-      const quarterGains = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
-
-      lots.forEach(lot => {
-        quarterGains[lot.quarter] += lot.gain;
-        if (lot.isLtcg) {
-          if (lot.gain > 0) ltcgGrossGain += lot.gain;
-          else ltcgGrossLoss += Math.abs(lot.gain);
-        } else {
-          if (lot.gain > 0) stcgGrossGain += lot.gain;
-          else stcgGrossLoss += Math.abs(lot.gain);
-        }
-      });
-
-      const stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
-      let netStcgAfterInternal = stcgGrossGain - stclOffsetAgainstStcg;
-      let remainingStcl = stcgGrossLoss - stclOffsetAgainstStcg;
-
-      const ltclOffsetAgainstLtcg = Math.min(ltcgGrossGain, ltcgGrossLoss);
-      let netLtcgAfterInternal = ltcgGrossGain - ltclOffsetAgainstLtcg;
-      let remainingLtcl = ltcgGrossLoss - ltclOffsetAgainstLtcg;
-
-      const stclOffsetAgainstLtcg = Math.min(netLtcgAfterInternal, remainingStcl);
-      netLtcgAfterInternal -= stclOffsetAgainstLtcg;
-      remainingStcl -= stclOffsetAgainstLtcg;
-
-      const totalStclOffset = stclOffsetAgainstStcg + stclOffsetAgainstLtcg;
-      const totalLtclOffset = ltclOffsetAgainstLtcg;
-
-      let stcgShortfallAbsorbed = 0;
-      let ltcgShortfallAbsorbed = 0;
-
-      if (isLowIncome) {
-        const totalShortfallCapacity = 300000;
-        stcgShortfallAbsorbed = Math.min(netStcgAfterInternal, totalShortfallCapacity);
-        const remainingShortfall = totalShortfallCapacity - stcgShortfallAbsorbed;
-        ltcgShortfallAbsorbed = Math.min(netLtcgAfterInternal, remainingShortfall);
-      }
-
-      const netStcgAfterShortfall = Math.max(0, netStcgAfterInternal - stcgShortfallAbsorbed);
-      const netLtcgAfterShortfall = Math.max(0, netLtcgAfterInternal - ltcgShortfallAbsorbed);
-
-      const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
-      const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterShortfall);
-      const taxableLtcg = Math.max(0, netLtcgAfterShortfall - exemptionClaimed);
-      const taxableStcg = netStcgAfterShortfall;
-
-      const stcgTax = taxableStcg * 0.2080;
-      const ltcgTax = taxableLtcg * 0.1300;
-      const totalTaxLiability = Math.round(stcgTax + ltcgTax);
-
-      const matrixTbody = document.getElementById('taxComputationTableBody');
-      matrixTbody.innerHTML = `
-        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
-          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
-            <span>Short-Term Capital Gains (STCG)</span>
-            <span class="block text-[11px] text-slate-500 font-normal">Holding period &le; 365 Days (Sec 111A)</span>
-          </td>
-          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(stcgGrossGain)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(stcgGrossLoss)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalStclOffset)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(stcgShortfallAbsorbed)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-400">₹0.00</td>
-          <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableStcg)}</td>
-          <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">20.80%</span></td>
-          <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(stcgTax)}</td>
-        </tr>
-        <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
-          <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
-            <span>Long-Term Capital Gains (LTCG)</span>
-            <span class="block text-[11px] text-slate-500 font-normal">Holding period &gt; 365 Days (Sec 112A)</span>
-          </td>
-          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">${formatINR(ltcgGrossGain)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 font-semibold">${formatINR(ltcgGrossLoss)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400 font-semibold">${formatINR(totalLtclOffset)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(ltcgShortfallAbsorbed)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-semibold">-${formatINR(exemptionClaimed)}</td>
-          <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableLtcg)}</td>
-          <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">13.00%</span></td>
-          <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(ltcgTax)}</td>
-        </tr>
-        <tr class="bg-slate-50/70 dark:bg-gray-950/60 font-bold border-t border-slate-200 dark:border-gray-700">
-          <td class="py-3 px-4 text-slate-900 dark:text-white uppercase tracking-wider text-xs">Total Net Position</td>
-          <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${formatINR(stcgGrossGain + ltcgGrossGain)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${formatINR(stcgGrossLoss + ltcgGrossLoss)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400">${formatINR(totalStclOffset + totalLtclOffset)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(stcgShortfallAbsorbed + ltcgShortfallAbsorbed)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">-${formatINR(exemptionClaimed)}</td>
-          <td class="py-3 px-3 text-right tabular-nums text-slate-900 dark:text-white">${formatINR(taxableStcg + taxableLtcg)}</td>
-          <td class="py-3 px-3 text-center text-slate-400 text-xs">—</td>
-          <td class="py-3 px-4 text-right tabular-nums text-base text-rose-600 dark:text-rose-400">${formatINR(totalTaxLiability)}</td>
-        </tr>
-      `;
-
-      renderTaxHarvestingRadar(data, exemptionClaimed);
-
-      const advTbody = document.getElementById('advanceTaxTableBody');
-      advTbody.innerHTML = '';
-
-      const quarterConfig = [
-        { key: 'Q1', title: 'Q1 (Apr 1 – Jun 15)', pct: 0.15 },
-        { key: 'Q2', title: 'Q2 (Jun 16 – Sep 15)', pct: 0.45 },
-        { key: 'Q3', title: 'Q3 (Sep 16 – Dec 15)', pct: 0.75 },
-        { key: 'Q4', title: 'Q4 (Dec 16 – Mar 15)', pct: 1.00 }
-      ];
-
-      let cumulativeTaxAccrued = 0;
-      let cumulativePaid = 0;
-      let totalPaidAllQuarters = 0;
-
-      quarterConfig.forEach(q => {
-        const qGains = Math.max(0, quarterGains[q.key]);
-        const approxQTax = (qGains / Math.max(1, (stcgGrossGain + ltcgGrossGain))) * totalTaxLiability;
-        cumulativeTaxAccrued = Math.min(totalTaxLiability, cumulativeTaxAccrued + approxQTax);
-
-        const statutoryMinDue = Math.round(totalTaxLiability * q.pct);
-        const challanKey = `${targetFy}__${currentTaxAccountFilter}__${q.key}`;
-        const actualPaid = taxPaidChallans[challanKey] || 0;
-        totalPaidAllQuarters += actualPaid;
-        cumulativePaid += actualPaid;
-
-        const remainingToPay = Math.max(0, statutoryMinDue - cumulativePaid);
-        const excessPaid = Math.max(0, cumulativePaid - statutoryMinDue);
-
-        let statusBadge = '';
-        if (totalTaxLiability === 0) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
-        } else if (remainingToPay === 0) {
-          statusBadge = excessPaid > 0 
-            ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+₹${formatCompactIndian(excessPaid)} Rolled Over</span>`
-            : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
-        } else {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200">₹${formatINR(remainingToPay, 0)} Due</span>`;
-        }
-
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
-        tr.innerHTML = `
-          <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${q.key}</td>
-          <td class="py-2.5 px-3 text-slate-500 dark:text-gray-400 text-xs">${q.title}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(cumulativeTaxAccrued)}</td>
-          <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded font-mono text-[11px] bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 font-bold">${Math.round(q.pct * 100)}%</span></td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(statutoryMinDue)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" onclick="recordTaxChallan('${targetFy}', '${currentTaxAccountFilter}', '${q.key}', ${actualPaid})" title="Click to update challan">${formatINR(actualPaid)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold ${remainingToPay > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}">${formatINR(remainingToPay)}</td>
-          <td class="py-2.5 px-4 text-center">${statusBadge}</td>
-        `;
-        advTbody.appendChild(tr);
-      });
-
-      const summaryBadge = document.getElementById('advanceTaxSummaryBadge');
-      const netYearBalance = totalTaxLiability - totalPaidAllQuarters;
-      if (netYearBalance <= 0 && totalTaxLiability > 0) {
-        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability 
-          ? `Surplus Advance Tax: +${formatINR(totalPaidAllQuarters - totalTaxLiability)} (Refundable at ITR)`
-          : `Advance Tax 100% Cleared`;
-      } else if (totalTaxLiability === 0) {
-        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300';
-        summaryBadge.innerText = 'No Tax Liability for this Financial Year';
-      } else {
-        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
-        summaryBadge.innerText = `Net Pending Tax: ${formatINR(netYearBalance)}`;
-      }
-
-      const auditTbody = document.getElementById('taxAuditTableBody');
-      auditTbody.innerHTML = '';
-      document.getElementById('taxAuditCount').innerText = `${lots.length} Closed Lots`;
-
-      if (lots.length === 0) {
-        auditTbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No sales recorded for ${targetFy} in this account filter.</td></tr>`;
-        return;
-      }
-
-      [...lots].reverse().forEach(lot => {
-        const isPos = lot.gain >= 0;
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
-        tr.innerHTML = `
-          <td class="py-2 px-3 tabular-nums text-slate-500 dark:text-gray-400">${lot.sellDate}</td>
-          <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${lot.account}</span></td>
-          <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">${lot.stock}</td>
-          <td class="py-2 px-2 text-right tabular-nums">${lot.qty}</td>
-          <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${lot.buyDate}</td>
-          <td class="py-2 px-2 text-right tabular-nums text-slate-600 dark:text-gray-300 font-mono">${lot.days}d</td>
-          <td class="py-2 px-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${lot.isLtcg ? 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800'}">${lot.isLtcg ? 'LTCG' : 'STCG'}</span></td>
-          <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(lot.costBasis)}</td>
-          <td class="py-2 px-3 text-right tabular-nums">${formatINR(lot.proceeds)}</td>
-          <td class="py-2 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(lot.gain)}</td>
-          <td class="py-2 px-2 text-center font-bold text-slate-500">${lot.quarter}</td>
-        `;
-        auditTbody.appendChild(tr);
-      });
-    }
-
-    /* ---------------- TAX HARVESTING RADAR ENGINE ---------------- */
-    function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
-      const maxExemptionRoom = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
-      const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
-
-      const roomEl = document.getElementById('harvestLtcgRoomVal');
-      if (roomEl) roomEl.innerText = `${formatINR(unusedRoom, 0)} available`;
-
-      let openLots = data.openLots || [];
-      if (currentTaxAccountFilter !== 'ALL') {
-        openLots = openLots.filter(l => l.account === currentTaxAccountFilter);
-      }
-
-      const today = new Date();
-      const profitCandidates = [];
-      const lossCandidates = [];
-
-      openLots.forEach(lot => {
-        const livePrice = (marketPrices[lot.stock] ? marketPrices[lot.stock].ltp : null) || (savedManualPrices[lot.stock] ? savedManualPrices[lot.stock].ltp : lot.price);
-        const lotCost = lot.qty * lot.price;
-        const currentVal = lot.qty * livePrice;
-        const unrealized = currentVal - lotCost;
-
-        const buyD = new Date(lot.date);
-        const diffDays = Math.ceil(Math.abs(today - buyD) / (1000 * 60 * 60 * 24));
-        const isLtcg = diffDays > 365;
-
-        if (unrealized > 0 && isLtcg) {
-          profitCandidates.push({
-            stock: lot.stock,
-            qty: lot.qty,
-            cost: lot.price,
-            ltp: livePrice,
-            gain: unrealized,
-            days: diffDays,
-            account: lot.account
-          });
-        } else if (unrealized < 0) {
-          lossCandidates.push({
-            stock: lot.stock,
-            qty: lot.qty,
-            cost: lot.price,
-            ltp: livePrice,
-            loss: Math.abs(unrealized),
-            days: diffDays,
-            isLtcg: isLtcg,
-            account: lot.account
-          });
-        }
-      });
-
-      const profitList = document.getElementById('profitHarvestList');
-      const profitBadge = document.getElementById('profitHarvestCountBadge');
-      if (profitList && profitBadge) {
-        profitList.innerHTML = '';
-        profitBadge.innerText = `${profitCandidates.length} lot(s)`;
-
-        if (profitCandidates.length === 0) {
-          profitList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
-        } else {
-          profitCandidates.sort((a, b) => b.gain - a.gain).forEach(c => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
-            row.innerHTML = `
-              <div>
-                <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                  <span>${c.stock}</span>
-                  <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
-                </div>
-                <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
-              </div>
-              <div class="text-right">
-                <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">+${formatINR(c.gain, 0)}</span>
-                <span class="block text-[10px] text-slate-400">Tax-Free Room</span>
-              </div>
-            `;
-            profitList.appendChild(row);
-          });
-        }
-      }
-
-      const lossList = document.getElementById('lossHarvestList');
-      const lossBadge = document.getElementById('lossHarvestCountBadge');
-      if (lossList && lossBadge) {
-        lossList.innerHTML = '';
-        lossBadge.innerText = `${lossCandidates.length} lot(s)`;
-
-        if (lossCandidates.length === 0) {
-          lossList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
-        } else {
-          lossCandidates.sort((a, b) => b.loss - a.loss).forEach(c => {
-            const row = document.createElement('div');
-            row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
-            row.innerHTML = `
-              <div>
-                <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                  <span>${c.stock}</span>
-                  <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
-                </div>
-                <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
-              </div>
-              <div class="text-right">
-                <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">-${formatINR(c.loss, 0)}</span>
-                <span class="block text-[10px] text-slate-400">Offset Capacity</span>
-              </div>
-            `;
-            lossList.appendChild(row);
-          });
-        }
-      }
-    }
-
-    /* ---------------- CLEAN PERFORMANCE CHART ---------------- */
-    function setChartRange(range) {
-      currentChartRange = range;
-      const ttmBtn = document.getElementById('chartRangeBtn-TTM');
-      const allBtn = document.getElementById('chartRangeBtn-ALL');
-
-      const activeClasses = 'bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
-      const inactiveClasses = 'text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 font-medium';
-
-      if (ttmBtn && allBtn) {
-        if (range === 'TTM') {
-          ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-          allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
-        } else {
-          allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-          ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
-        }
-      }
-
-      renderChart(computeEngine());
-    }
-
-    function renderChart(computed) {
-      const canvas = document.getElementById('multiCurveChart');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (multiChartInstance) multiChartInstance.destroy();
-
-      const isDark = document.documentElement.classList.contains('dark');
-      const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
-      const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
-      const tickColor = isDark ? '#94A3B8' : '#64748B';
-
-      let allPoints = [];
-
-      if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
-        const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-        sortedHistory.forEach(r => {
-          if (!r.date) return;
-          allPoints.push({
-            label: r.date,
-            netWorth: Number(r.portfolioValue || 0),
-            invested: Number(r.netCapital || 0),
-            profit: Number(r.profit || 0)
-          });
-        });
-      }
-
-      if (computed) {
-        allPoints.push({
-          label: 'Today',
-          netWorth: Math.round(computed.netWorth || 0),
-          invested: Math.round(computed.netInvested || 0),
-          profit: Math.round(computed.lifetimePnL || 0)
-        });
-      }
-
-      let displayPoints = allPoints;
-      if (currentChartRange === 'TTM' && allPoints.length > 12) {
-        displayPoints = allPoints.slice(-12);
-      }
-
-      const labels = displayPoints.length > 0 ? displayPoints.map(p => p.label) : ['No Data'];
-      const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
-      const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
-      const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
-
-      const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
-
-      const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-      blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.14)');
-      blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.04)');
-      blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
-
-      const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-      greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.14)' : 'rgba(22, 163, 74, 0.10)');
-      greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
-      greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
-
-      multiChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            {
-              label: 'Net Worth',
-              data: netWorthData,
-              borderColor: '#2563eb',
-              backgroundColor: blueGradient,
-              fill: true,
-              borderWidth: 2.2,
-              cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
-              pointBackgroundColor: '#2563eb',
-              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-              pointBorderWidth: 1.5,
-              order: 1
-            },
-            {
-              label: 'My Capital',
-              data: investedData,
-              borderColor: '#dc2626',
-              backgroundColor: 'transparent',
-              fill: false,
-              borderWidth: 2.0,
-              cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
-              pointBackgroundColor: '#dc2626',
-              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-              pointBorderWidth: 1.5,
-              order: 2
-            },
-            {
-              label: 'Profit',
-              data: profitData,
-              borderColor: '#16a34a',
-              backgroundColor: greenGradient,
-              fill: true,
-              borderWidth: 2.0,
-              borderDash: [4, 4],
-              cubicInterpolationMode: 'monotone',
-              pointRadius: 3.5,
-              pointHoverRadius: 5.5,
-              pointBackgroundColor: '#16a34a',
-              pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-              pointBorderWidth: 1.5,
-              order: 3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              enabled: true,
-              usePointStyle: true,
-              backgroundColor: isDark ? '#0f172a' : '#ffffff',
-              titleColor: isDark ? '#e2e8f0' : '#0f172a',
-              bodyColor: isDark ? '#94a3b8' : '#334155',
-              borderColor: isDark ? '#334155' : '#e2e8f0',
-              borderWidth: 1,
-              cornerRadius: 9,
-              padding: 10,
-              boxPadding: 4,
-              caretPadding: 6,
-              titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
-              bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
-              boxWidth: 7,
-              boxHeight: 7,
-              callbacks: {
-                title: function(items) { return items[0].label; },
-                labelPointStyle: function() {
-                  return { pointStyle: 'circle', rotation: 0 };
-                },
-                label: function(ctx) {
-                  const label = ctx.dataset.label || '';
-                  const val = formatINR(ctx.raw || 0, 0);
-                  return ` ${label.padEnd(11, ' ')} : ${val}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: {
-                display: false,
-                drawBorder: false
-              },
-              ticks: {
-                color: tickColor,
-                font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
-                maxRotation: 0,
-                autoSkip: true,
-                maxTicksLimit: 12,
-                padding: 6
-              }
-            },
-            y: {
-              grid: {
-                color: function(ctx) {
-                  if (ctx.tick && ctx.tick.value === 0) return zeroLineColor;
-                  return horizontalGridColor;
-                },
-                lineWidth: function(ctx) {
-                  return (ctx.tick && ctx.tick.value === 0) ? 1.2 : 0.6;
-                },
-                drawBorder: false
-              },
-              ticks: {
-                color: tickColor,
-                font: { family: "'Inter', sans-serif", size: 11 },
-                padding: 8,
-                callback: function(val) {
-                  return formatINR(val, 0);
-                }
-              }
-            }
-          }
-        }
-      });
-    }
-
-    /* ---------------- TRANSACTION MODAL HANDLERS ---------------- */
-    function openPresetModal(type) {
-      document.getElementById('txEditingId').value = '';
-      document.getElementById('txModal').classList.remove('hidden');
-      document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('txType').value = type;
-      document.getElementById('txAccount').value = 'Me';
-      document.getElementById('modalTitle').innerText = `Add ${type} Transaction`;
-      toggleFormFields();
-    }
-
-    function closeTransactionModal() {
-      document.getElementById('txEditingId').value = '';
-      document.getElementById('txModal').classList.add('hidden');
-      document.getElementById('txForm').reset();
-    }
-
-    function toggleFormFields() {
-      const type = document.getElementById('txType').value;
-      const isStock = (type === 'BUY' || type === 'SELL');
-      document.getElementById('stockFields').style.display = isStock ? 'grid' : 'none';
-    }
-
-    function autoComputeAmount() {
-      const qty = Number(document.getElementById('txQty').value || 0);
-      const price = Number(document.getElementById('txPrice').value || 0);
-      if (qty && price) document.getElementById('txAmount').value = (qty * price).toFixed(2);
-    }
-
-    async function handleTransactionSubmit(e) {
-      e.preventDefault();
-      const type = document.getElementById('txType').value;
-      const account = document.getElementById('txAccount').value;
-      const stock = document.getElementById('txStock').value.trim().toUpperCase();
-      const qty = Number(document.getElementById('txQty').value || 0);
-      const price = Number(document.getElementById('txPrice').value || 0);
-      let amount = Number(document.getElementById('txAmount').value || 0);
-      const remarks = document.getElementById('txRemarks').value;
-      const date = document.getElementById('txDate').value;
-
-      if ((type === 'BUY' || type === 'SELL') && !amount) amount = qty * price;
-
-      const newEntry = {
-        id: Date.now().toString(),
-        date,
-        account,
-        type,
-        stock,
-        qty,
-        price,
-        amount,
-        remarks
-      };
-
-      transactions.push(newEntry);
-      appendToGoogleSheet(newEntry);
-
-      saveToStorage();
-      updateStockAutocompleteOptions();
-      closeTransactionModal();
-      recalculateAndRender();
-    }
-
-    function quickSellModal(stock, maxQty, currentPrice) {
-      openPresetModal('SELL');
-      document.getElementById('txStock').value = stock;
-      document.getElementById('txQty').value = maxQty;
-      document.getElementById('txPrice').value = currentPrice;
-      document.getElementById('txAmount').value = (maxQty * currentPrice).toFixed(2);
-      document.getElementById('txRemarks').value = 'Liquidation';
-    }
-
-    function manualOverridePrice(stock, cur) {
-      const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
-      if (p && !isNaN(Number(p))) {
-        persistManualPrice(stock, Number(p));
-        recalculateAndRender();
-      }
-    }
-
-    function switchTab(t) {
-      ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(id => {
-        document.getElementById(`tabContent-${id}`).classList.add('hidden');
-        document.getElementById(`tabBtn-${id}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap';
-      });
-      document.getElementById(`tabContent-${t}`).classList.remove('hidden');
-      document.getElementById(`tabBtn-${t}`).className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
-
-      if (t === 'taxPnl') {
-        setTaxAccountFilter(currentTaxAccountFilter || 'Me');
-      }
-    }
-
-    function filterHoldingsTable() {
-      const q = document.getElementById('holdingsSearch').value.toLowerCase();
-      document.querySelectorAll('#holdingsTableBody tr').forEach(r => {
-        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
-      });
-    }
-
-    /* ---------------- SETTINGS MODAL & CASH CALIBRATION (Cash_Calibration sheet) ---------------- */
-    function openSettingsModal() {
-      document.getElementById('settingsModal').classList.remove('hidden');
-      switchSettingsTab('security');
-      document.getElementById('settingsCurrentPin').value = '';
-      document.getElementById('settingsNewPin').value = '';
-      document.getElementById('settingsConfirmPin').value = '';
-      const pinMsg = document.getElementById('settingsPinMsg');
-      pinMsg.innerText = '';
-      pinMsg.classList.add('opacity-0');
-
-      // Conceal current PIN input if no master PIN set yet
-      const curGroup = document.getElementById('currentPinFieldGroup');
-      if (!appSettings.pinHash) curGroup.classList.add('hidden');
-      else curGroup.classList.remove('hidden');
-
-      renderCashCalibrateRows();
-      lucide.createIcons();
-    }
-
-    function closeSettingsModal() {
-      document.getElementById('settingsModal').classList.add('hidden');
-    }
-
-    function switchSettingsTab(tab) {
-      ['security', 'cashCalibrate'].forEach(t => {
-        const content = document.getElementById(`settingsTabContent-${t}`);
-        const btn = document.getElementById(`settingsTabBtn-${t}`);
-        if (t === tab) {
-          content.classList.remove('hidden');
-          btn.className = 'px-3 py-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5';
-        } else {
-          content.classList.add('hidden');
-          btn.className = 'px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-1.5';
-        }
-      });
-      lucide.createIcons();
-    }
-
-    async function updatePinFromSettings() {
-      const curPin = document.getElementById('settingsCurrentPin').value.trim();
-      const newPin = document.getElementById('settingsNewPin').value.trim();
-      const confirmPin = document.getElementById('settingsConfirmPin').value.trim();
-      const msg = document.getElementById('settingsPinMsg');
-
-      msg.classList.remove('opacity-0', 'text-emerald-500', 'text-rose-500');
-
-      if (appSettings.pinHash) {
-        const testHash = await sha256Hex(curPin);
-        if (testHash !== appSettings.pinHash) {
-          msg.innerText = 'Current PIN is incorrect.';
-          msg.classList.add('text-rose-500');
-          return;
-        }
-      }
-
-      if (newPin.length !== 4 || isNaN(Number(newPin))) {
-        msg.innerText = 'New PIN must be exactly 4 numeric digits.';
-        msg.classList.add('text-rose-500');
-        return;
-      }
-
-      if (newPin !== confirmPin) {
-        msg.innerText = 'New PIN and confirmation do not match.';
-        msg.classList.add('text-rose-500');
-        return;
-      }
-
-      const newHash = await sha256Hex(newPin);
-      appSettings.pinHash = newHash;
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-
-      if (cloudScriptUrl) {
-        try {
-          fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: "setPinHash", pinHash: newHash })
-          });
-        } catch (e) {}
-      }
-
-      msg.innerText = 'PIN updated successfully!';
-      msg.classList.add('text-emerald-500');
-      setTimeout(() => closeSettingsModal(), 1200);
-    }
-
-    function renderCashCalibrateRows() {
-      const container = document.getElementById('cashCalibrateRows');
-      if (!container) return;
-      container.innerHTML = '';
-
-      const data = computeEngine();
-
-      CALIB_ACCOUNTS.forEach(acct => {
-        const rawCash = data.rawAccountCashMap[acct] || 0;
-        const currentEffective = data.accountCashMap[acct] || 0;
-        const offset = getCalibOffset(acct);
-        const rec = cashCalibration.records && cashCalibration.records[acct];
-        const lastDate = rec && rec.date ? rec.date : null;
-
-        const row = document.createElement('div');
-        row.className = 'p-3 bg-slate-50 dark:bg-gray-950/70 rounded-xl border border-slate-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5';
-        row.innerHTML = `
           <div>
-            <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-              <span>${acct}</span>
-              <span class="text-[10px] text-slate-400 font-medium">(Raw Tagged: ${formatINR(rawCash)})</span>
-            </div>
-            <div class="text-[10.5px] text-slate-500 dark:text-gray-400 mt-0.5">
-              Active Offset: <span class="font-mono ${offset >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${offset >= 0 ? '+' : ''}${formatINR(offset)}</span>
-            </div>
-            <div class="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">
-              ${lastDate ? `Last calibrated: ${lastDate}` : 'Not calibrated yet'}
-            </div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Month-End Valuation Review</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400" id="monthEndModalSubtitle">Provide closing prices as of month-end date</p>
           </div>
-          <div class="flex items-center space-x-1.5">
-            <span class="text-xs font-semibold text-slate-500">₹</span>
-            <input 
-              type="number" 
-              step="0.01" 
-              id="calibrateInp_${acct}" 
-              data-raw="${rawCash}" 
-              value="${Number(currentEffective).toFixed(2)}" 
-              placeholder="0.00"
-              class="w-32 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right font-bold focus:outline-none focus:border-emerald-500"
-            >
-          </div>
-        `;
-        container.appendChild(row);
-      });
-    }
+        </div>
+        <button onclick="closeMonthEndModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
-    async function saveCashCalibration() {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const payload = {};
-      const newOffsets = Object.assign({}, cashCalibration.offsets);
-      const newRecords = Object.assign({}, cashCalibration.records);
+      <p class="text-xs text-slate-600 dark:text-gray-300">
+        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
+      </p>
 
-      CALIB_ACCOUNTS.forEach(acct => {
-        const inp = document.getElementById(`calibrateInp_${acct}`);
-        if (!inp) return;
+      <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
 
-        const raw = Number(inp.getAttribute('data-raw') || 0);
-        const targetActual = Number(inp.value || 0);
-        // Offset = Actual cash you hold - Raw tagged cash from the ledger
-        const computedOffset = Number((targetActual - raw).toFixed(2));
+      <div class="bg-slate-50 dark:bg-gray-950 p-3 rounded-2xl border border-slate-200 dark:border-gray-800 text-xs space-y-1.5">
+        <div class="flex justify-between text-slate-500 dark:text-gray-400">
+          <span>Total Stock Value:</span>
+          <b id="meModalStockVal" class="text-slate-900 dark:text-white font-bold tabular-nums">₹0.00</b>
+        </div>
+        <div class="flex justify-between text-slate-500 dark:text-gray-400">
+          <span>Cash Balance + Net Capital:</span>
+          <span class="text-slate-700 dark:text-gray-300 tabular-nums"><b id="meModalCash">₹0</b> / <b id="meModalNetCap">₹0</b></span>
+        </div>
+        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-gray-800 font-bold text-slate-900 dark:text-white">
+          <span>Computed Month-End Net Worth &amp; Profit:</span>
+          <span class="text-emerald-600 dark:text-emerald-400 tabular-nums"><span id="meModalPortVal">₹0.00</span> (<span id="meModalProfit">₹0.00</span>)</span>
+        </div>
+      </div>
 
-        newOffsets[acct] = computedOffset;
-        newRecords[acct] = {
-          date: todayStr,
-          calibratedCash: targetActual,
-          rawTaggedCash: raw,
-          offset: computedOffset
-        };
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-gray-800">
+        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-semibold">Remind Me Later</button>
+        <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs">Confirm &amp; Record Month-End</button>
+      </div>
+    </div>
+  </div>
 
-        payload[acct] = {
-          calibratedCash: targetActual,
-          rawTaggedCash: raw,
-          computedOffset: computedOffset
-        };
-      });
-
-      // Update memory + local cache immediately (works offline / before the sheet confirms)
-      cashCalibration = { offsets: newOffsets, records: newRecords };
-      localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
-
-      // Persist to the dedicated Cash_Calibration sheet (NOT the Settings sheet)
-      if (cloudScriptUrl) {
-        try {
-          fetch(cloudScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: "saveCalibration", calibration: payload })
-          });
-        } catch (e) {
-          console.error('Failed to sync cash calibration to sheet:', e);
-        }
-      }
-
-      closeSettingsModal();
-      recalculateAndRender();
-    }
-
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+  <!-- MODULAR JAVASCRIPT ARCHITECTURE -->
+  <script src="js/config.js"></script>
+  <script src="js/gatekeeper.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/tax.js"></script>
+  <script src="js/ui.js"></script>
 </body>
 </html>
