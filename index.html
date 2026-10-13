@@ -1240,7 +1240,7 @@
         </div>
       </div>
 
-      <!-- TAB 2: CASH CALIBRATION (OPTION 3) -->
+      <!-- TAB 2: CASH CALIBRATION (stored in the Cash_Calibration sheet) -->
       <div id="settingsTabContent-cashCalibrate" class="space-y-4 text-xs hidden">
         <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-500/30 space-y-1">
           <span class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5">
@@ -1248,7 +1248,7 @@
             <span>Baseline Cash Calibration Engine</span>
           </span>
           <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
-            Compensates for historical untagged/unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> your accounts currently hold. Any newly tagged deposits, withdrawals, buys, and sells will automatically add and subtract from this calibrated baseline.
+            Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. The baseline is saved to the <b>Cash_Calibration</b> sheet (synced across devices) and is used <b>only</b> for the per-account "Cash Available" badge in Active Holdings. Combined cash, KPI cards, ledgers and history are never affected.
           </p>
         </div>
 
@@ -1277,6 +1277,9 @@
     const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
     const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
     const KPI_MASK_STATES_KEY = 'MYFOLIOAI_KPI_MASK_STATES';
+    // NEW: dedicated local cache for the Cash_Calibration sheet data
+    const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
+    const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -1310,23 +1313,37 @@
       taxToggle_Me: 'false',
       taxToggle_Wife: 'true',
       taxToggle_Mom: 'true',
-      taxToggle_Brother: 'false',
-      cashOffsets: {
-        'Me': 0,
-        'Wife': 0,
-        'Mom': 0,
-        'Brother': 0
-      }
+      taxToggle_Brother: 'false'
     };
     try {
       const localSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
       if (localSettings) {
         Object.assign(appSettings, localSettings);
-        if (!appSettings.cashOffsets) {
-          appSettings.cashOffsets = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
+        // Cash calibration no longer lives in Settings: drop any legacy / corrupted value
+        delete appSettings.cashOffsets;
+      }
+    } catch (e) {}
+
+    // ---- CASH CALIBRATION STATE (source of truth: Cash_Calibration sheet) ----
+    // offsets : { Me: 0, Wife: 0, Mom: 0, Brother: 0 }
+    // records : { Me: { date, calibratedCash, rawTaggedCash, offset }, ... }
+    let cashCalibration = { offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 }, records: {} };
+    try {
+      const localCalib = JSON.parse(localStorage.getItem(CASH_CALIB_KEY));
+      if (localCalib && typeof localCalib === 'object') {
+        if (localCalib.offsets && typeof localCalib.offsets === 'object') {
+          Object.assign(cashCalibration.offsets, localCalib.offsets);
+        }
+        if (localCalib.records && typeof localCalib.records === 'object') {
+          cashCalibration.records = localCalib.records;
         }
       }
     } catch (e) {}
+
+    function getCalibOffset(acct) {
+      const v = Number(cashCalibration.offsets && cashCalibration.offsets[acct]);
+      return isNaN(v) ? 0 : v;
+    }
 
     let taxPaidChallans = {};
     try {
@@ -1937,9 +1954,26 @@
         const data = await res.json();
 
         if (data.settings && typeof data.settings === 'object') {
-          Object.assign(appSettings, data.settings);
+          // Never let a stray "cashOffsets" row in the Settings sheet overwrite calibration data
+          const cleanSettings = Object.assign({}, data.settings);
+          delete cleanSettings.cashOffsets;
+          Object.assign(appSettings, cleanSettings);
+          delete appSettings.cashOffsets;
           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
           checkGatekeeperState();
+        }
+
+        // NEW: Cash calibration now comes from the dedicated Cash_Calibration sheet
+        if (data.cashCalibration && typeof data.cashCalibration === 'object') {
+          const sheetOffsets = data.cashCalibration.offsets || {};
+          const sheetRecords = data.cashCalibration.records || {};
+          const newOffsets = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
+          Object.keys(sheetOffsets).forEach(acct => {
+            const n = Number(sheetOffsets[acct]);
+            newOffsets[acct] = isNaN(n) ? 0 : n;
+          });
+          cashCalibration = { offsets: newOffsets, records: sheetRecords };
+          localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
         }
 
         if (data.goals && typeof data.goals === 'object') {
@@ -2234,14 +2268,14 @@
       });
 
       const totalUnrealizedPnL = totalPortfolioVal - totalPortfolioInvested;
-      // Track raw ledger before applying calibration offset
+      // Raw per-account cash straight from the ledger (no calibration applied)
       const rawAccountCashMap = { ...accountCashMap };
 
-      // Apply calibration offsets (Option 3) so known cash matches live brokerage reality
+      // Calibrated per-account cash = raw tagged cash + stored offset (from Cash_Calibration sheet).
+      // Used ONLY by the per-account "Cash Available" badge in Active Holdings.
       const calibratedAccountCashMap = {};
-      ['Me', 'Wife', 'Mom', 'Brother'].forEach(acct => {
-        const offset = (appSettings.cashOffsets && appSettings.cashOffsets[acct]) ? Number(appSettings.cashOffsets[acct]) : 0;
-        calibratedAccountCashMap[acct] = (rawAccountCashMap[acct] || 0) + offset;
+      CALIB_ACCOUNTS.forEach(acct => {
+        calibratedAccountCashMap[acct] = (rawAccountCashMap[acct] || 0) + getCalibOffset(acct);
       });
 
       const netInvested = totalDeposits - totalWithdrawals;
@@ -2258,7 +2292,7 @@
       return {
         cashBalance,
         rawAccountCashMap,
-        accountCashMap: calibratedAccountCashMap, // Point 4: Calibrated baseline
+        accountCashMap: calibratedAccountCashMap, // calibrated: badge only
         totalDeposits,
         totalWithdrawals,
         netInvested,
@@ -2780,7 +2814,9 @@
 
       document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-      // Update liquid cash badge (Point 4)
+      // Update liquid cash badge
+      // Combined  -> raw ledger cash (always correct)
+      // Per-account -> calibrated cash (raw tagged cash + offset from Cash_Calibration sheet)
       const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
       const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
       const cashBadgeContainer = document.getElementById('holdingsCashBadge');
@@ -2789,9 +2825,18 @@
       if (currentHoldingsAccountFilter === 'ALL') {
         cashAmt = data.cashBalance;
         cashBadgeLabel.innerText = 'Cash Available (Combined):';
+        cashBadgeContainer.removeAttribute('title');
       } else {
-        cashAmt = data.accountCashMap[currentHoldingsAccountFilter] || 0;
-        cashBadgeLabel.innerText = `Cash Available (${currentHoldingsAccountFilter}):`;
+        const acct = currentHoldingsAccountFilter;
+        cashAmt = data.accountCashMap[acct] || 0;
+        cashBadgeLabel.innerText = `Cash Available (${acct}):`;
+
+        const rec = cashCalibration.records && cashCalibration.records[acct];
+        if (rec && rec.date) {
+          cashBadgeContainer.title = `Calibrated baseline • last calibrated on ${rec.date}`;
+        } else {
+          cashBadgeContainer.title = 'Not calibrated yet • showing raw tagged cash. Use Settings → Cash Calibrate.';
+        }
       }
 
       cashBadgeVal.innerText = formatINR(cashAmt);
@@ -4025,7 +4070,7 @@
       });
     }
 
-    /* ---------------- SETTINGS MODAL & OPTION 3 CALIBRATION LOGIC ---------------- */
+    /* ---------------- SETTINGS MODAL & CASH CALIBRATION (Cash_Calibration sheet) ---------------- */
     function openSettingsModal() {
       document.getElementById('settingsModal').classList.remove('hidden');
       switchSettingsTab('security');
@@ -4119,12 +4164,13 @@
       container.innerHTML = '';
 
       const data = computeEngine();
-      const accounts = ['Me', 'Wife', 'Mom', 'Brother'];
 
-      accounts.forEach(acct => {
+      CALIB_ACCOUNTS.forEach(acct => {
         const rawCash = data.rawAccountCashMap[acct] || 0;
         const currentEffective = data.accountCashMap[acct] || 0;
-        const offset = (appSettings.cashOffsets && appSettings.cashOffsets[acct]) ? Number(appSettings.cashOffsets[acct]) : 0;
+        const offset = getCalibOffset(acct);
+        const rec = cashCalibration.records && cashCalibration.records[acct];
+        const lastDate = rec && rec.date ? rec.date : null;
 
         const row = document.createElement('div');
         row.className = 'p-3 bg-slate-50 dark:bg-gray-950/70 rounded-xl border border-slate-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5';
@@ -4136,6 +4182,9 @@
             </div>
             <div class="text-[10.5px] text-slate-500 dark:text-gray-400 mt-0.5">
               Active Offset: <span class="font-mono ${offset >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${offset >= 0 ? '+' : ''}${formatINR(offset)}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">
+              ${lastDate ? `Last calibrated: ${lastDate}` : 'Not calibrated yet'}
             </div>
           </div>
           <div class="flex items-center space-x-1.5">
@@ -4156,35 +4205,50 @@
     }
 
     async function saveCashCalibration() {
-      if (!appSettings.cashOffsets) appSettings.cashOffsets = {};
-      const accounts = ['Me', 'Wife', 'Mom', 'Brother'];
+      const todayStr = new Date().toISOString().split('T')[0];
+      const payload = {};
+      const newOffsets = Object.assign({}, cashCalibration.offsets);
+      const newRecords = Object.assign({}, cashCalibration.records);
 
-      accounts.forEach(acct => {
+      CALIB_ACCOUNTS.forEach(acct => {
         const inp = document.getElementById(`calibrateInp_${acct}`);
-        if (inp) {
-          const raw = Number(inp.getAttribute('data-raw') || 0);
-          const targetActual = Number(inp.value || 0);
-          // Option 3 Calibration Formula: Offset = Desired Balance - Raw Tagged (rounded to 2 decimals)
-          const computedOffset = Number((targetActual - raw).toFixed(2));
-          appSettings.cashOffsets[acct] = computedOffset;
-        }
+        if (!inp) return;
+
+        const raw = Number(inp.getAttribute('data-raw') || 0);
+        const targetActual = Number(inp.value || 0);
+        // Offset = Actual cash you hold - Raw tagged cash from the ledger
+        const computedOffset = Number((targetActual - raw).toFixed(2));
+
+        newOffsets[acct] = computedOffset;
+        newRecords[acct] = {
+          date: todayStr,
+          calibratedCash: targetActual,
+          rawTaggedCash: raw,
+          offset: computedOffset
+        };
+
+        payload[acct] = {
+          calibratedCash: targetActual,
+          rawTaggedCash: raw,
+          computedOffset: computedOffset
+        };
       });
 
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+      // Update memory + local cache immediately (works offline / before the sheet confirms)
+      cashCalibration = { offsets: newOffsets, records: newRecords };
+      localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
 
+      // Persist to the dedicated Cash_Calibration sheet (NOT the Settings sheet)
       if (cloudScriptUrl) {
         try {
           fetch(cloudScriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "saveSettings",
-              settings: { cashOffsets: appSettings.cashOffsets }
-            })
+            body: JSON.stringify({ action: "saveCalibration", calibration: payload })
           });
         } catch (e) {
-          console.error('Failed to sync cash offsets to sheet:', e);
+          console.error('Failed to sync cash calibration to sheet:', e);
         }
       }
 
