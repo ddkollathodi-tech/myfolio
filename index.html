@@ -1335,19 +1335,23 @@
       taxPaidChallans = {};
     }
 
-    // Point 1: Independent Gaussian Blur Mask States
+    // Default privacy mask state: all 4 cards start masked on each session entry
     let kpiMaskStates = {
       netWorth: true,
       netInvested: true,
       lifetimePnL: true,
       currentFy: true
     };
-    try {
-      const savedMasks = JSON.parse(localStorage.getItem(KPI_MASK_STATES_KEY));
-      if (savedMasks && typeof savedMasks === 'object') {
-        Object.assign(kpiMaskStates, savedMasks);
-      }
-    } catch (e) {}
+
+    function resetKpiMasksToDefault() {
+      kpiMaskStates = {
+        netWorth: true,
+        netInvested: true,
+        lifetimePnL: true,
+        currentFy: true
+      };
+      applyAllKpiMasks();
+    }
 
     // Point 2: 12-Row Unified Pagination across all 3 ledgers
     const PAGE_SIZE = 12;
@@ -1556,6 +1560,7 @@
             enteredPin = '';
             sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
             resetActivityTimer();
+            resetKpiMasksToDefault();
             checkGatekeeperState();
             recalculateAndRender();
             return;
@@ -1574,6 +1579,7 @@
         sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
         resetActivityTimer();
         enteredPin = '';
+        resetKpiMasksToDefault();
         checkGatekeeperState();
         recalculateAndRender();
       } else {
@@ -1584,6 +1590,7 @@
     function lockApplicationNow() {
       sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
       enteredPin = '';
+      resetKpiMasksToDefault();
       checkGatekeeperState();
     }
 
@@ -1591,7 +1598,6 @@
     function toggleSingleKpiMask(cardKey) {
       if (kpiMaskStates.hasOwnProperty(cardKey)) {
         kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
-        localStorage.setItem(KPI_MASK_STATES_KEY, JSON.stringify(kpiMaskStates));
         updateSingleMaskUI(cardKey);
       }
     }
@@ -1857,6 +1863,7 @@
       renderLastPriceTimestamp();
       initAutoLockEngine();
       initKeyboardPinListener(); // Point 5
+      resetKpiMasksToDefault(); // Always start in masked state
 
       const savedTx = localStorage.getItem(STORAGE_KEY);
       if (savedTx) {
@@ -4135,11 +4142,11 @@
             <span class="text-xs font-semibold text-slate-500">₹</span>
             <input 
               type="number" 
-              step="any" 
+              step="0.01" 
               id="calibrateInp_${acct}" 
               data-raw="${rawCash}" 
-              value="${Math.round(currentEffective)}" 
-              placeholder="0"
+              value="${Number(currentEffective).toFixed(2)}" 
+              placeholder="0.00"
               class="w-32 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right font-bold focus:outline-none focus:border-emerald-500"
             >
           </div>
@@ -4157,8 +4164,8 @@
         if (inp) {
           const raw = Number(inp.getAttribute('data-raw') || 0);
           const targetActual = Number(inp.value || 0);
-          // Option 3 Calibration Formula: Offset = Desired Balance - Raw Tagged
-          const computedOffset = targetActual - raw;
+          // Option 3 Calibration Formula: Offset = Desired Balance - Raw Tagged (rounded to 2 decimals)
+          const computedOffset = Number((targetActual - raw).toFixed(2));
           appSettings.cashOffsets[acct] = computedOffset;
         }
       });
