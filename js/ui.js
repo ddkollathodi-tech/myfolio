@@ -1046,7 +1046,31 @@ function toggleTxDropdown(e) {
   } else {
     menu.classList.add('hidden');
     if (chevron) chevron.classList.remove('rotate-180');
+    closeCorpActionSubmenu();
   }
+}
+
+function toggleCorpActionSubmenu(e) {
+  if (e) e.stopPropagation();
+  const submenu = document.getElementById('corpActionSubmenu');
+  const chevron = document.getElementById('corpSubmenuChevron');
+  if (!submenu) return;
+
+  const isHidden = submenu.classList.contains('hidden');
+  if (isHidden) {
+    submenu.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-90');
+  } else {
+    submenu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-90');
+  }
+}
+
+function closeCorpActionSubmenu() {
+  const submenu = document.getElementById('corpActionSubmenu');
+  const chevron = document.getElementById('corpSubmenuChevron');
+  if (submenu) submenu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-90');
 }
 
 function selectDropdownPreset(type) {
@@ -1054,6 +1078,7 @@ function selectDropdownPreset(type) {
   const chevron = document.getElementById('txDropdownChevron');
   if (menu) menu.classList.add('hidden');
   if (chevron) chevron.classList.remove('rotate-180');
+  closeCorpActionSubmenu();
   openPresetModal(type);
 }
 
@@ -1064,6 +1089,7 @@ window.addEventListener('click', function(e) {
   if (dropdown && !dropdown.contains(e.target) && menu && !menu.classList.contains('hidden')) {
     menu.classList.add('hidden');
     if (chevron) chevron.classList.remove('rotate-180');
+    closeCorpActionSubmenu();
   }
 });
 
@@ -1088,13 +1114,36 @@ function toggleFormFields() {
   const isStock = ['BUY', 'SELL', 'BONUS', 'SPLIT', 'DEMERGER'].includes(type);
   const stockFields = document.getElementById('stockFields');
   const amountField = document.getElementById('txAmountFieldGroup');
+  const qtyLabel = document.getElementById('txQtyLabel');
+  const priceLabel = document.getElementById('txPriceLabel');
+  const qtyInput = document.getElementById('txQty');
+  const priceInput = document.getElementById('txPrice');
+  const amtInput = document.getElementById('txAmount');
   
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
-  
-  // Bonus shares carry ₹0 amount
-  if (type === 'BONUS' && amountField) {
-    document.getElementById('txPrice').value = '0';
-    document.getElementById('txAmount').value = '0';
+
+  if (type === 'BONUS') {
+    qtyLabel.innerText = 'Bonus Shares Allotted';
+    priceLabel.innerText = 'Cost Per Share (₹)';
+    priceInput.value = '0';
+    priceInput.disabled = true;
+    amtInput.value = '0';
+    amtInput.disabled = true;
+  } else if (type === 'SPLIT') {
+    qtyLabel.innerText = 'New Ratio (e.g. 10)';
+    priceLabel.innerText = 'Old Ratio (e.g. 1)';
+    priceInput.disabled = false;
+    amtInput.disabled = false;
+  } else if (type === 'DEMERGER') {
+    qtyLabel.innerText = 'Shares Apportioned';
+    priceLabel.innerText = 'Cost Retained (e.g. 0.90)';
+    priceInput.disabled = false;
+    amtInput.disabled = false;
+  } else {
+    qtyLabel.innerText = 'Quantity';
+    priceLabel.innerText = 'Price / Share (₹)';
+    priceInput.disabled = false;
+    amtInput.disabled = false;
   }
 }
 
@@ -1350,7 +1399,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] -= Number(t.qty || 0);
+      inv[t.stock] += Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
