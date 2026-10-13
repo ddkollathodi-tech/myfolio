@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyFolioAI - Portfolio Tracker Engine</title>
+  
   <style>
     .hidden { display: none !important; }
     /* Anti-FOUC Gatekeeper Law: Conceal entire dashboard until session unlock */
@@ -16,7 +17,15 @@
     .shake-animation {
       animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
     }
+    /* Modern Gaussian Privacy Mask Utility */
+    .privacy-blurred {
+      filter: blur(8px) !important;
+      user-select: none !important;
+      pointer-events: none !important;
+      transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
   </style>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -33,8 +42,8 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Point 10: SheetJS for Multi-Tab Excel (.xlsx) Export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
@@ -84,9 +93,6 @@
 </head>
 <body class="bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
-  <!-- ========================================================================= -->
-  <!-- POINT 1: PIN GATEKEEPER OVERLAY (WORKING <details> POPOVER)               -->
-  <!-- ========================================================================= -->
   <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-black/95 backdrop-blur-md p-4 transition-opacity duration-300">
     <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-slate-200 dark:border-gray-800 shadow-2xl p-7 text-center space-y-6">
       
@@ -126,9 +132,9 @@
         </button>
       </div>
 
-      <!-- Point 1: Working <details> Popover (Mobile & Desktop Touch Safe) -->
+      <!-- Point 5: Keyboard and emergency reset info popover -->
       <div class="text-[11.5px] text-slate-400 dark:text-gray-500 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-center space-x-1.5">
-        <span>Emergency reset:</span>
+        <span>Type on keyboard or keypad. Reset:</span>
         <details class="relative inline-block text-left">
           <summary class="list-none cursor-pointer inline-flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 focus:outline-none" title="Click for instructions">
             <i data-lucide="info" class="w-3.5 h-3.5"></i>
@@ -141,9 +147,6 @@
     </div>
   </div>
 
-  <!-- ========================================================================= -->
-  <!-- MAIN APP ROOT                                                             -->
-  <!-- ========================================================================= -->
   <div id="app-root" class="flex-1 flex flex-col">
 
     <!-- TOP HEADER -->
@@ -212,16 +215,10 @@
             </div>
           </div>
 
-          <!-- 2. LIVE PRICES (Opens manual LTP prompt) -->
+          <!-- 2. LIVE PRICES -->
           <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
-          </button>
-
-          <!-- Point 10: Multi-Tab Excel Export Button -->
-          <button onclick="exportPortfolioToExcel()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Export complete multi-tab ledger to Excel">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500"></i>
-            <span>Export Excel</span>
           </button>
 
           <!-- 3. THEME TOGGLE -->
@@ -259,9 +256,6 @@
     <!-- MAIN VIEW CONTAINER -->
     <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-6 lg:py-8 space-y-6">
 
-      <!-- ========================================================================= -->
-      <!-- KPI ROW (POINT 4 & 5: PRIVACY MASKING FOR CARDS 1-4, CARD 5 UNMASKED)     -->
-      <!-- ========================================================================= -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         
         <!-- 1. TOTAL NET WORTH (Spans 2 Columns) -->
@@ -270,8 +264,8 @@
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Total Net Worth</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleKpiPrivacyMask()" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Privacy Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-1" class="w-4 h-4"></i>
+                <button onclick="toggleSingleKpiMask('netWorth')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Net Worth Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-4 h-4"></i>
                 </button>
                 <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
                   <i data-lucide="wallet" class="w-4 h-4"></i>
@@ -279,19 +273,20 @@
               </div>
             </div>
 
-            <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1">₹ ••••••••</div>
+            <!-- Value container with individual Gaussian blur hook -->
+            <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
             
             <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-gray-400">
-              <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹ ••••</b></span>
+              <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-gray-300 font-semibold transition-all duration-200">₹0</b></span>
               <span>•</span>
-              <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-semibold">₹ ••••</b></span>
+              <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-gray-300 font-semibold transition-all duration-200">₹0</b></span>
             </div>
           </div>
 
           <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-gray-800/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
-              <span id="kpiNetWorthRem" class="text-slate-500 dark:text-gray-400">₹ •••• left</span>
+              <span id="kpiNetWorthRem" class="text-slate-500 dark:text-gray-400 transition-all duration-200">₹0 left</span>
             </div>
             <div class="w-full bg-blue-100/70 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
               <div id="kpiNetWorthBar" class="bg-gradient-to-r from-blue-600 to-blue-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -305,8 +300,8 @@
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Net Invested</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleKpiPrivacyMask()" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Privacy Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-2" class="w-3.5 h-3.5"></i>
+                <button onclick="toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
                   <i data-lucide="layers" class="w-3.5 h-3.5"></i>
@@ -314,14 +309,14 @@
               </div>
             </div>
 
-            <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1">₹ ••••••••</div>
+            <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
             <div class="mt-2 text-[11px] text-slate-500 dark:text-gray-400 font-medium">Contributed Corpus</div>
           </div>
 
           <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
-              <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-gray-400">₹ •••• left</span>
+              <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-gray-400 transition-all duration-200">₹0 left</span>
             </div>
             <div class="w-full bg-rose-100/70 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
               <div id="kpiNetInvestedBar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -335,8 +330,8 @@
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Lifetime P&amp;L</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleKpiPrivacyMask()" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Privacy Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-3" class="w-3.5 h-3.5"></i>
+                <button onclick="toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
                   <i data-lucide="award" class="w-3.5 h-3.5"></i>
@@ -344,14 +339,14 @@
               </div>
             </div>
 
-            <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1">₹ ••••••••</div>
+            <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
             <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
           </div>
 
           <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
-              <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-gray-400">₹ •••• left</span>
+              <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-gray-400 transition-all duration-200">₹0 left</span>
             </div>
             <div class="w-full bg-emerald-100/70 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
               <div id="kpiLifetimeBar" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -365,8 +360,8 @@
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleKpiPrivacyMask()" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Privacy Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-4" class="w-3.5 h-3.5"></i>
+                <button onclick="toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
                   <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
@@ -377,11 +372,11 @@
             <div class="space-y-1 mt-1">
               <div class="flex items-baseline justify-between">
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Realized:</span>
-                <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400">₹ ••••••••</span>
+                <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400 transition-all duration-200">₹0.00</span>
               </div>
               <div class="flex items-baseline justify-between">
                 <span class="text-[11px] text-slate-500 dark:text-gray-400 font-medium">Unrealized:</span>
-                <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-gray-300">₹ ••••••••</span>
+                <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-gray-300 transition-all duration-200">₹0.00</span>
               </div>
             </div>
           </div>
@@ -389,7 +384,7 @@
           <div class="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
-              <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-gray-400">₹ •••• left</span>
+              <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-gray-400 transition-all duration-200">₹0 left</span>
             </div>
             <div class="w-full bg-amber-100/70 dark:bg-amber-950/60 rounded-full h-1.5 overflow-hidden">
               <div id="kpiCurrentFyBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -397,7 +392,7 @@
           </div>
         </div>
 
-        <!-- 5. ANNUALIZED XIRR (Strictly Unmasked, No Eye Button) -->
+        <!-- 5. ANNUALIZED XIRR (Always Unmasked, No Eye Button) -->
         <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
@@ -424,9 +419,6 @@
 
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- PERFORMANCE CHART + COLLAPSIBLE TTM BREAKDOWN (POINTS 3 & 4)              -->
-      <!-- ========================================================================= -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
@@ -468,7 +460,7 @@
           <canvas id="multiCurveChart"></canvas>
         </div>
 
-        <!-- Points 3 & 4: Collapsible TTM P&L Accordion Below Graph -->
+        <!-- Collapsible TTM P&L Accordion Below Graph -->
         <div class="pt-2 border-t border-slate-100 dark:border-gray-800/80">
           <button 
             type="button" 
@@ -502,40 +494,48 @@
 
       </div>
 
-      <!-- TABS NAVIGATION -->
-      <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2 overflow-x-auto">
-        <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="briefcase" class="w-4 h-4"></i>
-          <span>Active Holdings (WAP Basis)</span>
-        </button>
-        <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="check-check" class="w-4 h-4"></i>
-          <span>Closed Trades Book</span>
-        </button>
-        <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="calendar-check" class="w-4 h-4"></i>
-          <span>Financial Year P&amp;L (Strict FIFO)</span>
-        </button>
-        <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="list" class="w-4 h-4"></i>
-          <span>Tradebook &amp; Cash Ledger</span>
-        </button>
-        <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="landmark" class="w-4 h-4"></i>
-          <span>Bank Ledger</span>
-        </button>
-        <button onclick="switchTab('taxPnl')" id="tabBtn-taxPnl" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
-          <i data-lucide="calculator" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
-          <span>Tax P&amp;L &amp; Planning Cockpit</span>
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 gap-2">
+        <div class="flex space-x-2 overflow-x-auto custom-scroll flex-1 py-0.5">
+          <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="briefcase" class="w-4 h-4"></i>
+            <span>Active Holdings (WAP Basis)</span>
+          </button>
+          <button onclick="switchTab('closedTrades')" id="tabBtn-closedTrades" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="check-check" class="w-4 h-4"></i>
+            <span>Closed Trades Book</span>
+          </button>
+          <button onclick="switchTab('fyBreakdown')" id="tabBtn-fyBreakdown" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+            <span>Financial Year P&amp;L (Strict FIFO)</span>
+          </button>
+          <button onclick="switchTab('transactions')" id="tabBtn-transactions" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="list" class="w-4 h-4"></i>
+            <span>Tradebook &amp; Cash Ledger</span>
+          </button>
+          <button onclick="switchTab('bankLedger')" id="tabBtn-bankLedger" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="landmark" class="w-4 h-4"></i>
+            <span>Bank Ledger</span>
+          </button>
+          <button onclick="switchTab('taxPnl')" id="tabBtn-taxPnl" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+            <i data-lucide="calculator" class="w-4 h-4 text-rose-500 dark:text-rose-400"></i>
+            <span>Tax P&amp;L &amp; Planning Cockpit</span>
+          </button>
+        </div>
+
+        <!-- Point 3: Anchored Multi-Tab Excel Export Button -->
+        <button 
+          onclick="exportPortfolioToExcel()" 
+          class="shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-500/30 transition shadow-2xs mb-1" 
+          title="Export multi-sheet portfolio to Excel (.xlsx)"
+        >
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+          <span>Export Excel</span>
         </button>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- TAB 1: ACTIVE HOLDINGS (POINT 8, 9, 10: RATIO BAR, WEIGHT %, STICKY)      -->
-      <!-- ========================================================================= -->
       <div id="tabContent-holdings" class="space-y-4">
         
-        <!-- Point 9: Visual Win / Loss Health Bar -->
+        <!-- Win / Loss Ratio Health Bar -->
         <div id="holdingsRatioBarContainer" class="bg-white dark:bg-gray-900 p-3 rounded-xl border border-slate-200 dark:border-gray-800 space-y-2">
           <div class="flex items-center justify-between text-xs font-semibold">
             <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
@@ -554,17 +554,33 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
-          <div class="flex items-center space-x-2">
-            <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48 font-medium">
+        <!-- Point 4: Account Filter Switcher + Search Input + Prominent Liquid Cash Badge -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+          
+          <div class="flex items-center flex-wrap gap-2.5">
+            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
+              <button onclick="setHoldingsAccountFilter('ALL')" id="holdingsAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs">Combined</button>
+              <button onclick="setHoldingsAccountFilter('Me')" id="holdingsAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Me</button>
+              <button onclick="setHoldingsAccountFilter('Wife')" id="holdingsAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
+              <button onclick="setHoldingsAccountFilter('Mom')" id="holdingsAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
+              <button onclick="setHoldingsAccountFilter('Brother')" id="holdingsAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
+            </div>
+
+            <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
           </div>
-          <div class="text-xs text-slate-500 dark:text-gray-400">Click headers to sort. Click any <b>Live LTP</b> cell to override.</div>
+
+          <!-- Highlighted Liquid Cash Badge -->
+          <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs">
+            <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
+            <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
+          </div>
+
         </div>
 
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
-            <!-- Point 7: Sticky Header -->
             <thead class="bg-slate-100/95 dark:bg-gray-950/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
@@ -588,7 +604,6 @@
                     <span id="sortIcon-holdings-currentVal"></span>
                   </div>
                 </th>
-                <!-- Point 10: Allocation Weightage Column -->
                 <th class="py-3 px-3 text-right">Weight (%)</th>
                 <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
                   <div class="flex items-center justify-end space-x-1.5">
@@ -604,9 +619,6 @@
         </div>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- TAB 2: CLOSED TRADES BOOK (POINT 6: 15-ROW PAGINATION & STICKY HEADER)    -->
-      <!-- ========================================================================= -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
@@ -651,9 +663,9 @@
           </table>
         </div>
 
-        <!-- Point 6: Pagination Footer for Closed Trades -->
+        <!-- Point 2: Pagination Footer for Closed Trades (12 rows per page) -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <span id="closedPageInfo">Showing 1–15 entries</span>
+          <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <span id="closedPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
@@ -662,9 +674,6 @@
         </div>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- TAB 3: FY BREAKDOWN (POINT 2: CARDS JUSTIFY-BETWEEN & % RIGHT ALIGNED)    -->
-      <!-- ========================================================================= -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -683,18 +692,13 @@
         </div>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- TAB 4: TRADEBOOK & CASH LEDGER (POINT 6 & 8: SEARCH + 15-ROW PAGINATION)  -->
-      <!-- ========================================================================= -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
-        
-        <!-- Point 8: Ledger Search Filter Input -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="flex items-center space-x-2">
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="ledgerCountBadge">0 Entries</span>
           </div>
-          <div class="text-xs text-slate-500">15 rows per page • Click Record Transaction above to log new entries</div>
+          <div class="text-xs text-slate-500">12 rows per page • Log new entries via Record Transaction</div>
         </div>
 
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -717,9 +721,9 @@
           </table>
         </div>
 
-        <!-- Point 6: Pagination Footer for Ledger -->
+        <!-- Point 2: Pagination Footer for Ledger (12 rows per page) -->
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <span id="ledgerPageInfo">Showing 1–15 entries</span>
+          <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <span id="ledgerPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
@@ -728,7 +732,6 @@
         </div>
       </div>
 
-      <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
@@ -746,9 +749,18 @@
             <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-gray-800/80"></tbody>
           </table>
         </div>
+
+        <!-- Point 2: Pagination Footer for Bank Ledger (12 rows per page) -->
+        <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
+          <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
+          <div class="flex items-center space-x-2">
+            <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
+            <span id="bankLedgerPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
+            <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Next</button>
+          </div>
+        </div>
       </div>
 
-      <!-- TAB 6: TAX P&L, EXEMPTION SHORTFALL & HARVESTING COCKPIT -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
@@ -1028,7 +1040,7 @@
           <h3 id="goalModalTitle" class="text-sm font-bold text-slate-900 dark:text-white">Set Target</h3>
         </div>
         <button onclick="closeGoalModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
-          <i data-lucide="x" class="w-4 h-4"></i>
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
@@ -1168,7 +1180,7 @@
     const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
     const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
     const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
-    const KPI_MASK_KEY = 'MYFOLIOAI_KPI_MASK';
+    const KPI_MASK_STATES_KEY = 'MYFOLIOAI_KPI_MASK_STATES';
 
     let transactions = [];
     let chartHistoryRecords = [];
@@ -1216,18 +1228,29 @@
       taxPaidChallans = {};
     }
 
-    // Point 5: Default KPI Masking state
-    let isKpiMasked = true;
-    const storedMask = localStorage.getItem(KPI_MASK_KEY);
-    if (storedMask !== null) {
-      isKpiMasked = storedMask === 'true';
-    }
+    // Point 1: Independent Gaussian Blur Mask States
+    let kpiMaskStates = {
+      netWorth: true,
+      netInvested: true,
+      lifetimePnL: true,
+      currentFy: true
+    };
+    try {
+      const savedMasks = JSON.parse(localStorage.getItem(KPI_MASK_STATES_KEY));
+      if (savedMasks && typeof savedMasks === 'object') {
+        Object.assign(kpiMaskStates, savedMasks);
+      }
+    } catch (e) {}
 
-    // Point 6: Pagination Pointers (15 rows per page)
-    const PAGE_SIZE = 15;
+    // Point 2: 12-Row Unified Pagination across all 3 ledgers
+    const PAGE_SIZE = 12;
     let closedTradesCurrentPage = 1;
     let ledgerCurrentPage = 1;
+    let bankLedgerCurrentPage = 1;
     let ledgerSearchTerm = '';
+
+    // Point 4: Account Filter inside Active Holdings tab ('ALL' = Combined default)
+    let currentHoldingsAccountFilter = 'ALL';
 
     let enteredPin = '';
     let isSettingUpNewPin = false;
@@ -1256,14 +1279,34 @@
       'INFY': { ltp: 1895.00, prevClose: 1910.00 }
     }, savedManualPrices);
 
-    /* ---------------- SHA-256 Cryptographic Hash ---------------- */
+    /* ---------------- Cryptographic Hash ---------------- */
     async function sha256Hex(str) {
       const buf = new TextEncoder().encode(str);
       const digest = await crypto.subtle.digest('SHA-256', buf);
       return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    /* ---------------- POINT 1: GATEKEEPER & 10-MIN AUTO-LOCK ENGINE ---------------- */
+    /* ---------------- POINT 5: PHYSICAL KEYBOARD INPUT LISTENER ---------------- */
+    function initKeyboardPinListener() {
+      window.addEventListener('keydown', (e) => {
+        const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
+        if (isSessionUnlocked) return; // Do not intercept if unlocked
+
+        // Number keys 0 - 9
+        if (e.key >= '0' && e.key <= '9') {
+          e.preventDefault();
+          pressPinDigit(e.key);
+        } else if (e.key === 'Backspace') {
+          e.preventDefault();
+          backspacePinDigit();
+        } else if (e.key === 'Escape' || e.key === 'Delete') {
+          e.preventDefault();
+          clearPinInput();
+        }
+      });
+    }
+
+    /* ---------------- GATEKEEPER & 10-MIN AUTO-LOCK ENGINE ---------------- */
     let lastActiveTimestamp = Date.now();
     const AUTO_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -1276,7 +1319,6 @@
         window.addEventListener(evt, resetActivityTimer, { passive: true });
       });
 
-      // Background tab check
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true') {
           if (Date.now() - lastActiveTimestamp >= AUTO_LOCK_TIMEOUT_MS) {
@@ -1285,7 +1327,6 @@
         }
       });
 
-      // Periodic 30s interval check
       setInterval(() => {
         if (sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true') {
           if (Date.now() - lastActiveTimestamp >= AUTO_LOCK_TIMEOUT_MS) {
@@ -1439,28 +1480,42 @@
       checkGatekeeperState();
     }
 
-    /* ---------------- POINT 5: PRIVACY MASKING CONTROLLER ---------------- */
-    function toggleKpiPrivacyMask() {
-      isKpiMasked = !isKpiMasked;
-      localStorage.setItem(KPI_MASK_KEY, isKpiMasked ? 'true' : 'false');
-      updateMaskIcons();
-      recalculateAndRender();
+    /* ---------------- POINT 1: INDEPENDENT GAUSSIAN BLUR MASK CONTROLLER ---------------- */
+    function toggleSingleKpiMask(cardKey) {
+      if (kpiMaskStates.hasOwnProperty(cardKey)) {
+        kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
+        localStorage.setItem(KPI_MASK_STATES_KEY, JSON.stringify(kpiMaskStates));
+        updateSingleMaskUI(cardKey);
+      }
     }
 
-    function updateMaskIcons() {
-      const iconName = isKpiMasked ? 'eye-off' : 'eye';
-      for (let i = 1; i <= 4; i++) {
-        const el = document.getElementById(`maskToggleIcon-${i}`);
-        if (el) {
-          el.setAttribute('data-lucide', iconName);
-        }
+    function updateSingleMaskUI(cardKey) {
+      const isMasked = kpiMaskStates[cardKey];
+      const icon = document.getElementById(`maskToggleIcon-${cardKey}`);
+      if (icon) {
+        icon.setAttribute('data-lucide', isMasked ? 'eye-off' : 'eye');
       }
+
+      const targetsMap = {
+        netWorth: ['kpiNetWorth', 'subPortfolioVal', 'subCashVal', 'kpiNetWorthRem'],
+        netInvested: ['kpiNetInvested', 'kpiNetInvestedRem'],
+        lifetimePnL: ['kpiLifetimePnL', 'kpiLifetimeTargetRem'],
+        currentFy: ['kpiCurrentFyPnL', 'kpiCurrentFyUnrealized', 'kpiCurrentFyRem']
+      };
+
+      (targetsMap[cardKey] || []).forEach(elemId => {
+        const el = document.getElementById(elemId);
+        if (el) {
+          if (isMasked) el.classList.add('privacy-blurred');
+          else el.classList.remove('privacy-blurred');
+        }
+      });
+
       lucide.createIcons();
     }
 
-    function maskRupee(formattedVal, isBig = true) {
-      if (!isKpiMasked) return formattedVal;
-      return isBig ? '₹ ••••••••' : '₹ ••••';
+    function applyAllKpiMasks() {
+      ['netWorth', 'netInvested', 'lifetimePnL', 'currentFy'].forEach(key => updateSingleMaskUI(key));
     }
 
     /* ---------------- PERSISTENT FORMATTED TIMESTAMP (dd-mm-yy, hh:mm) ---------------- */
@@ -1693,8 +1748,8 @@
       initTheme();
       updateSyncUI();
       renderLastPriceTimestamp();
-      updateMaskIcons();
       initAutoLockEngine();
+      initKeyboardPinListener(); // Point 5
 
       const savedTx = localStorage.getItem(STORAGE_KEY);
       if (savedTx) {
@@ -1874,6 +1929,9 @@
       let totalDeposits = 0;
       let totalWithdrawals = 0;
 
+      // Track liquid cash balances per account (Point 4)
+      const accountCashMap = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
+
       const inventory = {};
       const fyRealized = {};
       const closedTradesMap = {};
@@ -1888,6 +1946,7 @@
         const invKey = `${acct}__${tx.stock}`;
 
         if (!fyRealized[fy]) fyRealized[fy] = { sellProceeds: 0, costBasis: 0, gain: 0 };
+        if (!accountCashMap.hasOwnProperty(acct)) accountCashMap[acct] = 0;
 
         const amt = Number(tx.amount || 0);
         let cashIn = 0;
@@ -1897,6 +1956,7 @@
           case 'DEPOSIT':
             cashIn = amt;
             cashBalance += amt;
+            accountCashMap[acct] += amt;
             totalDeposits += amt;
             bankEntries.push({ date: tx.date, account: acct, type: 'DEPOSIT', deposit: amt, withdrawal: 0, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
             break;
@@ -1904,6 +1964,7 @@
           case 'WITHDRAWAL':
             cashOut = amt;
             cashBalance -= amt;
+            accountCashMap[acct] -= amt;
             totalWithdrawals += amt;
             bankEntries.push({ date: tx.date, account: acct, type: 'WITHDRAWAL', deposit: 0, withdrawal: amt, corpus: totalDeposits - totalWithdrawals, remarks: tx.remarks });
             break;
@@ -1911,11 +1972,13 @@
           case 'FEES':
             cashOut = amt;
             cashBalance -= amt;
+            accountCashMap[acct] -= amt;
             break;
 
           case 'BUY':
             cashOut = amt;
             cashBalance -= amt;
+            accountCashMap[acct] -= amt;
             if (!inventory[invKey]) inventory[invKey] = [];
             inventory[invKey].push({ 
               qty: Number(tx.qty), 
@@ -1929,6 +1992,7 @@
           case 'SELL': {
             cashIn = amt;
             cashBalance += amt;
+            accountCashMap[acct] += amt;
             let qtyToSell = Number(tx.qty);
             const sellPrice = Number(tx.price);
             let costOfSoldShares = 0;
@@ -2027,7 +2091,6 @@
       let totalPortfolioVal = 0;
       let totalPortfolioInvested = 0;
 
-      // First pass to get total portfolio value
       Object.keys(stockAggregateMap).forEach(stock => {
         const item = stockAggregateMap[stock];
         if (item.totalQty > 0) {
@@ -2038,7 +2101,6 @@
         }
       });
 
-      // Second pass to compute weights (Point 10)
       const holdings = [];
       Object.keys(stockAggregateMap).forEach(stock => {
         const item = stockAggregateMap[stock];
@@ -2071,6 +2133,7 @@
 
       return {
         cashBalance,
+        accountCashMap, // Point 4
         totalDeposits,
         totalWithdrawals,
         netInvested,
@@ -2404,7 +2467,7 @@
         holdingsSort.key = key;
         holdingsSort.dir = 'desc';
       }
-      renderHoldings(computeEngine().holdings);
+      renderHoldings(computeEngine());
     }
 
     function handleClosedSort(key) {
@@ -2438,30 +2501,30 @@
       const data = computeEngine();
 
       // Card 1: Net Worth
-      document.getElementById('kpiNetWorth').innerText = maskRupee(formatINR(data.netWorth), true);
-      document.getElementById('subPortfolioVal').innerText = isKpiMasked ? '₹ ••••' : formatCompactIndian(data.totalPortfolioVal);
-      document.getElementById('subCashVal').innerText = isKpiMasked ? '₹ ••••' : formatCompactIndian(data.cashBalance);
+      document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
+      document.getElementById('subPortfolioVal').innerText = formatCompactIndian(data.totalPortfolioVal);
+      document.getElementById('subCashVal').innerText = formatCompactIndian(data.cashBalance);
 
       const nwTarget = milestoneGoals.netWorth || 10000000;
       const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
       const nwRem = Math.max(0, nwTarget - data.netWorth);
       document.getElementById('kpiNetWorthPct').innerText = `${nwPct.toFixed(2)}%`;
-      document.getElementById('kpiNetWorthRem').innerText = isKpiMasked ? '₹ •••• left' : (nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved');
+      document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
       document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
       // Card 2: Net Invested
-      document.getElementById('kpiNetInvested').innerText = maskRupee(formatINR(data.netInvested), true);
+      document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
       const invTarget = milestoneGoals.netInvested || 5000000;
       const invPct = invTarget > 0 ? Math.min(100, Math.max(0, (data.netInvested / invTarget) * 100)) : 0;
       const invRem = Math.max(0, invTarget - data.netInvested);
       document.getElementById('kpiNetInvestedPct').innerText = `${invPct.toFixed(2)}%`;
-      document.getElementById('kpiNetInvestedRem').innerText = isKpiMasked ? '₹ •••• left' : (invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved');
+      document.getElementById('kpiNetInvestedRem').innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
       document.getElementById('kpiNetInvestedBar').style.width = `${invPct}%`;
 
       // Card 3: Lifetime P&L
       const lifeEl = document.getElementById('kpiLifetimePnL');
-      lifeEl.innerText = maskRupee(formatINR(data.lifetimePnL), true);
-      lifeEl.className = `text-xl font-bold tabular-nums ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+      lifeEl.innerText = formatINR(data.lifetimePnL);
+      lifeEl.className = `text-xl font-bold tabular-nums transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const lifePctEl = document.getElementById('kpiLifetimePnLPct');
       lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
@@ -2471,7 +2534,7 @@
       const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
       const lifeRem = Math.max(0, pnlTarget - data.lifetimePnL);
       document.getElementById('kpiLifetimeTargetPct').innerText = `${lifeTargetPct.toFixed(2)}%`;
-      document.getElementById('kpiLifetimeTargetRem').innerText = isKpiMasked ? '₹ •••• left' : (lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved');
+      document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
       document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
 
       // Card 4: Current FY
@@ -2480,18 +2543,18 @@
       const curFyData = data.fyRealized[curFy] || { gain: 0 };
       
       const curFyEl = document.getElementById('kpiCurrentFyPnL');
-      curFyEl.innerText = maskRupee(formatINR(curFyData.gain), false);
-      curFyEl.className = `text-sm font-bold tabular-nums ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
+      curFyEl.innerText = formatINR(curFyData.gain);
+      curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const curFyUnrealEl = document.getElementById('kpiCurrentFyUnrealized');
-      curFyUnrealEl.innerText = maskRupee(formatINR(data.totalUnrealizedPnL), false);
-      curFyUnrealEl.className = `text-sm font-bold tabular-nums ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+      curFyUnrealEl.innerText = formatINR(data.totalUnrealizedPnL);
+      curFyUnrealEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
       const fyTarget = milestoneGoals.currentFyPnL || 1000000;
       const fyPct = fyTarget > 0 ? Math.min(100, Math.max(0, (curFyData.gain / fyTarget) * 100)) : 0;
       const fyRem = Math.max(0, fyTarget - curFyData.gain);
       document.getElementById('kpiCurrentFyPct').innerText = `${fyPct.toFixed(2)}%`;
-      document.getElementById('kpiCurrentFyRem').innerText = isKpiMasked ? '₹ •••• left' : (fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved');
+      document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
       document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
 
       // Card 5: Annualized XIRR (Always unmasked)
@@ -2503,7 +2566,10 @@
       document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
       document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
 
-      renderHoldings(data.holdings);
+      // Apply independent Gaussian blur filters
+      applyAllKpiMasks();
+
+      renderHoldings(data);
       renderClosedTrades(data.closedTrades);
       renderFY(data.fyRealized);
       renderLedger(data.ledgerEntries);
@@ -2516,35 +2582,124 @@
       lucide.createIcons();
     }
 
-    /* ---------------- POINT 9 & 10: RENDER HOLDINGS & RATIO BAR ---------------- */
-    function renderHoldings(holdings) {
+    /* ---------------- POINT 4: ACCOUNT-FILTERED HOLDINGS & CASH BADGE ---------------- */
+    function setHoldingsAccountFilter(acct) {
+      currentHoldingsAccountFilter = acct;
+      ['ALL', 'Me', 'Wife', 'Mom', 'Brother'].forEach(key => {
+        const btn = document.getElementById(`holdingsAcctBtn-${key}`);
+        if (!btn) return;
+        if (key === acct) {
+          btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
+        }
+      });
+      renderHoldings(computeEngine());
+    }
+
+    function renderHoldings(data) {
       const tbody = document.getElementById('holdingsTableBody');
       tbody.innerHTML = '';
-      document.getElementById('holdingsCount').innerText = `${holdings.length} Open Positions`;
 
-      // Point 9: Win/Loss Ratio Bar
-      const profitPositions = holdings.filter(h => h.pnlVal >= 0);
-      const lossPositions = holdings.filter(h => h.pnlVal < 0);
+      // Filter relevant open lots based on selected account
+      let relevantLots = data.openLots;
+      if (currentHoldingsAccountFilter !== 'ALL') {
+        relevantLots = relevantLots.filter(l => l.account === currentHoldingsAccountFilter);
+      }
+
+      // Aggregate filtered positions
+      const aggMap = {};
+      let totalFilteredPortVal = 0;
+      let totalFilteredInvested = 0;
+
+      relevantLots.forEach(lot => {
+        if (!aggMap[lot.stock]) {
+          aggMap[lot.stock] = { totalQty: 0, totalCost: 0 };
+        }
+        aggMap[lot.stock].totalQty += lot.qty;
+        aggMap[lot.stock].totalCost += (lot.qty * lot.price);
+      });
+
+      const filteredHoldings = [];
+      Object.keys(aggMap).forEach(stock => {
+        const item = aggMap[stock];
+        if (item.totalQty > 0) {
+          const wap = item.totalCost / item.totalQty;
+          const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
+          const ltp = liveData.ltp;
+          const curVal = item.totalQty * ltp;
+          const invVal = item.totalCost;
+          const pnlVal = curVal - invVal;
+          const pnlPct = invVal > 0 ? (pnlVal / invVal) * 100 : 0;
+
+          totalFilteredPortVal += curVal;
+          totalFilteredInvested += invVal;
+
+          filteredHoldings.push({
+            stock,
+            qty: item.totalQty,
+            wap,
+            ltp,
+            investedVal: invVal,
+            currentVal: curVal,
+            pnlVal,
+            pnlPct
+          });
+        }
+      });
+
+      // Compute weight % relative to current filtered equity
+      filteredHoldings.forEach(h => {
+        h.weightPct = totalFilteredPortVal > 0 ? (h.currentVal / totalFilteredPortVal) * 100 : 0;
+      });
+
+      document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
+
+      // Update liquid cash badge (Point 4)
+      const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
+      const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
+      const cashBadgeContainer = document.getElementById('holdingsCashBadge');
+      
+      let cashAmt = 0;
+      if (currentHoldingsAccountFilter === 'ALL') {
+        cashAmt = data.cashBalance;
+        cashBadgeLabel.innerText = 'Cash Available (Combined):';
+      } else {
+        cashAmt = data.accountCashMap[currentHoldingsAccountFilter] || 0;
+        cashBadgeLabel.innerText = `Cash Available (${currentHoldingsAccountFilter}):`;
+      }
+
+      cashBadgeVal.innerText = formatINR(cashAmt);
+      if (cashAmt >= 0) {
+        cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs';
+        cashBadgeVal.className = 'tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm';
+      } else {
+        cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/30 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs';
+        cashBadgeVal.className = 'tabular-nums font-extrabold text-rose-600 dark:text-rose-400 text-sm';
+      }
+
+      // Win / Loss bar
+      const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
+      const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
       const profitSum = profitPositions.reduce((acc, h) => acc + h.pnlVal, 0);
       const lossSum = lossPositions.reduce((acc, h) => acc + h.pnlVal, 0);
-      const totalCount = holdings.length;
+      const totalCount = filteredHoldings.length;
       const winRate = totalCount > 0 ? Math.round((profitPositions.length / totalCount) * 100) : 0;
 
       document.getElementById('holdingsProfitSummary').innerText = `${profitPositions.length} Green (+${formatCompactIndian(profitSum)})`;
       document.getElementById('holdingsLossSummary').innerText = `${lossPositions.length} Red (${formatCompactIndian(lossSum)})`;
       document.getElementById('holdingsWinRateBadge').innerText = `Win Rate: ${winRate}%`;
-
       document.getElementById('holdingsWinBar').style.width = `${winRate}%`;
       document.getElementById('holdingsLossBar').style.width = `${100 - winRate}%`;
 
       updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
 
-      if (holdings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active stock positions.</td></tr>`;
+      if (filteredHoldings.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active holdings for ${currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : currentHoldingsAccountFilter}.</td></tr>`;
         return;
       }
 
-      const sorted = [...holdings].sort((a, b) => {
+      const sorted = [...filteredHoldings].sort((a, b) => {
         let valA = a[holdingsSort.key];
         let valB = b[holdingsSort.key];
 
@@ -2584,7 +2739,7 @@
       filterHoldingsTable();
     }
 
-    /* ---------------- POINT 6: PAGINATED CLOSED TRADES ---------------- */
+    /* ---------------- POINT 2: 12-ROW PAGINATION: CLOSED TRADES ---------------- */
     function renderClosedTrades(closedTrades) {
       const tbody = document.getElementById('closedTradesTableBody');
       tbody.innerHTML = '';
@@ -2658,7 +2813,7 @@
       }
     }
 
-    /* ---------------- POINT 2: FY SUMMARY CARDS (JUSTIFY-BETWEEN) ---------------- */
+    /* ---------------- FY SUMMARY CARDS (JUSTIFY-BETWEEN) ---------------- */
     function renderFY(fyRealized) {
       const cards = document.getElementById('fyCardsContainer');
       const tbody = document.getElementById('fySummaryTableBody');
@@ -2670,7 +2825,6 @@
         const isPos = item.gain >= 0;
         const retPct = item.costBasis > 0 ? (item.gain / item.costBasis) * 100 : 0;
 
-        // Point 2: Justify-between alignment
         const card = document.createElement('div');
         card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xs transition-colors';
         card.innerHTML = `
@@ -2706,7 +2860,7 @@
       });
     }
 
-    /* ---------------- POINT 6 & 8: SEARCHABLE & PAGINATED LEDGER ---------------- */
+    /* ---------------- POINT 2: 12-ROW PAGINATION: TRADEBOOK ---------------- */
     function handleLedgerSearch() {
       ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
       ledgerCurrentPage = 1;
@@ -2792,11 +2946,34 @@
       }
     }
 
+    /* ---------------- POINT 2: 12-ROW PAGINATION: BANK LEDGER ---------------- */
     function renderBankLedger(bankEntries) {
       const tbody = document.getElementById('bankLedgerTableBody');
       tbody.innerHTML = '';
 
-      [...bankEntries].reverse().forEach(b => {
+      const list = [...bankEntries].reverse();
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">No bank ledger transactions recorded yet.</td></tr>`;
+        document.getElementById('bankLedgerPaginationContainer').classList.add('hidden');
+        return;
+      }
+      document.getElementById('bankLedgerPaginationContainer').classList.remove('hidden');
+
+      const totalItems = list.length;
+      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+      if (bankLedgerCurrentPage > totalPages) bankLedgerCurrentPage = totalPages;
+
+      const startIndex = (bankLedgerCurrentPage - 1) * PAGE_SIZE;
+      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+      const pageSlice = list.slice(startIndex, endIndex);
+
+      document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
+      document.getElementById('bankLedgerPageNumbers').innerText = `Page ${bankLedgerCurrentPage} of ${totalPages}`;
+      document.getElementById('bankLedgerPrevBtn').disabled = bankLedgerCurrentPage <= 1;
+      document.getElementById('bankLedgerNextBtn').disabled = bankLedgerCurrentPage >= totalPages;
+
+      pageSlice.forEach(b => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
         tr.innerHTML = `
@@ -2812,7 +2989,22 @@
       });
     }
 
-    /* ---------------- POINT 3 & 4: TTM BREAKDOWN ACCORDION & TABLE ---------------- */
+    function prevBankLedgerPage() {
+      if (bankLedgerCurrentPage > 1) {
+        bankLedgerCurrentPage--;
+        renderBankLedger(computeEngine().bankEntries);
+      }
+    }
+
+    function nextBankLedgerPage() {
+      const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE);
+      if (bankLedgerCurrentPage < totalPages) {
+        bankLedgerCurrentPage++;
+        renderBankLedger(computeEngine().bankEntries);
+      }
+    }
+
+    /* ---------------- TTM BREAKDOWN ACCORDION & TABLE ---------------- */
     function toggleTtmTableAccordion() {
       const container = document.getElementById('ttmTableContainer');
       const chevron = document.getElementById('ttmAccordionChevron');
@@ -2847,7 +3039,6 @@
         return;
       }
 
-      // Take last 12 intervals
       const ttmRecords = history.slice(-13);
       const rows = [];
 
@@ -2859,7 +3050,6 @@
         const prevPortVal = Number(prev.portfolioValue || 0);
         const monthlyReturnPct = prevPortVal > 0 ? (deltaProfit / prevPortVal) * 100 : 0;
         
-        // Point 4: Return on Net Capital = Cumulative Profit / Net Capital
         const currNetCap = Number(curr.netCapital || 0);
         const currCumProfit = Number(curr.profit || 0);
         const cumReturnOnCapPct = currNetCap > 0 ? (currCumProfit / currNetCap) * 100 : 0;
@@ -2901,7 +3091,7 @@
       });
     }
 
-    /* ---------------- POINT 10: MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
+    /* ---------------- POINT 3: MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
     function exportPortfolioToExcel() {
       if (typeof XLSX === 'undefined') {
         return;
@@ -3296,9 +3486,10 @@
       const maxExemptionRoom = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
       const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
 
-      document.getElementById('harvestLtcgRoomVal').innerText = `${formatINR(unusedRoom, 0)} available`;
+      const roomEl = document.getElementById('harvestLtcgRoomVal');
+      if (roomEl) roomEl.innerText = `${formatINR(unusedRoom, 0)} available`;
 
-      let openLots = data.openLots;
+      let openLots = data.openLots || [];
       if (currentTaxAccountFilter !== 'ALL') {
         openLots = openLots.filter(l => l.account === currentTaxAccountFilter);
       }
@@ -3343,58 +3534,62 @@
 
       const profitList = document.getElementById('profitHarvestList');
       const profitBadge = document.getElementById('profitHarvestCountBadge');
-      profitList.innerHTML = '';
-      profitBadge.innerText = `${profitCandidates.length} lot(s)`;
+      if (profitList && profitBadge) {
+        profitList.innerHTML = '';
+        profitBadge.innerText = `${profitCandidates.length} lot(s)`;
 
-      if (profitCandidates.length === 0) {
-        profitList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
-      } else {
-        profitCandidates.sort((a, b) => b.gain - a.gain).forEach(c => {
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
-          row.innerHTML = `
-            <div>
-              <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <span>${c.stock}</span>
-                <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
+        if (profitCandidates.length === 0) {
+          profitList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
+        } else {
+          profitCandidates.sort((a, b) => b.gain - a.gain).forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+            row.innerHTML = `
+              <div>
+                <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                  <span>${c.stock}</span>
+                  <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
               </div>
-              <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
-            </div>
-            <div class="text-right">
-              <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">+${formatINR(c.gain, 0)}</span>
-              <span class="block text-[10px] text-slate-400">Tax-Free Room</span>
-            </div>
-          `;
-          profitList.appendChild(row);
-        });
+              <div class="text-right">
+                <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">+${formatINR(c.gain, 0)}</span>
+                <span class="block text-[10px] text-slate-400">Tax-Free Room</span>
+              </div>
+            `;
+            profitList.appendChild(row);
+          });
+        }
       }
 
       const lossList = document.getElementById('lossHarvestList');
       const lossBadge = document.getElementById('lossHarvestCountBadge');
-      lossList.innerHTML = '';
-      lossBadge.innerText = `${lossCandidates.length} lot(s)`;
+      if (lossList && lossBadge) {
+        lossList.innerHTML = '';
+        lossBadge.innerText = `${lossCandidates.length} lot(s)`;
 
-      if (lossCandidates.length === 0) {
-        lossList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
-      } else {
-        lossCandidates.sort((a, b) => b.loss - a.loss).forEach(c => {
-          const row = document.createElement('div');
-          row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
-          row.innerHTML = `
-            <div>
-              <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <span>${c.stock}</span>
-                <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
+        if (lossCandidates.length === 0) {
+          lossList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
+        } else {
+          lossCandidates.sort((a, b) => b.loss - a.loss).forEach(c => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+            row.innerHTML = `
+              <div>
+                <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+                  <span>${c.stock}</span>
+                  <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
               </div>
-              <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
-            </div>
-            <div class="text-right">
-              <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">-${formatINR(c.loss, 0)}</span>
-              <span class="block text-[10px] text-slate-400">Offset Capacity</span>
-            </div>
-          `;
-          lossList.appendChild(row);
-        });
+              <div class="text-right">
+                <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">-${formatINR(c.loss, 0)}</span>
+                <span class="block text-[10px] text-slate-400">Offset Capacity</span>
+              </div>
+            `;
+            lossList.appendChild(row);
+          });
+        }
       }
     }
 
@@ -3407,12 +3602,14 @@
       const activeClasses = 'bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
       const inactiveClasses = 'text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 font-medium';
 
-      if (range === 'TTM') {
-        ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-        allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
-      } else {
-        allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-        ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
+      if (ttmBtn && allBtn) {
+        if (range === 'TTM') {
+          ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+          allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
+        } else {
+          allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+          ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
+        }
       }
 
       renderChart(computeEngine());
@@ -3463,7 +3660,7 @@
       const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
       const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
 
-      const chartHeight = canvas.parentElement.clientHeight || 330;
+      const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
 
       const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
       blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.14)');
