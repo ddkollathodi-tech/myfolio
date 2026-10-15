@@ -110,7 +110,7 @@
         <!-- Action Cluster -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- RECORD TRANSACTION DROPDOWN (WITH CLEAN NESTED CORPORATE ACTIONS) -->
+          <!-- 1. RECORD TRANSACTION DROPDOWN (WITH CLEAN NESTED CORPORATE ACTIONS) -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
@@ -185,23 +185,50 @@
             </div>
           </div>
 
-          <!-- LIVE PRICES (MANUAL MODAL) -->
+          <!-- 2. LIVE PRICES (MANUAL MODAL) -->
           <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
-          <!-- THEME TOGGLE -->
+          <!-- 3. THEME TOGGLE -->
           <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
             <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
           </button>
 
-          <!-- SETTINGS TRIGGER -->
-          <button onclick="openSettingsModal()" id="settingsModalBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Platform Settings">
-            <i data-lucide="settings" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
-          </button>
+          <!-- 4. SETTINGS DROPDOWN TRIGGER (POINT 5) -->
+          <div class="relative" id="settingsDropdownContainer">
+            <button 
+              onclick="toggleSettingsDropdown(event)" 
+              id="settingsModalBtn" 
+              class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" 
+              title="Platform Settings"
+            >
+              <i data-lucide="settings" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
+            </button>
 
-          <!-- INSTANT PIN LOCK -->
+            <!-- Settings Navbar Dropdown Menu -->
+            <div 
+              id="settingsDropdownMenu" 
+              class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
+            >
+              <div class="px-3.5 py-1 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Settings &amp; Tools</div>
+              <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
+                <span>Master PIN &amp; Security</span>
+              </button>
+              <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500 mr-2.5"></i>
+                <span>Cash Calibration</span>
+              </button>
+              <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
+                <span>Stock Master Registry</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 5. INSTANT PIN LOCK -->
           <button onclick="lockApplicationNow()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
             <span>Lock</span>
@@ -367,11 +394,15 @@
           </div>
         </div>
 
-        <!-- 5. ANNUALIZED XIRR -->
+        <!-- 5. ANNUALIZED XIRR (WITH POINT 1 INCEPTION SUBTITLE) -->
         <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
+              <div>
+                <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
+                <!-- Point 1 Inception Date -->
+                <span id="kpiXirrInception" class="text-[10px] text-slate-400 dark:text-gray-500 font-medium block mt-0.5">Since —</span>
+              </div>
               <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
                 <i data-lucide="percent" class="w-3.5 h-3.5"></i>
               </div>
@@ -640,12 +671,23 @@
           </table>
         </div>
 
-        <!-- Pagination Footer -->
+        <!-- Point 3: Jump-To-Page Pagination Footer -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
-            <span id="closedPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
+            <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
+              <span>Page</span>
+              <input 
+                type="number" 
+                id="closedJumpInput" 
+                min="1" 
+                value="1" 
+                onchange="jumpToClosedPage(this.value)" 
+                class="w-12 text-center rounded bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+              <span id="closedTotalPagesLabel">of 1</span>
+            </div>
             <button id="closedNextBtn" onclick="nextClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
@@ -700,12 +742,23 @@
           </table>
         </div>
 
-        <!-- Pagination Footer -->
+        <!-- Point 3: Jump-To-Page Pagination Footer -->
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
-            <span id="ledgerPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
+            <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
+              <span>Page</span>
+              <input 
+                type="number" 
+                id="ledgerJumpInput" 
+                min="1" 
+                value="1" 
+                onchange="jumpToLedgerPage(this.value)" 
+                class="w-12 text-center rounded bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+              <span id="ledgerTotalPagesLabel">of 1</span>
+            </div>
             <button id="ledgerNextBtn" onclick="nextLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
@@ -730,12 +783,23 @@
           </table>
         </div>
 
-        <!-- Pagination Footer -->
+        <!-- Point 3: Jump-To-Page Pagination Footer -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
-            <span id="bankLedgerPageNumbers" class="font-bold text-slate-800 dark:text-gray-200">Page 1</span>
+            <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
+              <span>Page</span>
+              <input 
+                type="number" 
+                id="bankLedgerJumpInput" 
+                min="1" 
+                value="1" 
+                onchange="jumpToBankLedgerPage(this.value)" 
+                class="w-12 text-center rounded bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              />
+              <span id="bankLedgerTotalPagesLabel">of 1</span>
+            </div>
             <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
@@ -1067,7 +1131,7 @@
       </div>
 
       <div class="space-y-3 text-xs">
-        <p class="text-slate-500 dark:text-gray-400" id="goalModalDesc">Enter your milestone goal. Targets sync across all devices via your linked Sheet.</p>
+        <p class="text-slate-500 dark:text-gray-400" id="goalModalDesc">Enter your milestone goal. Targets sync across all devices via your linked Sheet[cite: 2].</p>
         <div>
           <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1" id="goalInputLabel">Target Value</label>
           <div class="relative">
@@ -1098,7 +1162,7 @@
       </div>
 
       <div class="space-y-3 text-xs text-slate-600 dark:text-gray-300">
-        <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script deployment below:</p>
+        <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script deployment below[cite: 2]:</p>
         <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
       </div>
 
@@ -1112,90 +1176,132 @@
     </div>
   </div>
 
-  <!-- MODAL: PLATFORM SETTINGS & CASH CALIBRATION -->
-  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      
+  <!-- DEDICATED MODAL 1: PIN & SECURITY SETTINGS (POINT 5) -->
+  <div id="pinSettingsModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
         <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-200 flex items-center justify-center shadow-2xs">
-            <i data-lucide="settings" class="w-5 h-5"></i>
+          <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-2xs">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Platform Settings</h3>
-            <p class="text-[11px] text-slate-500 dark:text-gray-400">Manage security credentials and account cash baselines</p>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Security &amp; PIN</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400">Master gatekeeper credential</p>
           </div>
         </div>
-        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+        <button onclick="closePinSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="flex border-b border-slate-200 dark:border-gray-800 space-x-2">
-        <button onclick="switchSettingsTab('security')" id="settingsTabBtn-security" class="px-3 py-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
-          <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-          <span>Security &amp; PIN</span>
-        </button>
-        <button onclick="switchSettingsTab('cashCalibrate')" id="settingsTabBtn-cashCalibrate" class="px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-1.5">
-          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
-          <span>Cash Calibrate</span>
-        </button>
+      <div class="space-y-3 text-xs">
+        <div id="currentPinFieldGroup">
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Current 4-Digit PIN</label>
+          <input type="password" maxlength="4" id="settingsCurrentPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">New 4-Digit PIN</label>
+          <input type="password" maxlength="4" id="settingsNewPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Confirm New PIN</label>
+          <input type="password" maxlength="4" id="settingsConfirmPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+        <div id="settingsPinMsg" class="text-xs font-semibold h-4 text-rose-500 opacity-0 transition-opacity"></div>
       </div>
 
-      <!-- Tab 1: PIN Security -->
-      <div id="settingsTabContent-security" class="space-y-4 text-xs">
-        <div class="p-3 bg-slate-50 dark:bg-gray-950 rounded-2xl border border-slate-200 dark:border-gray-800 space-y-1">
-          <span class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-            <i data-lucide="key-round" class="w-3.5 h-3.5 text-emerald-500"></i>
-            <span>Master Gatekeeper PIN</span>
-          </span>
-          <p class="text-[11px] text-slate-500 dark:text-gray-400 leading-relaxed">
-            Update your 4-digit numeric PIN used to unlock your dashboard session across devices[cite: 2].
-          </p>
-        </div>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-gray-800">
+        <button type="button" onclick="closePinSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium text-xs">Cancel</button>
+        <button type="button" onclick="updatePinFromSettings()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-2xs">Update PIN</button>
+      </div>
+    </div>
+  </div>
 
-        <div class="space-y-3">
-          <div id="currentPinFieldGroup">
-            <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Current 4-Digit PIN</label>
-            <input type="password" maxlength="4" id="settingsCurrentPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+  <!-- DEDICATED MODAL 2: CASH CALIBRATION (POINT 5) -->
+  <div id="cashCalibrateModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-2xs">
+            <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
           </div>
           <div>
-            <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">New 4-Digit PIN</label>
-            <input type="password" maxlength="4" id="settingsNewPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Cash Calibration</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400">Baseline per-account cash balances</p>
+          </div>
+        </div>
+        <button onclick="closeCashCalibrateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-500/30 space-y-1 text-xs">
+        <span class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5">
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+          <span>Baseline Cash Calibration Engine</span>
+        </span>
+        <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
+          Compensates for historical unassigned transactions without modifying legacy records[cite: 2]. Enter the <b>actual cash balance</b> each account currently holds[cite: 2]. Saved directly to the <b>Cash_Calibration</b> sheet[cite: 2].
+        </p>
+      </div>
+
+      <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1 text-xs" id="cashCalibrateRows"></div>
+
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-gray-800 text-xs">
+        <button type="button" onclick="closeCashCalibrateModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
+        <button type="button" onclick="saveCashCalibration()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-2xs">Save &amp; Calibrate Baseline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEDICATED MODAL 3: STOCK MASTER REGISTRY (POINT 4 & 5) -->
+  <div id="stockMasterModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="h-9 w-9 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-2xs">
+            <i data-lucide="database" class="w-5 h-5"></i>
           </div>
           <div>
-            <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Confirm New PIN</label>
-            <input type="password" maxlength="4" id="settingsConfirmPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Stock Master Registry</h3>
+            <p class="text-[11px] text-slate-500 dark:text-gray-400">Add new symbols to master autocomplete</p>
           </div>
-          <div id="settingsPinMsg" class="text-xs font-semibold h-4 text-rose-500 opacity-0 transition-opacity"></div>
         </div>
-
-        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-gray-800">
-          <button type="button" onclick="closeSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
-          <button type="button" onclick="updatePinFromSettings()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-2xs">Update PIN</button>
-        </div>
+        <button onclick="closeStockMasterModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
-      <!-- Tab 2: Cash Calibration -->
-      <div id="settingsTabContent-cashCalibrate" class="space-y-4 text-xs hidden">
-        <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-500/30 space-y-1">
-          <span class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5">
-            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
-            <span>Baseline Cash Calibration Engine</span>
-          </span>
-          <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
-            Compensates for historical unassigned transactions without modifying legacy records[cite: 2]. Enter the <b>actual cash balance</b> each account currently holds[cite: 2]. Saved to the <b>Cash_Calibration</b> sheet[cite: 2].
-          </p>
+      <form id="stockMasterForm" onsubmit="handleAddStockMasterSubmit(event)" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Stock Ticker Symbol</label>
+          <input 
+            type="text" 
+            id="smSymbolInput" 
+            required 
+            placeholder="e.g. TATAMOTORS, DANISH" 
+            class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-purple-500"
+          >
         </div>
 
-        <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1" id="cashCalibrateRows"></div>
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Company / Script Name</label>
+          <input 
+            type="text" 
+            id="smNameInput" 
+            required 
+            placeholder="e.g. Tata Motors Limited" 
+            class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
+          >
+        </div>
+
+        <div id="smStatusMsg" class="text-xs font-semibold h-4 text-emerald-500 opacity-0 transition-opacity"></div>
 
         <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-gray-800">
-          <button type="button" onclick="closeSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
-          <button type="button" onclick="saveCashCalibration()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-2xs">Save &amp; Calibrate Baseline</button>
+          <button type="button" onclick="closeStockMasterModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium">Cancel</button>
+          <button type="submit" class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-2xs">Save Ticker</button>
         </div>
-      </div>
-
+      </form>
     </div>
   </div>
 
