@@ -182,7 +182,7 @@ function recalculateAndRender() {
   document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
   document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
 
-  // Card 5: Annualized XIRR
+  // Card 5: Annualized XIRR & Inception Date (Point 1)
   document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
   const xirrTarget = milestoneGoals.xirr || 25;
   const xirrProgress = xirrTarget > 0 ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
@@ -190,6 +190,23 @@ function recalculateAndRender() {
   document.getElementById('kpiXirrPct').innerText = `${xirrProgress.toFixed(2)}%`;
   document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
   document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
+
+  // Point 1: Determine Inception Date from Oldest Capital Infusion
+  const inceptionEl = document.getElementById('kpiXirrInception');
+  if (inceptionEl) {
+    const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
+    if (capitalTxs.length > 0 && capitalTxs[0].date) {
+      const d = new Date(capitalTxs[0].date);
+      if (!isNaN(d.getTime())) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        inceptionEl.innerText = `Since ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      } else {
+        inceptionEl.innerText = 'Since —';
+      }
+    } else {
+      inceptionEl.innerText = 'Since —';
+    }
+  }
 
   applyAllKpiMasks();
   renderHoldings(data);
@@ -385,7 +402,7 @@ function filterHoldingsTable() {
   });
 }
 
-/* ---------------- CLOSED TRADES TABLE (12-ROW PAGINATION) ---------------- */
+/* ---------------- CLOSED TRADES TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
 function renderClosedTrades(closedTrades) {
   const tbody = document.getElementById('closedTradesTableBody');
   if (!tbody) return;
@@ -419,7 +436,16 @@ function renderClosedTrades(closedTrades) {
   const pageSlice = sorted.slice(startIndex, endIndex);
 
   document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  document.getElementById('closedPageNumbers').innerText = `Page ${closedTradesCurrentPage} of ${totalPages}`;
+  
+  // Point 3: Sync Jump Input & Total Pages
+  const jumpInput = document.getElementById('closedJumpInput');
+  const totalLabel = document.getElementById('closedTotalPagesLabel');
+  if (jumpInput) {
+    jumpInput.value = closedTradesCurrentPage;
+    jumpInput.max = totalPages;
+  }
+  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
+
   document.getElementById('closedPrevBtn').disabled = closedTradesCurrentPage <= 1;
   document.getElementById('closedNextBtn').disabled = closedTradesCurrentPage >= totalPages;
 
@@ -471,6 +497,15 @@ function nextClosedPage() {
   }
 }
 
+function jumpToClosedPage(val) {
+  const totalPages = Math.ceil(computeEngine().closedTrades.length / PAGE_SIZE) || 1;
+  let target = parseInt(val, 10);
+  if (isNaN(target) || target < 1) target = 1;
+  if (target > totalPages) target = totalPages;
+  closedTradesCurrentPage = target;
+  renderClosedTrades(computeEngine().closedTrades);
+}
+
 /* ---------------- FINANCIAL YEAR SUMMARY ---------------- */
 function renderFY(fyRealized) {
   const cards = document.getElementById('fyCardsContainer');
@@ -519,7 +554,7 @@ function renderFY(fyRealized) {
   });
 }
 
-/* ---------------- TRADEBOOK LEDGER TABLE (12-ROW PAGINATION) ---------------- */
+/* ---------------- TRADEBOOK LEDGER TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
 function handleLedgerSearch() {
   ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
   ledgerCurrentPage = 1;
@@ -559,7 +594,16 @@ function renderLedger(ledgerEntries) {
   const pageSlice = list.slice(startIndex, endIndex);
 
   document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  document.getElementById('ledgerPageNumbers').innerText = `Page ${ledgerCurrentPage} of ${totalPages}`;
+  
+  // Point 3: Sync Jump Input & Total Pages
+  const jumpInput = document.getElementById('ledgerJumpInput');
+  const totalLabel = document.getElementById('ledgerTotalPagesLabel');
+  if (jumpInput) {
+    jumpInput.value = ledgerCurrentPage;
+    jumpInput.max = totalPages;
+  }
+  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
+
   document.getElementById('ledgerPrevBtn').disabled = ledgerCurrentPage <= 1;
   document.getElementById('ledgerNextBtn').disabled = ledgerCurrentPage >= totalPages;
 
@@ -609,7 +653,25 @@ function nextLedgerPage() {
   }
 }
 
-/* ---------------- BANK LEDGER TABLE (12-ROW PAGINATION) ---------------- */
+function jumpToLedgerPage(val) {
+  let list = computeEngine().ledgerEntries;
+  if (ledgerSearchTerm) {
+    list = list.filter(tx => 
+      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
+    );
+  }
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  let target = parseInt(val, 10);
+  if (isNaN(target) || target < 1) target = 1;
+  if (target > totalPages) target = totalPages;
+  ledgerCurrentPage = target;
+  renderLedger(computeEngine().ledgerEntries);
+}
+
+/* ---------------- BANK LEDGER TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
 function renderBankLedger(bankEntries) {
   const tbody = document.getElementById('bankLedgerTableBody');
   if (!tbody) return;
@@ -633,7 +695,16 @@ function renderBankLedger(bankEntries) {
   const pageSlice = list.slice(startIndex, endIndex);
 
   document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  document.getElementById('bankLedgerPageNumbers').innerText = `Page ${bankLedgerCurrentPage} of ${totalPages}`;
+  
+  // Point 3: Sync Jump Input & Total Pages
+  const jumpInput = document.getElementById('bankLedgerJumpInput');
+  const totalLabel = document.getElementById('bankLedgerTotalPagesLabel');
+  if (jumpInput) {
+    jumpInput.value = bankLedgerCurrentPage;
+    jumpInput.max = totalPages;
+  }
+  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
+
   document.getElementById('bankLedgerPrevBtn').disabled = bankLedgerCurrentPage <= 1;
   document.getElementById('bankLedgerNextBtn').disabled = bankLedgerCurrentPage >= totalPages;
 
@@ -666,6 +737,15 @@ function nextBankLedgerPage() {
     bankLedgerCurrentPage++;
     renderBankLedger(computeEngine().bankEntries);
   }
+}
+
+function jumpToBankLedgerPage(val) {
+  const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE) || 1;
+  let target = parseInt(val, 10);
+  if (isNaN(target) || target < 1) target = 1;
+  if (target > totalPages) target = totalPages;
+  bankLedgerCurrentPage = target;
+  renderBankLedger(computeEngine().bankEntries);
 }
 
 /* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
@@ -835,7 +915,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- PERFORMANCE CHART (CHART.JS) ---------------- */
+/* ---------------- PERFORMANCE CHART (POINT 2 MONTHLY DELTA TOOLTIP) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -890,6 +970,15 @@ function renderChart(computed) {
       invested: Math.round(computed.netInvested || 0),
       profit: Math.round(computed.lifetimePnL || 0)
     });
+  }
+
+  // Point 2: Compute Monthly Delta between adjacent checkpoints
+  for (let i = 0; i < allPoints.length; i++) {
+    if (i === 0) {
+      allPoints[i].deltaProfit = null; // Inception baseline
+    } else {
+      allPoints[i].deltaProfit = allPoints[i].profit - allPoints[i - 1].profit;
+    }
   }
 
   let displayPoints = allPoints;
@@ -992,9 +1081,19 @@ function renderChart(computed) {
           callbacks: {
             title: function(items) { return items[0].label; },
             labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
-            label: function(ctx) {
-              const label = ctx.dataset.label || '';
-              const val = formatINR(ctx.raw || 0, 0);
+            label: function(tooltipCtx) {
+              const label = tooltipCtx.dataset.label || '';
+              const val = formatINR(tooltipCtx.raw || 0, 0);
+
+              // Point 2: Attach (+₹X this month) to Profit
+              if (label === 'Profit') {
+                const pt = displayPoints[tooltipCtx.dataIndex];
+                if (pt && pt.deltaProfit !== null && pt.deltaProfit !== undefined) {
+                  const sign = pt.deltaProfit >= 0 ? '+' : '';
+                  const formattedDelta = `${sign}${formatINR(pt.deltaProfit, 0)}`;
+                  return ` ${label.padEnd(11, ' ')} : ${val} (${formattedDelta} this month)`;
+                }
+              }
               return ` ${label.padEnd(11, ' ')} : ${val}`;
             }
           }
@@ -1014,11 +1113,11 @@ function renderChart(computed) {
         },
         y: {
           grid: {
-            color: function(ctx) {
-              if (ctx.tick && ctx.tick.value === 0) return zeroLineColor;
+            color: function(scaleCtx) {
+              if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
               return horizontalGridColor;
             },
-            lineWidth: function(ctx) { return (ctx.tick && ctx.tick.value === 0) ? 1.2 : 0.6; },
+            lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; },
             drawBorder: false
           },
           ticks: {
@@ -1033,7 +1132,7 @@ function renderChart(computed) {
   });
 }
 
-/* ---------------- RECORD TRANSACTION MODAL & ACTIONS ---------------- */
+/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS ---------------- */
 function toggleTxDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('txDropdownMenu');
@@ -1082,17 +1181,6 @@ function selectDropdownPreset(type) {
   openPresetModal(type);
 }
 
-window.addEventListener('click', function(e) {
-  const dropdown = document.getElementById('txDropdownContainer');
-  const menu = document.getElementById('txDropdownMenu');
-  const chevron = document.getElementById('txDropdownChevron');
-  if (dropdown && !dropdown.contains(e.target) && menu && !menu.classList.contains('hidden')) {
-    menu.classList.add('hidden');
-    if (chevron) chevron.classList.remove('rotate-180');
-    closeCorpActionSubmenu();
-  }
-});
-
 function openPresetModal(type) {
   document.getElementById('txEditingId').value = '';
   document.getElementById('txModal').classList.remove('hidden');
@@ -1113,7 +1201,6 @@ function toggleFormFields() {
   const type = document.getElementById('txType').value;
   const isStock = ['BUY', 'SELL', 'BONUS', 'SPLIT', 'DEMERGER'].includes(type);
   const stockFields = document.getElementById('stockFields');
-  const amountField = document.getElementById('txAmountFieldGroup');
   const qtyLabel = document.getElementById('txQtyLabel');
   const priceLabel = document.getElementById('txPriceLabel');
   const qtyInput = document.getElementById('txQty');
@@ -1399,7 +1486,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] += Number(t.qty || 0);
+      inv[t.stock] -= Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
@@ -1529,42 +1616,47 @@ async function commitMonthEndSnapshot() {
   recalculateAndRender();
 }
 
-/* ---------------- SETTINGS MODAL & CASH CALIBRATION ---------------- */
-function openSettingsModal() {
-  document.getElementById('settingsModal').classList.remove('hidden');
-  switchSettingsTab('security');
+/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS (POINT 5) ---------------- */
+function toggleSettingsDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('settingsDropdownMenu');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+  } else {
+    menu.classList.add('hidden');
+  }
+}
+
+function closeSettingsDropdown() {
+  const menu = document.getElementById('settingsDropdownMenu');
+  if (menu) menu.classList.add('hidden');
+}
+
+// 1. PIN Settings Modal
+function openPinSettingsModal() {
+  closeSettingsDropdown();
   document.getElementById('settingsCurrentPin').value = '';
   document.getElementById('settingsNewPin').value = '';
   document.getElementById('settingsConfirmPin').value = '';
   const pinMsg = document.getElementById('settingsPinMsg');
-  pinMsg.innerText = '';
-  pinMsg.classList.add('opacity-0');
+  if (pinMsg) {
+    pinMsg.innerText = '';
+    pinMsg.classList.add('opacity-0');
+  }
 
   const curGroup = document.getElementById('currentPinFieldGroup');
-  if (!appSettings.pinHash) curGroup.classList.add('hidden');
-  else curGroup.classList.remove('hidden');
+  if (curGroup) {
+    if (!appSettings.pinHash) curGroup.classList.add('hidden');
+    else curGroup.classList.remove('hidden');
+  }
 
-  renderCashCalibrateRows();
-  if (window.lucide) lucide.createIcons();
+  document.getElementById('pinSettingsModal').classList.remove('hidden');
 }
 
-function closeSettingsModal() {
-  document.getElementById('settingsModal').classList.add('hidden');
-}
-
-function switchSettingsTab(tab) {
-  ['security', 'cashCalibrate'].forEach(t => {
-    const content = document.getElementById(`settingsTabContent-${t}`);
-    const btn = document.getElementById(`settingsTabBtn-${t}`);
-    if (t === tab) {
-      content.classList.remove('hidden');
-      btn.className = 'px-3 py-2 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5';
-    } else {
-      content.classList.add('hidden');
-      btn.className = 'px-3 py-2 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-1.5';
-    }
-  });
-  if (window.lucide) lucide.createIcons();
+function closePinSettingsModal() {
+  document.getElementById('pinSettingsModal').classList.add('hidden');
 }
 
 async function updatePinFromSettings() {
@@ -1606,7 +1698,18 @@ async function updatePinFromSettings() {
 
   msg.innerText = 'PIN updated successfully!';
   msg.classList.add('text-emerald-500');
-  setTimeout(() => closeSettingsModal(), 1200);
+  setTimeout(() => closePinSettingsModal(), 1200);
+}
+
+// 2. Cash Calibration Modal
+function openCashCalibrateModal() {
+  closeSettingsDropdown();
+  renderCashCalibrateRows();
+  document.getElementById('cashCalibrateModal').classList.remove('hidden');
+}
+
+function closeCashCalibrateModal() {
+  document.getElementById('cashCalibrateModal').classList.add('hidden');
 }
 
 function renderCashCalibrateRows() {
@@ -1691,8 +1794,83 @@ async function saveCashCalibration() {
     sendToSheet({ action: "saveCalibration", calibration: payload });
   }
 
-  closeSettingsModal();
+  closeCashCalibrateModal();
   recalculateAndRender();
 }
+
+// 3. Stock Master Modal (Point 4)
+function openStockMasterModal() {
+  closeSettingsDropdown();
+  document.getElementById('smSymbolInput').value = '';
+  document.getElementById('smNameInput').value = '';
+  const msg = document.getElementById('smStatusMsg');
+  if (msg) {
+    msg.innerText = '';
+    msg.classList.add('opacity-0');
+  }
+  document.getElementById('stockMasterModal').classList.remove('hidden');
+}
+
+function closeStockMasterModal() {
+  document.getElementById('stockMasterModal').classList.add('hidden');
+}
+
+async function handleAddStockMasterSubmit(e) {
+  e.preventDefault();
+  const symInput = document.getElementById('smSymbolInput');
+  const nameInput = document.getElementById('smNameInput');
+  const msg = document.getElementById('smStatusMsg');
+
+  const symbol = symInput.value.trim().toUpperCase();
+  const name = nameInput.value.trim();
+
+  if (!symbol) return;
+
+  // Update in-memory stock master list
+  const existingIndex = stockMasterList.findIndex(item => (item.symbol || '').toUpperCase() === symbol);
+  if (existingIndex >= 0) {
+    stockMasterList[existingIndex].name = name;
+  } else {
+    stockMasterList.push({ symbol: symbol, name: name });
+  }
+
+  localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
+  updateStockAutocompleteOptions();
+
+  if (cloudScriptUrl) {
+    sendToSheet({
+      action: "addStockMaster",
+      symbol: symbol,
+      name: name
+    });
+  }
+
+  msg.innerText = `Added ${symbol} to Master!`;
+  msg.classList.remove('opacity-0');
+
+  setTimeout(() => {
+    closeStockMasterModal();
+  }, 1000);
+}
+
+/* ---------------- GLOBAL OUTSIDE CLICK LISTENER ---------------- */
+window.addEventListener('click', function(e) {
+  // Dropdown 1: Record Transaction
+  const txDropdown = document.getElementById('txDropdownContainer');
+  const txMenu = document.getElementById('txDropdownMenu');
+  const txChevron = document.getElementById('txDropdownChevron');
+  if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
+    txMenu.classList.add('hidden');
+    if (txChevron) txChevron.classList.remove('rotate-180');
+    closeCorpActionSubmenu();
+  }
+
+  // Dropdown 2: Settings (Point 5)
+  const settingsDropdown = document.getElementById('settingsDropdownContainer');
+  const settingsMenu = document.getElementById('settingsDropdownMenu');
+  if (settingsDropdown && !settingsDropdown.contains(e.target) && settingsMenu && !settingsMenu.classList.contains('hidden')) {
+    settingsMenu.classList.add('hidden');
+  }
+});
 
 window.addEventListener('DOMContentLoaded', init);
