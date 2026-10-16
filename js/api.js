@@ -1,190 +1,219 @@
 // ============================================================================
-// MyFolioAI - Google Apps Script Cloud Sync & Network Bridge (api.js)
+// MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
+// Integrates: Token Handshake Auth, Cross-Device Sync, Offline Cache & Modals
 // ============================================================================
 
-/**
- * Universal POST Dispatcher to Google Apps Script.
- * Uses text/plain to bypass CORS preflights and follows 302 redirects natively.
- */
-async function sendToSheet(payload) {
-  if (!cloudScriptUrl) return { status: 'error', message: 'No Google Script Web App URL linked.' };
+function updateSyncUI(status, isError) {
+  const syncDot = document.getElementById('syncDot');
+  const syncStatus = document.getElementById('syncStatus');
+  const cloudSyncText = document.getElementById('cloudSyncText');
 
-  try {
-    const response = await fetch(cloudScriptUrl, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify(payload)
-    });
+  if (!syncDot || !syncStatus || !cloudSyncText) return;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+  if (cloudScriptUrl) {
+    cloudSyncText.innerText = 'Sheet Linked';
+    if (status) {
+      syncStatus.innerText = status;
+      syncDot.className = isError
+        ? 'w-2 h-2 rounded-full bg-rose-500 animate-pulse'
+        : 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+    } else {
+      syncStatus.innerText = 'Connected & synchronized.';
+      syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
     }
-
-    const result = await response.json();
-    return result;
-  } catch (err) {
-    console.warn('Network call completed with warning or redirect handling:', err);
-    return { status: 'success', note: 'Sent via standard stream' };
+  } else {
+    cloudSyncText.innerText = 'Connect Sheet';
+    syncStatus.innerText = 'Running on local cache only.';
+    syncDot.className = 'w-2 h-2 rounded-full bg-amber-500';
   }
 }
 
-/**
- * Pulls all synchronized data from Google Sheets in a single request.
- */
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return;
-  const statusText = document.getElementById('syncStatus');
-  if (statusText) statusText.innerText = 'Pulling rows from Google Sheet...';
+
+  updateSyncUI('Syncing with Google Sheets...', false);
 
   try {
-    const res = await fetch(`${cloudScriptUrl}?action=getAll`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-
-    if (data.settings && typeof data.settings === 'object') {
-      const cleanSettings = Object.assign({}, data.settings);
-      delete cleanSettings.cashOffsets;
-      Object.assign(appSettings, cleanSettings);
-      delete appSettings.cashOffsets;
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-      if (typeof checkGatekeeperState === 'function') checkGatekeeperState();
+    // Point 3: Inject secret token into GET query string
+    let url = `${cloudScriptUrl}?action=getAll`;
+    if (apiToken) {
+      url += `&token=${encodeURIComponent(apiToken)}`;
     }
 
-    if (data.cashCalibration && typeof data.cashCalibration === 'object') {
-      const sheetOffsets = data.cashCalibration.offsets || {};
-      const sheetRecords = data.cashCalibration.records || {};
-      const newOffsets = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
-      Object.keys(sheetOffsets).forEach(acct => {
-        const n = Number(sheetOffsets[acct]);
-        newOffsets[acct] = isNaN(n) ? 0 : n;
-      });
-      cashCalibration = { offsets: newOffsets, records: sheetRecords };
-      localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+
+    // Check for Point 3 Authentication Error
+    if (data && data.status === 'error' && String(data.message).includes('Unauthorized')) {
+      updateSyncUI('Auth Error: Invalid API Secret Token', true);
+      alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
+      return;
     }
 
-    if (data.goals && typeof data.goals === 'object') {
-      Object.assign(milestoneGoals, data.goals);
-      localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
+    // 1. Process Ledger
+    if (data && Array.isArray(data.ledger)) {
+      transactions = data.ledger;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    } else if (Array.isArray(data)) {
+      transactions = data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
     }
 
-    if (data.stockMaster && Array.isArray(data.stockMaster)) {
-      stockMasterList = data.stockMaster;
-      localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
-      if (typeof updateStockAutocompleteOptions === 'function') updateStockAutocompleteOptions();
-    }
-
-    if (data.customPrices && typeof data.customPrices === 'object') {
-      Object.assign(savedManualPrices, data.customPrices);
-      Object.assign(marketPrices, data.customPrices);
-      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-    }
-
-    if (data.chartHistory && Array.isArray(data.chartHistory) && data.chartHistory.length > 0) {
+    // 2. Process Performance History
+    if (data && Array.isArray(data.chartHistory)) {
       chartHistoryRecords = data.chartHistory;
       localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
     }
 
-    if (data.ledger && Array.isArray(data.ledger) && data.ledger.length > 0) {
-      transactions = data.ledger.map((item, idx) => ({
-        id: (Date.now() + idx).toString(),
-        date: item.date,
-        account: item.account || 'Unassigned',
-        type: item.type,
-        stock: item.stock,
-        qty: Number(item.qty || 0),
-        price: Number(item.price || 0),
-        amount: Number(item.amount || 0),
-        remarks: item.remarks || ''
-      }));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-      if (typeof updateStockAutocompleteOptions === 'function') updateStockAutocompleteOptions();
+    // 3. Process Custom / Manual Prices
+    if (data && data.customPrices && typeof data.customPrices === 'object') {
+      savedManualPrices = Object.assign(savedManualPrices, data.customPrices);
+      marketPrices = Object.assign(marketPrices, savedManualPrices);
+      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
     }
 
-    if (typeof recalculateAndRender === 'function') recalculateAndRender();
-    if (statusText) statusText.innerText = `Synced ${transactions.length} trades, ${chartHistoryRecords.length} graph checkpoints & master tickers.`;
+    // 4. Process Stock Master
+    if (data && Array.isArray(data.stockMaster)) {
+      stockMasterList = data.stockMaster;
+      localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
+      if (typeof updateStockAutocompleteOptions === 'function') {
+        updateStockAutocompleteOptions();
+      }
+    }
+
+    // 5. Process Milestone Goals
+    if (data && data.goals && typeof data.goals === 'object') {
+      milestoneGoals = Object.assign(milestoneGoals, data.goals);
+      localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
+    }
+
+    // 6. Process Settings & PIN Hash
+    if (data && data.settings && typeof data.settings === 'object') {
+      appSettings = Object.assign(appSettings, data.settings);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+      if (typeof checkGatekeeperState === 'function') {
+        checkGatekeeperState();
+      }
+    }
+
+    // 7. Process Cash Calibration Map
+    if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
+      if (data.cashCalibration.offsets) {
+        cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
+      }
+      if (data.cashCalibration.records) {
+        cashCalibration.records = data.cashCalibration.records;
+      }
+      localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
+    }
+
+    updateSyncUI('Synced with Google Sheet.', false);
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
+
+    // Verify if previous month-end snapshot is pending
+    if (typeof checkPendingMonthEndSnapshot === 'function') {
+      checkPendingMonthEndSnapshot();
+    }
+
   } catch (err) {
-    console.error('Fetch error:', err);
-    if (statusText) statusText.innerText = 'Could not load from Google Sheet. Verify your Web App deployment URL.';
+    console.error('Failed to sync with Google Sheet:', err);
+    updateSyncUI('Sync failed (offline cache active).', true);
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
   }
 }
 
-/**
- * Pushes a newly recorded trade or corporate action to Google Sheets.
- */
-async function appendToGoogleSheet(tx) {
+async function sendToSheet(payload) {
   if (!cloudScriptUrl) return;
-  await sendToSheet(tx);
+
+  try {
+    // Point 3: Inject secret token into POST payload body
+    if (apiToken) {
+      payload.token = apiToken;
+    }
+
+    await fetch(cloudScriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.error('Background sendToSheet failed:', err);
+  }
 }
 
-/**
- * Persists updated manual LTP prices to the Prices sheet.
- */
-async function persistManualPrice(symbol, price) {
-  if (!savedManualPrices) savedManualPrices = {};
-  savedManualPrices[symbol] = { ltp: price, prevClose: price };
-  marketPrices[symbol] = { ltp: price, prevClose: price };
+async function appendToGoogleSheet(txData) {
+  await sendToSheet(txData);
+}
+
+function persistManualPrice(stock, ltp) {
+  const sym = stock.toUpperCase().trim();
+  const priceObj = { ltp: ltp, prevClose: ltp };
+  savedManualPrices[sym] = priceObj;
+  marketPrices[sym] = priceObj;
+
   localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-  
   if (typeof recordPriceUpdateTimestamp === 'function') {
     recordPriceUpdateTimestamp();
   }
 
-  if (cloudScriptUrl) {
-    await sendToSheet({
-      action: "savePrices",
-      prices: { [symbol]: { ltp: price, prevClose: price } }
-    });
-  }
+  sendToSheet({
+    action: "savePrices",
+    prices: { [sym]: priceObj }
+  });
 }
 
-/**
- * Sync Cloud Modal UI Controls
- */
 function openSyncModal() {
-  const input = document.getElementById('scriptUrlInput');
-  if (input) input.value = cloudScriptUrl;
-  const modal = document.getElementById('syncModal');
-  if (modal) modal.classList.remove('hidden');
+  const urlInput = document.getElementById('scriptUrlInput');
+  const tokenInput = document.getElementById('apiTokenInput');
+  if (urlInput) urlInput.value = cloudScriptUrl || '';
+  if (tokenInput) tokenInput.value = apiToken || '';
+  document.getElementById('syncModal').classList.remove('hidden');
 }
 
-function closeSyncModal() { 
-  const modal = document.getElementById('syncModal');
-  if (modal) modal.classList.add('hidden'); 
+function closeSyncModal() {
+  document.getElementById('syncModal').classList.add('hidden');
 }
 
-function updateSyncUI() {
-  const btnText = document.getElementById('cloudSyncText');
-  const dot = document.getElementById('syncDot');
-  const statusText = document.getElementById('syncStatus');
+function saveAndFetchCloud() {
+  const urlInput = document.getElementById('scriptUrlInput');
+  const tokenInput = document.getElementById('apiTokenInput');
+
+  const newUrl = urlInput ? urlInput.value.trim() : '';
+  const newToken = tokenInput ? tokenInput.value.trim() : '';
+
+  cloudScriptUrl = newUrl;
+  apiToken = newToken;
+
+  localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
+  localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
+
+  closeSyncModal();
+  updateSyncUI('Connecting...', false);
 
   if (cloudScriptUrl) {
-    if (btnText) btnText.innerText = 'Sheet Linked';
-    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse';
-    if (statusText) statusText.innerText = 'Synced with Google Sheet (MyFolio_DB)';
+    fetchFromGoogleSheet();
   } else {
-    if (btnText) btnText.innerText = 'Link Sheet';
-    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400';
-    if (statusText) statusText.innerText = 'Operating locally. Connect Google Sheet for cloud sync.';
+    updateSyncUI();
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
   }
-}
-
-async function saveAndFetchCloud() {
-  const input = document.getElementById('scriptUrlInput');
-  const url = input ? input.value.trim() : '';
-  if (!url) return;
-  cloudScriptUrl = url;
-  localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
-  closeSyncModal();
-  updateSyncUI();
-  await fetchFromGoogleSheet();
 }
 
 function disconnectCloudSync() {
-  cloudScriptUrl = '';
-  localStorage.removeItem(SCRIPT_URL_KEY);
-  closeSyncModal();
-  updateSyncUI();
+  if (confirm('Disconnect from Google Sheets? (Your local cache remains intact)')) {
+    cloudScriptUrl = '';
+    apiToken = '';
+    localStorage.removeItem(SCRIPT_URL_KEY);
+    localStorage.removeItem(API_TOKEN_STORAGE_KEY);
+    closeSyncModal();
+    updateSyncUI();
+  }
 }
