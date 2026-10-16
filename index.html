@@ -150,7 +150,7 @@
                 <span class="font-semibold text-slate-500 dark:text-gray-400 mr-1.5">+</span> Record Fees
               </button>
 
-              <!-- Single Line Corporate Actions Expandable Menu -->
+              <!-- Corporate Actions Expandable Menu -->
               <div class="border-t border-slate-100 dark:border-gray-800 my-1"></div>
               <div class="relative">
                 <button 
@@ -191,12 +191,12 @@
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
-          <!-- 3. LOCK BUTTON (Point 1: Swapped to come before Settings; Matching neutral color) -->
+          <!-- 3. LOCK BUTTON -->
           <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN (Point 1: Rightmost action button) -->
+          <!-- 4. SETTINGS DROPDOWN -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -438,7 +438,7 @@
 
       </div>
 
-      <!-- PERFORMANCE CHART CARD (POINT 2: SWITCHABLE VIEW HEADER) -->
+      <!-- PERFORMANCE CHART CARD (POINT 1 & 2: RENAMED VIEW & STEALTH EYE TOGGLE) -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
@@ -453,7 +453,7 @@
                 <i data-lucide="chevron-down" id="chartViewChevron" class="w-4 h-4 text-slate-400 transition-transform duration-150"></i>
               </button>
 
-              <!-- View Switcher Dropdown Menu -->
+              <!-- View Switcher Dropdown Menu (Point 1: Monthly RoC Curve) -->
               <div 
                 id="chartViewDropdownMenu" 
                 class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
@@ -463,30 +463,44 @@
                   <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
                 </button>
                 <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 transition border-t border-slate-100 dark:border-gray-800">
-                  <div class="font-bold text-slate-800 dark:text-gray-100">Monthly RoC &amp; 4-Curve Target</div>
-                  <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Ratchet</div>
+                  <div class="font-bold text-slate-800 dark:text-gray-100">Monthly RoC Curve</div>
+                  <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Ratchet Target</div>
                 </button>
               </div>
             </div>
             
-            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
+            <!-- TTM / All Range & Point 2 Chart Stealth Eye Toggle -->
+            <div class="flex items-center space-x-2">
+              <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
+                <button 
+                  id="chartRangeBtn-TTM" 
+                  onclick="setChartRange('TTM')" 
+                  class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+                >
+                  TTM
+                </button>
+                <button 
+                  id="chartRangeBtn-ALL" 
+                  onclick="setChartRange('ALL')" 
+                  class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+                >
+                  All Journey
+                </button>
+              </div>
+
+              <!-- Dedicated Chart Stealth Eye Toggle (Y-Axis & Tooltip Masking) -->
               <button 
-                id="chartRangeBtn-TTM" 
-                onclick="setChartRange('TTM')" 
-                class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
+                id="chartMaskToggleBtn" 
+                onclick="toggleTabMask('chart')" 
+                class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-200/90 dark:border-gray-700/80 text-slate-600 dark:text-gray-300 transition" 
+                title="Toggle Chart Numbers Stealth Mask"
               >
-                TTM
-              </button>
-              <button 
-                id="chartRangeBtn-ALL" 
-                onclick="setChartRange('ALL')" 
-                class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
-              >
-                All Journey
+                <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-3.5 h-3.5"></i>
               </button>
             </div>
           </div>
 
+          <!-- Dynamic Legend Header Container (Point 1: Auto Swapped) -->
           <div class="flex items-center space-x-3.5 text-xs" id="chartLegendContainer">
             <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
               <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
@@ -600,7 +614,7 @@
           </div>
         </div>
 
-        <!-- Account Filter & Cash Badge -->
+        <!-- Account Filter, Search & Holdings Stealth Eye Toggle (Point 2) -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="flex items-center flex-wrap gap-2.5">
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
@@ -610,6 +624,15 @@
               <button onclick="setHoldingsAccountFilter('Mom')" id="holdingsAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
               <button onclick="setHoldingsAccountFilter('Brother')" id="holdingsAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
             </div>
+
+            <!-- Holdings Eye Mask Toggle Button -->
+            <button 
+              onclick="toggleTabMask('holdings')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Holdings Privacy Mask (Qty, Invested, LTP, P&L, Cash)"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
+            </button>
 
             <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
@@ -708,9 +731,18 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer -->
+        <!-- Jump-To-Page Pagination Footer & Closed Trades Stealth Eye Toggle (Point 2) -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <span id="closedPageInfo">Showing 1–12 entries</span>
+          <div class="flex items-center space-x-2">
+            <button 
+              onclick="toggleTabMask('closedTrades')" 
+              class="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Closed Trades Privacy Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
+            </button>
+            <span id="closedPageInfo">Showing 1–12 entries</span>
+          </div>
           <div class="flex items-center space-x-2">
             <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
@@ -732,6 +764,18 @@
 
       <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">FIFO Realized History by Financial Year</div>
+          <button 
+            onclick="toggleTabMask('fyBreakdown')" 
+            class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-xs font-semibold text-slate-600 dark:text-gray-300 transition" 
+            title="Toggle FY P&L Privacy Mask"
+          >
+            <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-3.5 h-3.5"></i>
+            <span>Privacy Mask</span>
+          </button>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
@@ -752,7 +796,14 @@
       <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2.5">
+            <button 
+              onclick="toggleTabMask('ledger')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Ledger Privacy Mask (Qty, Price, Cash In/Out, Running Cash)"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
+            </button>
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="ledgerCountBadge">0 Entries</span>
           </div>
@@ -820,9 +871,18 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer -->
+        <!-- Jump-To-Page Pagination Footer & Bank Ledger Eye Toggle (Point 2) -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
+          <div class="flex items-center space-x-2">
+            <button 
+              onclick="toggleTabMask('bankLedger')" 
+              class="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Bank Ledger Privacy Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
+            </button>
+            <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
+          </div>
           <div class="flex items-center space-x-2">
             <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
@@ -855,6 +915,15 @@
           </div>
 
           <div class="flex items-center flex-wrap gap-2">
+            <!-- Tax Cockpit Privacy Mask Button (Point 2) -->
+            <button 
+              onclick="toggleTabMask('taxPnl')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Tax Cockpit Privacy Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-3.5 h-3.5"></i>
+            </button>
+
             <div class="flex items-center space-x-1.5 text-xs">
               <span class="text-slate-500 dark:text-gray-400 font-medium">FY:</span>
               <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
@@ -1185,7 +1254,7 @@
     </div>
   </div>
 
-  <!-- MODAL: GOOGLE SHEETS SYNC (POINT 3: API SECRET TOKEN FIELD) -->
+  <!-- MODAL: GOOGLE SHEETS SYNC (API SECRET TOKEN FIELD) -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
