@@ -107,10 +107,10 @@
           </div>
         </div>
 
-        <!-- Action Cluster -->
+        <!-- Action Cluster: [Record Tx] [Live Prices] [Lock] [Settings ▾] -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- 1. RECORD TRANSACTION DROPDOWN (WITH CLEAN NESTED CORPORATE ACTIONS) -->
+          <!-- 1. RECORD TRANSACTION DROPDOWN -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
@@ -191,12 +191,12 @@
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
-          <!-- 3. THEME TOGGLE -->
-          <button onclick="toggleTheme()" id="themeToggleBtn" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Toggle Light / Dark Mode">
-            <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-amber-500 dark:text-amber-400"></i>
+          <!-- 3. LOCK BUTTON (Point 1: Swapped to come before Settings; Matching neutral color) -->
+          <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Instant PIN Lock Screen">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN TRIGGER (POINT 5) -->
+          <!-- 4. SETTINGS DROPDOWN (Point 1: Rightmost action button) -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -210,29 +210,43 @@
             <!-- Settings Navbar Dropdown Menu -->
             <div 
               id="settingsDropdownMenu" 
-              class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
+              class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-gray-800"
             >
-              <div class="px-3.5 py-1 text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">Settings &amp; Tools</div>
-              <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
-                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
-                <span>Master PIN &amp; Security</span>
-              </button>
-              <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
-                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500 mr-2.5"></i>
-                <span>Cash Calibration</span>
-              </button>
-              <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
-                <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
-                <span>Stock Master Registry</span>
-              </button>
+              <!-- Item 1: Theme Mode Toggle (Inline Row) -->
+              <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition">
+                <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-gray-200">
+                  <i data-lucide="moon" id="settingsThemeIcon" class="w-4 h-4 text-indigo-400"></i>
+                  <span>Appearance</span>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                  <span id="settingsThemeLabel" class="text-[11px] font-semibold text-slate-500 dark:text-gray-400">Dark</span>
+                  <div class="w-7 h-4 bg-emerald-600 rounded-full flex items-center justify-end p-0.5" id="settingsThemePill">
+                    <div class="w-3 h-3 bg-white rounded-full shadow-xs"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Item 2: Master PIN & Security -->
+              <div class="py-1">
+                <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
+                  <span>Master PIN &amp; Security</span>
+                </button>
+
+                <!-- Item 3: Cash Calibration -->
+                <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500 mr-2.5"></i>
+                  <span>Cash Calibration</span>
+                </button>
+
+                <!-- Item 4: Stock Master Registry -->
+                <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
+                  <span>Stock Master Registry</span>
+                </button>
+              </div>
             </div>
           </div>
-
-          <!-- 5. INSTANT PIN LOCK -->
-          <button onclick="lockApplicationNow()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50/80 dark:hover:bg-rose-950/40 transition" title="Instant PIN Lock Screen">
-            <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
-            <span>Lock</span>
-          </button>
 
         </div>
       </div>
@@ -394,13 +408,12 @@
           </div>
         </div>
 
-        <!-- 5. ANNUALIZED XIRR (WITH POINT 1 INCEPTION SUBTITLE) -->
+        <!-- 5. ANNUALIZED XIRR -->
         <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <div>
                 <span class="text-xs font-semibold text-slate-700 dark:text-gray-200 tracking-tight">Annualized XIRR</span>
-                <!-- Point 1 Inception Date -->
                 <span id="kpiXirrInception" class="text-[10px] text-slate-400 dark:text-gray-500 font-medium block mt-0.5">Since —</span>
               </div>
               <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
@@ -425,12 +438,36 @@
 
       </div>
 
-      <!-- PERFORMANCE CHART CARD -->
+      <!-- PERFORMANCE CHART CARD (POINT 2: SWITCHABLE VIEW HEADER) -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
           <div class="flex items-center space-x-3.5">
-            <h2 class="text-base font-bold text-slate-900 dark:text-white tracking-tight">Performance Chart</h2>
+            <!-- View Switcher Dropdown Trigger -->
+            <div class="relative" id="chartViewSwitcherContainer">
+              <button 
+                onclick="toggleChartViewDropdown(event)" 
+                class="flex items-center space-x-2 text-base font-bold text-slate-900 dark:text-white tracking-tight hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+              >
+                <span id="currentChartViewLabel">Performance Trajectory</span>
+                <i data-lucide="chevron-down" id="chartViewChevron" class="w-4 h-4 text-slate-400 transition-transform duration-150"></i>
+              </button>
+
+              <!-- View Switcher Dropdown Menu -->
+              <div 
+                id="chartViewDropdownMenu" 
+                class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
+              >
+                <button onclick="switchChartView('trajectory')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 transition">
+                  <div class="font-bold text-slate-800 dark:text-gray-100">Performance Trajectory</div>
+                  <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
+                </button>
+                <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 transition border-t border-slate-100 dark:border-gray-800">
+                  <div class="font-bold text-slate-800 dark:text-gray-100">Monthly RoC &amp; 4-Curve Target</div>
+                  <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Ratchet</div>
+                </button>
+              </div>
+            </div>
             
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
               <button 
@@ -450,7 +487,7 @@
             </div>
           </div>
 
-          <div class="flex items-center space-x-3.5 text-xs">
+          <div class="flex items-center space-x-3.5 text-xs" id="chartLegendContainer">
             <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
               <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
             </span>
@@ -476,14 +513,14 @@
           >
             <span class="flex items-center space-x-2">
               <i data-lucide="table" class="w-4 h-4 text-emerald-500"></i>
-              <span>View Trailing 12 Months (TTM) P&amp;L Breakdown</span>
+              <span id="ttmAccordionTitle">View Trailing 12 Months (TTM) P&amp;L Breakdown</span>
             </span>
             <i data-lucide="chevron-down" id="ttmAccordionChevron" class="w-4 h-4 transition-transform duration-200"></i>
           </button>
 
           <div id="ttmTableContainer" class="hidden mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-800">
             <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-gray-300">
-              <thead class="bg-slate-100 dark:bg-gray-950/70 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
+              <thead id="ttmTableHead" class="bg-slate-100 dark:bg-gray-950/70 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
                 <tr>
                   <th class="py-2.5 px-3">Month / Checkpoint</th>
                   <th class="py-2.5 px-3 text-right">Portfolio Value</th>
@@ -671,7 +708,7 @@
           </table>
         </div>
 
-        <!-- Point 3: Jump-To-Page Pagination Footer -->
+        <!-- Jump-To-Page Pagination Footer -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -742,7 +779,7 @@
           </table>
         </div>
 
-        <!-- Point 3: Jump-To-Page Pagination Footer -->
+        <!-- Jump-To-Page Pagination Footer -->
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -783,7 +820,7 @@
           </table>
         </div>
 
-        <!-- Point 3: Jump-To-Page Pagination Footer -->
+        <!-- Jump-To-Page Pagination Footer -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -858,7 +895,7 @@
               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5"
             >
               <i data-lucide="check" class="w-3.5 h-3.5"></i>
-              <span id="taxLowIncomeToggleText">Zero / Low Income (< ₹3L)</span>
+              <span id="taxLowIncomeToggleText">Zero / Low Income (&lt; ₹3L)</span>
             </button>
           </div>
         </div>
@@ -888,7 +925,7 @@
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Long-Term Profit Harvest Candidates (>365 Days)</span>
+                  <span>Long-Term Profit Harvest Candidates (&gt;365 Days)</span>
                 </span>
                 <span id="profitHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">0 stocks</span>
               </div>
@@ -1103,7 +1140,7 @@
       </div>
 
       <p class="text-xs text-slate-600 dark:text-gray-300">
-        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet[cite: 1, 2].
+        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet.
       </p>
 
       <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
@@ -1131,7 +1168,7 @@
       </div>
 
       <div class="space-y-3 text-xs">
-        <p class="text-slate-500 dark:text-gray-400" id="goalModalDesc">Enter your milestone goal. Targets sync across all devices via your linked Sheet[cite: 2].</p>
+        <p class="text-slate-500 dark:text-gray-400" id="goalModalDesc">Enter your milestone goal. Targets sync across all devices via your linked Sheet.</p>
         <div>
           <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1" id="goalInputLabel">Target Value</label>
           <div class="relative">
@@ -1148,7 +1185,7 @@
     </div>
   </div>
 
-  <!-- MODAL: GOOGLE SHEETS SYNC -->
+  <!-- MODAL: GOOGLE SHEETS SYNC (POINT 3: API SECRET TOKEN FIELD) -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1161,9 +1198,17 @@
         </button>
       </div>
 
-      <div class="space-y-3 text-xs text-slate-600 dark:text-gray-300">
-        <p>Paste the <b>Web App URL</b> from your Google Sheet Apps Script deployment below[cite: 2]:</p>
-        <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+      <div class="space-y-3.5 text-xs text-slate-600 dark:text-gray-300">
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">Web App Deployment URL</label>
+          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-600 dark:text-gray-300 font-semibold mb-1">API Secret Token (Handshake)</label>
+          <input type="password" id="apiTokenInput" placeholder="Enter matching API_SECRET key" class="w-full bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+          <p class="text-[10.5px] text-slate-400 dark:text-gray-500 mt-1">Leave empty if you haven't configured an <code>API_SECRET</code> Script Property.</p>
+        </div>
       </div>
 
       <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-gray-800">
@@ -1176,7 +1221,7 @@
     </div>
   </div>
 
-  <!-- DEDICATED MODAL 1: PIN & SECURITY SETTINGS (POINT 5) -->
+  <!-- DEDICATED MODAL 1: PIN & SECURITY SETTINGS -->
   <div id="pinSettingsModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1217,7 +1262,7 @@
     </div>
   </div>
 
-  <!-- DEDICATED MODAL 2: CASH CALIBRATION (POINT 5) -->
+  <!-- DEDICATED MODAL 2: CASH CALIBRATION -->
   <div id="cashCalibrateModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1241,7 +1286,7 @@
           <span>Baseline Cash Calibration Engine</span>
         </span>
         <p class="text-[11px] text-slate-600 dark:text-gray-300 leading-relaxed">
-          Compensates for historical unassigned transactions without modifying legacy records[cite: 2]. Enter the <b>actual cash balance</b> each account currently holds[cite: 2]. Saved directly to the <b>Cash_Calibration</b> sheet[cite: 2].
+          Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. Saved directly to the <b>Cash_Calibration</b> sheet.
         </p>
       </div>
 
@@ -1254,7 +1299,7 @@
     </div>
   </div>
 
-  <!-- DEDICATED MODAL 3: STOCK MASTER REGISTRY (POINT 4 & 5) -->
+  <!-- DEDICATED MODAL 3: STOCK MASTER REGISTRY -->
   <div id="stockMasterModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
@@ -1324,7 +1369,7 @@
       </div>
 
       <p class="text-xs text-slate-600 dark:text-gray-300">
-        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>[cite: 2]:
+        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
       </p>
 
       <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
