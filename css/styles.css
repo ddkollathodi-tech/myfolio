@@ -42,12 +42,20 @@ table,
   animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
 }
 
-/* Gaussian Privacy Mask Utility */
+/* Gaussian Privacy Mask Utility (Granular Stealth Mode) */
+.blurred-mask,
 .privacy-blurred {
-  filter: blur(8px) !important;
+  filter: blur(7px) !important;
   user-select: none !important;
   pointer-events: none !important;
-  transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateZ(0);
+  will-change: filter;
+  transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Unmasked State Smooth Transition */
+.mask-transition {
+  transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Custom Scrollbar */
