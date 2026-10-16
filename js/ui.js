@@ -9,6 +9,7 @@ let currentPendingMonthEndDateStr = null;
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
+  initTabMaskStates();
   updateSyncUI();
   renderLastPriceTimestamp();
   initAutoLockEngine();
@@ -28,6 +29,55 @@ function init() {
   } else {
     recalculateAndRender();
   }
+}
+
+/* ---------------- STEALTH MASKING SYSTEM (POINT 2) ---------------- */
+function initTabMaskStates() {
+  try {
+    const saved = localStorage.getItem(TAB_MASK_STATES_KEY);
+    if (saved) {
+      tabMaskStates = Object.assign(tabMaskStates, JSON.parse(saved));
+    }
+  } catch (e) {}
+
+  // Update all mask eye icons on UI
+  Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
+}
+
+function toggleTabMask(tabKey) {
+  if (!tabMaskStates.hasOwnProperty(tabKey)) return;
+  tabMaskStates[tabKey] = !tabMaskStates[tabKey];
+  localStorage.setItem(TAB_MASK_STATES_KEY, JSON.stringify(tabMaskStates));
+  updateTabMaskIcon(tabKey);
+
+  const data = computeEngine();
+  if (tabKey === 'chart') {
+    renderChart(data);
+  } else if (tabKey === 'holdings') {
+    renderHoldings(data);
+  } else if (tabKey === 'closedTrades') {
+    renderClosedTrades(data.closedTrades);
+  } else if (tabKey === 'fyBreakdown') {
+    renderFY(data.fyRealized);
+  } else if (tabKey === 'ledger') {
+    renderLedger(data.ledgerEntries);
+  } else if (tabKey === 'bankLedger') {
+    renderBankLedger(data.bankEntries);
+  } else if (tabKey === 'taxPnl') {
+    renderTaxView();
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function updateTabMaskIcon(tabKey) {
+  const icon = document.getElementById(`maskToggleIcon-${tabKey}`);
+  if (!icon) return;
+  const isMasked = !!tabMaskStates[tabKey];
+  icon.setAttribute('data-lucide', isMasked ? 'eye-off' : 'eye');
+}
+
+function getMaskClass(tabKey) {
+  return tabMaskStates[tabKey] ? 'blurred-mask' : 'mask-transition';
 }
 
 /* ---------------- THEME TOGGLE (POINT 1 INTEGRATION) ---------------- */
@@ -228,6 +278,7 @@ function recalculateAndRender() {
   renderBankLedger(data.bankEntries);
   populateTaxFyOptions(data.fyRealized);
   renderTaxView();
+  renderChartLegend();
   renderChart(data);
   renderTtmTable(data);
 
@@ -253,6 +304,8 @@ function renderHoldings(data) {
   const tbody = document.getElementById('holdingsTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
+
+  const maskClass = getMaskClass('holdings');
 
   let relevantLots = data.openLots;
   if (currentHoldingsAccountFilter !== 'ALL') {
@@ -305,7 +358,7 @@ function renderHoldings(data) {
 
   document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-  // Liquid Cash Available Badge
+  // Liquid Cash Available Badge (Mask Controlled)
   const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
   const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
   const cashBadgeContainer = document.getElementById('holdingsCashBadge');
@@ -328,13 +381,7 @@ function renderHoldings(data) {
   }
 
   cashBadgeVal.innerText = formatINR(cashAmt);
-  if (cashAmt >= 0) {
-    cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs';
-    cashBadgeVal.className = 'tabular-nums font-mono font-extrabold text-emerald-600 dark:text-emerald-400 text-sm';
-  } else {
-    cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/30 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs';
-    cashBadgeVal.className = 'tabular-nums font-mono font-extrabold text-rose-600 dark:text-rose-400 text-sm';
-  }
+  cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
   // Win / Loss bar
   const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
@@ -344,8 +391,8 @@ function renderHoldings(data) {
   const totalCount = filteredHoldings.length;
   const winRate = totalCount > 0 ? Math.round((profitPositions.length / totalCount) * 100) : 0;
 
-  document.getElementById('holdingsProfitSummary').innerText = `${profitPositions.length} Green (+${formatCompactIndian(profitSum)})`;
-  document.getElementById('holdingsLossSummary').innerText = `${lossPositions.length} Red (${formatCompactIndian(lossSum)})`;
+  document.getElementById('holdingsProfitSummary').innerHTML = `${profitPositions.length} Green <span class="${maskClass}">(+${formatCompactIndian(profitSum)})</span>`;
+  document.getElementById('holdingsLossSummary').innerHTML = `${lossPositions.length} Red <span class="${maskClass}">(${formatCompactIndian(lossSum)})</span>`;
   document.getElementById('holdingsWinRateBadge').innerText = `Win Rate: ${winRate}%`;
   document.getElementById('holdingsWinBar').style.width = `${winRate}%`;
   document.getElementById('holdingsLossBar').style.width = `${100 - winRate}%`;
@@ -373,18 +420,18 @@ function renderHoldings(data) {
     tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
     tr.innerHTML = `
       <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
-      <td class="py-3 px-3 text-right tabular-nums">${h.qty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(h.investedVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(h.currentVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300">
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${h.qty}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 ${maskClass}">${formatINR(h.wap)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline ${maskClass}" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(h.investedVal)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300 ${maskClass}">
         <span>${h.weightPct.toFixed(1)}%</span>
         <div class="w-full bg-slate-200 dark:bg-gray-700 h-1 rounded-full mt-1">
           <div class="bg-blue-600 h-1 rounded-full" style="width: ${Math.min(100, h.weightPct)}%"></div>
         </div>
       </td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
         ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
         <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
       </td>
@@ -420,6 +467,7 @@ function renderClosedTrades(closedTrades) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
   if (closedTrades.length === 0) {
@@ -470,13 +518,13 @@ function renderClosedTrades(closedTrades) {
     tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
     tr.innerHTML = `
       <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${c.stock}</td>
-      <td class="py-3 px-3 text-right tabular-nums">${c.totalQty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(avgBuy)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(avgSell)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(c.totalCostBasis)}</td>
-      <td class="py-3 px-3 text-right tabular-nums">${formatINR(c.totalProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${c.totalQty}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(avgBuy)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 ${maskClass}">${formatINR(avgSell)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -525,6 +573,8 @@ function renderFY(fyRealized) {
   cards.innerHTML = '';
   tbody.innerHTML = '';
 
+  const maskClass = getMaskClass('fyBreakdown');
+
   Object.keys(fyRealized).sort().reverse().forEach(fy => {
     const item = fyRealized[fy];
     const isPos = item.gain >= 0;
@@ -537,7 +587,7 @@ function renderFY(fyRealized) {
         <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
         <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
       </div>
-      <div class="flex items-baseline justify-between mt-1.5">
+      <div class="flex items-baseline justify-between mt-1.5 ${maskClass}">
         <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isPos ? '+' : ''}${formatINR(item.gain)}
         </span>
@@ -545,7 +595,7 @@ function renderFY(fyRealized) {
           ${isPos ? '+' : ''}${retPct.toFixed(2)}%
         </span>
       </div>
-      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
+      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2 ${maskClass}">
         <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.sellProceeds)}</span></div>
         <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.costBasis)}</span></div>
       </div>
@@ -556,10 +606,10 @@ function renderFY(fyRealized) {
     tr.className = 'border-b border-slate-100 dark:border-gray-800/60';
     tr.innerHTML = `
       <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${fy}</td>
-      <td class="py-3 px-4 text-right tabular-nums">${formatINR(item.sellProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(item.costBasis)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(item.sellProceeds)}</td>
+      <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(item.costBasis)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -577,6 +627,7 @@ function renderLedger(ledgerEntries) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const maskClass = getMaskClass('ledger');
   let list = [...ledgerEntries].reverse();
   if (ledgerSearchTerm) {
     list = list.filter(tx => 
@@ -636,11 +687,11 @@ function renderLedger(ledgerEntries) {
       <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
       <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${tx.type}</span></td>
       <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(tx.runningCash)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${tx.qty || '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${tx.price ? formatINR(tx.price) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
       <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
     `;
     tbody.appendChild(tr);
@@ -687,6 +738,7 @@ function renderBankLedger(bankEntries) {
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const maskClass = getMaskClass('bankLedger');
   const list = [...bankEntries].reverse();
 
   if (list.length === 0) {
@@ -724,9 +776,9 @@ function renderBankLedger(bankEntries) {
       <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${b.date}</td>
       <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${b.account || 'Unassigned'}</span></td>
       <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(b.corpus)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(b.corpus)}</td>
       <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400">${b.remarks || ''}</td>
     `;
     tbody.appendChild(tr);
@@ -757,7 +809,42 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(computeEngine().bankEntries);
 }
 
-/* ---------------- POINT 2: VIEW SWITCHER DROPDOWN ---------------- */
+/* ---------------- POINT 1: DYNAMIC HEADER LEGEND RENDERER ---------------- */
+function renderChartLegend() {
+  const container = document.getElementById('chartLegendContainer');
+  if (!container) return;
+
+  if (currentChartView === 'roc') {
+    container.innerHTML = `
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Actual Track
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>Capital Base
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2.5 h-0.5 border-t-2 border-dotted border-amber-500 mr-1.5"></span>Pure 2% Hurdle
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-600 mr-1.5"></span>Ratchet Target
+      </span>
+    `;
+  } else {
+    container.innerHTML = `
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
+      </span>
+    `;
+  }
+}
+
+/* ---------------- VIEW SWITCHER DROPDOWN ---------------- */
 function toggleChartViewDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('chartViewDropdownMenu');
@@ -785,9 +872,10 @@ function switchChartView(view) {
   currentChartView = view;
   const label = document.getElementById('currentChartViewLabel');
   if (label) {
-    label.innerText = view === 'roc' ? 'Monthly RoC & 4-Curve Target' : 'Performance Trajectory';
+    label.innerText = view === 'roc' ? 'Monthly RoC Curve' : 'Performance Trajectory';
   }
   closeChartViewDropdown();
+  renderChartLegend();
   const data = computeEngine();
   renderChart(data);
   renderTtmTable(data);
@@ -816,6 +904,8 @@ function renderTtmTable(computed) {
 
   thead.innerHTML = '';
   tbody.innerHTML = '';
+
+  const maskClass = getMaskClass('chart');
 
   if (currentChartView === 'roc') {
     if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
@@ -851,19 +941,19 @@ function renderTtmTable(computed) {
       tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
       tr.innerHTML = `
         <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.startCapital, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(r.actualVal, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 ${maskClass}">${formatINR(r.startCapital, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(r.actualVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosProfit ? '+' : ''}${r.rocPct.toFixed(2)}%
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">${formatINR(r.pureTarget, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(r.pureTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosGap ? '+' : ''}${formatINR(r.pureGap, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosRatchet ? '+' : ''}${formatINR(r.ratchetDeficit, 0)}
         </td>
       `;
@@ -933,18 +1023,18 @@ function renderTtmTable(computed) {
       tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
       tr.innerHTML = `
         <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums">${formatINR(r.portVal, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.netCap, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${formatINR(r.portVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 ${maskClass}">${formatINR(r.netCap, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
         </td>
       `;
@@ -1033,7 +1123,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 2) ---------------- */
+/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 1 & 2) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -1066,6 +1156,7 @@ function renderChart(computed) {
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
+  const isChartMasked = !!tabMaskStates.chart;
 
   // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
   if (currentChartView === 'roc') {
@@ -1161,19 +1252,7 @@ function renderChart(computed) {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            align: 'end',
-            labels: {
-              boxWidth: 12,
-              boxHeight: 2,
-              usePointStyle: false,
-              color: tickColor,
-              font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
-              padding: 12
-            }
-          },
+          legend: { display: false }, // Use dynamic header index instead
           tooltip: {
             enabled: true,
             usePointStyle: true,
@@ -1195,6 +1274,10 @@ function renderChart(computed) {
               labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
               label: function(tooltipCtx) {
                 const label = tooltipCtx.dataset.label || '';
+                if (isChartMasked) {
+                  return ` ${label.padEnd(15, ' ')} : ••••••`;
+                }
+
                 const val = formatINR(tooltipCtx.raw || 0, 0);
                 const pt = displayPoints[tooltipCtx.dataIndex];
 
@@ -1240,7 +1323,9 @@ function renderChart(computed) {
               color: tickColor,
               font: { family: "'Inter', sans-serif", size: 11 },
               padding: 8,
-              callback: function(val) { return formatINR(val, 0); }
+              callback: function(val) {
+                return isChartMasked ? '••••••' : formatINR(val, 0);
+              }
             }
           }
         }
@@ -1288,7 +1373,7 @@ function renderChart(computed) {
     displayPoints = allPoints.slice(-12);
   }
 
-  const labels = displayPoints.length > 0 ? displayPoints.map(p => p.label) : ['No Data'];
+  const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date || p.label) : ['No Data'];
   const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
   const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
   const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
@@ -1383,8 +1468,11 @@ function renderChart(computed) {
             labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
             label: function(tooltipCtx) {
               const label = tooltipCtx.dataset.label || '';
-              const val = formatINR(tooltipCtx.raw || 0, 0);
+              if (isChartMasked) {
+                return ` ${label.padEnd(11, ' ')} : ••••••`;
+              }
 
+              const val = formatINR(tooltipCtx.raw || 0, 0);
               if (label === 'Profit') {
                 const pt = displayPoints[tooltipCtx.dataIndex];
                 if (pt && pt.deltaProfit !== null && pt.deltaProfit !== undefined) {
@@ -1423,7 +1511,9 @@ function renderChart(computed) {
             color: tickColor,
             font: { family: "'Inter', sans-serif", size: 11 },
             padding: 8,
-            callback: function(val) { return formatINR(val, 0); }
+            callback: function(val) {
+              return isChartMasked ? '••••••' : formatINR(val, 0);
+            }
           }
         }
       }
@@ -1785,7 +1875,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] += Number(t.qty || 0);
+      inv[t.stock] -= Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
@@ -2163,14 +2253,14 @@ window.addEventListener('click', function(e) {
     closeCorpActionSubmenu();
   }
 
-  // Dropdown 2: Settings (Point 1 & 5)
+  // Dropdown 2: Settings
   const settingsDropdown = document.getElementById('settingsDropdownContainer');
   const settingsMenu = document.getElementById('settingsDropdownMenu');
   if (settingsDropdown && !settingsDropdown.contains(e.target) && settingsMenu && !settingsMenu.classList.contains('hidden')) {
     settingsMenu.classList.add('hidden');
   }
 
-  // Dropdown 3: Chart View Switcher (Point 2)
+  // Dropdown 3: Chart View Switcher
   const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
   const chartMenu = document.getElementById('chartViewDropdownMenu');
   const chartChevron = document.getElementById('chartViewChevron');
