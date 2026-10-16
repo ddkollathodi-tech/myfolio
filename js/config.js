@@ -6,6 +6,7 @@
 const THEME_KEY = 'MYFOLIOAI_THEME';
 const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
 const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
+const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN'; // Point 3: Secret Handshake Token
 const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
 const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
@@ -104,7 +105,12 @@ let marketPrices = Object.assign({
 let currentHoldingsAccountFilter = 'ALL';
 let currentTaxAccountFilter = 'Me';
 let currentChartRange = 'TTM';
+let currentChartView = 'trajectory'; // Point 2: 'trajectory' | 'roc'
+const ROC_TARGET_MONTHLY_RATE = 0.02; // Point 2: 2% per month compound baseline
+
+// Cloud Sync & Handshake State (Point 3)
 let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
+let apiToken = localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
 
 // Table Pagination & Sorting Pointers
 let closedTradesCurrentPage = 1;
