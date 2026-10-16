@@ -30,21 +30,24 @@ function init() {
   }
 }
 
-/* ---------------- THEME TOGGLE ---------------- */
+/* ---------------- THEME TOGGLE (POINT 1 INTEGRATION) ---------------- */
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   const isDark = saved ? saved === 'dark' : true;
   applyTheme(isDark);
 }
 
-function toggleTheme() {
+function toggleTheme(e) {
+  if (e) e.stopPropagation();
   const isDark = document.documentElement.classList.contains('dark');
   applyTheme(!isDark);
 }
 
 function applyTheme(isDark) {
   const root = document.documentElement;
-  const themeIcon = document.getElementById('themeIcon');
+  const themeIcon = document.getElementById('settingsThemeIcon');
+  const themeLabel = document.getElementById('settingsThemeLabel');
+  const themePill = document.getElementById('settingsThemePill');
 
   if (isDark) {
     root.classList.add('dark');
@@ -53,6 +56,10 @@ function applyTheme(isDark) {
       themeIcon.setAttribute('data-lucide', 'moon');
       themeIcon.className = 'w-4 h-4 text-indigo-400';
     }
+    if (themeLabel) themeLabel.innerText = 'Dark';
+    if (themePill) {
+      themePill.className = 'w-7 h-4 bg-emerald-600 rounded-full flex items-center justify-end p-0.5 transition-colors';
+    }
   } else {
     root.classList.remove('dark');
     localStorage.setItem(THEME_KEY, 'light');
@@ -60,7 +67,12 @@ function applyTheme(isDark) {
       themeIcon.setAttribute('data-lucide', 'sun');
       themeIcon.className = 'w-4 h-4 text-amber-500';
     }
+    if (themeLabel) themeLabel.innerText = 'Light';
+    if (themePill) {
+      themePill.className = 'w-7 h-4 bg-slate-300 rounded-full flex items-center justify-start p-0.5 transition-colors';
+    }
   }
+
   if (window.lucide) lucide.createIcons();
 
   if (multiChartInstance) {
@@ -149,11 +161,11 @@ function recalculateAndRender() {
   // Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
-  lifeEl.className = `text-xl font-bold tabular-nums transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  lifeEl.className = `text-2xl font-bold tracking-tight tabular-nums transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const lifePctEl = document.getElementById('kpiLifetimePnLPct');
   lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-  lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  lifePctEl.className = `mt-1 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
   const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
@@ -182,7 +194,7 @@ function recalculateAndRender() {
   document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
   document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
 
-  // Card 5: Annualized XIRR & Inception Date (Point 1)
+  // Card 5: Annualized XIRR & Inception Date
   document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
   const xirrTarget = milestoneGoals.xirr || 25;
   const xirrProgress = xirrTarget > 0 ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
@@ -191,7 +203,7 @@ function recalculateAndRender() {
   document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
   document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
 
-  // Point 1: Determine Inception Date from Oldest Capital Infusion
+  // Inception Subtitle Determination
   const inceptionEl = document.getElementById('kpiXirrInception');
   if (inceptionEl) {
     const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
@@ -293,7 +305,7 @@ function renderHoldings(data) {
 
   document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-  // Liquid Cash Badge
+  // Liquid Cash Available Badge
   const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
   const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
   const cashBadgeContainer = document.getElementById('holdingsCashBadge');
@@ -301,7 +313,7 @@ function renderHoldings(data) {
   let cashAmt = 0;
   if (currentHoldingsAccountFilter === 'ALL') {
     cashAmt = data.cashBalance;
-    cashBadgeLabel.innerText = 'Cash Available (Combined):';
+    cashBadgeLabel.innerText = 'Cash Available:';
     cashBadgeContainer.removeAttribute('title');
   } else {
     const acct = currentHoldingsAccountFilter;
@@ -311,17 +323,17 @@ function renderHoldings(data) {
     if (rec && rec.date) {
       cashBadgeContainer.title = `Calibrated baseline • last calibrated on ${rec.date}`;
     } else {
-      cashBadgeContainer.title = 'Not calibrated yet. Use Settings → Cash Calibrate.';
+      cashBadgeContainer.title = 'Not calibrated yet. Use Settings → Cash Calibration.';
     }
   }
 
   cashBadgeVal.innerText = formatINR(cashAmt);
   if (cashAmt >= 0) {
     cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs';
-    cashBadgeVal.className = 'tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm';
+    cashBadgeVal.className = 'tabular-nums font-mono font-extrabold text-emerald-600 dark:text-emerald-400 text-sm';
   } else {
     cashBadgeContainer.className = 'flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/30 text-xs font-bold text-rose-700 dark:text-rose-300 shadow-2xs';
-    cashBadgeVal.className = 'tabular-nums font-extrabold text-rose-600 dark:text-rose-400 text-sm';
+    cashBadgeVal.className = 'tabular-nums font-mono font-extrabold text-rose-600 dark:text-rose-400 text-sm';
   }
 
   // Win / Loss bar
@@ -402,7 +414,7 @@ function filterHoldingsTable() {
   });
 }
 
-/* ---------------- CLOSED TRADES TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
+/* ---------------- CLOSED TRADES TABLE ---------------- */
 function renderClosedTrades(closedTrades) {
   const tbody = document.getElementById('closedTradesTableBody');
   if (!tbody) return;
@@ -437,7 +449,6 @@ function renderClosedTrades(closedTrades) {
 
   document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
   
-  // Point 3: Sync Jump Input & Total Pages
   const jumpInput = document.getElementById('closedJumpInput');
   const totalLabel = document.getElementById('closedTotalPagesLabel');
   if (jumpInput) {
@@ -554,7 +565,7 @@ function renderFY(fyRealized) {
   });
 }
 
-/* ---------------- TRADEBOOK LEDGER TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
+/* ---------------- TRADEBOOK LEDGER TABLE ---------------- */
 function handleLedgerSearch() {
   ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
   ledgerCurrentPage = 1;
@@ -595,7 +606,6 @@ function renderLedger(ledgerEntries) {
 
   document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
   
-  // Point 3: Sync Jump Input & Total Pages
   const jumpInput = document.getElementById('ledgerJumpInput');
   const totalLabel = document.getElementById('ledgerTotalPagesLabel');
   if (jumpInput) {
@@ -671,7 +681,7 @@ function jumpToLedgerPage(val) {
   renderLedger(computeEngine().ledgerEntries);
 }
 
-/* ---------------- BANK LEDGER TABLE (POINT 3 JUMP-TO-PAGE) ---------------- */
+/* ---------------- BANK LEDGER TABLE ---------------- */
 function renderBankLedger(bankEntries) {
   const tbody = document.getElementById('bankLedgerTableBody');
   if (!tbody) return;
@@ -696,7 +706,6 @@ function renderBankLedger(bankEntries) {
 
   document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
   
-  // Point 3: Sync Jump Input & Total Pages
   const jumpInput = document.getElementById('bankLedgerJumpInput');
   const totalLabel = document.getElementById('bankLedgerTotalPagesLabel');
   if (jumpInput) {
@@ -748,6 +757,42 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(computeEngine().bankEntries);
 }
 
+/* ---------------- POINT 2: VIEW SWITCHER DROPDOWN ---------------- */
+function toggleChartViewDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('chartViewDropdownMenu');
+  const chevron = document.getElementById('chartViewChevron');
+  if (!menu) return;
+
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    if (chevron) chevron.classList.add('rotate-180');
+  } else {
+    menu.classList.add('hidden');
+    if (chevron) chevron.classList.remove('rotate-180');
+  }
+}
+
+function closeChartViewDropdown() {
+  const menu = document.getElementById('chartViewDropdownMenu');
+  const chevron = document.getElementById('chartViewChevron');
+  if (menu) menu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+}
+
+function switchChartView(view) {
+  currentChartView = view;
+  const label = document.getElementById('currentChartViewLabel');
+  if (label) {
+    label.innerText = view === 'roc' ? 'Monthly RoC & 4-Curve Target' : 'Performance Trajectory';
+  }
+  closeChartViewDropdown();
+  const data = computeEngine();
+  renderChart(data);
+  renderTtmTable(data);
+}
+
 /* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
 function toggleTtmTableAccordion() {
   const container = document.getElementById('ttmTableContainer');
@@ -764,75 +809,148 @@ function toggleTtmTableAccordion() {
 }
 
 function renderTtmTable(computed) {
+  const thead = document.getElementById('ttmTableHead');
   const tbody = document.getElementById('ttmTableBody');
-  if (!tbody) return;
+  const titleEl = document.getElementById('ttmAccordionTitle');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
   tbody.innerHTML = '';
 
-  let history = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-  if (computed) {
-    history.push({
-      date: 'Current',
-      portfolioValue: computed.netWorth,
-      netCapital: computed.netInvested,
-      profit: computed.lifetimePnL
-    });
-  }
+  if (currentChartView === 'roc') {
+    if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
 
-  if (history.length < 2) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
-    return;
-  }
-
-  const ttmRecords = history.slice(-13);
-  const rows = [];
-
-  for (let i = 1; i < ttmRecords.length; i++) {
-    const curr = ttmRecords[i];
-    const prev = ttmRecords[i - 1];
-
-    const deltaProfit = Number(curr.profit || 0) - Number(prev.profit || 0);
-    const prevPortVal = Number(prev.portfolioValue || 0);
-    const monthlyReturnPct = prevPortVal > 0 ? (deltaProfit / prevPortVal) * 100 : 0;
-    
-    const currNetCap = Number(curr.netCapital || 0);
-    const currCumProfit = Number(curr.profit || 0);
-    const cumReturnOnCapPct = currNetCap > 0 ? (currCumProfit / currNetCap) * 100 : 0;
-
-    rows.push({
-      date: curr.date,
-      portVal: curr.portfolioValue,
-      netCap: currNetCap,
-      deltaProfit,
-      monthlyReturnPct,
-      cumProfit: currCumProfit,
-      cumReturnOnCapPct
-    });
-  }
-
-  rows.reverse().forEach(r => {
-    const isPos = r.deltaProfit >= 0;
-    const isCumPos = r.cumProfit >= 0;
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
-    tr.innerHTML = `
-      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums">${formatINR(r.portVal, 0)}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.netCap, 0)}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-        ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
-      </td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-        ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
-      </td>
-      <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-        ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
-      </td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-        ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
-      </td>
+    thead.innerHTML = `
+      <tr>
+        <th class="py-2.5 px-3 font-semibold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Start Capital</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Actual Value</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Monthly P&L</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Monthly RoC</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Target</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Gap</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Ratchet Deficit</th>
+      </tr>
     `;
-    tbody.appendChild(tr);
-  });
+
+    const fourCurvePoints = computeRocFourCurves(computed);
+    if (!fourCurvePoints || fourCurvePoints.length < 2) {
+      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
+      return;
+    }
+
+    const ttmPoints = fourCurvePoints.slice(-13);
+    const rows = ttmPoints.slice(1).reverse();
+
+    rows.forEach(r => {
+      const isPosProfit = r.deltaProfit >= 0;
+      const isPosGap = r.pureGap >= 0;
+      const isPosRatchet = r.ratchetDeficit >= 0;
+
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.startCapital, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(r.actualVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPosProfit ? '+' : ''}${r.rocPct.toFixed(2)}%
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">${formatINR(r.pureTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPosGap ? '+' : ''}${formatINR(r.pureGap, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPosRatchet ? '+' : ''}${formatINR(r.ratchetDeficit, 0)}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } else {
+    if (titleEl) titleEl.innerText = 'Trailing 12-Months (TTM) Performance Ledger';
+
+    thead.innerHTML = `
+      <tr>
+        <th class="py-2.5 px-3 font-semibold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Portfolio Value</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Net Capital</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Period P&L</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Return %</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Cumulative P&L</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Cumulative RoC</th>
+      </tr>
+    `;
+
+    let history = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (computed) {
+      history.push({
+        date: 'Current',
+        portfolioValue: computed.netWorth,
+        netCapital: computed.netInvested,
+        profit: computed.lifetimePnL
+      });
+    }
+
+    if (history.length < 2) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
+      return;
+    }
+
+    const ttmRecords = history.slice(-13);
+    const rows = [];
+
+    for (let i = 1; i < ttmRecords.length; i++) {
+      const curr = ttmRecords[i];
+      const prev = ttmRecords[i - 1];
+
+      const deltaProfit = Number(curr.profit || 0) - Number(prev.profit || 0);
+      const prevPortVal = Number(prev.portfolioValue || 0);
+      const monthlyReturnPct = prevPortVal > 0 ? (deltaProfit / prevPortVal) * 100 : 0;
+      
+      const currNetCap = Number(curr.netCapital || 0);
+      const currCumProfit = Number(curr.profit || 0);
+      const cumReturnOnCapPct = currNetCap > 0 ? (currCumProfit / currNetCap) * 100 : 0;
+
+      rows.push({
+        date: curr.date,
+        portVal: curr.portfolioValue,
+        netCap: currNetCap,
+        deltaProfit,
+        monthlyReturnPct,
+        cumProfit: currCumProfit,
+        cumReturnOnCapPct
+      });
+    }
+
+    rows.reverse().forEach(r => {
+      const isPos = r.deltaProfit >= 0;
+      const isCumPos = r.cumProfit >= 0;
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums">${formatINR(r.portVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500">${formatINR(r.netCap, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 }
 
 /* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
@@ -915,7 +1033,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- PERFORMANCE CHART (POINT 2 MONTHLY DELTA TOOLTIP) ---------------- */
+/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 2) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -947,7 +1065,192 @@ function renderChart(computed) {
   const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
+  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
 
+  // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
+  if (currentChartView === 'roc') {
+    const fourPoints = computeRocFourCurves(computed);
+    let displayPoints = fourPoints;
+
+    if (currentChartRange === 'TTM' && fourPoints.length > 12) {
+      displayPoints = fourPoints.slice(-12);
+    }
+
+    const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
+    const actualTrackData = displayPoints.map(p => p.actualVal);
+    const netCapBaseData = displayPoints.map(p => p.netCapBase);
+    const pureTargetData = displayPoints.map(p => p.pureTarget);
+    const ratchetTargetData = displayPoints.map(p => p.ratchetTarget);
+
+    const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+    blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
+    blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.03)');
+    blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+
+    multiChartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Actual Track',
+            data: actualTrackData,
+            borderColor: '#2563eb',
+            backgroundColor: blueGradient,
+            fill: true,
+            borderWidth: 2.4,
+            cubicInterpolationMode: 'monotone',
+            pointRadius: 3.5,
+            pointHoverRadius: 5.5,
+            pointBackgroundColor: '#2563eb',
+            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+            pointBorderWidth: 1.5,
+            order: 1
+          },
+          {
+            label: 'Capital Base',
+            data: netCapBaseData,
+            borderColor: '#dc2626',
+            backgroundColor: 'transparent',
+            fill: false,
+            borderWidth: 2.0,
+            cubicInterpolationMode: 'monotone',
+            pointRadius: 3.5,
+            pointHoverRadius: 5.5,
+            pointBackgroundColor: '#dc2626',
+            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+            pointBorderWidth: 1.5,
+            order: 2
+          },
+          {
+            label: 'Pure 2% Hurdle',
+            data: pureTargetData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'transparent',
+            fill: false,
+            borderWidth: 2.0,
+            borderDash: [3, 3],
+            cubicInterpolationMode: 'monotone',
+            pointRadius: 3.0,
+            pointHoverRadius: 5.0,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+            pointBorderWidth: 1.5,
+            order: 3
+          },
+          {
+            label: 'Ratchet Target',
+            data: ratchetTargetData,
+            borderColor: '#9333ea',
+            backgroundColor: 'transparent',
+            fill: false,
+            borderWidth: 2.0,
+            borderDash: [6, 4],
+            cubicInterpolationMode: 'monotone',
+            pointRadius: 3.5,
+            pointHoverRadius: 5.5,
+            pointBackgroundColor: '#9333ea',
+            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
+            pointBorderWidth: 1.5,
+            order: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: {
+              boxWidth: 12,
+              boxHeight: 2,
+              usePointStyle: false,
+              color: tickColor,
+              font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
+              padding: 12
+            }
+          },
+          tooltip: {
+            enabled: true,
+            usePointStyle: true,
+            backgroundColor: isDark ? '#0f172a' : '#ffffff',
+            titleColor: isDark ? '#e2e8f0' : '#0f172a',
+            bodyColor: isDark ? '#94a3b8' : '#334155',
+            borderColor: isDark ? '#334155' : '#e2e8f0',
+            borderWidth: 1,
+            cornerRadius: 9,
+            padding: 10,
+            boxPadding: 4,
+            caretPadding: 6,
+            titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
+            bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
+            boxWidth: 7,
+            boxHeight: 7,
+            callbacks: {
+              title: function(items) { return items[0].label; },
+              labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
+              label: function(tooltipCtx) {
+                const label = tooltipCtx.dataset.label || '';
+                const val = formatINR(tooltipCtx.raw || 0, 0);
+                const pt = displayPoints[tooltipCtx.dataIndex];
+
+                if (label === 'Actual Track' && pt && pt.deltaProfit !== undefined) {
+                  const sign = pt.deltaProfit >= 0 ? '+' : '';
+                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.deltaProfit, 0)} P&L)`;
+                }
+                if (label === 'Pure 2% Hurdle' && pt && pt.pureGap !== undefined) {
+                  const sign = pt.pureGap >= 0 ? '+' : '';
+                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.pureGap, 0)} gap)`;
+                }
+                if (label === 'Ratchet Target' && pt && pt.ratchetDeficit !== undefined) {
+                  const sign = pt.ratchetDeficit >= 0 ? '+' : '';
+                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.ratchetDeficit, 0)} deficit)`;
+                }
+                return ` ${label.padEnd(15, ' ')} : ${val}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false, drawBorder: false },
+            ticks: {
+              color: tickColor,
+              font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 12,
+              padding: 6
+            }
+          },
+          y: {
+            grid: {
+              color: function(scaleCtx) {
+                if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
+                return horizontalGridColor;
+              },
+              lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; },
+              drawBorder: false
+            },
+            ticks: {
+              color: tickColor,
+              font: { family: "'Inter', sans-serif", size: 11 },
+              padding: 8,
+              callback: function(val) { return formatINR(val, 0); }
+            }
+          }
+        }
+      }
+    });
+
+    return;
+  }
+
+  // VIEW 2: CLASSIC PERFORMANCE TRAJECTORY
   let allPoints = [];
 
   if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
@@ -972,10 +1275,9 @@ function renderChart(computed) {
     });
   }
 
-  // Point 2: Compute Monthly Delta between adjacent checkpoints
   for (let i = 0; i < allPoints.length; i++) {
     if (i === 0) {
-      allPoints[i].deltaProfit = null; // Inception baseline
+      allPoints[i].deltaProfit = null;
     } else {
       allPoints[i].deltaProfit = allPoints[i].profit - allPoints[i - 1].profit;
     }
@@ -990,8 +1292,6 @@ function renderChart(computed) {
   const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
   const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
   const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
-
-  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
 
   const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
   blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.14)');
@@ -1085,7 +1385,6 @@ function renderChart(computed) {
               const label = tooltipCtx.dataset.label || '';
               const val = formatINR(tooltipCtx.raw || 0, 0);
 
-              // Point 2: Attach (+₹X this month) to Profit
               if (label === 'Profit') {
                 const pt = displayPoints[tooltipCtx.dataIndex];
                 if (pt && pt.deltaProfit !== null && pt.deltaProfit !== undefined) {
@@ -1486,7 +1785,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] -= Number(t.qty || 0);
+      inv[t.stock] += Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
@@ -1616,7 +1915,7 @@ async function commitMonthEndSnapshot() {
   recalculateAndRender();
 }
 
-/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS (POINT 5) ---------------- */
+/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS (POINT 1 & 5) ---------------- */
 function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
@@ -1798,7 +2097,7 @@ async function saveCashCalibration() {
   recalculateAndRender();
 }
 
-// 3. Stock Master Modal (Point 4)
+// 3. Stock Master Modal
 function openStockMasterModal() {
   closeSettingsDropdown();
   document.getElementById('smSymbolInput').value = '';
@@ -1826,7 +2125,6 @@ async function handleAddStockMasterSubmit(e) {
 
   if (!symbol) return;
 
-  // Update in-memory stock master list
   const existingIndex = stockMasterList.findIndex(item => (item.symbol || '').toUpperCase() === symbol);
   if (existingIndex >= 0) {
     stockMasterList[existingIndex].name = name;
@@ -1865,11 +2163,20 @@ window.addEventListener('click', function(e) {
     closeCorpActionSubmenu();
   }
 
-  // Dropdown 2: Settings (Point 5)
+  // Dropdown 2: Settings (Point 1 & 5)
   const settingsDropdown = document.getElementById('settingsDropdownContainer');
   const settingsMenu = document.getElementById('settingsDropdownMenu');
   if (settingsDropdown && !settingsDropdown.contains(e.target) && settingsMenu && !settingsMenu.classList.contains('hidden')) {
     settingsMenu.classList.add('hidden');
+  }
+
+  // Dropdown 3: Chart View Switcher (Point 2)
+  const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
+  const chartMenu = document.getElementById('chartViewDropdownMenu');
+  const chartChevron = document.getElementById('chartViewChevron');
+  if (chartViewDropdown && !chartViewDropdown.contains(e.target) && chartMenu && !chartMenu.classList.contains('hidden')) {
+    chartMenu.classList.add('hidden');
+    if (chartChevron) chartChevron.classList.remove('rotate-180');
   }
 });
 
