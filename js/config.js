@@ -6,7 +6,7 @@
 const THEME_KEY = 'MYFOLIOAI_THEME';
 const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
 const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
-const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN'; // Point 3: Secret Handshake Token
+const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN'; // Secret Handshake Token
 const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
 const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
@@ -15,6 +15,7 @@ const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
 const KPI_MASK_STATES_KEY = 'MYFOLIOAI_KPI_MASK_STATES';
+const TAB_MASK_STATES_KEY = 'MYFOLIOAI_TAB_MASK_STATES'; // Stealth Tab Masks
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
 
 // Core Account Definitions
@@ -105,10 +106,21 @@ let marketPrices = Object.assign({
 let currentHoldingsAccountFilter = 'ALL';
 let currentTaxAccountFilter = 'Me';
 let currentChartRange = 'TTM';
-let currentChartView = 'trajectory'; // Point 2: 'trajectory' | 'roc'
-const ROC_TARGET_MONTHLY_RATE = 0.02; // Point 2: 2% per month compound baseline
+let currentChartView = 'trajectory'; // 'trajectory' | 'roc'
+const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
 
-// Cloud Sync & Handshake State (Point 3)
+// Stealth Masking State (All blurred by default)
+let tabMaskStates = {
+  chart: true,        // Chart Y-axis ticks & tooltip numbers
+  holdings: true,     // Holdings table (qty, wap, invested, current, p&l) + cash badge
+  closedTrades: true, // Closed trades quantities, proceeds & gains
+  fyBreakdown: true,  // FY P&L cards & summary table
+  ledger: true,       // Tradebook & Ledger numeric columns
+  bankLedger: true,   // Bank Ledger numeric columns
+  taxPnl: true        // Tax Cockpit gains & advance tax numbers
+};
+
+// Cloud Sync & Handshake State
 let cloudScriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
 let apiToken = localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
 
