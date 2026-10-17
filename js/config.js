@@ -65,6 +65,7 @@ try {
   }
 } catch (e) {}
 
+// POINT 6: Strict Runtime Isolation of Cash Calibration State
 let cashCalibration = { 
   offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 }, 
   records: {} 
