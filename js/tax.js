@@ -78,7 +78,6 @@ function renderTaxView() {
   const data = computeEngine();
   const allLotsForFy = data.taxClosedLots.filter(l => l.fy === targetFy);
 
-  // POINT 7: Compute per-account or aggregated totals with correct individual PAN caps (₹1.25L per active account)
   const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
 
   let stcgGrossGain = 0;
@@ -134,7 +133,7 @@ function renderTaxView() {
     let aStcgShortfall = 0;
     let aLtcgShortfall = 0;
     if (isLowIncome) {
-      const cap = 300000;
+      const cap = 400000; // Updated to ₹4,00,000 New Regime limit
       aStcgShortfall = Math.min(aNetStcg, cap);
       aLtcgShortfall = Math.min(aNetLtcg, cap - aStcgShortfall);
     }
@@ -167,12 +166,12 @@ function renderTaxView() {
 
   if (isLowIncomeActive) {
     if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
-    if (toggleText) toggleText.innerText = 'Zero / Low Income (< ₹3L)';
+    if (toggleText) toggleText.innerText = 'Zero / Low Income (< ₹4L)';
     if (toggleBadge) {
       toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-      toggleBadge.innerText = 'Active (₹3L Absorbed)';
+      toggleBadge.innerText = 'Active (₹4L Absorbed)';
     }
-    if (explainer) explainer.innerText = `Absorbs up to ₹3,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
+    if (explainer) explainer.innerText = `Absorbs up to ₹4,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
   } else {
     if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300';
     if (toggleText) toggleText.innerText = 'Regular Salary / Income';
@@ -264,11 +263,13 @@ function renderTaxView() {
       if (totalTaxLiability === 0) {
         statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
       } else if (remainingToPay === 0) {
+        // Fixed: Removed duplicate manual '₹' symbol before formatCompactIndian
         statusBadge = excessPaid > 0 
-          ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+₹${formatCompactIndian(excessPaid)} Rolled Over</span>`
+          ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+${formatCompactIndian(excessPaid)} Rolled Over</span>`
           : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
       } else {
-        statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200">₹${formatINR(remainingToPay, 0)} Due</span>`;
+        // Fixed: Removed duplicate manual '₹' symbol before formatINR
+        statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200">${formatINR(remainingToPay, 0)} Due</span>`;
       }
 
       const tr = document.createElement('tr');
