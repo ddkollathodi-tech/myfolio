@@ -165,7 +165,6 @@
                   <i data-lucide="chevron-right" id="corpSubmenuChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150"></i>
                 </button>
 
-                <!-- Sub-Menu items (Bonus, Split, Demerger) -->
                 <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-gray-800/40 border-y border-slate-100 dark:border-gray-800">
                   <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
@@ -185,7 +184,7 @@
             </div>
           </div>
 
-          <!-- 2. LIVE PRICES (MANUAL MODAL) -->
+          <!-- 2. LIVE PRICES -->
           <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
@@ -196,7 +195,7 @@
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN -->
+          <!-- 4. SETTINGS DROPDOWN (POINT 8: EXPORT EXCEL MOVED HERE) -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -207,12 +206,10 @@
               <i data-lucide="settings" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
             </button>
 
-            <!-- Settings Navbar Dropdown Menu -->
             <div 
               id="settingsDropdownMenu" 
               class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-gray-800"
             >
-              <!-- Item 1: Theme Mode Toggle (Inline Row) -->
               <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition">
                 <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-gray-200">
                   <i data-lucide="moon" id="settingsThemeIcon" class="w-4 h-4 text-indigo-400"></i>
@@ -226,23 +223,23 @@
                 </div>
               </div>
 
-              <!-- Item 2: Master PIN & Security -->
               <div class="py-1">
                 <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
                   <span>Master PIN &amp; Security</span>
                 </button>
-
-                <!-- Item 3: Cash Calibration -->
                 <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500 mr-2.5"></i>
                   <span>Cash Calibration</span>
                 </button>
-
-                <!-- Item 4: Stock Master Registry -->
                 <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
                   <span>Stock Master Registry</span>
+                </button>
+                <!-- POINT 8: Export Excel relocated into Settings Menu -->
+                <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium border-t border-slate-100 dark:border-gray-800 mt-1 pt-2">
+                  <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2.5"></i>
+                  <span>Export Excel Report (.xlsx)</span>
                 </button>
               </div>
             </div>
@@ -438,12 +435,11 @@
 
       </div>
 
-      <!-- PERFORMANCE CHART CARD (RENAMED VIEW & STEALTH EYE TOGGLE TOP-RIGHT) -->
+      <!-- PERFORMANCE CHART CARD (POINTS 2 & 4: CONTAINER WITH OVERLAY & TOOLTIP) -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
           <div class="flex items-center space-x-3.5">
-            <!-- View Switcher Dropdown Trigger -->
             <div class="relative" id="chartViewSwitcherContainer">
               <button 
                 onclick="toggleChartViewDropdown(event)" 
@@ -453,7 +449,6 @@
                 <i data-lucide="chevron-down" id="chartViewChevron" class="w-4 h-4 text-slate-400 transition-transform duration-150"></i>
               </button>
 
-              <!-- View Switcher Dropdown Menu (Monthly RoC Curve) -->
               <div 
                 id="chartViewDropdownMenu" 
                 class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
@@ -469,7 +464,6 @@
               </div>
             </div>
             
-            <!-- TTM / All Range -->
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
               <button 
                 id="chartRangeBtn-TTM" 
@@ -488,7 +482,6 @@
             </div>
           </div>
 
-          <!-- Dynamic Legend Header & Chart Stealth Eye Toggle (Top-Right) -->
           <div class="flex items-center space-x-3.5 text-xs">
             <div class="flex items-center space-x-3.5" id="chartLegendContainer">
               <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
@@ -502,7 +495,6 @@
               </span>
             </div>
 
-            <!-- Dedicated Chart Stealth Eye Toggle -->
             <button 
               id="chartMaskToggleBtn" 
               onclick="toggleTabMask('chart')" 
@@ -514,13 +506,10 @@
           </div>
         </div>
 
+        <!-- Chart Container with Y-Axis Frosted Overlay and Custom HTML Tooltip Container -->
         <div class="h-[330px] w-full relative overflow-hidden" id="chartCanvasWrapper">
           <canvas id="multiCurveChart"></canvas>
-          
-          <!-- Frosted Glass Y-Axis Overlay Rail (Masks values only, keeps lines/grid crisp) -->
           <div id="chartYAxisBlurOverlay" class="absolute top-0 left-0 bottom-7 pointer-events-none transition-all duration-200 z-10 hidden" style="width: 65px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.06);"></div>
-
-          <!-- External Floating HTML Tooltip (Masks values only inside hover card) -->
           <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
         </div>
 
@@ -558,7 +547,7 @@
 
       </div>
 
-      <!-- TABS NAVIGATION BAR -->
+      <!-- TABS NAVIGATION BAR (POINT 8: EXPORT EXCEL REMOVED FROM HERE) -->
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 gap-2">
         <div class="flex space-x-2 overflow-x-auto custom-scroll flex-1 py-0.5">
           <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
@@ -586,22 +575,10 @@
             <span>Tax P&amp;L &amp; Planning Cockpit</span>
           </button>
         </div>
-
-        <!-- Multi-Tab Excel Export Button -->
-        <button 
-          onclick="exportPortfolioToExcel()" 
-          class="shrink-0 flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 border border-emerald-500/30 transition shadow-2xs mb-1" 
-          title="Export multi-sheet portfolio to Excel (.xlsx)"
-        >
-          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
-          <span>Export Excel</span>
-        </button>
       </div>
 
       <!-- TAB 1: ACTIVE HOLDINGS -->
       <div id="tabContent-holdings" class="space-y-4">
-        
-        <!-- Win / Loss Bar -->
         <div id="holdingsRatioBarContainer" class="bg-white dark:bg-gray-900 p-3 rounded-xl border border-slate-200 dark:border-gray-800 space-y-2">
           <div class="flex items-center justify-between text-xs font-semibold">
             <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
@@ -620,7 +597,6 @@
           </div>
         </div>
 
-        <!-- Account Filter, Search & Holdings Stealth Eye Toggle (Top-Right) -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="flex items-center flex-wrap gap-2.5">
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
@@ -635,7 +611,6 @@
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
           </div>
 
-          <!-- Highlighted Liquid Cash Badge + Top-Right Eye Button -->
           <div class="flex items-center space-x-2">
             <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs">
               <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
@@ -643,7 +618,6 @@
               <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
             </div>
 
-            <!-- Holdings Eye Mask Toggle Button -->
             <button 
               onclick="toggleTabMask('holdings')" 
               class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition shrink-0" 
@@ -693,9 +667,9 @@
           </table>
         </div>
       </div>
-      <!-- TAB 2: CLOSED TRADES -->
+
+      <!-- TAB 2: CLOSED TRADES (POINT 3: SINGLE INSTANCE DEDUPLICATED) -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
-        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Closed Trades Portfolio</div>
           <button 
@@ -750,7 +724,6 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -774,7 +747,6 @@
 
       <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">FIFO Realized History by Financial Year</div>
           <button 
@@ -805,7 +777,6 @@
 
       <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
-        <!-- Top Toolbar with Search on Left and Eye Button on Top-Right -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800 gap-3">
           <div class="flex items-center space-x-2.5">
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
@@ -840,7 +811,6 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer -->
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -864,7 +834,6 @@
 
       <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
-        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Bank Capital Deposits &amp; Withdrawals</div>
           <button 
@@ -893,7 +862,6 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
@@ -942,7 +910,6 @@
           </div>
         </div>
 
-        <!-- Basic Exemption Limit Shortfall Banner -->
         <div id="basicExemptionBanner" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center space-x-3">
             <div class="h-10 w-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -972,7 +939,6 @@
           </div>
         </div>
 
-        <!-- Tax Harvesting Radar -->
         <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-gray-800 pb-3">
             <div class="flex items-center space-x-2.5">
@@ -992,7 +958,6 @@
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            
             <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-950/40 border border-slate-200 dark:border-gray-800/80 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
@@ -1002,7 +967,6 @@
                 <span id="profitHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">0 stocks</span>
               </div>
               <p class="text-[11px] text-slate-500 dark:text-gray-400">Sell &amp; re-buy to step-up purchase price without paying tax within exemption limit.</p>
-              
               <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
 
@@ -1015,14 +979,11 @@
                 <span id="lossHarvestCountBadge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400">0 stocks</span>
               </div>
               <p class="text-[11px] text-slate-500 dark:text-gray-400">Booking these unrealized losses before FY end neutralizes realized gains.</p>
-
               <div id="lossHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
-
           </div>
         </div>
 
-        <!-- Tax Matrix -->
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
             <thead class="bg-slate-100/95 dark:bg-gray-950/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
@@ -1042,7 +1003,6 @@
           </table>
         </div>
 
-        <!-- Advance Tax Schedule Table -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <div>
@@ -1074,7 +1034,6 @@
           </div>
         </div>
 
-        <!-- Tax Audit Lots Table -->
         <div class="bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -1257,7 +1216,7 @@
     </div>
   </div>
 
-  <!-- MODAL: GOOGLE SHEETS SYNC (API SECRET TOKEN FIELD) -->
+  <!-- MODAL: GOOGLE SHEETS SYNC -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 pb-3">
