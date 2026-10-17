@@ -438,7 +438,7 @@
 
       </div>
 
-      <!-- PERFORMANCE CHART CARD (POINT 1 & 2: RENAMED VIEW & STEALTH EYE TOGGLE) -->
+      <!-- PERFORMANCE CHART CARD (RENAMED VIEW & STEALTH EYE TOGGLE TOP-RIGHT) -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
@@ -453,7 +453,7 @@
                 <i data-lucide="chevron-down" id="chartViewChevron" class="w-4 h-4 text-slate-400 transition-transform duration-150"></i>
               </button>
 
-              <!-- View Switcher Dropdown Menu (Point 1: Monthly RoC Curve) -->
+              <!-- View Switcher Dropdown Menu (Monthly RoC Curve) -->
               <div 
                 id="chartViewDropdownMenu" 
                 class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px]"
@@ -469,48 +469,48 @@
               </div>
             </div>
             
-            <!-- TTM / All Range & Point 2 Chart Stealth Eye Toggle -->
-            <div class="flex items-center space-x-2">
-              <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
-                <button 
-                  id="chartRangeBtn-TTM" 
-                  onclick="setChartRange('TTM')" 
-                  class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
-                >
-                  TTM
-                </button>
-                <button 
-                  id="chartRangeBtn-ALL" 
-                  onclick="setChartRange('ALL')" 
-                  class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
-                >
-                  All Journey
-                </button>
-              </div>
-
-              <!-- Dedicated Chart Stealth Eye Toggle (Y-Axis & Tooltip Masking) -->
+            <!-- TTM / All Range -->
+            <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs">
               <button 
-                id="chartMaskToggleBtn" 
-                onclick="toggleTabMask('chart')" 
-                class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-200/90 dark:border-gray-700/80 text-slate-600 dark:text-gray-300 transition" 
-                title="Toggle Chart Numbers Stealth Mask"
+                id="chartRangeBtn-TTM" 
+                onclick="setChartRange('TTM')" 
+                class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs"
               >
-                <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-3.5 h-3.5"></i>
+                TTM
+              </button>
+              <button 
+                id="chartRangeBtn-ALL" 
+                onclick="setChartRange('ALL')" 
+                class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200"
+              >
+                All Journey
               </button>
             </div>
           </div>
 
-          <!-- Dynamic Legend Header Container (Point 1: Auto Swapped) -->
-          <div class="flex items-center space-x-3.5 text-xs" id="chartLegendContainer">
-            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-              <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
-            </span>
-            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-              <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
-            </span>
-            <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-              <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
-            </span>
+          <!-- Dynamic Legend Header & Chart Stealth Eye Toggle (Top-Right) -->
+          <div class="flex items-center space-x-3.5 text-xs">
+            <div class="flex items-center space-x-3.5" id="chartLegendContainer">
+              <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
+              </span>
+              <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
+              </span>
+              <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
+              </span>
+            </div>
+
+            <!-- Dedicated Chart Stealth Eye Toggle -->
+            <button 
+              id="chartMaskToggleBtn" 
+              onclick="toggleTabMask('chart')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-200/90 dark:border-gray-700/80 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Chart Numbers Stealth Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
 
@@ -614,7 +614,7 @@
           </div>
         </div>
 
-        <!-- Account Filter, Search & Holdings Stealth Eye Toggle (Point 2) -->
+        <!-- Account Filter, Search & Holdings Stealth Eye Toggle (Top-Right) -->
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="flex items-center flex-wrap gap-2.5">
             <div class="inline-flex items-center bg-slate-100 dark:bg-gray-800 p-0.5 rounded-lg border border-slate-200/90 dark:border-gray-700/80 shadow-2xs text-xs font-semibold">
@@ -625,24 +625,26 @@
               <button onclick="setHoldingsAccountFilter('Brother')" id="holdingsAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
             </div>
 
-            <!-- Holdings Eye Mask Toggle Button -->
-            <button 
-              onclick="toggleTabMask('holdings')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Holdings Privacy Mask (Qty, Invested, Current Value, P&L, Cash)"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
-            </button>
-
             <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="holdingsCount">0 Open Positions</span>
           </div>
 
-          <!-- Highlighted Liquid Cash Badge -->
-          <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs">
-            <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-            <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
-            <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
+          <!-- Highlighted Liquid Cash Badge + Top-Right Eye Button -->
+          <div class="flex items-center space-x-2">
+            <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs">
+              <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+              <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
+              <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
+            </div>
+
+            <!-- Holdings Eye Mask Toggle Button -->
+            <button 
+              onclick="toggleTabMask('holdings')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition shrink-0" 
+              title="Toggle Holdings Privacy Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
 
@@ -687,6 +689,18 @@
       </div>
       <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
+        <!-- Unified Top Header Bar with Top-Right Eye Button -->
+        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+          <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Closed Trades Portfolio</div>
+          <button 
+            onclick="toggleTabMask('closedTrades')" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
+            title="Toggle Closed Trades Privacy Mask"
+          >
+            <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
             <thead class="bg-slate-100/95 dark:bg-gray-950/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-gray-300 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
@@ -730,18 +744,9 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer & Closed Trades Stealth Eye Toggle -->
+        <!-- Jump-To-Page Pagination Footer -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <div class="flex items-center space-x-2">
-            <button 
-              onclick="toggleTabMask('closedTrades')" 
-              class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Closed Trades Privacy Mask (Qty, Cost Basis, Proceeds, Realized P&L)"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
-            </button>
-            <span id="closedPageInfo">Showing 1–12 entries</span>
-          </div>
+          <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
@@ -763,15 +768,15 @@
 
       <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-        <div class="flex items-center justify-between">
-          <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">FIFO Realized History by Financial Year</div>
+        <!-- Unified Header with Top-Right Eye Button -->
+        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+          <div class="text-xs font-bold text-slate-700 dark:text-gray-300">FIFO Realized History by Financial Year</div>
           <button 
             onclick="toggleTabMask('fyBreakdown')" 
-            class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-xs font-semibold text-slate-600 dark:text-gray-300 transition" 
-            title="Toggle FY P&L Privacy Mask (Sales, Cost Basis, Realized Gain)"
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
+            title="Toggle FY P&L Privacy Mask"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-3.5 h-3.5"></i>
-            <span>Privacy Mask</span>
           </button>
         </div>
 
@@ -794,19 +799,19 @@
 
       <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
-        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+        <!-- Unified Toolbar with Search on Left and Eye Button on Top-Right -->
+        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800 gap-3">
           <div class="flex items-center space-x-2.5">
-            <button 
-              onclick="toggleTabMask('ledger')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Ledger Privacy Mask (Cash Out, Cash In, Running Cash)"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
-            </button>
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
             <span class="text-xs text-slate-500 dark:text-gray-400 font-medium" id="ledgerCountBadge">0 Entries</span>
           </div>
-          <div class="text-xs text-slate-500">12 rows per page • Log trades or corporate actions above</div>
+          <button 
+            onclick="toggleTabMask('ledger')" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition shrink-0" 
+            title="Toggle Ledger Privacy Mask"
+          >
+            <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
+          </button>
         </div>
 
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -853,6 +858,18 @@
 
       <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
+        <!-- Unified Header with Top-Right Eye Button -->
+        <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
+          <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Bank Capital Deposits &amp; Withdrawals</div>
+          <button 
+            onclick="toggleTabMask('bankLedger')" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition shrink-0" 
+            title="Toggle Bank Ledger Privacy Mask"
+          >
+            <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-gray-300">
             <thead class="bg-slate-100/95 dark:bg-gray-950/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-10 backdrop-blur">
@@ -870,18 +887,9 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer & Bank Ledger Eye Toggle -->
+        <!-- Jump-To-Page Pagination Footer -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-          <div class="flex items-center space-x-2">
-            <button 
-              onclick="toggleTabMask('bankLedger')" 
-              class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Bank Ledger Privacy Mask (Deposit In, Withdrawal Out, Contributed Corpus)"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
-            </button>
-            <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
-          </div>
+          <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
             <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-gray-300">
@@ -901,9 +909,8 @@
         </div>
       </div>
 
-      <!-- TAB 6: TAX PLANNING COCKPIT -->
+      <!-- TAB 6: TAX PLANNING COCKPIT (Clean - No Eye Toggle) -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
-        
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <div>
             <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -914,15 +921,6 @@
           </div>
 
           <div class="flex items-center flex-wrap gap-2">
-            <!-- Tax Cockpit Privacy Mask Button -->
-            <button 
-              onclick="toggleTabMask('taxPnl')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Tax Cockpit Privacy Mask"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-3.5 h-3.5"></i>
-            </button>
-
             <div class="flex items-center space-x-1.5 text-xs">
               <span class="text-slate-500 dark:text-gray-400 font-medium">FY:</span>
               <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
