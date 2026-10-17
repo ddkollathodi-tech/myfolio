@@ -41,7 +41,6 @@ function initTabMaskStates() {
   } catch (e) {}
 
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
-  applyChartCanvasMask();
 }
 
 function toggleTabMask(tabKey) {
@@ -52,7 +51,7 @@ function toggleTabMask(tabKey) {
 
   const data = computeEngine();
   if (tabKey === 'chart') {
-    applyChartCanvasMask();
+    renderChart(data);
     renderTtmTable(data);
   } else if (tabKey === 'holdings') {
     renderHoldings(data);
@@ -64,8 +63,6 @@ function toggleTabMask(tabKey) {
     renderLedger(data.ledgerEntries);
   } else if (tabKey === 'bankLedger') {
     renderBankLedger(data.bankEntries);
-  } else if (tabKey === 'taxPnl') {
-    renderTaxView();
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -82,14 +79,10 @@ function getMaskClass(tabKey) {
 }
 
 function applyChartCanvasMask() {
-  const canvas = document.getElementById('multiCurveChart');
-  if (!canvas) return;
-  if (tabMaskStates.chart) {
-    canvas.classList.add('blurred-mask');
-    canvas.classList.remove('mask-transition');
-  } else {
-    canvas.classList.remove('blurred-mask');
-    canvas.classList.add('mask-transition');
+  // Graph line art, trends, and geometries remain crisp and unblurred.
+  // Masking is applied selectively to X-axis tick labels and hover cards.
+  if (multiChartInstance) {
+    multiChartInstance.update();
   }
 }
 
@@ -292,7 +285,6 @@ function recalculateAndRender() {
   renderTaxView();
   renderChartLegend();
   renderChart(data);
-  applyChartCanvasMask();
   renderTtmTable(data);
 
   if (window.lucide) lucide.createIcons();
@@ -396,7 +388,7 @@ function renderHoldings(data) {
   cashBadgeVal.innerText = formatINR(cashAmt);
   cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
-  // Win / Loss bar (Totals unmasked, dollar sums masked)
+  // Win / Loss bar
   const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
   const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
   const profitSum = profitPositions.reduce((acc, h) => acc + h.pnlVal, 0);
@@ -891,7 +883,6 @@ function switchChartView(view) {
   renderChartLegend();
   const data = computeEngine();
   renderChart(data);
-  applyChartCanvasMask();
   renderTtmTable(data);
 }
 
@@ -1170,6 +1161,7 @@ function renderChart(computed) {
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
+  const isChartMasked = !!tabMaskStates.chart;
 
   // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
   if (currentChartView === 'roc') {
@@ -1283,10 +1275,16 @@ function renderChart(computed) {
             boxWidth: 7,
             boxHeight: 7,
             callbacks: {
-              title: function(items) { return items[0].label; },
+              title: function(items) { 
+                return isChartMasked ? '••••••' : items[0].label; 
+              },
               labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
               label: function(tooltipCtx) {
                 const label = tooltipCtx.dataset.label || '';
+                if (isChartMasked) {
+                  return ` ${label.padEnd(15, ' ')} : ••••••`;
+                }
+
                 const val = formatINR(tooltipCtx.raw || 0, 0);
                 const pt = displayPoints[tooltipCtx.dataIndex];
 
@@ -1316,7 +1314,11 @@ function renderChart(computed) {
               maxRotation: 0,
               autoSkip: true,
               maxTicksLimit: 12,
-              padding: 6
+              padding: 6,
+              callback: function(val, index) {
+                const rawLabel = this.getLabelForValue(val);
+                return isChartMasked ? '••••••' : rawLabel;
+              }
             }
           },
           y: {
@@ -1473,10 +1475,16 @@ function renderChart(computed) {
           boxWidth: 7,
           boxHeight: 7,
           callbacks: {
-            title: function(items) { return items[0].label; },
+            title: function(items) { 
+              return isChartMasked ? '••••••' : items[0].label; 
+            },
             labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
             label: function(tooltipCtx) {
               const label = tooltipCtx.dataset.label || '';
+              if (isChartMasked) {
+                return ` ${label.padEnd(11, ' ')} : ••••••`;
+              }
+
               const val = formatINR(tooltipCtx.raw || 0, 0);
               if (label === 'Profit') {
                 const pt = displayPoints[tooltipCtx.dataIndex];
@@ -1500,7 +1508,11 @@ function renderChart(computed) {
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 12,
-            padding: 6
+            padding: 6,
+            callback: function(val, index) {
+              const rawLabel = this.getLabelForValue(val);
+              return isChartMasked ? '••••••' : rawLabel;
+            }
           }
         },
         y: {
@@ -1880,7 +1892,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] -= Number(t.qty || 0);
+      inv[t.stock] += Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
