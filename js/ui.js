@@ -1158,7 +1158,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (WITH PROFIT VARIATION & BOUNDARY AWARENESS) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER (PROFIT VARIATION & BOUNDARY AWARENESS) ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
   ensureChartDomElements();
@@ -1173,7 +1173,6 @@ function customHtmlTooltipHandler(context) {
 
   const isMasked = !!tabMaskStates.chart;
   const maskClass = isMasked ? 'blurred-mask' : '';
-  const displayPoints = chart._displayPoints || [];
 
   if (tooltip.body) {
     const titleLines = tooltip.title || [];
@@ -1191,14 +1190,18 @@ function customHtmlTooltipHandler(context) {
       const rawVal = dp.raw || 0;
       const formattedVal = formatINR(rawVal, 0);
 
-      // Check if this point has a profit variation (deltaProfit) to show in brackets
+      // Compute period profit variation (delta) on the fly from dataset values
       let variationHtml = '';
-      const pointMeta = displayPoints[dp.dataIndex];
-      if ((label === 'Profit' || label === 'Actual Track') && pointMeta && pointMeta.deltaProfit !== undefined && pointMeta.deltaProfit !== null) {
-        const delta = pointMeta.deltaProfit;
-        const isPos = delta >= 0;
-        const formattedDelta = formatINR(Math.abs(delta), 0);
-        variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+      if ((label === 'Profit' || label === 'Actual Track') && dp.dataIndex > 0) {
+        const datasetData = dataset.data;
+        const currVal = datasetData[dp.dataIndex];
+        const prevVal = datasetData[dp.dataIndex - 1];
+        if (currVal !== undefined && prevVal !== undefined) {
+          const delta = currVal - prevVal;
+          const isPos = delta >= 0;
+          const formattedDelta = formatINR(Math.abs(delta), 0);
+          variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+        }
       }
 
       innerHtml += `
@@ -1415,7 +1418,6 @@ function renderChart(computed) {
       }
     });
 
-    multiChartInstance._displayPoints = displayPoints;
     return;
   }
 
@@ -1569,8 +1571,6 @@ function renderChart(computed) {
       }
     }
   });
-
-  multiChartInstance._displayPoints = displayPoints;
 }
 
 /* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS ---------------- */
