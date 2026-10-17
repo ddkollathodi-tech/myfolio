@@ -10,6 +10,7 @@ let currentPendingMonthEndDateStr = null;
 function init() {
   initTheme();
   initTabMaskStates();
+  ensureChartDomElements();
   updateSyncUI();
   renderLastPriceTimestamp();
   initAutoLockEngine();
@@ -41,6 +42,7 @@ function initTabMaskStates() {
   } catch (e) {}
 
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
+  syncYAxisBlurOverlay();
 }
 
 function toggleTabMask(tabKey) {
@@ -51,7 +53,7 @@ function toggleTabMask(tabKey) {
 
   const data = computeEngine();
   if (tabKey === 'chart') {
-    renderChart(data);
+    syncYAxisBlurOverlay();
     renderTtmTable(data);
   } else if (tabKey === 'holdings') {
     renderHoldings(data);
@@ -78,9 +80,35 @@ function getMaskClass(tabKey) {
   return tabMaskStates[tabKey] ? 'blurred-mask' : 'mask-transition';
 }
 
-function applyChartCanvasMask() {
-  if (multiChartInstance) {
-    multiChartInstance.update();
+function ensureChartDomElements() {
+  const canvas = document.getElementById('multiCurveChart');
+  if (!canvas || !canvas.parentElement) return;
+  const wrapper = canvas.parentElement;
+
+  if (!document.getElementById('chartYAxisBlurOverlay')) {
+    const overlay = document.createElement('div');
+    overlay.id = 'chartYAxisBlurOverlay';
+    overlay.className = 'absolute top-0 left-0 pointer-events-none transition-all duration-200 z-10 hidden';
+    overlay.style.cssText = 'width: 65px; height: calc(100% - 28px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.06);';
+    wrapper.appendChild(overlay);
+  }
+
+  if (!document.getElementById('chartCustomTooltip')) {
+    const tooltipEl = document.createElement('div');
+    tooltipEl.id = 'chartCustomTooltip';
+    tooltipEl.className = 'pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]';
+    wrapper.appendChild(tooltipEl);
+  }
+}
+
+function syncYAxisBlurOverlay() {
+  ensureChartDomElements();
+  const overlay = document.getElementById('chartYAxisBlurOverlay');
+  if (!overlay) return;
+  if (tabMaskStates.chart) {
+    overlay.classList.remove('hidden');
+  } else {
+    overlay.classList.add('hidden');
   }
 }
 
@@ -232,7 +260,7 @@ function recalculateAndRender() {
   const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
-  
+
   const curFyEl = document.getElementById('kpiCurrentFyPnL');
   curFyEl.innerText = formatINR(curFyData.gain);
   curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
@@ -283,6 +311,7 @@ function recalculateAndRender() {
   renderTaxView();
   renderChartLegend();
   renderChart(data);
+  syncYAxisBlurOverlay();
   renderTtmTable(data);
 
   if (window.lucide) lucide.createIcons();
@@ -365,7 +394,7 @@ function renderHoldings(data) {
   const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
   const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
   const cashBadgeContainer = document.getElementById('holdingsCashBadge');
-  
+
   let cashAmt = 0;
   if (currentHoldingsAccountFilter === 'ALL') {
     cashAmt = data.cashBalance;
@@ -499,7 +528,7 @@ function renderClosedTrades(closedTrades) {
   const pageSlice = sorted.slice(startIndex, endIndex);
 
   document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  
+
   const jumpInput = document.getElementById('closedJumpInput');
   const totalLabel = document.getElementById('closedTotalPagesLabel');
   if (jumpInput) {
@@ -659,7 +688,7 @@ function renderLedger(ledgerEntries) {
   const pageSlice = list.slice(startIndex, endIndex);
 
   document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  
+
   const jumpInput = document.getElementById('ledgerJumpInput');
   const totalLabel = document.getElementById('ledgerTotalPagesLabel');
   if (jumpInput) {
@@ -760,7 +789,7 @@ function renderBankLedger(bankEntries) {
   const pageSlice = list.slice(startIndex, endIndex);
 
   document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-  
+
   const jumpInput = document.getElementById('bankLedgerJumpInput');
   const totalLabel = document.getElementById('bankLedgerTotalPagesLabel');
   if (jumpInput) {
@@ -881,7 +910,7 @@ function switchChartView(view) {
   renderChartLegend();
   const data = computeEngine();
   renderChart(data);
-  applyChartCanvasMask();
+  syncYAxisBlurOverlay();
   renderTtmTable(data);
 }
 
@@ -1127,6 +1156,60 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER ---------------- */
+function customHtmlTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  ensureChartDomElements();
+  const tooltipEl = document.getElementById('chartCustomTooltip');
+
+  if (!tooltipEl) return;
+
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = '0';
+    return;
+  }
+
+  const isMasked = !!tabMaskStates.chart;
+  const maskClass = isMasked ? 'blurred-mask' : '';
+
+  if (tooltip.body) {
+    const titleLines = tooltip.title || [];
+    let innerHtml = '<div class="space-y-1.5">';
+
+    // Date/Checkpoint Header is always unmasked and legible
+    titleLines.forEach(title => {
+      innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-gray-800 text-[11.5px]">${title}</div>`;
+    });
+
+    innerHtml += '<div class="space-y-1 pt-0.5">';
+    tooltip.dataPoints.forEach(dp => {
+      const dataset = chart.data.datasets[dp.datasetIndex];
+      const color = dataset.borderColor || '#2563eb';
+      const label = dataset.label || '';
+      const rawVal = dp.raw || 0;
+      const formattedVal = formatINR(rawVal, 0);
+
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-3 text-[11px]">
+          <span class="flex items-center text-slate-600 dark:text-gray-300">
+            <span class="w-2 h-2 rounded-full mr-1.5" style="background-color: ${color}"></span>
+            <span>${label}:</span>
+          </span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">${formattedVal}</span>
+        </div>
+      `;
+    });
+    innerHtml += '</div></div>';
+
+    tooltipEl.innerHTML = innerHtml;
+  }
+
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+  tooltipEl.style.opacity = '1';
+  tooltipEl.style.left = positionX + tooltip.caretX + 12 + 'px';
+  tooltipEl.style.top = positionY + tooltip.caretY - 12 + 'px';
+}
+
 /* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
@@ -1161,49 +1244,9 @@ function renderChart(computed) {
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
 
-  // Custom Chart.js Canvas Plugin: Blurs strictly the Y-Axis Labels & Hover Tooltip Card
-  const canvasStealthBlurPlugin = {
-    id: 'canvasStealthBlurPlugin',
-    afterDraw: (chart) => {
-      if (!tabMaskStates.chart) return;
-      const { ctx: cCtx, scales: { y } } = chart;
-      if (!y) return;
-
-      // 1. Frosted Glass blur overlay over Y-Axis numbers only (X-axis dates & line art remain crisp)
-      const pad = 12;
-      const yLeft = Math.max(0, y.left - pad);
-      const yTop = Math.max(0, y.top - pad);
-      const yWidth = y.width + (pad * 2);
-      const yHeight = y.height + (pad * 2);
-
-      cCtx.save();
-      cCtx.filter = 'blur(6px)';
-      cCtx.drawImage(
-        chart.canvas,
-        yLeft, yTop, yWidth, yHeight,
-        yLeft, yTop, yWidth, yHeight
-      );
-      cCtx.restore();
-
-      // 2. Frosted Glass blur overlay strictly over active Hover Tooltip Card
-      const tooltip = chart.tooltip;
-      if (tooltip && tooltip.opacity > 0) {
-        const tPad = 8;
-        const tX = Math.max(0, tooltip.x - tPad);
-        const tY = Math.max(0, tooltip.y - tPad);
-        const tW = tooltip.width + (tPad * 2);
-        const tH = tooltip.height + (tPad * 2);
-
-        cCtx.save();
-        cCtx.filter = 'blur(7px)';
-        cCtx.drawImage(
-          chart.canvas,
-          tX, tY, tW, tH,
-          tX, tY, tW, tH
-        );
-        cCtx.restore();
-      }
-    }
+  const externalTooltipOptions = {
+    enabled: false,
+    external: customHtmlTooltipHandler
   };
 
   // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
@@ -1301,48 +1344,7 @@ function renderChart(computed) {
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            enabled: true,
-            usePointStyle: true,
-            backgroundColor: isDark ? '#0f172a' : '#ffffff',
-            titleColor: isDark ? '#e2e8f0' : '#0f172a',
-            bodyColor: isDark ? '#94a3b8' : '#334155',
-            borderColor: isDark ? '#334155' : '#e2e8f0',
-            borderWidth: 1,
-            cornerRadius: 9,
-            padding: 10,
-            boxPadding: 4,
-            caretPadding: 6,
-            titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
-            bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
-            boxWidth: 7,
-            boxHeight: 7,
-            callbacks: {
-              title: function(items) { 
-                return items[0].label; 
-              },
-              labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
-              label: function(tooltipCtx) {
-                const label = tooltipCtx.dataset.label || '';
-                const val = formatINR(tooltipCtx.raw || 0, 0);
-                const pt = displayPoints[tooltipCtx.dataIndex];
-
-                if (label === 'Actual Track' && pt && pt.deltaProfit !== undefined) {
-                  const sign = pt.deltaProfit >= 0 ? '+' : '';
-                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.deltaProfit, 0)} P&L)`;
-                }
-                if (label === 'Pure 2% Hurdle' && pt && pt.pureGap !== undefined) {
-                  const sign = pt.pureGap >= 0 ? '+' : '';
-                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.pureGap, 0)} gap)`;
-                }
-                if (label === 'Ratchet Target' && pt && pt.ratchetDeficit !== undefined) {
-                  const sign = pt.ratchetDeficit >= 0 ? '+' : '';
-                  return ` ${label.padEnd(15, ' ')} : ${val} (${sign}${formatINR(pt.ratchetDeficit, 0)} deficit)`;
-                }
-                return ` ${label.padEnd(15, ' ')} : ${val}`;
-              }
-            }
-          }
+          tooltip: externalTooltipOptions
         },
         scales: {
           x: {
@@ -1354,7 +1356,7 @@ function renderChart(computed) {
               autoSkip: true,
               maxTicksLimit: 12,
               padding: 6,
-              callback: function(val, index) {
+              callback: function(val) {
                 return this.getLabelForValue(val);
               }
             }
@@ -1378,8 +1380,7 @@ function renderChart(computed) {
             }
           }
         }
-      },
-      plugins: [canvasStealthBlurPlugin]
+      }
     });
 
     return;
@@ -1497,42 +1498,7 @@ function renderChart(computed) {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: {
-          enabled: true,
-          usePointStyle: true,
-          backgroundColor: isDark ? '#0f172a' : '#ffffff',
-          titleColor: isDark ? '#e2e8f0' : '#0f172a',
-          bodyColor: isDark ? '#94a3b8' : '#334155',
-          borderColor: isDark ? '#334155' : '#e2e8f0',
-          borderWidth: 1,
-          cornerRadius: 9,
-          padding: 10,
-          boxPadding: 4,
-          caretPadding: 6,
-          titleFont: { family: "'Inter', sans-serif", size: 12, weight: '700' },
-          bodyFont: { family: "'Inter', sans-serif", size: 12, weight: '500' },
-          boxWidth: 7,
-          boxHeight: 7,
-          callbacks: {
-            title: function(items) { 
-              return items[0].label; 
-            },
-            labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
-            label: function(tooltipCtx) {
-              const label = tooltipCtx.dataset.label || '';
-              const val = formatINR(tooltipCtx.raw || 0, 0);
-              if (label === 'Profit') {
-                const pt = displayPoints[tooltipCtx.dataIndex];
-                if (pt && pt.deltaProfit !== null && pt.deltaProfit !== undefined) {
-                  const sign = pt.deltaProfit >= 0 ? '+' : '';
-                  const formattedDelta = `${sign}${formatINR(pt.deltaProfit, 0)}`;
-                  return ` ${label.padEnd(11, ' ')} : ${val} (${formattedDelta} this month)`;
-                }
-              }
-              return ` ${label.padEnd(11, ' ')} : ${val}`;
-            }
-          }
-        }
+        tooltip: externalTooltipOptions
       },
       scales: {
         x: {
@@ -1544,7 +1510,7 @@ function renderChart(computed) {
             autoSkip: true,
             maxTicksLimit: 12,
             padding: 6,
-            callback: function(val, index) {
+            callback: function(val) {
               return this.getLabelForValue(val);
             }
           }
@@ -1568,8 +1534,7 @@ function renderChart(computed) {
           }
         }
       }
-    },
-    plugins: [canvasStealthBlurPlugin]
+    }
   });
 }
 
@@ -1579,7 +1544,7 @@ function toggleTxDropdown(e) {
   const menu = document.getElementById('txDropdownMenu');
   const chevron = document.getElementById('txDropdownChevron');
   const isHidden = menu.classList.contains('hidden');
-  
+
   if (isHidden) {
     menu.classList.remove('hidden');
     if (chevron) chevron.classList.add('rotate-180');
@@ -1647,7 +1612,7 @@ function toggleFormFields() {
   const qtyInput = document.getElementById('txQty');
   const priceInput = document.getElementById('txPrice');
   const amtInput = document.getElementById('txAmount');
-  
+
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
 
   if (type === 'BONUS') {
@@ -1975,6 +1940,7 @@ function recalcMonthEndModal(netCap, cash) {
   const profit = portVal - netCap;
 
   document.getElementById('meModalStockVal').innerText = formatINR(stockVal);
+  document.getElementById('meModalStockVal').className = 'text-slate-900 dark:text-white font-bold tabular-nums';
   document.getElementById('meModalCash').innerText = formatCompactIndian(cash);
   document.getElementById('meModalNetCap').innerText = formatCompactIndian(netCap);
   document.getElementById('meModalPortVal').innerText = formatINR(portVal);
