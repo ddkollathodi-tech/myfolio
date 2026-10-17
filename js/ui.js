@@ -79,8 +79,6 @@ function getMaskClass(tabKey) {
 }
 
 function applyChartCanvasMask() {
-  // Graph line art, trends, and geometries remain crisp and unblurred.
-  // Masking is applied selectively to X-axis tick labels and hover cards.
   if (multiChartInstance) {
     multiChartInstance.update();
   }
@@ -883,6 +881,7 @@ function switchChartView(view) {
   renderChartLegend();
   const data = computeEngine();
   renderChart(data);
+  applyChartCanvasMask();
   renderTtmTable(data);
 }
 
@@ -1161,7 +1160,51 @@ function renderChart(computed) {
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
-  const isChartMasked = !!tabMaskStates.chart;
+
+  // Custom Chart.js Canvas Plugin: Blurs strictly the Y-Axis Labels & Hover Tooltip Card
+  const canvasStealthBlurPlugin = {
+    id: 'canvasStealthBlurPlugin',
+    afterDraw: (chart) => {
+      if (!tabMaskStates.chart) return;
+      const { ctx: cCtx, scales: { y } } = chart;
+      if (!y) return;
+
+      // 1. Frosted Glass blur overlay over Y-Axis numbers only (X-axis dates & line art remain crisp)
+      const pad = 12;
+      const yLeft = Math.max(0, y.left - pad);
+      const yTop = Math.max(0, y.top - pad);
+      const yWidth = y.width + (pad * 2);
+      const yHeight = y.height + (pad * 2);
+
+      cCtx.save();
+      cCtx.filter = 'blur(6px)';
+      cCtx.drawImage(
+        chart.canvas,
+        yLeft, yTop, yWidth, yHeight,
+        yLeft, yTop, yWidth, yHeight
+      );
+      cCtx.restore();
+
+      // 2. Frosted Glass blur overlay strictly over active Hover Tooltip Card
+      const tooltip = chart.tooltip;
+      if (tooltip && tooltip.opacity > 0) {
+        const tPad = 8;
+        const tX = Math.max(0, tooltip.x - tPad);
+        const tY = Math.max(0, tooltip.y - tPad);
+        const tW = tooltip.width + (tPad * 2);
+        const tH = tooltip.height + (tPad * 2);
+
+        cCtx.save();
+        cCtx.filter = 'blur(7px)';
+        cCtx.drawImage(
+          chart.canvas,
+          tX, tY, tW, tH,
+          tX, tY, tW, tH
+        );
+        cCtx.restore();
+      }
+    }
+  };
 
   // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
   if (currentChartView === 'roc') {
@@ -1276,15 +1319,11 @@ function renderChart(computed) {
             boxHeight: 7,
             callbacks: {
               title: function(items) { 
-                return isChartMasked ? '••••••' : items[0].label; 
+                return items[0].label; 
               },
               labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
               label: function(tooltipCtx) {
                 const label = tooltipCtx.dataset.label || '';
-                if (isChartMasked) {
-                  return ` ${label.padEnd(15, ' ')} : ••••••`;
-                }
-
                 const val = formatINR(tooltipCtx.raw || 0, 0);
                 const pt = displayPoints[tooltipCtx.dataIndex];
 
@@ -1316,8 +1355,7 @@ function renderChart(computed) {
               maxTicksLimit: 12,
               padding: 6,
               callback: function(val, index) {
-                const rawLabel = this.getLabelForValue(val);
-                return isChartMasked ? '••••••' : rawLabel;
+                return this.getLabelForValue(val);
               }
             }
           },
@@ -1340,7 +1378,8 @@ function renderChart(computed) {
             }
           }
         }
-      }
+      },
+      plugins: [canvasStealthBlurPlugin]
     });
 
     return;
@@ -1476,15 +1515,11 @@ function renderChart(computed) {
           boxHeight: 7,
           callbacks: {
             title: function(items) { 
-              return isChartMasked ? '••••••' : items[0].label; 
+              return items[0].label; 
             },
             labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
             label: function(tooltipCtx) {
               const label = tooltipCtx.dataset.label || '';
-              if (isChartMasked) {
-                return ` ${label.padEnd(11, ' ')} : ••••••`;
-              }
-
               const val = formatINR(tooltipCtx.raw || 0, 0);
               if (label === 'Profit') {
                 const pt = displayPoints[tooltipCtx.dataIndex];
@@ -1510,8 +1545,7 @@ function renderChart(computed) {
             maxTicksLimit: 12,
             padding: 6,
             callback: function(val, index) {
-              const rawLabel = this.getLabelForValue(val);
-              return isChartMasked ? '••••••' : rawLabel;
+              return this.getLabelForValue(val);
             }
           }
         },
@@ -1534,7 +1568,8 @@ function renderChart(computed) {
           }
         }
       }
-    }
+    },
+    plugins: [canvasStealthBlurPlugin]
   });
 }
 
