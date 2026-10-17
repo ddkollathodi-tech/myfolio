@@ -171,7 +171,9 @@ function computeEngine() {
         break;
 
       case 'SPLIT': {
-        const splitRatio = qty > 0 && price > 0 ? (qty / price) : 1;
+        // POINT 5: Zero-division safeguard fallback
+        const effectiveOldPrice = price > 0 ? price : 1;
+        const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
         openLots.forEach(lot => {
           if (lot.stock === stock && lot.account === acct) {
             lot.qty = lot.qty * splitRatio;
