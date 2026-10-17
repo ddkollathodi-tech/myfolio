@@ -167,15 +167,15 @@
 
                 <!-- Sub-Menu items (Bonus, Split, Demerger) -->
                 <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-gray-800/40 border-y border-slate-100 dark:border-gray-800">
-                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
                     <span>Bonus Issue (₹0 Cost)</span>
                   </button>
-                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
                     <span>Stock Split (Ratio)</span>
                   </button>
-                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
+                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-gray-700/80 text-[11.5px] text-slate-600 dark:text-gray-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2"></span>
                     <span>Demerger Cost Adjust</span>
                   </button>
@@ -514,8 +514,14 @@
           </div>
         </div>
 
-        <div class="h-[330px] w-full relative">
+        <div class="h-[330px] w-full relative overflow-hidden" id="chartCanvasWrapper">
           <canvas id="multiCurveChart"></canvas>
+          
+          <!-- Frosted Glass Y-Axis Overlay Rail (Masks values only, keeps lines/grid crisp) -->
+          <div id="chartYAxisBlurOverlay" class="absolute top-0 left-0 bottom-7 pointer-events-none transition-all duration-200 z-10 hidden" style="width: 65px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.06);"></div>
+
+          <!-- External Floating HTML Tooltip (Masks values only inside hover card) -->
+          <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
         </div>
 
         <!-- Trailing 12 Months Accordion -->
@@ -689,7 +695,7 @@
       </div>
       <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
-        <!-- Unified Top Header Bar with Top-Right Eye Button -->
+        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Closed Trades Portfolio</div>
           <button 
@@ -768,7 +774,7 @@
 
       <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-        <!-- Unified Header with Top-Right Eye Button -->
+        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">FIFO Realized History by Financial Year</div>
           <button 
@@ -799,7 +805,7 @@
 
       <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
-        <!-- Unified Toolbar with Search on Left and Eye Button on Top-Right -->
+        <!-- Top Toolbar with Search on Left and Eye Button on Top-Right -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800 gap-3">
           <div class="flex items-center space-x-2.5">
             <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
@@ -858,7 +864,7 @@
 
       <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
-        <!-- Unified Header with Top-Right Eye Button -->
+        <!-- Top Header Bar with Top-Right Eye Button -->
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Bank Capital Deposits &amp; Withdrawals</div>
           <button 
