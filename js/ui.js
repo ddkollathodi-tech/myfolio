@@ -1158,7 +1158,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 1: SMART EDGE AVOIDANCE) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 1: SMART BOUNDARY-AWARE) ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
   ensureChartDomElements();
@@ -1206,26 +1206,24 @@ function customHtmlTooltipHandler(context) {
   }
 
   const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
-  const chartWidth = chart.width;
+  const chartCanvasWidth = chart.width;
   const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
   const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
   
-  // Determine if we are near the right edge: final 2-3 points for TTM view (~12 points max) or final 5 points for All Journey view
   const isTtmMode = currentChartRange === 'TTM' || totalPoints <= 13;
   const edgeThreshold = isTtmMode ? 3 : 5;
   const isNearRightEdge = dataIndex >= totalPoints - edgeThreshold;
 
   tooltipEl.style.opacity = '1';
   
-  // Measure tooltip width dynamically or estimate ~220px to shift left when near the edge
   const tooltipWidth = tooltipEl.offsetWidth || 210;
-  
-  if (isNearRightEdge) {
-    // Shift tooltip to the left of the cursor point
-    tooltipEl.style.left = (positionX + tooltip.caretX - tooltipWidth - 12) + 'px';
+  const caretX = tooltip.caretX;
+  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
+
+  if (isNearRightEdge || willOverflowRight) {
+    tooltipEl.style.left = (positionX + caretX - tooltipWidth - 12) + 'px';
   } else {
-    // Default: place to the right of the cursor point
-    tooltipEl.style.left = (positionX + tooltip.caretX + 12) + 'px';
+    tooltipEl.style.left = (positionX + caretX + 12) + 'px';
   }
   
   tooltipEl.style.top = (positionY + tooltip.caretY - 12) + 'px';
