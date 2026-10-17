@@ -76,21 +76,96 @@ function renderTaxView() {
   const targetFy = fySelect.value || getFinancialYear(new Date().toISOString().split('T')[0]);
 
   const data = computeEngine();
-  let lots = data.taxClosedLots.filter(l => l.fy === targetFy);
+  const allLotsForFy = data.taxClosedLots.filter(l => l.fy === targetFy);
 
-  if (currentTaxAccountFilter !== 'ALL') {
-    lots = lots.filter(l => l.account === currentTaxAccountFilter);
-  }
+  // POINT 7: Compute per-account or aggregated totals with correct individual PAN caps (₹1.25L per active account)
+  const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
 
-  const activeAcct = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
-  const isLowIncome = appSettings[`taxToggle_${activeAcct}`] === 'true';
+  let stcgGrossGain = 0;
+  let stcgGrossLoss = 0;
+  let ltcgGrossGain = 0;
+  let ltcgGrossLoss = 0;
+  let totalStclOffset = 0;
+  let totalLtclOffset = 0;
+  let stcgShortfallAbsorbed = 0;
+  let ltcgShortfallAbsorbed = 0;
+  let exemptionClaimed = 0;
+  let taxableStcg = 0;
+  let taxableLtcg = 0;
+  let stcgTax = 0;
+  let ltcgTax = 0;
+  const quarterGains = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
+
+  activeAccounts.forEach(acct => {
+    const lots = allLotsForFy.filter(l => l.account === acct);
+    const isLowIncome = appSettings[`taxToggle_${acct}`] === 'true';
+
+    let aStcgGain = 0, aStcgLoss = 0, aLtcgGain = 0, aLtcgLoss = 0;
+    lots.forEach(lot => {
+      quarterGains[lot.quarter] += lot.gain;
+      if (lot.isLtcg) {
+        if (lot.gain > 0) aLtcgGain += lot.gain;
+        else aLtcgLoss += Math.abs(lot.gain);
+      } else {
+        if (lot.gain > 0) aStcgGain += lot.gain;
+        else aStcgLoss += Math.abs(lot.gain);
+      }
+    });
+
+    stcgGrossGain += aStcgGain;
+    stcgGrossLoss += aStcgLoss;
+    ltcgGrossGain += aLtcgGain;
+    ltcgGrossLoss += aLtcgLoss;
+
+    // Set-off cascade per account
+    const aStclOffStcg = Math.min(aStcgGain, aStcgLoss);
+    let aNetStcg = aStcgGain - aStclOffStcg;
+    let aRemStcl = aStcgLoss - aStclOffStcg;
+
+    const aLtclOffLtcg = Math.min(aLtcgGain, aLtcgLoss);
+    let aNetLtcg = aLtcgGain - aLtclOffLtcg;
+
+    const aStclOffLtcg = Math.min(aNetLtcg, aRemStcl);
+    aNetLtcg -= aStclOffLtcg;
+
+    totalStclOffset += (aStclOffStcg + aStclOffLtcg);
+    totalLtclOffset += aLtclOffLtcg;
+
+    let aStcgShortfall = 0;
+    let aLtcgShortfall = 0;
+    if (isLowIncome) {
+      const cap = 300000;
+      aStcgShortfall = Math.min(aNetStcg, cap);
+      aLtcgShortfall = Math.min(aNetLtcg, cap - aStcgShortfall);
+    }
+    stcgShortfallAbsorbed += aStcgShortfall;
+    ltcgShortfallAbsorbed += aLtcgShortfall;
+
+    const aFinStcg = Math.max(0, aNetStcg - aStcgShortfall);
+    const aFinLtcg = Math.max(0, aNetLtcg - aLtcgShortfall);
+
+    const aExemption = Math.min(125000, aFinLtcg);
+    const aTaxableLtcg = Math.max(0, aFinLtcg - aExemption);
+
+    exemptionClaimed += aExemption;
+    taxableStcg += aFinStcg;
+    taxableLtcg += aTaxableLtcg;
+
+    stcgTax += aFinStcg * 0.2080;
+    ltcgTax += aTaxableLtcg * 0.1300;
+  });
+
+  const totalTaxLiability = Math.round(stcgTax + ltcgTax);
+
+  const activeAcctForToggle = currentTaxAccountFilter === 'ALL' ? 'Wife' : currentTaxAccountFilter;
+  const isLowIncomeActive = appSettings[`taxToggle_${activeAcctForToggle}`] === 'true';
 
   const toggleBtn = document.getElementById('taxLowIncomeToggleBtn');
   const toggleText = document.getElementById('taxLowIncomeToggleText');
   const toggleBadge = document.getElementById('taxToggleBadge');
   const explainer = document.getElementById('taxToggleExplainer');
 
-  if (isLowIncome) {
+  if (isLowIncomeActive) {
     if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
     if (toggleText) toggleText.innerText = 'Zero / Low Income (< ₹3L)';
     if (toggleBadge) {
@@ -107,63 +182,6 @@ function renderTaxView() {
     }
     if (explainer) explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
   }
-
-  let stcgGrossGain = 0;
-  let stcgGrossLoss = 0;
-  let ltcgGrossGain = 0;
-  let ltcgGrossLoss = 0;
-
-  const quarterGains = { Q1: 0, Q2: 0, Q3: 0, Q4: 0 };
-
-  lots.forEach(lot => {
-    quarterGains[lot.quarter] += lot.gain;
-    if (lot.isLtcg) {
-      if (lot.gain > 0) ltcgGrossGain += lot.gain;
-      else ltcgGrossLoss += Math.abs(lot.gain);
-    } else {
-      if (lot.gain > 0) stcgGrossGain += lot.gain;
-      else stcgGrossLoss += Math.abs(lot.gain);
-    }
-  });
-
-  // Statutory Set-Off Cascade
-  const stclOffsetAgainstStcg = Math.min(stcgGrossGain, stcgGrossLoss);
-  let netStcgAfterInternal = stcgGrossGain - stclOffsetAgainstStcg;
-  let remainingStcl = stcgGrossLoss - stclOffsetAgainstStcg;
-
-  const ltclOffsetAgainstLtcg = Math.min(ltcgGrossGain, ltcgGrossLoss);
-  let netLtcgAfterInternal = ltcgGrossGain - ltclOffsetAgainstLtcg;
-  let remainingLtcl = ltcgGrossLoss - ltclOffsetAgainstLtcg;
-
-  const stclOffsetAgainstLtcg = Math.min(netLtcgAfterInternal, remainingStcl);
-  netLtcgAfterInternal -= stclOffsetAgainstLtcg;
-  remainingStcl -= stclOffsetAgainstLtcg;
-
-  const totalStclOffset = stclOffsetAgainstStcg + stclOffsetAgainstLtcg;
-  const totalLtclOffset = ltclOffsetAgainstLtcg;
-
-  // Basic Exemption Shortfall Absorption
-  let stcgShortfallAbsorbed = 0;
-  let ltcgShortfallAbsorbed = 0;
-
-  if (isLowIncome) {
-    const totalShortfallCapacity = 300000;
-    stcgShortfallAbsorbed = Math.min(netStcgAfterInternal, totalShortfallCapacity);
-    const remainingShortfall = totalShortfallCapacity - stcgShortfallAbsorbed;
-    ltcgShortfallAbsorbed = Math.min(netLtcgAfterInternal, remainingShortfall);
-  }
-
-  const netStcgAfterShortfall = Math.max(0, netStcgAfterInternal - stcgShortfallAbsorbed);
-  const netLtcgAfterShortfall = Math.max(0, netLtcgAfterInternal - ltcgShortfallAbsorbed);
-
-  const maxExemptionAllowed = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
-  const exemptionClaimed = Math.min(maxExemptionAllowed, netLtcgAfterShortfall);
-  const taxableLtcg = Math.max(0, netLtcgAfterShortfall - exemptionClaimed);
-  const taxableStcg = netStcgAfterShortfall;
-
-  const stcgTax = taxableStcg * 0.2080;
-  const ltcgTax = taxableLtcg * 0.1300;
-  const totalTaxLiability = Math.round(stcgTax + ltcgTax);
 
   const matrixTbody = document.getElementById('taxComputationTableBody');
   if (matrixTbody) {
@@ -289,16 +307,17 @@ function renderTaxView() {
   // Closed Lots Tax Audit Trail
   const auditTbody = document.getElementById('taxAuditTableBody');
   const countBadge = document.getElementById('taxAuditCount');
-  if (countBadge) countBadge.innerText = `${lots.length} Closed Lots`;
+  const fyLotsForAudit = currentTaxAccountFilter === 'ALL' ? data.taxClosedLots.filter(l => l.fy === targetFy) : data.taxClosedLots.filter(l => l.fy === targetFy && l.account === currentTaxAccountFilter);
+  if (countBadge) countBadge.innerText = `${fyLotsForAudit.length} Lots`;
 
   if (auditTbody) {
     auditTbody.innerHTML = '';
-    if (lots.length === 0) {
+    if (fyLotsForAudit.length === 0) {
       auditTbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No sales recorded for ${targetFy} in this account filter.</td></tr>`;
       return;
     }
 
-    [...lots].reverse().forEach(lot => {
+    [...fyLotsForAudit].reverse().forEach(lot => {
       const isPos = lot.gain >= 0;
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
@@ -321,7 +340,8 @@ function renderTaxView() {
 }
 
 function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
-  const maxExemptionRoom = currentTaxAccountFilter === 'ALL' ? 500000 : 125000;
+  const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
+  const maxExemptionRoom = activeAccounts.length * 125000;
   const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
 
   const roomEl = document.getElementById('harvestLtcgRoomVal');
