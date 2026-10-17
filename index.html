@@ -435,7 +435,7 @@
 
       </div>
 
-      <!-- PERFORMANCE CHART CARD (POINTS 2 & 4: CONTAINER WITH OVERLAY & TOOLTIP) -->
+      <!-- PERFORMANCE CHART CARD -->
       <div class="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
@@ -547,7 +547,7 @@
 
       </div>
 
-      <!-- TABS NAVIGATION BAR (POINT 8: EXPORT EXCEL REMOVED FROM HERE) -->
+      <!-- TABS NAVIGATION BAR -->
       <div class="flex items-center justify-between border-b border-slate-200 dark:border-gray-800 gap-2">
         <div class="flex space-x-2 overflow-x-auto custom-scroll flex-1 py-0.5">
           <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
@@ -667,8 +667,7 @@
           </table>
         </div>
       </div>
-
-      <!-- TAB 2: CLOSED TRADES (POINT 3: SINGLE INSTANCE DEDUPLICATED) -->
+      <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
           <div class="text-xs font-bold text-slate-700 dark:text-gray-300">Closed Trades Portfolio</div>
@@ -883,7 +882,7 @@
         </div>
       </div>
 
-      <!-- TAB 6: TAX PLANNING COCKPIT (Clean - No Eye Toggle) -->
+      <!-- TAB 6: TAX PLANNING COCKPIT (Updated with Top-Right Eye Toggle) -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <div>
@@ -907,6 +906,14 @@
               <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
               <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white">Combined</button>
             </div>
+
+            <button 
+              onclick="toggleTabMask('taxPnl')" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-200/90 dark:border-gray-700/80 text-slate-600 dark:text-gray-300 transition ml-2" 
+              title="Toggle Tax Cockpit Stealth Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
 
@@ -917,11 +924,11 @@
             </div>
             <div>
               <div class="flex items-center space-x-2">
-                <span class="text-xs font-bold text-slate-900 dark:text-white tracking-tight">Basic Exemption Shortfall Absorption (₹3,00,000 New Regime)</span>
+                <span class="text-xs font-bold text-slate-900 dark:text-white tracking-tight">Basic Exemption Shortfall Absorption (₹4,00,000 New Regime)</span>
                 <span id="taxToggleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Active</span>
               </div>
               <p class="text-[11.5px] text-slate-500 dark:text-gray-400 mt-0.5" id="taxToggleExplainer">
-                Absorbs up to ₹3L profit first against STCG (saving 20.80%) and remaining against LTCG (saving 13%).
+                Absorbs up to ₹4L profit first against STCG (saving 20.80%) and remaining against LTCG (saving 13%).
               </p>
             </div>
           </div>
@@ -934,7 +941,7 @@
               class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5"
             >
               <i data-lucide="check" class="w-3.5 h-3.5"></i>
-              <span id="taxLowIncomeToggleText">Zero / Low Income (&lt; ₹3L)</span>
+              <span id="taxLowIncomeToggleText">Zero / Low Income (&lt; ₹4L)</span>
             </button>
           </div>
         </div>
