@@ -1158,7 +1158,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 1: SMART BOUNDARY-AWARE) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER (WITH PROFIT VARIATION & BOUNDARY AWARENESS) ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
   ensureChartDomElements();
@@ -1173,6 +1173,7 @@ function customHtmlTooltipHandler(context) {
 
   const isMasked = !!tabMaskStates.chart;
   const maskClass = isMasked ? 'blurred-mask' : '';
+  const displayPoints = chart._displayPoints || [];
 
   if (tooltip.body) {
     const titleLines = tooltip.title || [];
@@ -1190,13 +1191,25 @@ function customHtmlTooltipHandler(context) {
       const rawVal = dp.raw || 0;
       const formattedVal = formatINR(rawVal, 0);
 
+      // Check if this point has a profit variation (deltaProfit) to show in brackets
+      let variationHtml = '';
+      const pointMeta = displayPoints[dp.dataIndex];
+      if ((label === 'Profit' || label === 'Actual Track') && pointMeta && pointMeta.deltaProfit !== undefined && pointMeta.deltaProfit !== null) {
+        const delta = pointMeta.deltaProfit;
+        const isPos = delta >= 0;
+        const formattedDelta = formatINR(Math.abs(delta), 0);
+        variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+      }
+
       innerHtml += `
         <div class="flex items-center justify-between space-x-3 text-[11px]">
           <span class="flex items-center text-slate-600 dark:text-gray-300">
             <span class="w-2 h-2 rounded-full mr-1.5" style="background-color: ${color}"></span>
             <span>${label}:</span>
           </span>
-          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">${formattedVal}</span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+            ${formattedVal}${variationHtml}
+          </span>
         </div>
       `;
     });
@@ -1402,6 +1415,7 @@ function renderChart(computed) {
       }
     });
 
+    multiChartInstance._displayPoints = displayPoints;
     return;
   }
 
@@ -1555,6 +1569,8 @@ function renderChart(computed) {
       }
     }
   });
+
+  multiChartInstance._displayPoints = displayPoints;
 }
 
 /* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS ---------------- */
@@ -2287,7 +2303,7 @@ window.addEventListener('click', function(e) {
   const txChevron = document.getElementById('txDropdownChevron');
   if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
     txMenu.classList.add('hidden');
-    if (txChevron) txChevron.classList.remove('rotate-180');
+    if (chevron) chevron.classList.remove('rotate-180');
     closeCorpActionSubmenu();
   }
 
