@@ -629,7 +629,7 @@
             <button 
               onclick="toggleTabMask('holdings')" 
               class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Holdings Privacy Mask (Qty, Invested, LTP, P&L, Cash)"
+              title="Toggle Holdings Privacy Mask (Qty, Invested, Current Value, P&L, Cash)"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
             </button>
@@ -685,7 +685,6 @@
           </table>
         </div>
       </div>
-
       <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
         <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs max-h-[550px] custom-scroll">
@@ -731,13 +730,13 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer & Closed Trades Stealth Eye Toggle (Point 2) -->
+        <!-- Jump-To-Page Pagination Footer & Closed Trades Stealth Eye Toggle -->
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <div class="flex items-center space-x-2">
             <button 
               onclick="toggleTabMask('closedTrades')" 
-              class="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Closed Trades Privacy Mask"
+              class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Closed Trades Privacy Mask (Qty, Cost Basis, Proceeds, Realized P&L)"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
             </button>
@@ -769,7 +768,7 @@
           <button 
             onclick="toggleTabMask('fyBreakdown')" 
             class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-xs font-semibold text-slate-600 dark:text-gray-300 transition" 
-            title="Toggle FY P&L Privacy Mask"
+            title="Toggle FY P&L Privacy Mask (Sales, Cost Basis, Realized Gain)"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-3.5 h-3.5"></i>
             <span>Privacy Mask</span>
@@ -800,7 +799,7 @@
             <button 
               onclick="toggleTabMask('ledger')" 
               class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Ledger Privacy Mask (Qty, Price, Cash In/Out, Running Cash)"
+              title="Toggle Ledger Privacy Mask (Cash Out, Cash In, Running Cash)"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
             </button>
@@ -871,13 +870,13 @@
           </table>
         </div>
 
-        <!-- Jump-To-Page Pagination Footer & Bank Ledger Eye Toggle (Point 2) -->
+        <!-- Jump-To-Page Pagination Footer & Bank Ledger Eye Toggle -->
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <div class="flex items-center space-x-2">
             <button 
               onclick="toggleTabMask('bankLedger')" 
-              class="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
-              title="Toggle Bank Ledger Privacy Mask"
+              class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300 transition" 
+              title="Toggle Bank Ledger Privacy Mask (Deposit In, Withdrawal Out, Contributed Corpus)"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
             </button>
@@ -915,7 +914,7 @@
           </div>
 
           <div class="flex items-center flex-wrap gap-2">
-            <!-- Tax Cockpit Privacy Mask Button (Point 2) -->
+            <!-- Tax Cockpit Privacy Mask Button -->
             <button 
               onclick="toggleTabMask('taxPnl')" 
               class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 transition" 
