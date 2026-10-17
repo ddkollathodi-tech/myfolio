@@ -65,6 +65,8 @@ function toggleTabMask(tabKey) {
     renderLedger(data.ledgerEntries);
   } else if (tabKey === 'bankLedger') {
     renderBankLedger(data.bankEntries);
+  } else if (tabKey === 'taxPnl') {
+    renderTaxView();
   }
   if (window.lucide) lucide.createIcons();
 }
@@ -1892,7 +1894,8 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] += Number(t.qty || 0);
+      // Fixed: Subtracted shares on SELL instead of adding them
+      inv[t.stock] -= Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
       inv[t.stock] += Number(t.qty || 0);
