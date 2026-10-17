@@ -31,7 +31,7 @@ function init() {
   }
 }
 
-/* ---------------- STEALTH MASKING SYSTEM (POINT 2) ---------------- */
+/* ---------------- STEALTH MASKING SYSTEM ---------------- */
 function initTabMaskStates() {
   try {
     const saved = localStorage.getItem(TAB_MASK_STATES_KEY);
@@ -40,8 +40,8 @@ function initTabMaskStates() {
     }
   } catch (e) {}
 
-  // Update all mask eye icons on UI
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
+  applyChartCanvasMask();
 }
 
 function toggleTabMask(tabKey) {
@@ -52,7 +52,8 @@ function toggleTabMask(tabKey) {
 
   const data = computeEngine();
   if (tabKey === 'chart') {
-    renderChart(data);
+    applyChartCanvasMask();
+    renderTtmTable(data);
   } else if (tabKey === 'holdings') {
     renderHoldings(data);
   } else if (tabKey === 'closedTrades') {
@@ -80,7 +81,19 @@ function getMaskClass(tabKey) {
   return tabMaskStates[tabKey] ? 'blurred-mask' : 'mask-transition';
 }
 
-/* ---------------- THEME TOGGLE (POINT 1 INTEGRATION) ---------------- */
+function applyChartCanvasMask() {
+  const canvas = document.getElementById('multiCurveChart');
+  if (!canvas) return;
+  if (tabMaskStates.chart) {
+    canvas.classList.add('blurred-mask');
+    canvas.classList.remove('mask-transition');
+  } else {
+    canvas.classList.remove('blurred-mask');
+    canvas.classList.add('mask-transition');
+  }
+}
+
+/* ---------------- THEME TOGGLE ---------------- */
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   const isDark = saved ? saved === 'dark' : true;
@@ -253,7 +266,6 @@ function recalculateAndRender() {
   document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
   document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
 
-  // Inception Subtitle Determination
   const inceptionEl = document.getElementById('kpiXirrInception');
   if (inceptionEl) {
     const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
@@ -280,6 +292,7 @@ function recalculateAndRender() {
   renderTaxView();
   renderChartLegend();
   renderChart(data);
+  applyChartCanvasMask();
   renderTtmTable(data);
 
   if (window.lucide) lucide.createIcons();
@@ -358,7 +371,7 @@ function renderHoldings(data) {
 
   document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-  // Liquid Cash Available Badge (Mask Controlled)
+  // Liquid Cash Available Badge
   const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
   const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
   const cashBadgeContainer = document.getElementById('holdingsCashBadge');
@@ -366,7 +379,7 @@ function renderHoldings(data) {
   let cashAmt = 0;
   if (currentHoldingsAccountFilter === 'ALL') {
     cashAmt = data.cashBalance;
-    cashBadgeLabel.innerText = 'Cash Available:';
+    cashBadgeLabel.innerText = 'Cash Available (Combined):';
     cashBadgeContainer.removeAttribute('title');
   } else {
     const acct = currentHoldingsAccountFilter;
@@ -383,7 +396,7 @@ function renderHoldings(data) {
   cashBadgeVal.innerText = formatINR(cashAmt);
   cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
-  // Win / Loss bar
+  // Win / Loss bar (Totals unmasked, dollar sums masked)
   const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
   const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
   const profitSum = profitPositions.reduce((acc, h) => acc + h.pnlVal, 0);
@@ -421,11 +434,11 @@ function renderHoldings(data) {
     tr.innerHTML = `
       <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${h.qty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 ${maskClass}">${formatINR(h.wap)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline ${maskClass}" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(h.investedVal)}</td>
       <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300 ${maskClass}">
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300">
         <span>${h.weightPct.toFixed(1)}%</span>
         <div class="w-full bg-slate-200 dark:bg-gray-700 h-1 rounded-full mt-1">
           <div class="bg-blue-600 h-1 rounded-full" style="width: ${Math.min(100, h.weightPct)}%"></div>
@@ -519,12 +532,12 @@ function renderClosedTrades(closedTrades) {
     tr.innerHTML = `
       <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${c.stock}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${c.totalQty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(avgBuy)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 ${maskClass}">${formatINR(avgSell)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(avgBuy)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(avgSell)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
       <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -587,17 +600,17 @@ function renderFY(fyRealized) {
         <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
         <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
       </div>
-      <div class="flex items-baseline justify-between mt-1.5 ${maskClass}">
-        <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+      <div class="flex items-baseline justify-between mt-1.5">
+        <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPos ? '+' : ''}${formatINR(item.gain)}
         </span>
         <span class="text-base font-bold tabular-nums text-right ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isPos ? '+' : ''}${retPct.toFixed(2)}%
         </span>
       </div>
-      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2 ${maskClass}">
-        <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.sellProceeds)}</span></div>
-        <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium">${formatINR(item.costBasis)}</span></div>
+      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
+        <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium ${maskClass}">${formatINR(item.sellProceeds)}</span></div>
+        <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium ${maskClass}">${formatINR(item.costBasis)}</span></div>
       </div>
     `;
     cards.appendChild(card);
@@ -609,7 +622,7 @@ function renderFY(fyRealized) {
       <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(item.sellProceeds)}</td>
       <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(item.costBasis)}</td>
       <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -687,8 +700,8 @@ function renderLedger(ledgerEntries) {
       <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
       <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${tx.type}</span></td>
       <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${tx.qty || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${tx.price ? formatINR(tx.price) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
@@ -809,7 +822,7 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(computeEngine().bankEntries);
 }
 
-/* ---------------- POINT 1: DYNAMIC HEADER LEGEND RENDERER ---------------- */
+/* ---------------- DYNAMIC HEADER LEGEND RENDERER ---------------- */
 function renderChartLegend() {
   const container = document.getElementById('chartLegendContainer');
   if (!container) return;
@@ -878,6 +891,7 @@ function switchChartView(view) {
   renderChartLegend();
   const data = computeEngine();
   renderChart(data);
+  applyChartCanvasMask();
   renderTtmTable(data);
 }
 
@@ -946,7 +960,7 @@ function renderTtmTable(computed) {
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isPosProfit ? '+' : ''}${r.rocPct.toFixed(2)}%
         </td>
         <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(r.pureTarget, 0)}</td>
@@ -1028,13 +1042,13 @@ function renderTtmTable(computed) {
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
         </td>
         <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
         </td>
       `;
@@ -1123,7 +1137,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 1 & 2) ---------------- */
+/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -1156,7 +1170,6 @@ function renderChart(computed) {
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
-  const isChartMasked = !!tabMaskStates.chart;
 
   // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
   if (currentChartView === 'roc') {
@@ -1252,7 +1265,7 @@ function renderChart(computed) {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: false }, // Use dynamic header index instead
+          legend: { display: false },
           tooltip: {
             enabled: true,
             usePointStyle: true,
@@ -1274,10 +1287,6 @@ function renderChart(computed) {
               labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
               label: function(tooltipCtx) {
                 const label = tooltipCtx.dataset.label || '';
-                if (isChartMasked) {
-                  return ` ${label.padEnd(15, ' ')} : ••••••`;
-                }
-
                 const val = formatINR(tooltipCtx.raw || 0, 0);
                 const pt = displayPoints[tooltipCtx.dataIndex];
 
@@ -1324,7 +1333,7 @@ function renderChart(computed) {
               font: { family: "'Inter', sans-serif", size: 11 },
               padding: 8,
               callback: function(val) {
-                return isChartMasked ? '••••••' : formatINR(val, 0);
+                return formatINR(val, 0);
               }
             }
           }
@@ -1468,10 +1477,6 @@ function renderChart(computed) {
             labelPointStyle: function() { return { pointStyle: 'circle', rotation: 0 }; },
             label: function(tooltipCtx) {
               const label = tooltipCtx.dataset.label || '';
-              if (isChartMasked) {
-                return ` ${label.padEnd(11, ' ')} : ••••••`;
-              }
-
               const val = formatINR(tooltipCtx.raw || 0, 0);
               if (label === 'Profit') {
                 const pt = displayPoints[tooltipCtx.dataIndex];
@@ -1512,7 +1517,7 @@ function renderChart(computed) {
             font: { family: "'Inter', sans-serif", size: 11 },
             padding: 8,
             callback: function(val) {
-              return isChartMasked ? '••••••' : formatINR(val, 0);
+              return formatINR(val, 0);
             }
           }
         }
@@ -2005,7 +2010,7 @@ async function commitMonthEndSnapshot() {
   recalculateAndRender();
 }
 
-/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS (POINT 1 & 5) ---------------- */
+/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS ---------------- */
 function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
