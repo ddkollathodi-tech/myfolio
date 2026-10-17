@@ -34,7 +34,6 @@ async function fetchFromGoogleSheet() {
   updateSyncUI('Syncing with Google Sheets...', false);
 
   try {
-    // Point 3: Inject secret token into GET query string
     let url = `${cloudScriptUrl}?action=getAll`;
     if (apiToken) {
       url += `&token=${encodeURIComponent(apiToken)}`;
@@ -45,7 +44,6 @@ async function fetchFromGoogleSheet() {
 
     const data = await response.json();
 
-    // Check for Point 3 Authentication Error
     if (data && data.status === 'error' && String(data.message).includes('Unauthorized')) {
       updateSyncUI('Auth Error: Invalid API Secret Token', true);
       alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
@@ -89,8 +87,9 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
     }
 
-    // 6. Process Settings & PIN Hash
+    // 6. Process Settings & PIN Hash (Strictly filtered to avoid offset pollution)
     if (data && data.settings && typeof data.settings === 'object') {
+      delete data.settings.cashOffsets;
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
       if (typeof checkGatekeeperState === 'function') {
@@ -98,7 +97,7 @@ async function fetchFromGoogleSheet() {
       }
     }
 
-    // 7. Process Cash Calibration Map
+    // 7. Process Cash Calibration Map Independently (POINT 6)
     if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
       if (data.cashCalibration.offsets) {
         cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
@@ -114,7 +113,6 @@ async function fetchFromGoogleSheet() {
       recalculateAndRender();
     }
 
-    // Verify if previous month-end snapshot is pending
     if (typeof checkPendingMonthEndSnapshot === 'function') {
       checkPendingMonthEndSnapshot();
     }
@@ -132,7 +130,6 @@ async function sendToSheet(payload) {
   if (!cloudScriptUrl) return;
 
   try {
-    // Point 3: Inject secret token into POST payload body
     if (apiToken) {
       payload.token = apiToken;
     }
