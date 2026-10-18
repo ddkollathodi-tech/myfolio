@@ -356,7 +356,7 @@ function computeRocFourCurves(computed) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Delta Capital Injected this period[cite: 3]
+    // Delta Capital Injected this period (C_i - C_{i-1})[cite: 3]
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
 
     // Curve 1: Actual Track[cite: 3]
@@ -377,10 +377,16 @@ function computeRocFourCurves(computed) {
     // Curve 4: Aggressive Ratchet Target (High-Water Mark Recovery Engine)
     let ratchetTarget = 0;
     if (i === 0) {
+      // First point is initialization baseline only (R_0 = C_0)
       ratchetTarget = netCapBase;
+    } else if (i === 1) {
+      // Second point is strictly calculated from the first point's capital base
+      const c0 = points[0].netCapital;
+      const c1 = curr.netCapital;
+      ratchetTarget = Math.round((c0 * (1 + rate)) + (c1 - c0));
     } else {
-      // 2% applied on max of (previous month close, previous month's ratchet target) + deltaCapital
-      const highWaterMark = Math.max(prevRatchetTarget, prev.portfolioValue);
+      // Every subsequent point (i >= 2): Ri = max(A_{i-1}, R_{i-1}) * (1 + r) + deltaC_i[cite: 3]
+      const highWaterMark = Math.max(prev.portfolioValue, prevRatchetTarget);
       ratchetTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
     }
     prevRatchetTarget = ratchetTarget;
@@ -395,7 +401,8 @@ function computeRocFourCurves(computed) {
     curr.actualVal = actualVal;
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
-    curr.ratchetTarget = ratchetTarget;
+    // Hide ratchet point at index 0 (baseline only); show from index 1 onward
+    curr.ratchetTarget = (i === 0) ? null : ratchetTarget;
     curr.deltaProfit = deltaProfit;
     curr.rocPct = rocPct;
     curr.pureGap = pureGap;
