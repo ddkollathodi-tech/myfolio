@@ -449,8 +449,6 @@ function computeRocFourCurves(computed) {
   const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month[cite: 3]
 
   let prevPureTarget = points[0].netCapital;
-
-  // Initialize recursive ratchet state from the FIRST graph point.
   let prevRatchetTarget = points[0].netCapital;
 
   for (let i = 0; i < points.length; i++) {
@@ -485,10 +483,8 @@ function computeRocFourCurves(computed) {
     let ratchetTarget;
 
     if (i === 0) {
-      // FIRST GRAPH POINT: Initialization baseline only (R_0 = C_0). No marker displayed.
       ratchetTarget = curr.netCapital;
     } else if (i === 1) {
-      // SECOND GRAPH POINT: First visible ratchet point computed strictly from first point's capital base.
       const initialCapital = points[0].netCapital;
 
       ratchetTarget = Math.round(
@@ -496,8 +492,6 @@ function computeRocFourCurves(computed) {
         deltaCapital
       );
     } else {
-      // THIRD GRAPH POINT ONWARDS:
-      // Ri = max(A_{i-1}, R_{i-1}) * (1 + r) + deltaC_i[cite: 3]
       const previousActualClose = prev.portfolioValue;
       const previousRatchetTarget = prevRatchetTarget;
 
@@ -512,7 +506,7 @@ function computeRocFourCurves(computed) {
       );
     }
 
-    // Update recursive state AFTER calculating the current target.
+    // Update recursive state AFTER calculating current target
     prevRatchetTarget = ratchetTarget;
 
     // RoC Analytics for the month[cite: 3]
@@ -534,10 +528,7 @@ function computeRocFourCurves(computed) {
     curr.actualVal = actualVal;
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
-
-    // Hide the baseline ratchet point only (index 0); show from index 1 onward.
     curr.ratchetTarget = i === 0 ? null : ratchetTarget;
-
     curr.deltaProfit = deltaProfit;
     curr.rocPct = rocPct;
     curr.pureGap = pureGap;
