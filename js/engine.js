@@ -407,12 +407,12 @@ function computeEngine() {
 
 // ----------------------------------------------------------------------------
 // 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
-// HIGH-WATER MARK RATCHET — RECURSIVE FROM FIRST GRAPH POINT
+// EXTREME TARGET ENGINE — RECURSIVE FROM FIRST GRAPH POINT
 // ----------------------------------------------------------------------------
 function computeRocFourCurves(computed) {
   const points = [];
 
-  // 1. Gather all historical checkpoints[cite: 3]
+  // 1. Gather all historical checkpoints
   if (
     Array.isArray(chartHistoryRecords) &&
     chartHistoryRecords.length > 0
@@ -433,7 +433,7 @@ function computeRocFourCurves(computed) {
     });
   }
 
-  // 2. Append live today checkpoint[cite: 3]
+  // 2. Append live today checkpoint
   if (computed) {
     points.push({
       date: 'Current',
@@ -445,28 +445,30 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  // 3. Compute Recursive 4 Curves[cite: 3]
-  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month[cite: 3]
+  // 3. Compute Recursive 4 Curves
+  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
 
   let prevPureTarget = points[0].netCapital;
-  let prevRatchetTarget = points[0].netCapital;
+
+  // Initialize recursive extreme target state from the FIRST graph point baseline.
+  let prevExtremeTarget = points[0].netCapital;
 
   for (let i = 0; i < points.length; i++) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Net capital contributed/withdrawn during this period[cite: 3]
+    // Net capital contributed/withdrawn during this period
     const deltaCapital = prev
       ? curr.netCapital - prev.netCapital
       : 0;
 
-    // Curve 1: Actual Track[cite: 3]
+    // Curve 1: Actual Track
     const actualVal = curr.portfolioValue;
 
-    // Curve 2: Contributed Capital Base[cite: 3]
+    // Curve 2: Contributed Capital Base
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Pure 2% Compound Hurdle[cite: 3]
+    // Curve 3: Pure 2% Compound Hurdle
     let pureTarget;
 
     if (i === 0) {
@@ -479,37 +481,41 @@ function computeRocFourCurves(computed) {
 
     prevPureTarget = pureTarget;
 
-    // Curve 4: Recursive High-Water-Mark Ratchet
-    let ratchetTarget;
+    // Curve 4: Extreme Target (High-Water Mark Engine)
+    let extremeTarget;
 
     if (i === 0) {
-      ratchetTarget = curr.netCapital;
+      // FIRST GRAPH POINT: Initialization baseline only (No marker displayed).
+      extremeTarget = curr.netCapital;
     } else if (i === 1) {
+      // SECOND GRAPH POINT: First visible extreme target point computed strictly from first point's capital base.
       const initialCapital = points[0].netCapital;
 
-      ratchetTarget = Math.round(
+      extremeTarget = Math.round(
         initialCapital * (1 + rate) +
         deltaCapital
       );
     } else {
+      // THIRD GRAPH POINT ONWARDS:
+      // 2% applied on max of (previous month close, previous months value of extreme target) + deltaCapital
       const previousActualClose = prev.portfolioValue;
-      const previousRatchetTarget = prevRatchetTarget;
+      const previousExtremeTarget = prevExtremeTarget;
 
       const highWaterMark = Math.max(
         previousActualClose,
-        previousRatchetTarget
+        previousExtremeTarget
       );
 
-      ratchetTarget = Math.round(
+      extremeTarget = Math.round(
         highWaterMark * (1 + rate) +
         deltaCapital
       );
     }
 
     // Update recursive state AFTER calculating current target
-    prevRatchetTarget = ratchetTarget;
+    prevExtremeTarget = extremeTarget;
 
-    // RoC Analytics for the month[cite: 3]
+    // RoC Analytics for the month
     const deltaProfit = prev
       ? curr.profit - prev.profit
       : 0;
@@ -523,16 +529,19 @@ function computeRocFourCurves(computed) {
       : 0;
 
     const pureGap = actualVal - pureTarget;
-    const ratchetDeficit = actualVal - ratchetTarget;
+    const extremeDeficit = actualVal - extremeTarget;
 
     curr.actualVal = actualVal;
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
-    curr.ratchetTarget = i === 0 ? null : ratchetTarget;
+
+    // Hide the baseline extreme target point only (index 0); show from index 1 onward.
+    curr.ratchetTarget = i === 0 ? null : extremeTarget;
+
     curr.deltaProfit = deltaProfit;
     curr.rocPct = rocPct;
     curr.pureGap = pureGap;
-    curr.ratchetDeficit = ratchetDeficit;
+    curr.ratchetDeficit = extremeDeficit;
     curr.startCapital = startCapital;
   }
 
