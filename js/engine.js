@@ -1,6 +1,7 @@
+
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & 4-Curve Math (engine.js)
-// Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR, 
+// Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR,
 //             Multi-Account Segregation, Tax Audit Trail & 4-Curve RoC
 // ============================================================================
 
@@ -23,7 +24,12 @@ function computeEngine() {
   let totalWithdrawals = 0;
 
   // Raw Tagged Cash per Account (Pre-Calibration)
-  const rawAccountCashMap = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
+  const rawAccountCashMap = {
+    'Me': 0,
+    'Wife': 0,
+    'Mom': 0,
+    'Brother': 0
+  };
 
   const ledgerEntries = [];
   const bankEntries = [];
@@ -44,7 +50,11 @@ function computeEngine() {
         netInvested += amt;
         totalDeposits += amt;
         cashIn = amt;
-        if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] += amt;
+
+        if (rawAccountCashMap.hasOwnProperty(acct)) {
+          rawAccountCashMap[acct] += amt;
+        }
+
         bankEntries.push({
           date: tx.date,
           account: acct,
@@ -61,7 +71,11 @@ function computeEngine() {
         netInvested -= amt;
         totalWithdrawals += amt;
         cashOut = amt;
-        if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= amt;
+
+        if (rawAccountCashMap.hasOwnProperty(acct)) {
+          rawAccountCashMap[acct] -= amt;
+        }
+
         bankEntries.push({
           date: tx.date,
           account: acct,
@@ -76,14 +90,21 @@ function computeEngine() {
       case 'FEES':
         runningCash -= amt;
         cashOut = amt;
-        if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= amt;
+
+        if (rawAccountCashMap.hasOwnProperty(acct)) {
+          rawAccountCashMap[acct] -= amt;
+        }
         break;
 
       case 'BUY': {
         const buyCost = amt > 0 ? amt : (qty * price);
+
         runningCash -= buyCost;
         cashOut = buyCost;
-        if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= buyCost;
+
+        if (rawAccountCashMap.hasOwnProperty(acct)) {
+          rawAccountCashMap[acct] -= buyCost;
+        }
 
         openLots.push({
           id: tx.id || String(Math.random()),
@@ -98,16 +119,30 @@ function computeEngine() {
 
       case 'SELL': {
         const sellProceeds = amt > 0 ? amt : (qty * price);
+
         runningCash += sellProceeds;
         cashIn = sellProceeds;
-        if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] += sellProceeds;
+
+        if (rawAccountCashMap.hasOwnProperty(acct)) {
+          rawAccountCashMap[acct] += sellProceeds;
+        }
 
         let remQtyToSell = qty;
-        const effectiveSellPrice = price > 0 ? price : (sellProceeds / (qty || 1));
+        const effectiveSellPrice =
+          price > 0 ? price : (sellProceeds / (qty || 1));
 
-        for (let i = 0; i < openLots.length && remQtyToSell > 0; i++) {
+        for (
+          let i = 0;
+          i < openLots.length && remQtyToSell > 0;
+          i++
+        ) {
           const lot = openLots[i];
-          if (lot.stock === stock && lot.account === acct && lot.qty > 0) {
+
+          if (
+            lot.stock === stock &&
+            lot.account === acct &&
+            lot.qty > 0
+          ) {
             const matchedQty = Math.min(lot.qty, remQtyToSell);
             const costBasis = matchedQty * lot.price;
             const proceeds = matchedQty * effectiveSellPrice;
@@ -118,8 +153,15 @@ function computeEngine() {
 
             // Update Closed Trades Aggregation
             if (!closedTradesMap[stock]) {
-              closedTradesMap[stock] = { stock, totalQty: 0, totalCostBasis: 0, totalProceeds: 0, netPnL: 0 };
+              closedTradesMap[stock] = {
+                stock,
+                totalQty: 0,
+                totalCostBasis: 0,
+                totalProceeds: 0,
+                netPnL: 0
+              };
             }
+
             closedTradesMap[stock].totalQty += matchedQty;
             closedTradesMap[stock].totalCostBasis += costBasis;
             closedTradesMap[stock].totalProceeds += proceeds;
@@ -127,9 +169,16 @@ function computeEngine() {
 
             // Financial Year Bucket
             const fy = getFinancialYear(tx.date);
+
             if (!fyRealized[fy]) {
-              fyRealized[fy] = { fy, sellProceeds: 0, costBasis: 0, gain: 0 };
+              fyRealized[fy] = {
+                fy,
+                sellProceeds: 0,
+                costBasis: 0,
+                gain: 0
+              };
             }
+
             fyRealized[fy].sellProceeds += proceeds;
             fyRealized[fy].costBasis += costBasis;
             fyRealized[fy].gain += gain;
@@ -137,7 +186,14 @@ function computeEngine() {
             // Tax Lot Details (STCG vs LTCG)
             const buyD = new Date(lot.date);
             const sellD = new Date(tx.date);
-            const holdingDays = Math.max(0, Math.round((sellD - buyD) / (1000 * 60 * 60 * 24)));
+
+            const holdingDays = Math.max(
+              0,
+              Math.round(
+                (sellD - buyD) / (1000 * 60 * 60 * 24)
+              )
+            );
+
             const isLtcg = holdingDays > 365;
 
             taxClosedLots.push({
@@ -173,6 +229,7 @@ function computeEngine() {
       case 'SPLIT': {
         const effectiveOldPrice = price > 0 ? price : 1;
         const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
+
         openLots.forEach(lot => {
           if (lot.stock === stock && lot.account === acct) {
             lot.qty = lot.qty * splitRatio;
@@ -210,8 +267,10 @@ function computeEngine() {
 
   // Effective Calibrated Account Cash Map
   const accountCashMap = {};
+
   CALIB_ACCOUNTS.forEach(acct => {
-    accountCashMap[acct] = (rawAccountCashMap[acct] || 0) + getCalibOffset(acct);
+    accountCashMap[acct] =
+      (rawAccountCashMap[acct] || 0) + getCalibOffset(acct);
   });
 
   // Total Open Holdings Value & Unrealized P&L
@@ -224,17 +283,27 @@ function computeEngine() {
 
   // Group by Stock
   const stockGroup = {};
+
   activeLots.forEach(l => {
-    if (!stockGroup[l.stock]) stockGroup[l.stock] = { qty: 0, cost: 0 };
+    if (!stockGroup[l.stock]) {
+      stockGroup[l.stock] = { qty: 0, cost: 0 };
+    }
+
     stockGroup[l.stock].qty += l.qty;
     stockGroup[l.stock].cost += (l.qty * l.price);
   });
 
   Object.keys(stockGroup).forEach(stock => {
     const item = stockGroup[stock];
+
     if (item.qty > 0) {
       const wap = item.cost / item.qty;
-      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
+
+      const liveData =
+        marketPrices[stock] ||
+        savedManualPrices[stock] ||
+        { ltp: wap, prevClose: wap };
+
       const ltp = liveData.ltp;
       const curVal = item.qty * ltp;
       const invVal = item.cost;
@@ -259,33 +328,55 @@ function computeEngine() {
   });
 
   holdings.forEach(h => {
-    h.weightPct = totalPortfolioVal > 0 ? (h.currentVal / totalPortfolioVal) * 100 : 0;
+    h.weightPct =
+      totalPortfolioVal > 0
+        ? (h.currentVal / totalPortfolioVal) * 100
+        : 0;
   });
 
   // Net Worth & Lifetime P&L
   const netWorth = runningCash + totalPortfolioVal;
   const lifetimePnL = netWorth - netInvested;
-  const lifetimePnLPct = netInvested > 0 ? (lifetimePnL / netInvested) * 100 : 0;
+
+  const lifetimePnLPct =
+    netInvested > 0
+      ? (lifetimePnL / netInvested) * 100
+      : 0;
 
   // Closed Trades List
   const closedTrades = Object.values(closedTradesMap).map(c => {
-    const retPct = c.totalCostBasis > 0 ? (c.netPnL / c.totalCostBasis) * 100 : 0;
+    const retPct =
+      c.totalCostBasis > 0
+        ? (c.netPnL / c.totalCostBasis) * 100
+        : 0;
+
     return { ...c, retPct };
   });
 
   // Accurate Cash-Flow XIRR Calculation
   const cashFlows = [];
+
   sortedTx.forEach(t => {
     const amt = Number(t.amount || 0);
+
     if (t.type === 'DEPOSIT') {
-      cashFlows.push({ date: new Date(t.date), amount: -amt });
+      cashFlows.push({
+        date: new Date(t.date),
+        amount: -amt
+      });
     } else if (t.type === 'WITHDRAWAL') {
-      cashFlows.push({ date: new Date(t.date), amount: amt });
+      cashFlows.push({
+        date: new Date(t.date),
+        amount: amt
+      });
     }
   });
 
   if (netWorth > 0) {
-    cashFlows.push({ date: new Date(), amount: netWorth });
+    cashFlows.push({
+      date: new Date(),
+      amount: netWorth
+    });
   }
 
   const xirrValue = calculateAccurateXIRR(cashFlows);
@@ -316,16 +407,24 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS (HIGH-WATER MARK RATCHET)
+// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
+// HIGH-WATER MARK RATCHET — RECURSIVE FROM FIRST GRAPH POINT
 // ----------------------------------------------------------------------------
 function computeRocFourCurves(computed) {
   const points = [];
 
-  // 1. Gather all historical checkpoints[cite: 3]
-  if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
-    const sorted = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+  // 1. Gather all historical checkpoints
+  if (
+    Array.isArray(chartHistoryRecords) &&
+    chartHistoryRecords.length > 0
+  ) {
+    const sorted = [...chartHistoryRecords].sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
     sorted.forEach(r => {
       if (!r.date) return;
+
       points.push({
         date: r.date,
         portfolioValue: Number(r.portfolioValue || 0),
@@ -335,7 +434,7 @@ function computeRocFourCurves(computed) {
     });
   }
 
-  // 2. Append live today checkpoint[cite: 3]
+  // 2. Append live today checkpoint
   if (computed) {
     points.push({
       date: 'Current',
@@ -347,62 +446,115 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  // 3. Compute Recursive 4 Curves[cite: 3]
-  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month[cite: 3]
+  // 3. Compute Recursive 4 Curves
+  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
+
   let prevPureTarget = points[0].netCapital;
+
+  // Initialize recursive ratchet state from the FIRST graph point.
+  // This baseline is retained internally but is not displayed.
   let prevRatchetTarget = points[0].netCapital;
 
   for (let i = 0; i < points.length; i++) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Delta Capital Injected this period (C_i - C_{i-1})[cite: 3]
-    const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
+    // Net capital contributed/withdrawn during this period
+    const deltaCapital = prev
+      ? curr.netCapital - prev.netCapital
+      : 0;
 
-    // Curve 1: Actual Track[cite: 3]
+    // Curve 1: Actual Track
     const actualVal = curr.portfolioValue;
 
-    // Curve 2: Contributed Capital Base[cite: 3]
+    // Curve 2: Contributed Capital Base
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Pure 2% Compound Hurdle[cite: 3]
-    let pureTarget = 0;
+    // Curve 3: Pure 2% Compound Hurdle
+    let pureTarget;
+
     if (i === 0) {
       pureTarget = netCapBase;
     } else {
-      pureTarget = Math.round((prevPureTarget * (1 + rate)) + deltaCapital);
+      pureTarget = Math.round(
+        prevPureTarget * (1 + rate) + deltaCapital
+      );
     }
+
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target (High-Water Mark Recovery Engine)
-    let ratchetTarget = 0;
+    // Curve 4: Recursive High-Water-Mark Ratchet
+    let ratchetTarget;
+
     if (i === 0) {
-      // First point is initialization baseline only (R_0 = C_0)
-      ratchetTarget = netCapBase;
+      // FIRST GRAPH POINT:
+      // Initialize the ratchet using initial net capital.
+      // No ratchet point is displayed at this position.
+      ratchetTarget = curr.netCapital;
     } else if (i === 1) {
-      // Second point is strictly calculated from the first point's capital base
-      const c0 = points[0].netCapital;
-      const c1 = curr.netCapital;
-      ratchetTarget = Math.round((c0 * (1 + rate)) + (c1 - c0));
+      // SECOND GRAPH POINT:
+      // First visible ratchet point.
+      // Apply 2% to the FIRST graph point's capital,
+      // then adjust for the change in net capital.
+      const initialCapital = points[0].netCapital;
+
+      ratchetTarget = Math.round(
+        initialCapital * (1 + rate) +
+        deltaCapital
+      );
     } else {
-      // Every subsequent point (i >= 2): Ri = max(A_{i-1}, R_{i-1}) * (1 + r) + deltaC_i[cite: 3]
-      const highWaterMark = Math.max(prev.portfolioValue, prevRatchetTarget);
-      ratchetTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
+      // THIRD GRAPH POINT ONWARDS:
+      // Use the previous graph point's actual portfolio close
+      // OR the previous graph point's ratchet target,
+      // whichever is HIGHER.
+      //
+      // Formula:
+      // R[i] = max(A[i-1], R[i-1]) * (1 + rate) + deltaCapital
+      //
+      // prevRatchetTarget still contains R[i-1] here because
+      // it is updated only AFTER the new target is calculated.
+      const previousActualClose = prev.portfolioValue;
+      const previousRatchetTarget = prevRatchetTarget;
+
+      const highWaterMark = Math.max(
+        previousActualClose,
+        previousRatchetTarget
+      );
+
+      ratchetTarget = Math.round(
+        highWaterMark * (1 + rate) +
+        deltaCapital
+      );
     }
+
+    // Update recursive state AFTER calculating the current target.
+    // This also preserves the baseline for the next point.
     prevRatchetTarget = ratchetTarget;
 
-    // RoC Analytics for the month[cite: 3]
-    const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
-    const startCapital = prev ? prev.portfolioValue : netCapBase;
-    const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
+    // RoC Analytics for the month
+    const deltaProfit = prev
+      ? curr.profit - prev.profit
+      : 0;
+
+    const startCapital = prev
+      ? prev.portfolioValue
+      : netCapBase;
+
+    const rocPct = startCapital > 0
+      ? (deltaProfit / startCapital) * 100
+      : 0;
+
     const pureGap = actualVal - pureTarget;
     const ratchetDeficit = actualVal - ratchetTarget;
 
     curr.actualVal = actualVal;
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
-    // Hide ratchet point at index 0 (baseline only); show from index 1 onward
-    curr.ratchetTarget = (i === 0) ? null : ratchetTarget;
+
+    // Hide the baseline ratchet point only.
+    // All subsequent ratchet points remain visible.
+    curr.ratchetTarget = i === 0 ? null : ratchetTarget;
+
     curr.deltaProfit = deltaProfit;
     curr.rocPct = rocPct;
     curr.pureGap = pureGap;
@@ -421,36 +573,58 @@ function calculateAccurateXIRR(cashFlows) {
 
   const hasNegative = cashFlows.some(cf => cf.amount < 0);
   const hasPositive = cashFlows.some(cf => cf.amount > 0);
+
   if (!hasNegative || !hasPositive) return 0.0;
 
   const t0 = cashFlows[0].date.getTime();
 
   function xnpv(rate) {
     return cashFlows.reduce((acc, cf) => {
-      const years = (cf.date.getTime() - t0) / (1000 * 60 * 60 * 24 * 365);
-      return acc + (cf.amount / Math.pow(1 + rate, years));
+      const years =
+        (cf.date.getTime() - t0) /
+        (1000 * 60 * 60 * 24 * 365);
+
+      return acc + (
+        cf.amount / Math.pow(1 + rate, years)
+      );
     }, 0);
   }
 
   function xnpvPrime(rate) {
     return cashFlows.reduce((acc, cf) => {
-      const years = (cf.date.getTime() - t0) / (1000 * 60 * 60 * 24 * 365);
+      const years =
+        (cf.date.getTime() - t0) /
+        (1000 * 60 * 60 * 24 * 365);
+
       if (years === 0) return acc;
-      return acc - (years * cf.amount / Math.pow(1 + rate, years + 1));
+
+      return acc - (
+        years * cf.amount /
+        Math.pow(1 + rate, years + 1)
+      );
     }, 0);
   }
 
   let rate = 0.15;
+
   for (let i = 0; i < 100; i++) {
     const fVal = xnpv(rate);
     const fDeriv = xnpvPrime(rate);
+
     if (Math.abs(fDeriv) < 1e-10) break;
+
     const nextRate = rate - fVal / fDeriv;
+
     if (Math.abs(nextRate - rate) < 1e-7) {
       return nextRate * 100;
     }
+
     rate = nextRate;
-    if (rate <= -0.9999) rate = -0.99;
+
+    if (rate <= -0.9999) {
+      rate = -0.99;
+    }
   }
+
   return isNaN(rate) ? 0.0 : rate * 100;
 }
