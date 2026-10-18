@@ -316,7 +316,7 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS (PROFIT-LOCKED RATCHET)
+// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS (HIGH-WATER MARK RATCHET)
 // ----------------------------------------------------------------------------
 function computeRocFourCurves(computed) {
   const points = [];
@@ -359,11 +359,6 @@ function computeRocFourCurves(computed) {
     // Delta Capital Injected this period[cite: 3]
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
 
-    // RoC Analytics for the month[cite: 3]
-    const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
-    const startCapital = prev ? prev.portfolioValue : curr.netCapital;
-    const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
-
     // Curve 1: Actual Track[cite: 3]
     const actualVal = curr.portfolioValue;
 
@@ -379,19 +374,21 @@ function computeRocFourCurves(computed) {
     }
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target ($T+1$ Forward-Looking Profit-Lock Engine)
+    // Curve 4: Aggressive Ratchet Target (High-Water Mark Recovery Engine)
     let ratchetTarget = 0;
     if (i === 0) {
       ratchetTarget = netCapBase;
     } else {
-      // If previous month made a profit, add it to the previous target base.
-      // If previous month made a loss (deltaProfit <= 0), add 0 (holding the base flat before compounding).
-      const profitAddition = Math.max(0, prev.deltaProfit);
-      const effectiveBase = prevRatchetTarget + profitAddition;
-      ratchetTarget = Math.round((effectiveBase * (1 + rate)) + deltaCapital);
+      // 2% applied on max of (previous month close, previous month's ratchet target) + deltaCapital
+      const highWaterMark = Math.max(prevRatchetTarget, prev.portfolioValue);
+      ratchetTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
     }
     prevRatchetTarget = ratchetTarget;
 
+    // RoC Analytics for the month[cite: 3]
+    const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
+    const startCapital = prev ? prev.portfolioValue : netCapBase;
+    const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
     const pureGap = actualVal - pureTarget;
     const ratchetDeficit = actualVal - ratchetTarget;
 
