@@ -1,7 +1,6 @@
-
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & 4-Curve Math (engine.js)
-// Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR,
+// Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR, 
 //             Multi-Account Segregation, Tax Audit Trail & 4-Curve RoC
 // ============================================================================
 
@@ -413,7 +412,7 @@ function computeEngine() {
 function computeRocFourCurves(computed) {
   const points = [];
 
-  // 1. Gather all historical checkpoints
+  // 1. Gather all historical checkpoints[cite: 3]
   if (
     Array.isArray(chartHistoryRecords) &&
     chartHistoryRecords.length > 0
@@ -434,7 +433,7 @@ function computeRocFourCurves(computed) {
     });
   }
 
-  // 2. Append live today checkpoint
+  // 2. Append live today checkpoint[cite: 3]
   if (computed) {
     points.push({
       date: 'Current',
@@ -446,31 +445,30 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  // 3. Compute Recursive 4 Curves
-  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
+  // 3. Compute Recursive 4 Curves[cite: 3]
+  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month[cite: 3]
 
   let prevPureTarget = points[0].netCapital;
 
   // Initialize recursive ratchet state from the FIRST graph point.
-  // This baseline is retained internally but is not displayed.
   let prevRatchetTarget = points[0].netCapital;
 
   for (let i = 0; i < points.length; i++) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Net capital contributed/withdrawn during this period
+    // Net capital contributed/withdrawn during this period[cite: 3]
     const deltaCapital = prev
       ? curr.netCapital - prev.netCapital
       : 0;
 
-    // Curve 1: Actual Track
+    // Curve 1: Actual Track[cite: 3]
     const actualVal = curr.portfolioValue;
 
-    // Curve 2: Contributed Capital Base
+    // Curve 2: Contributed Capital Base[cite: 3]
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Pure 2% Compound Hurdle
+    // Curve 3: Pure 2% Compound Hurdle[cite: 3]
     let pureTarget;
 
     if (i === 0) {
@@ -487,15 +485,10 @@ function computeRocFourCurves(computed) {
     let ratchetTarget;
 
     if (i === 0) {
-      // FIRST GRAPH POINT:
-      // Initialize the ratchet using initial net capital.
-      // No ratchet point is displayed at this position.
+      // FIRST GRAPH POINT: Initialization baseline only (R_0 = C_0). No marker displayed.
       ratchetTarget = curr.netCapital;
     } else if (i === 1) {
-      // SECOND GRAPH POINT:
-      // First visible ratchet point.
-      // Apply 2% to the FIRST graph point's capital,
-      // then adjust for the change in net capital.
+      // SECOND GRAPH POINT: First visible ratchet point computed strictly from first point's capital base.
       const initialCapital = points[0].netCapital;
 
       ratchetTarget = Math.round(
@@ -504,15 +497,7 @@ function computeRocFourCurves(computed) {
       );
     } else {
       // THIRD GRAPH POINT ONWARDS:
-      // Use the previous graph point's actual portfolio close
-      // OR the previous graph point's ratchet target,
-      // whichever is HIGHER.
-      //
-      // Formula:
-      // R[i] = max(A[i-1], R[i-1]) * (1 + rate) + deltaCapital
-      //
-      // prevRatchetTarget still contains R[i-1] here because
-      // it is updated only AFTER the new target is calculated.
+      // Ri = max(A_{i-1}, R_{i-1}) * (1 + r) + deltaC_i[cite: 3]
       const previousActualClose = prev.portfolioValue;
       const previousRatchetTarget = prevRatchetTarget;
 
@@ -528,10 +513,9 @@ function computeRocFourCurves(computed) {
     }
 
     // Update recursive state AFTER calculating the current target.
-    // This also preserves the baseline for the next point.
     prevRatchetTarget = ratchetTarget;
 
-    // RoC Analytics for the month
+    // RoC Analytics for the month[cite: 3]
     const deltaProfit = prev
       ? curr.profit - prev.profit
       : 0;
@@ -551,8 +535,7 @@ function computeRocFourCurves(computed) {
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
 
-    // Hide the baseline ratchet point only.
-    // All subsequent ratchet points remain visible.
+    // Hide the baseline ratchet point only (index 0); show from index 1 onward.
     curr.ratchetTarget = i === 0 ? null : ratchetTarget;
 
     curr.deltaProfit = deltaProfit;
