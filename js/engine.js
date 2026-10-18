@@ -379,7 +379,7 @@ function computeRocFourCurves(computed) {
     if (i === 0) {
       ratchetTarget = netCapBase;
     } else {
-      // Protects peak performance baseline: locks onto max of prior ratchet target or prior portfolio peak
+      // High-water mark calculation: maintains peak performance baseline and continues compounding 2%
       const highWaterMark = Math.max(prevRatchetTarget, prev.portfolioValue);
       ratchetTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
     }
