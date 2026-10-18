@@ -171,7 +171,6 @@ function computeEngine() {
         break;
 
       case 'SPLIT': {
-        // POINT 5: Zero-division safeguard fallback
         const effectiveOldPrice = price > 0 ? price : 1;
         const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
         openLots.forEach(lot => {
@@ -317,12 +316,12 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// POINT 2: 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
+// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS (HIGH-WATER MARK RATCHET)
 // ----------------------------------------------------------------------------
 function computeRocFourCurves(computed) {
   const points = [];
 
-  // 1. Gather all historical checkpoints
+  // 1. Gather all historical checkpoints[cite: 3]
   if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
     const sorted = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
     sorted.forEach(r => {
@@ -336,7 +335,7 @@ function computeRocFourCurves(computed) {
     });
   }
 
-  // 2. Append live today checkpoint
+  // 2. Append live today checkpoint[cite: 3]
   if (computed) {
     points.push({
       date: 'Current',
@@ -348,8 +347,8 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  // 3. Compute Recursive 4 Curves
-  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
+  // 3. Compute Recursive 4 Curves[cite: 3]
+  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month[cite: 3]
   let prevPureTarget = points[0].netCapital;
   let prevRatchetTarget = points[0].netCapital;
 
@@ -357,16 +356,16 @@ function computeRocFourCurves(computed) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Delta Capital Injected this period
+    // Delta Capital Injected this period[cite: 3]
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
 
-    // Curve 1: Actual Track
+    // Curve 1: Actual Track[cite: 3]
     const actualVal = curr.portfolioValue;
 
-    // Curve 2: Contributed Capital Base
+    // Curve 2: Contributed Capital Base[cite: 3]
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Pure 2% Compound Hurdle
+    // Curve 3: Pure 2% Compound Hurdle[cite: 3]
     let pureTarget = 0;
     if (i === 0) {
       pureTarget = netCapBase;
@@ -375,17 +374,18 @@ function computeRocFourCurves(computed) {
     }
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target (demanding high-water mark benchmark)
+    // Curve 4: Aggressive Ratchet Target (High-Water Mark Recovery Engine)
     let ratchetTarget = 0;
     if (i === 0) {
       ratchetTarget = netCapBase;
     } else {
-      const peakBase = Math.max(prevRatchetTarget, prev.portfolioValue);
-      ratchetTarget = Math.round((peakBase * (1 + rate)) + deltaCapital);
+      // Protects peak performance baseline: locks onto max of prior ratchet target or prior portfolio peak
+      const highWaterMark = Math.max(prevRatchetTarget, prev.portfolioValue);
+      ratchetTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
     }
     prevRatchetTarget = ratchetTarget;
 
-    // RoC Analytics for the month
+    // RoC Analytics for the month[cite: 3]
     const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
     const startCapital = prev ? prev.portfolioValue : netCapBase;
     const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
