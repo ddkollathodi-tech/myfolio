@@ -860,7 +860,7 @@ function renderChartLegend() {
         <span class="w-2.5 h-0.5 border-t-2 border-dotted border-amber-500 mr-1.5"></span>Pure 2% Hurdle
       </span>
       <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-        <span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-600 mr-1.5"></span>Ratchet Target
+        <span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-600 mr-1.5"></span>Extreme Target
       </span>
     `;
   } else {
@@ -954,7 +954,7 @@ function renderTtmTable(computed) {
         <th class="py-2.5 px-3 text-right font-semibold">Monthly RoC</th>
         <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Target</th>
         <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Gap</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Ratchet Deficit</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Extreme Deficit</th>
       </tr>
     `;
 
@@ -1356,7 +1356,7 @@ function renderChart(computed) {
             order: 3
           },
           {
-            label: 'Ratchet Target',
+            label: 'Extreme Target',
             data: ratchetTargetData,
             borderColor: '#9333ea',
             backgroundColor: 'transparent',
@@ -2303,7 +2303,7 @@ window.addEventListener('click', function(e) {
   const txChevron = document.getElementById('txDropdownChevron');
   if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
     txMenu.classList.add('hidden');
-    if (chevron) chevron.classList.remove('rotate-180');
+    if (txChevron) txChevron.classList.remove('rotate-180');
     closeCorpActionSubmenu();
   }
 
