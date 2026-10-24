@@ -171,7 +171,6 @@ function computeEngine() {
         break;
 
       case 'SPLIT': {
-        // POINT 5: Zero-division safeguard fallback
         const effectiveOldPrice = price > 0 ? price : 1;
         const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
         openLots.forEach(lot => {
@@ -317,7 +316,7 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// POINT 2: 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
+// 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS (EXTREME TARGET ENGINE)
 // ----------------------------------------------------------------------------
 function computeRocFourCurves(computed) {
   const points = [];
@@ -351,7 +350,7 @@ function computeRocFourCurves(computed) {
   // 3. Compute Recursive 4 Curves
   const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
   let prevPureTarget = points[0].netCapital;
-  let prevRatchetTarget = points[0].netCapital;
+  let prevExtremeTarget = points[0].netCapital;
 
   for (let i = 0; i < points.length; i++) {
     const curr = points[i];
@@ -375,31 +374,35 @@ function computeRocFourCurves(computed) {
     }
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target (demanding high-water mark benchmark)
-    let ratchetTarget = 0;
+    // Curve 4: Extreme Target (High-Water Mark Engine)
+    let extremeTarget = 0;
     if (i === 0) {
-      ratchetTarget = netCapBase;
+      extremeTarget = netCapBase;
+    } else if (i === 1) {
+      const initialCapital = points[0].netCapital;
+      extremeTarget = Math.round((initialCapital * (1 + rate)) + deltaCapital);
     } else {
-      const peakBase = Math.max(prevRatchetTarget, prev.portfolioValue);
-      ratchetTarget = Math.round((peakBase * (1 + rate)) + deltaCapital);
+      const highWaterMark = Math.max(prev.portfolioValue, prevExtremeTarget);
+      extremeTarget = Math.round((highWaterMark * (1 + rate)) + deltaCapital);
     }
-    prevRatchetTarget = ratchetTarget;
+    prevExtremeTarget = extremeTarget;
 
     // RoC Analytics for the month
     const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
     const startCapital = prev ? prev.portfolioValue : netCapBase;
     const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
     const pureGap = actualVal - pureTarget;
-    const ratchetDeficit = actualVal - ratchetTarget;
+    const extremeDeficit = actualVal - extremeTarget;
 
     curr.actualVal = actualVal;
     curr.netCapBase = netCapBase;
     curr.pureTarget = pureTarget;
-    curr.ratchetTarget = ratchetTarget;
+    // Map to ratchetTarget property so the UI/Chart code renders it without breaking dependencies
+    curr.ratchetTarget = (i === 0) ? null : extremeTarget;
     curr.deltaProfit = deltaProfit;
     curr.rocPct = rocPct;
     curr.pureGap = pureGap;
-    curr.ratchetDeficit = ratchetDeficit;
+    curr.ratchetDeficit = extremeDeficit;
     curr.startCapital = startCapital;
   }
 
