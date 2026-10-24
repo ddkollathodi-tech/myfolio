@@ -1085,7 +1085,19 @@ function exportPortfolioToExcel() {
   const data = computeEngine();
   const wb = XLSX.utils.book_new();
 
-  // Tab 1: Holdings
+  // Tab 1: Summary Dashboard
+  const summaryRows = [
+    { "Metric": "Total Net Worth", "Value": data.netWorth },
+    { "Metric": "Contributed Corpus (Net Invested)", "Value": data.netInvested },
+    { "Metric": "Total Portfolio Valuation", "Value": data.totalPortfolioVal },
+    { "Metric": "Total Cash Balance", "Value": data.cashBalance },
+    { "Metric": "Lifetime P&L", "Value": data.lifetimePnL },
+    { "Metric": "Lifetime P&L (%)", "Value": Number(data.lifetimePnLPct.toFixed(2)) },
+    { "Metric": "Annualized XIRR (%)", "Value": Number(data.xirrValue.toFixed(2)) }
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary Dashboard");
+
+  // Tab 2: Holdings
   const holdingsRows = data.holdings.map(h => ({
     "Stock Ticker": h.stock,
     "Quantity": h.qty,
@@ -1099,7 +1111,7 @@ function exportPortfolioToExcel() {
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(holdingsRows), "Active Holdings");
 
-  // Tab 2: Closed Trades
+  // Tab 3: Closed Trades
   const closedRows = data.closedTrades.map(c => ({
     "Stock Ticker": c.stock,
     "Total Sold Qty": c.totalQty,
@@ -1110,7 +1122,7 @@ function exportPortfolioToExcel() {
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(closedRows), "Closed Trades");
 
-  // Tab 3: Tradebook
+  // Tab 4: Tradebook
   const tradebookRows = data.ledgerEntries.map(l => ({
     "Date": l.date,
     "Account": l.account,
@@ -1125,7 +1137,7 @@ function exportPortfolioToExcel() {
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tradebookRows), "Tradebook & Ledger");
 
-  // Tab 4: Tax Audit
+  // Tab 5: Tax Audit
   const taxRows = data.taxClosedLots.map(t => ({
     "Sell Date": t.sellDate,
     "Buy Date (FIFO)": t.buyDate,
@@ -1142,7 +1154,7 @@ function exportPortfolioToExcel() {
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taxRows), "Tax Audit Trail");
 
-  // Tab 5: Bank Ledger
+  // Tab 6: Bank Ledger
   const bankRows = data.bankEntries.map(b => ({
     "Date": b.date,
     "Account": b.account,
@@ -1153,6 +1165,40 @@ function exportPortfolioToExcel() {
     "Remarks": b.remarks
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), "Bank Ledger");
+
+  // Tab 7: Performance Trajectory (Complete Table)
+  let trajectoryHistory = [];
+  if (Array.isArray(chartHistoryRecords)) {
+    trajectoryHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => ({
+      "Checkpoint Date": r.date,
+      "Portfolio Value": Number(r.portfolioValue || 0),
+      "Net Capital": Number(r.netCapital || 0),
+      "Profit": Number(r.profit || 0)
+    }));
+  }
+  trajectoryHistory.push({
+    "Checkpoint Date": "Current",
+    "Portfolio Value": Math.round(data.netWorth || 0),
+    "Net Capital": Math.round(data.netInvested || 0),
+    "Profit": Math.round(data.lifetimePnL || 0)
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trajectoryHistory), "Performance Trajectory");
+
+  // Tab 8: Monthly RoC & Extreme Target Table
+  const fourCurvePoints = computeRocFourCurves(data);
+  const rocRows = fourCurvePoints.map(p => ({
+    "Checkpoint": p.date,
+    "Start Capital": p.startCapital,
+    "Actual Value": p.actualVal,
+    "Net Capital Base": p.netCapBase,
+    "Monthly P&L (Delta Profit)": p.deltaProfit,
+    "Monthly RoC (%)": Number(p.rocPct.toFixed(2)),
+    "Pure 2% Target": p.pureTarget,
+    "Pure 2% Gap": p.pureGap,
+    "Extreme Target": p.ratchetTarget !== null ? p.ratchetTarget : "",
+    "Extreme Deficit": p.ratchetDeficit
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rocRows), "Monthly RoC & Extreme Target");
 
   const todayStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
@@ -2303,7 +2349,7 @@ window.addEventListener('click', function(e) {
   const txChevron = document.getElementById('txDropdownChevron');
   if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
     txMenu.classList.add('hidden');
-    if (txChevron) txChevron.classList.remove('rotate-180');
+    if (chevron) chevron.classList.remove('rotate-180');
     closeCorpActionSubmenu();
   }
 
