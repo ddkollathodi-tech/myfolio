@@ -74,7 +74,7 @@ table,
 }
 
 .dark .custom-scroll::-webkit-scrollbar-thumb { 
-  background: #374151; 
+  background: #262626; 
   border-radius: 4px; 
 }
 
@@ -109,4 +109,20 @@ th.sortable:hover {
 .dark .btn-record-tx:hover {
   background-color: rgba(20, 118, 83, 0.26);
   border-color: rgba(203, 231, 217, 0.35);
+}
+
+/* POINT 6: Premium OLED / Rich Near-Black Dark Theme Overrides */
+.dark body {
+  background-color: #000000 !important;
+}
+
+.dark header,
+.dark .bg-gray-950,
+.dark .bg-gray-900 {
+  background-color: #08090d !important;
+}
+
+.dark border-gray-800,
+.dark .border-gray-800 {
+  border-color: #1a1d24 !important;
 }
