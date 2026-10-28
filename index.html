@@ -195,7 +195,7 @@
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN (POINT 8: EXPORT EXCEL MOVED HERE) -->
+          <!-- 4. SETTINGS DROPDOWN (POINT 1: CLOUD SYNC & EXCEL REPORT MOVED HERE) -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -223,7 +223,12 @@
                 </div>
               </div>
 
+              <!-- POINT 1: Cloud Sync Configuration moved as first option below Appearance -->
               <div class="py-1">
+                <button onclick="openSyncModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="cloud" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
+                  <span>Google Sheets Sync</span>
+                </button>
                 <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
                   <span>Master PIN &amp; Security</span>
@@ -236,7 +241,6 @@
                   <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
                   <span>Stock Master Registry</span>
                 </button>
-                <!-- POINT 8: Export Excel relocated into Settings Menu -->
                 <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium border-t border-slate-100 dark:border-gray-800 mt-1 pt-2">
                   <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2.5"></i>
                   <span>Export Excel Report (.xlsx)</span>
@@ -249,18 +253,12 @@
       </div>
     </header>
 
-    <!-- SYNC STATUS BAR -->
+    <!-- SYNC STATUS BAR (POINT 1: Sheet Linked button removed, status indicator retained) -->
     <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center flex-wrap gap-2.5">
-          <button onclick="openSyncModal()" id="cloudSyncBtn" class="flex items-center space-x-1.5 px-2 py-0.5 rounded-md text-[11.5px] font-semibold text-slate-700 dark:text-gray-200 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 transition">
-            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400"></i>
-            <span id="cloudSyncText">Sheet Linked</span>
-          </button>
-          <div class="flex items-center space-x-2">
-            <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-            <span id="syncStatus">Ready to track.</span>
-          </div>
+        <div class="flex items-center space-x-2">
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+          <span id="syncStatus">Ready to track.</span>
         </div>
         <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
       </div>
@@ -457,9 +455,10 @@
                   <div class="font-bold text-slate-800 dark:text-gray-100">Performance Trajectory</div>
                   <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
                 </button>
+                <!-- POINT 4: Renamed Ratchet Target to Extreme Target -->
                 <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 transition border-t border-slate-100 dark:border-gray-800">
                   <div class="font-bold text-slate-800 dark:text-gray-100">Monthly RoC Curve</div>
-                  <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Ratchet Target</div>
+                  <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Extreme Target</div>
                 </button>
               </div>
             </div>
