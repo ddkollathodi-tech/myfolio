@@ -6,7 +6,7 @@ let enteredPin = '';
 let isSettingUpNewPin = false;
 let tempPinForSetup = '';
 let lastActiveTimestamp = Date.now();
-const AUTO_LOCK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const AUTO_LOCK_TIMEOUT_MS = 1 * 60 * 1000; // 1 minute
 
 // Default privacy mask states: all 4 key metric cards start masked
 let kpiMaskStates = {
@@ -42,7 +42,7 @@ function initKeyboardPinListener() {
   });
 }
 
-/* ---------------- 10-MINUTE AUTO-LOCK ENGINE ---------------- */
+/* ---------------- 1-MINUTE AUTO-LOCK ENGINE ---------------- */
 function resetActivityTimer() {
   lastActiveTimestamp = Date.now();
 }
