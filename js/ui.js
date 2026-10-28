@@ -114,10 +114,10 @@ function syncYAxisBlurOverlay() {
   }
 }
 
-/* ---------------- THEME TOGGLE ---------------- */
+/* ---------------- THEME TOGGLE (POINT 3: Default Light Mode) ---------------- */
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
-  const isDark = saved ? saved === 'dark' : true;
+  const isDark = saved ? saved === 'dark' : false; 
   applyTheme(isDark);
 }
 
@@ -843,7 +843,7 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(computeEngine().bankEntries);
 }
 
-/* ---------------- DYNAMIC HEADER LEGEND RENDERER ---------------- */
+/* ---------------- DYNAMIC HEADER LEGEND RENDERER (POINT 4: Extreme Target) ---------------- */
 function renderChartLegend() {
   const container = document.getElementById('chartLegendContainer');
   if (!container) return;
@@ -942,6 +942,7 @@ function renderTtmTable(computed) {
 
   const maskClass = getMaskClass('chart');
 
+  // POINT 5: Monthly RoC breakdown table with Extreme Target and Recovery % columns
   if (currentChartView === 'roc') {
     if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
 
@@ -954,13 +955,15 @@ function renderTtmTable(computed) {
         <th class="py-2.5 px-3 text-right font-semibold">Monthly RoC</th>
         <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Target</th>
         <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Gap</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Extreme Target</th>
         <th class="py-2.5 px-3 text-right font-semibold">Extreme Deficit</th>
+        <th class="py-2.5 px-3 text-right font-semibold">Recovery %</th>
       </tr>
     `;
 
     const fourCurvePoints = computeRocFourCurves(computed);
     if (!fourCurvePoints || fourCurvePoints.length < 2) {
-      tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
       return;
     }
 
@@ -971,6 +974,12 @@ function renderTtmTable(computed) {
       const isPosProfit = r.deltaProfit >= 0;
       const isPosGap = r.pureGap >= 0;
       const isPosRatchet = r.ratchetDeficit >= 0;
+
+      // Recovery %: percentage gain required on actualVal to cover extreme deficit (if deficit is negative)
+      let recoveryPct = 0;
+      if (r.ratchetDeficit < 0 && r.actualVal > 0) {
+        recoveryPct = (Math.abs(r.ratchetDeficit) / r.actualVal) * 100;
+      }
 
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
@@ -988,8 +997,12 @@ function renderTtmTable(computed) {
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosGap ? '+' : ''}${formatINR(r.pureGap, 0)}
         </td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 ${maskClass}">${formatINR(r.ratchetTarget, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosRatchet ? '+' : ''}${formatINR(r.ratchetDeficit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+          ${recoveryPct > 0 ? recoveryPct.toFixed(2) + '%' : '—'}
         </td>
       `;
       tbody.appendChild(tr);
@@ -1204,7 +1217,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (PROFIT VARIATION & BOUNDARY AWARENESS) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 5: My Capital Deltas & Bottom Bounding) ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
   ensureChartDomElements();
@@ -1236,9 +1249,9 @@ function customHtmlTooltipHandler(context) {
       const rawVal = dp.raw || 0;
       const formattedVal = formatINR(rawVal, 0);
 
-      // Compute period profit variation (delta) on the fly from dataset values
+      // POINT 5: Compute period variation (delta) on the fly for Profit, Actual Track, and My Capital
       let variationHtml = '';
-      if ((label === 'Profit' || label === 'Actual Track') && dp.dataIndex > 0) {
+      if ((label === 'Profit' || label === 'Actual Track' || label === 'My Capital') && dp.dataIndex > 0) {
         const datasetData = dataset.data;
         const currVal = datasetData[dp.dataIndex];
         const prevVal = datasetData[dp.dataIndex - 1];
@@ -1269,6 +1282,7 @@ function customHtmlTooltipHandler(context) {
 
   const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
   const chartCanvasWidth = chart.width;
+  const chartCanvasHeight = chart.height;
   const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
   const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
   
@@ -1279,16 +1293,24 @@ function customHtmlTooltipHandler(context) {
   tooltipEl.style.opacity = '1';
   
   const tooltipWidth = tooltipEl.offsetWidth || 210;
+  const tooltipHeight = tooltipEl.offsetHeight || 120;
   const caretX = tooltip.caretX;
-  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
+  const caretY = tooltip.caretY;
 
+  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
   if (isNearRightEdge || willOverflowRight) {
     tooltipEl.style.left = (positionX + caretX - tooltipWidth - 12) + 'px';
   } else {
     tooltipEl.style.left = (positionX + caretX + 12) + 'px';
   }
   
-  tooltipEl.style.top = (positionY + tooltip.caretY - 12) + 'px';
+  // POINT 5: Vertical bottom boundary collision detection
+  const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
+  if (willOverflowBottom) {
+    tooltipEl.style.top = (positionY + caretY - tooltipHeight - 12) + 'px';
+  } else {
+    tooltipEl.style.top = (positionY + caretY - 12) + 'px';
+  }
 }
 
 /* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER ---------------- */
@@ -1619,7 +1641,7 @@ function renderChart(computed) {
   });
 }
 
-/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS ---------------- */
+/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS (POINT 2: Mobile Scroll Trap) ---------------- */
 function toggleTxDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('txDropdownMenu');
@@ -1628,6 +1650,8 @@ function toggleTxDropdown(e) {
 
   if (isHidden) {
     menu.classList.remove('hidden');
+    // POINT 2: Add max-height and internal scroll container classes for mobile view
+    menu.classList.add('max-h-[65vh]', 'overflow-y-auto', 'custom-scroll');
     if (chevron) chevron.classList.add('rotate-180');
   } else {
     menu.classList.add('hidden');
