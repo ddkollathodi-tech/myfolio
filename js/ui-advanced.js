@@ -1,203 +1,6 @@
 // ============================================================================
-// MyFolioAI - UI Controller Part 2: Charts, Ledgers, Modals & Expanded Table (ui-advanced.js)
+// MyFolioAI - UI Controller Part 2: Charts, TTM, Excel Export & Modals (ui-advanced.js)
 // ============================================================================
-
-// Point 1 State: Expanded Monthly Table View Toggle State (false = TTM summary view, true = Expanded monthly view)
-let ttmExpandedView = false;
-
-/* ---------------- TRADEBOOK LEDGER TABLE ---------------- */
-function handleLedgerSearch() {
-  ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
-  ledgerCurrentPage = 1;
-  renderLedger(computeEngine().ledgerEntries);
-}
-
-function renderLedger(ledgerEntries) {
-  const tbody = document.getElementById('txTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const maskClass = getMaskClass('ledger');
-  let list = [...ledgerEntries].reverse();
-  if (ledgerSearchTerm) {
-    list = list.filter(tx => 
-      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-    );
-  }
-
-  document.getElementById('ledgerCountBadge').innerText = `${list.length} Entries`;
-
-  if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 font-medium">No matching transactions found.</td></tr>`;
-    document.getElementById('ledgerPaginationContainer').classList.add('hidden');
-    return;
-  }
-  document.getElementById('ledgerPaginationContainer').classList.remove('hidden');
-
-  const totalItems = list.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-  if (ledgerCurrentPage > totalPages) ledgerCurrentPage = totalPages;
-
-  const startIndex = (ledgerCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-  const pageSlice = list.slice(startIndex, endIndex);
-
-  document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-
-  const jumpInput = document.getElementById('ledgerJumpInput');
-  const totalLabel = document.getElementById('ledgerTotalPagesLabel');
-  if (jumpInput) {
-    jumpInput.value = ledgerCurrentPage;
-    jumpInput.max = totalPages;
-  }
-  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
-
-  document.getElementById('ledgerPrevBtn').disabled = ledgerCurrentPage <= 1;
-  document.getElementById('ledgerNextBtn').disabled = ledgerCurrentPage >= totalPages;
-
-  const badgeColors = {
-    'BUY': 'bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/40',
-    'SELL': 'bg-rose-50 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40',
-    'DEPOSIT': 'bg-emerald-50 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40',
-    'WITHDRAWAL': 'bg-amber-50 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40',
-    'FEES': 'bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700',
-    'BONUS': 'bg-purple-50 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700/40',
-    'SPLIT': 'bg-indigo-50 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/40',
-    'DEMERGER': 'bg-cyan-50 dark:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700/40'
-  };
-
-  pageSlice.forEach(tx => {
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-    tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${tx.date}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${tx.type}</span></td>
-      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function prevLedgerPage() {
-  if (ledgerCurrentPage > 1) {
-    ledgerCurrentPage--;
-    renderLedger(computeEngine().ledgerEntries);
-  }
-}
-
-function nextLedgerPage() {
-  const filteredCount = computeEngine().ledgerEntries.length;
-  const totalPages = Math.ceil(filteredCount / PAGE_SIZE);
-  if (ledgerCurrentPage < totalPages) {
-    ledgerCurrentPage++;
-    renderLedger(computeEngine().ledgerEntries);
-  }
-}
-
-function jumpToLedgerPage(val) {
-  let list = computeEngine().ledgerEntries;
-  if (ledgerSearchTerm) {
-    list = list.filter(tx => 
-      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-    );
-  }
-  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
-  let target = parseInt(val, 10);
-  if (isNaN(target) || target < 1) target = 1;
-  if (target > totalPages) target = totalPages;
-  ledgerCurrentPage = target;
-  renderLedger(computeEngine().ledgerEntries);
-}
-
-/* ---------------- BANK LEDGER TABLE ---------------- */
-function renderBankLedger(bankEntries) {
-  const tbody = document.getElementById('bankLedgerTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-
-  const maskClass = getMaskClass('bankLedger');
-  const list = [...bankEntries].reverse();
-
-  if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">No bank ledger transactions recorded yet.</td></tr>`;
-    document.getElementById('bankLedgerPaginationContainer').classList.add('hidden');
-    return;
-  }
-  document.getElementById('bankLedgerPaginationContainer').classList.remove('hidden');
-
-  const totalItems = list.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-  if (bankLedgerCurrentPage > totalPages) bankLedgerCurrentPage = totalPages;
-
-  const startIndex = (bankLedgerCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-  const pageSlice = list.slice(startIndex, endIndex);
-
-  document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-
-  const jumpInput = document.getElementById('bankLedgerJumpInput');
-  const totalLabel = document.getElementById('bankLedgerTotalPagesLabel');
-  if (jumpInput) {
-    jumpInput.value = bankLedgerCurrentPage;
-    jumpInput.max = totalPages;
-  }
-  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
-
-  document.getElementById('bankLedgerPrevBtn').disabled = bankLedgerCurrentPage <= 1;
-  document.getElementById('bankLedgerNextBtn').disabled = bankLedgerCurrentPage >= totalPages;
-
-  pageSlice.forEach(b => {
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
-    tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${b.date}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${b.account || 'Unassigned'}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(b.corpus)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400">${b.remarks || ''}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function prevBankLedgerPage() {
-  if (bankLedgerCurrentPage > 1) {
-    bankLedgerCurrentPage--;
-    renderBankLedger(computeEngine().bankEntries);
-  }
-}
-
-function nextBankLedgerPage() {
-  const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE);
-  if (bankLedgerCurrentPage < totalPages) {
-    bankLedgerCurrentPage++;
-    renderBankLedger(computeEngine().bankEntries);
-  }
-}
-
-function jumpToBankLedgerPage(val) {
-  const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE) || 1;
-  let target = parseInt(val, 10);
-  if (isNaN(target) || target < 1) target = 1;
-  if (target > totalPages) target = totalPages;
-  bankLedgerCurrentPage = target;
-  renderBankLedger(computeEngine().bankEntries);
-}
 
 /* ---------------- DYNAMIC HEADER LEGEND RENDERER ---------------- */
 function renderChartLegend() {
@@ -272,7 +75,7 @@ function switchChartView(view) {
   renderTtmTable(data);
 }
 
-/* ---------------- TTM BREAKDOWN ACCORDION & POINT 1: EXPANDED MONTHLY VIEW ---------------- */
+/* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
 function toggleTtmTableAccordion() {
   const container = document.getElementById('ttmTableContainer');
   const chevron = document.getElementById('ttmAccordionChevron');
@@ -287,11 +90,6 @@ function toggleTtmTableAccordion() {
   }
 }
 
-function toggleTtmExpandedView() {
-  ttmExpandedView = !ttmExpandedView;
-  renderTtmTable(computeEngine());
-}
-
 function renderTtmTable(computed) {
   const thead = document.getElementById('ttmTableHead');
   const tbody = document.getElementById('ttmTableBody');
@@ -303,26 +101,8 @@ function renderTtmTable(computed) {
 
   const maskClass = getMaskClass('chart');
 
-  // Inject or update toggle control in accordion header if present
-  if (titleEl && !document.getElementById('ttmViewToggleBtn')) {
-    const parentContainer = titleEl.parentElement;
-    if (parentContainer) {
-      const toggleBtn = document.createElement('button');
-      toggleBtn.id = 'ttmViewToggleBtn';
-      toggleBtn.type = 'button';
-      toggleBtn.className = 'ml-3 px-2 py-0.5 text-[11px] font-bold rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 transition hover:bg-emerald-200';
-      toggleBtn.onclick = (e) => { e.stopPropagation(); toggleTtmExpandedView(); };
-      parentContainer.appendChild(toggleBtn);
-    }
-  }
-
-  const toggleBtn = document.getElementById('ttmViewToggleBtn');
-  if (toggleBtn) {
-    toggleBtn.innerText = ttmExpandedView ? 'Mode: Expanded Monthly View (All Actual Records)' : 'Mode: Trailing 12 Months (TTM)';
-  }
-
   if (currentChartView === 'roc') {
-    if (titleEl) titleEl.innerText = ttmExpandedView ? 'Monthly RoC & 4-Curve Milestone Ledger (Expanded Monthly View)' : 'Monthly RoC & 4-Curve Milestone Ledger';
+    if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
 
     thead.innerHTML = `
       <tr>
@@ -343,9 +123,8 @@ function renderTtmTable(computed) {
       return;
     }
 
-    // Point 1: If expanded view, show all actual historical records (derived strictly from base data without interpolation); otherwise TTM (-13)
-    const activePoints = ttmExpandedView ? fourCurvePoints : fourCurvePoints.slice(-13);
-    const rows = activePoints.slice(1).reverse();
+    const ttmPoints = fourCurvePoints.slice(-13);
+    const rows = ttmPoints.slice(1).reverse();
 
     rows.forEach(r => {
       const isPosProfit = r.deltaProfit >= 0;
@@ -376,7 +155,7 @@ function renderTtmTable(computed) {
     });
 
   } else {
-    if (titleEl) titleEl.innerText = ttmExpandedView ? 'Expanded Monthly Performance Ledger (All Actual Records)' : 'Trailing 12-Months (TTM) Performance Ledger';
+    if (titleEl) titleEl.innerText = 'Trailing 12-Months (TTM) Performance Ledger';
 
     thead.innerHTML = `
       <tr>
@@ -401,17 +180,16 @@ function renderTtmTable(computed) {
     }
 
     if (history.length < 2) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute monthly deltas.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
       return;
     }
 
-    // Point 1: Expanded view uses all actual historical records; TTM uses the last 13 records
-    const activeRecords = ttmExpandedView ? history : history.slice(-13);
+    const ttmRecords = history.slice(-13);
     const rows = [];
 
-    for (let i = 1; i < activeRecords.length; i++) {
-      const curr = activeRecords[i];
-      const prev = activeRecords[i - 1];
+    for (let i = 1; i < ttmRecords.length; i++) {
+      const curr = ttmRecords[i];
+      const prev = ttmRecords[i - 1];
 
       const deltaProfit = Number(curr.profit || 0) - Number(prev.profit || 0);
       const prevPortVal = Number(prev.portfolioValue || 0);
