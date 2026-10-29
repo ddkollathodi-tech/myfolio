@@ -5,6 +5,7 @@
 let multiChartInstance = null;
 let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
+let pendingCodeBackupType = null; // 'frontend' | 'backend' during PIN prompt
 
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
@@ -32,14 +33,19 @@ function init() {
   }
 }
 
-/* ---------------- STEALTH MASKING SYSTEM ---------------- */
+/* ---------------- STEALTH MASKING SYSTEM (POINT 5) ---------------- */
 function initTabMaskStates() {
-  try {
-    const saved = localStorage.getItem(TAB_MASK_STATES_KEY);
-    if (saved) {
-      tabMaskStates = Object.assign(tabMaskStates, JSON.parse(saved));
-    }
-  } catch (e) {}
+  // POINT 5: Enforce blur-by-default across all privacy tabs on every login and refresh
+  tabMaskStates = {
+    chart: true,
+    holdings: true,
+    closedTrades: true,
+    fyBreakdown: true,
+    ledger: true,
+    bankLedger: true,
+    taxPnl: true
+  };
+  localStorage.setItem(TAB_MASK_STATES_KEY, JSON.stringify(tabMaskStates));
 
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
   syncYAxisBlurOverlay();
@@ -415,6 +421,7 @@ function renderHoldings(data) {
   }
 
   cashBadgeVal.innerText = formatINR(cashAmt);
+  // POINT 7: Dynamic green/red font color keeping neutral grey card background
   cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
   // Win / Loss bar
@@ -942,7 +949,6 @@ function renderTtmTable(computed) {
 
   const maskClass = getMaskClass('chart');
 
-  // POINT 5: Monthly RoC breakdown table with Extreme Target and Recovery % columns
   if (currentChartView === 'roc') {
     if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
 
@@ -975,7 +981,6 @@ function renderTtmTable(computed) {
       const isPosGap = r.pureGap >= 0;
       const isPosRatchet = r.ratchetDeficit >= 0;
 
-      // Recovery %: percentage gain required on actualVal to cover extreme deficit (if deficit is negative)
       let recoveryPct = 0;
       if (r.ratchetDeficit < 0 && r.actualVal > 0) {
         recoveryPct = (Math.abs(r.ratchetDeficit) / r.actualVal) * 100;
@@ -1179,7 +1184,7 @@ function exportPortfolioToExcel() {
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), "Bank Ledger");
 
-  // Tab 7: Performance Trajectory (Complete Table)
+  // Tab 7: Performance Trajectory
   let trajectoryHistory = [];
   if (Array.isArray(chartHistoryRecords)) {
     trajectoryHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => ({
@@ -1197,7 +1202,7 @@ function exportPortfolioToExcel() {
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trajectoryHistory), "Performance Trajectory");
 
-  // Tab 8: Monthly RoC & Extreme Target Table
+  // Tab 8: Monthly RoC & Extreme Target
   const fourCurvePoints = computeRocFourCurves(data);
   const rocRows = fourCurvePoints.map(p => ({
     "Checkpoint": p.date,
@@ -1217,7 +1222,7 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 5: My Capital Deltas & Bottom Bounding) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 5 & 6) ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
   ensureChartDomElements();
@@ -1249,7 +1254,6 @@ function customHtmlTooltipHandler(context) {
       const rawVal = dp.raw || 0;
       const formattedVal = formatINR(rawVal, 0);
 
-      // POINT 5: Compute period variation (delta) on the fly for Profit, Actual Track, and My Capital
       let variationHtml = '';
       if ((label === 'Profit' || label === 'Actual Track' || label === 'My Capital') && dp.dataIndex > 0) {
         const datasetData = dataset.data;
@@ -1304,7 +1308,6 @@ function customHtmlTooltipHandler(context) {
     tooltipEl.style.left = (positionX + caretX + 12) + 'px';
   }
   
-  // POINT 5: Vertical bottom boundary collision detection
   const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
   if (willOverflowBottom) {
     tooltipEl.style.top = (positionY + caretY - tooltipHeight - 12) + 'px';
@@ -1313,7 +1316,7 @@ function customHtmlTooltipHandler(context) {
   }
 }
 
-/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER ---------------- */
+/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 6) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
@@ -1352,7 +1355,6 @@ function renderChart(computed) {
     external: customHtmlTooltipHandler
   };
 
-  // VIEW 1: MONTHLY ROC & 4-CURVE TARGET ENGINE
   if (currentChartView === 'roc') {
     const fourPoints = computeRocFourCurves(computed);
     let displayPoints = fourPoints;
@@ -1444,6 +1446,14 @@ function renderChart(computed) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        // POINT 6: Mobile touch-device event configuration to dismiss tooltips on outside tap or scroll
+        events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+        onHover: (event, chartElement) => {
+          if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+            const tooltipEl = document.getElementById('chartCustomTooltip');
+            if (tooltipEl) tooltipEl.style.opacity = '0';
+          }
+        },
         interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: { display: false },
@@ -1489,7 +1499,6 @@ function renderChart(computed) {
     return;
   }
 
-  // VIEW 2: CLASSIC PERFORMANCE TRAJECTORY
   let allPoints = [];
 
   if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
@@ -1598,6 +1607,14 @@ function renderChart(computed) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      // POINT 6: Mobile touch-device event configuration to dismiss tooltips on outside tap or scroll
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+      onHover: (event, chartElement) => {
+        if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+          const tooltipEl = document.getElementById('chartCustomTooltip');
+          if (tooltipEl) tooltipEl.style.opacity = '0';
+        }
+      },
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
@@ -1641,7 +1658,7 @@ function renderChart(computed) {
   });
 }
 
-/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS (POINT 2: Mobile Scroll Trap) ---------------- */
+/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS (POINT 2) ---------------- */
 function toggleTxDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('txDropdownMenu');
@@ -1650,7 +1667,6 @@ function toggleTxDropdown(e) {
 
   if (isHidden) {
     menu.classList.remove('hidden');
-    // POINT 2: Add max-height and internal scroll container classes for mobile view
     menu.classList.add('max-h-[65vh]', 'overflow-y-auto', 'custom-scroll');
     if (chevron) chevron.classList.add('rotate-180');
   } else {
@@ -1997,7 +2013,6 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
     } else if (t.type === 'SELL') {
       cash += amt;
       if (!inv[t.stock]) inv[t.stock] = 0;
-      // Fixed: Subtracted shares on SELL instead of adding them
       inv[t.stock] -= Number(t.qty || 0);
     } else if (t.type === 'BONUS') {
       if (!inv[t.stock]) inv[t.stock] = 0;
@@ -2129,7 +2144,7 @@ async function commitMonthEndSnapshot() {
   recalculateAndRender();
 }
 
-/* ---------------- SETTINGS DROPDOWN & DEDICATED MODALS ---------------- */
+/* ---------------- SETTINGS DROPDOWN & BACKUP / PIN GATEKEEPERS (POINT 9 & 10) ---------------- */
 function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
@@ -2214,7 +2229,84 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Cash Calibration Modal
+// 2. Manual Backup Triggers (POINT 9 & 10: PIN Gatekeeper for Code Backups)
+async function triggerManualDatabaseBackup() {
+  closeSettingsDropdown();
+  if (!cloudScriptUrl) {
+    alert('Google Sheets Sync is not connected. Please connect your Web App Deployment URL first.');
+    return;
+  }
+
+  if (confirm('Execute manual backup of your Google Sheet database to the MyFolio_Vault_Backups folder?')) {
+    updateSyncUI('Backing up database...', false);
+    try {
+      let url = `${cloudScriptUrl}?action=triggerDatabaseBackup`;
+      if (apiToken) url += `&token=${encodeURIComponent(apiToken)}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.status === 'success') {
+        alert('Database backup created successfully in your Google Drive vault folder!');
+        updateSyncUI('Database backup complete.', false);
+      } else {
+        throw new Error(json.message || 'Unknown error');
+      }
+    } catch (err) {
+      alert('Database backup failed: ' + err.toString());
+      updateSyncUI('Database backup failed.', true);
+    }
+  }
+}
+
+function triggerManualCodeBackup(type) {
+  closeSettingsDropdown();
+  pendingCodeBackupType = type;
+
+  // POINT 10: Prompt for master security PIN verification before proceeding with code backup
+  const pinPrompt = prompt(`Enter your 4-digit Master Security PIN to authorize ${type.toUpperCase()} Code Backup:`);
+  if (!pinPrompt) {
+    pendingCodeBackupType = null;
+    return;
+  }
+
+  sha256Hex(pinPrompt.trim()).then(candidateHash => {
+    if (appSettings.pinHash && candidateHash === appSettings.pinHash) {
+      executeCodeBackupDownload(pendingCodeBackupType);
+    } else {
+      alert('Incorrect Security PIN. Code backup cancelled.');
+    }
+    pendingCodeBackupType = null;
+  });
+}
+
+function executeCodeBackupDownload(type) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  let fileName = '';
+  let content = '';
+
+  if (type === 'frontend') {
+    fileName = `MyFolioAI_Frontend_Code_Backup_${todayStr}.html`;
+    content = document.documentElement.outerHTML;
+  } else if (type === 'backend') {
+    fileName = `MyFolioAI_Backend_Code_Backup_${todayStr}.gs`;
+    // Grabs active backend script reference or template
+    content = `// MyFolio.AI Backend Code Snapshot - ${todayStr}\n// Exported securely from MyFolio.AI Vault\n\n` + (typeof takeSnapshotNow === 'function' ? takeSnapshotNow.toString() : '');
+  }
+
+  if (!content) return;
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert(`${type.toUpperCase()} code backup archive downloaded successfully!`);
+}
+
+// 3. Cash Calibration Modal
 function openCashCalibrateModal() {
   closeSettingsDropdown();
   renderCashCalibrateRows();
@@ -2311,7 +2403,7 @@ async function saveCashCalibration() {
   recalculateAndRender();
 }
 
-// 3. Stock Master Modal
+// 4. Stock Master Modal
 function openStockMasterModal() {
   closeSettingsDropdown();
   document.getElementById('smSymbolInput').value = '';
@@ -2367,7 +2459,6 @@ async function handleAddStockMasterSubmit(e) {
 
 /* ---------------- GLOBAL OUTSIDE CLICK LISTENER ---------------- */
 window.addEventListener('click', function(e) {
-  // Dropdown 1: Record Transaction
   const txDropdown = document.getElementById('txDropdownContainer');
   const txMenu = document.getElementById('txDropdownMenu');
   const txChevron = document.getElementById('txDropdownChevron');
@@ -2377,14 +2468,12 @@ window.addEventListener('click', function(e) {
     closeCorpActionSubmenu();
   }
 
-  // Dropdown 2: Settings
   const settingsDropdown = document.getElementById('settingsDropdownContainer');
   const settingsMenu = document.getElementById('settingsDropdownMenu');
   if (settingsDropdown && !settingsDropdown.contains(e.target) && settingsMenu && !settingsMenu.classList.contains('hidden')) {
     settingsMenu.classList.add('hidden');
   }
 
-  // Dropdown 3: Chart View Switcher
   const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
   const chartMenu = document.getElementById('chartViewDropdownMenu');
   const chartChevron = document.getElementById('chartViewChevron');
