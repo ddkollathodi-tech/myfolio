@@ -88,30 +88,35 @@ th.sortable:hover {
   background-color: rgba(148, 163, 184, 0.12); 
 }
 
-/* Record Transaction Dropdown Button */
+/* Record Transaction Dropdown Button (POINT 2: Harmonized Neutral Utility Styling) */
 .btn-record-tx {
-  background-color: #EAF5F0;
-  border: 1px solid #CBE7D9;
-  color: #147653;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #334155;
 }
 
 .btn-record-tx:hover {
-  background-color: #DEF0E7;
-  border-color: #B2DDC6;
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
 }
 
 .dark .btn-record-tx {
-  background-color: rgba(20, 118, 83, 0.16);
-  border-color: rgba(203, 231, 217, 0.22);
-  color: #34D399;
+  background-color: rgba(30, 41, 59, 0.7);
+  border-color: rgba(51, 65, 85, 0.8);
+  color: #cbd5e1;
 }
 
 .dark .btn-record-tx:hover {
-  background-color: rgba(20, 118, 83, 0.26);
-  border-color: rgba(203, 231, 217, 0.35);
+  background-color: rgba(30, 41, 59, 1);
+  border-color: rgba(71, 85, 105, 1);
 }
 
-/* POINT 6: Premium OLED / Rich Near-Black Dark Theme Overrides */
+/* POINT 7: Slimmer Active Holdings Win/Loss Distribution Bar */
+#holdingsRatioBarContainer .h-2 {
+  height: 5px !important;
+}
+
+/* POINT 4: Premium OLED / Rich Near-Black Dark Theme Overrides */
 .dark body {
   background-color: #000000 !important;
 }
