@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MyFolioAI - Portfolio Tracker Engine</title>
+  <title>MyFolio.AI - Portfolio Tracker Engine</title>
   
   <!-- External CDNs -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -90,7 +90,7 @@
     <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
         
-        <!-- Brand Logo & Title -->
+        <!-- Brand Logo & Title (POINT 3: MyFolio.AI formatting) -->
         <div class="flex items-center space-x-3.5">
           <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
             <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -100,8 +100,7 @@
           </div>
           <div class="flex flex-col justify-center">
             <div class="flex items-baseline leading-none">
-              <span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">MyFolio</span>
-              <span class="text-[20px] font-extrabold text-[#D81B60] tracking-tight ml-0.5">AI</span>
+              <span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">MyFolio</span><span class="text-[19px] font-bold tracking-tight text-[#0f172a] dark:text-white">.</span><span class="text-[20px] font-extrabold text-[#D81B60] tracking-tight ml-0.5">AI</span>
             </div>
             <p class="text-[11.5px] font-medium text-slate-500 dark:text-gray-400 tracking-normal mt-0.5">Portfolio Tracker Engine</p>
           </div>
@@ -110,14 +109,14 @@
         <!-- Action Cluster: [Record Tx] [Live Prices] [Lock] [Settings ▾] -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- 1. RECORD TRANSACTION DROPDOWN -->
+          <!-- 1. RECORD TRANSACTION DROPDOWN (POINT 2: Harmonized Neutral Styling) -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
               onclick="toggleTxDropdown(event)" 
-              class="btn-record-tx flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+              class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-400/40 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-200 border border-slate-200 dark:border-gray-700"
             >
-              <i data-lucide="file-pen-line" class="w-3.5 h-3.5"></i>
+              <i data-lucide="file-pen-line" class="w-3.5 h-3.5 text-slate-500 dark:text-gray-400"></i>
               <span>Record Transaction</span>
               <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 ml-0.5 transition-transform duration-150 opacity-80"></i>
             </button>
@@ -195,7 +194,7 @@
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN (POINT 1: CLOUD SYNC & EXCEL REPORT MOVED HERE) -->
+          <!-- 4. SETTINGS DROPDOWN (POINT 9: Added Backup Section) -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -208,22 +207,22 @@
 
             <div 
               id="settingsDropdownMenu" 
-              class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-gray-800"
+              class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-slate-200 dark:border-gray-800 py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-gray-800"
             >
               <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition">
                 <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-gray-200">
-                  <i data-lucide="moon" id="settingsThemeIcon" class="w-4 h-4 text-indigo-400"></i>
+                  <i data-lucide="sun" id="settingsThemeIcon" class="w-4 h-4 text-amber-500"></i>
                   <span>Appearance</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
-                  <span id="settingsThemeLabel" class="text-[11px] font-semibold text-slate-500 dark:text-gray-400">Dark</span>
-                  <div class="w-7 h-4 bg-emerald-600 rounded-full flex items-center justify-end p-0.5" id="settingsThemePill">
+                  <span id="settingsThemeLabel" class="text-[11px] font-semibold text-slate-500 dark:text-gray-400">Light</span>
+                  <div class="w-7 h-4 bg-slate-300 rounded-full flex items-center justify-start p-0.5" id="settingsThemePill">
                     <div class="w-3 h-3 bg-white rounded-full shadow-xs"></div>
                   </div>
                 </div>
               </div>
 
-              <!-- POINT 1: Cloud Sync Configuration moved as first option below Appearance -->
+              <!-- General Settings -->
               <div class="py-1">
                 <button onclick="openSyncModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="cloud" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
@@ -241,7 +240,28 @@
                   <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
                   <span>Stock Master Registry</span>
                 </button>
-                <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium border-t border-slate-100 dark:border-gray-800 mt-1 pt-2">
+              </div>
+
+              <!-- POINT 9 & 10: Dedicated Backup Section in Settings -->
+              <div class="py-1">
+                <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Vault &amp; Code Backups</div>
+                <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="database-backup" class="w-4 h-4 text-emerald-600 mr-2.5"></i>
+                  <span>Backup Database Now</span>
+                </button>
+                <button onclick="triggerManualCodeBackup('frontend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="file-code" class="w-4 h-4 text-blue-600 mr-2.5"></i>
+                  <span>Backup Frontend Code (PIN)</span>
+                </button>
+                <button onclick="triggerManualCodeBackup('backend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
+                  <i data-lucide="terminal" class="w-4 h-4 text-purple-600 mr-2.5"></i>
+                  <span>Backup Backend Code (PIN)</span>
+                </button>
+              </div>
+
+              <!-- Export Excel -->
+              <div class="py-1">
+                <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2.5"></i>
                   <span>Export Excel Report (.xlsx)</span>
                 </button>
@@ -253,7 +273,7 @@
       </div>
     </header>
 
-    <!-- SYNC STATUS BAR (POINT 1: Sheet Linked button removed, status indicator retained) -->
+    <!-- SYNC STATUS BAR -->
     <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
@@ -455,7 +475,6 @@
                   <div class="font-bold text-slate-800 dark:text-gray-100">Performance Trajectory</div>
                   <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
                 </button>
-                <!-- POINT 4: Renamed Ratchet Target to Extreme Target -->
                 <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 transition border-t border-slate-100 dark:border-gray-800">
                   <div class="font-bold text-slate-800 dark:text-gray-100">Monthly RoC Curve</div>
                   <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Extreme Target</div>
@@ -611,10 +630,11 @@
           </div>
 
           <div class="flex items-center space-x-2">
-            <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-2xs">
-              <i data-lucide="banknote" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            <!-- POINT 7: Subtle neutral grey card styling for cash available badge -->
+            <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-xs font-bold text-slate-700 dark:text-gray-200 shadow-2xs">
+              <i data-lucide="banknote" class="w-4 h-4 text-slate-500 dark:text-gray-400"></i>
               <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
-              <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹0.00</span>
+              <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-sm">₹0.00</span>
             </div>
 
             <button 
@@ -881,7 +901,7 @@
         </div>
       </div>
 
-      <!-- TAB 6: TAX PLANNING COCKPIT (Updated with Top-Right Eye Toggle) -->
+      <!-- TAB 6: TAX PLANNING COCKPIT (POINT 8: Stealth Eye Toggle Retained & Wired) -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <div>
