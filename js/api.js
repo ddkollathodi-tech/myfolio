@@ -8,21 +8,22 @@ function updateSyncUI(status, isError) {
   const syncStatus = document.getElementById('syncStatus');
   const cloudSyncText = document.getElementById('cloudSyncText');
 
-  if (!syncDot || !syncStatus || !cloudSyncText) return;
+  if (!syncDot || !syncStatus) return;
+  if (cloudSyncText) {
+    cloudSyncText.innerText = cloudScriptUrl ? 'Sheet Linked' : 'Connect Sheet';
+  }
 
   if (cloudScriptUrl) {
-    cloudSyncText.innerText = 'Sheet Linked';
     if (status) {
       syncStatus.innerText = status;
       syncDot.className = isError
         ? 'w-2 h-2 rounded-full bg-rose-500 animate-pulse'
-        : 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        : 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
     } else {
       syncStatus.innerText = 'Connected & synchronized.';
       syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
     }
   } else {
-    cloudSyncText.innerText = 'Connect Sheet';
     syncStatus.innerText = 'Running on local cache only.';
     syncDot.className = 'w-2 h-2 rounded-full bg-amber-500';
   }
@@ -108,7 +109,7 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
     }
 
-    updateSyncUI('Synced with Google Sheet.', false);
+    updateSyncUI(null, false);
     if (typeof recalculateAndRender === 'function') {
       recalculateAndRender();
     }
