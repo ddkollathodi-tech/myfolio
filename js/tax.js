@@ -263,12 +263,10 @@ function renderTaxView() {
       if (totalTaxLiability === 0) {
         statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
       } else if (remainingToPay === 0) {
-        // Fixed: Removed duplicate manual '₹' symbol before formatCompactIndian
         statusBadge = excessPaid > 0 
           ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+${formatCompactIndian(excessPaid)} Rolled Over</span>`
           : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
       } else {
-        // Fixed: Removed duplicate manual '₹' symbol before formatINR
         statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200">${formatINR(remainingToPay, 0)} Due</span>`;
       }
 
@@ -393,6 +391,8 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
 
   const profitList = document.getElementById('profitHarvestList');
   const profitBadge = document.getElementById('profitHarvestCountBadge');
+  const maskClass = typeof getMaskClass === 'function' ? getMaskClass('taxPnl') : '';
+
   if (profitList && profitBadge) {
     profitList.innerHTML = '';
     profitBadge.innerText = `${profitCandidates.length} lot(s)`;
@@ -409,10 +409,10 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
               <span>${c.stock}</span>
               <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
             </div>
-            <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            <div class="text-[11px] text-slate-500 dark:text-gray-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
           </div>
           <div class="text-right">
-            <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">+${formatINR(c.gain, 0)}</span>
+            <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}">+${formatINR(c.gain, 0)}</span>
             <span class="block text-[10px] text-slate-400">Tax-Free Room</span>
           </div>
         `;
@@ -439,10 +439,10 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
               <span>${c.stock}</span>
               <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
             </div>
-            <div class="text-[11px] text-slate-500 dark:text-gray-400">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            <div class="text-[11px] text-slate-500 dark:text-gray-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
           </div>
           <div class="text-right">
-            <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">-${formatINR(c.loss, 0)}</span>
+            <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}">-${formatINR(c.loss, 0)}</span>
             <span class="block text-[10px] text-slate-400">Offset Capacity</span>
           </div>
         `;
