@@ -242,7 +242,7 @@
                 </button>
               </div>
 
-              <!-- POINT 9 & 10: Dedicated Backup Section in Settings -->
+              <!-- POINT 9 & 10: Dedicated Backup Section in Settings (PIN text removed from brackets) -->
               <div class="py-1">
                 <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Vault &amp; Code Backups</div>
                 <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
@@ -251,11 +251,11 @@
                 </button>
                 <button onclick="triggerManualCodeBackup('frontend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="file-code" class="w-4 h-4 text-blue-600 mr-2.5"></i>
-                  <span>Backup Frontend Code (PIN)</span>
+                  <span>Backup Frontend Code</span>
                 </button>
                 <button onclick="triggerManualCodeBackup('backend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="terminal" class="w-4 h-4 text-purple-600 mr-2.5"></i>
-                  <span>Backup Backend Code (PIN)</span>
+                  <span>Backup Backend Code</span>
                 </button>
               </div>
 
@@ -280,7 +280,10 @@
           <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
           <span id="syncStatus">Ready to track.</span>
         </div>
-        <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-right">
+          <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
+          <div>Last Data Backup: <span id="lastBackupTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not backed up yet</span></div>
+        </div>
       </div>
     </div>
 
