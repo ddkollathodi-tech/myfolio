@@ -74,7 +74,7 @@ table,
 }
 
 .dark .custom-scroll::-webkit-scrollbar-thumb { 
-  background: #262626; 
+  background: #2a2e39; 
   border-radius: 4px; 
 }
 
@@ -116,18 +116,18 @@ th.sortable:hover {
   height: 5px !important;
 }
 
-/* POINT 4: Premium OLED / Rich Near-Black Dark Theme Overrides */
+/* POINT 4: Warm RPCI-Style Espresso/Obsidian Charcoal Dark Theme Overrides */
 .dark body {
-  background-color: #000000 !important;
+  background-color: #0d0e11 !important;
 }
 
 .dark header,
 .dark .bg-gray-950,
 .dark .bg-gray-900 {
-  background-color: #08090d !important;
+  background-color: #13151b !important;
 }
 
 .dark border-gray-800,
 .dark .border-gray-800 {
-  border-color: #1a1d24 !important;
+  border-color: #22252e !important;
 }
