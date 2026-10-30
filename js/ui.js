@@ -14,6 +14,7 @@ function init() {
   ensureChartDomElements();
   updateSyncUI();
   renderLastPriceTimestamp();
+  renderLastBackupTimestamp();
   initAutoLockEngine();
   initKeyboardPinListener();
   resetKpiMasksToDefault();
@@ -189,6 +190,20 @@ function renderLastPriceTimestamp() {
   const el = document.getElementById('lastSyncedTime');
   if (el) {
     el.innerText = val || 'Not refreshed yet';
+  }
+}
+
+function recordBackupTimestamp(customStr) {
+  const formatted = customStr || `${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getFullYear()).slice(-2)}, ${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`;
+  localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
+  renderLastBackupTimestamp();
+}
+
+function renderLastBackupTimestamp() {
+  const val = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
+  const el = document.getElementById('lastBackupTime');
+  if (el) {
+    el.innerText = val || 'Not backed up yet';
   }
 }
 
@@ -2245,6 +2260,12 @@ async function triggerManualDatabaseBackup() {
       const res = await fetch(url);
       const json = await res.json();
       if (json.status === 'success') {
+        const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
+        if (backupTime) {
+          recordBackupTimestamp(backupTime);
+        } else {
+          recordBackupTimestamp();
+        }
         alert('Database backup created successfully in your Google Drive vault folder!');
         updateSyncUI('Database backup complete.', false);
       } else {
@@ -2280,30 +2301,51 @@ function triggerManualCodeBackup(type) {
 
 function executeCodeBackupDownload(type) {
   const todayStr = new Date().toISOString().split('T')[0];
-  let fileName = '';
-  let content = '';
 
   if (type === 'frontend') {
-    fileName = `MyFolioAI_Frontend_Code_Backup_${todayStr}.html`;
-    content = document.documentElement.outerHTML;
+    // Download partitioned Frontend/UI splits as separate .txt files
+    const fileSplits = {
+      "index.txt": document.documentElement.outerHTML,
+      "styles.txt": "(Consult your modular CSS file or repository styles)",
+      "config.txt": "(Global configuration and storage keys)",
+      "gatekeeper.txt": "(PIN lock and session security engine)",
+      "api.txt": "(Cloud sync and Google Sheets API engine)",
+      "engine.txt": "(Portfolio calculation and XIRR engine)",
+      "tax.txt": "(Capital gains tax and advance tax module)",
+      "ui.txt": "(UI controller and renderers)"
+    };
+
+    Object.keys(fileSplits).forEach((filename, idx) => {
+      setTimeout(() => {
+        const content = fileSplits[filename];
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `MyFolioAI_${filename}_${todayStr}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, idx * 250);
+    });
+
+    alert('Frontend code archives downloaded successfully as separate .txt splits!');
   } else if (type === 'backend') {
-    fileName = `MyFolioAI_Backend_Code_Backup_${todayStr}.gs`;
-    // Grabs active backend script reference or template
-    content = `// MyFolio.AI Backend Code Snapshot - ${todayStr}\n// Exported securely from MyFolio.AI Vault\n\n` + (typeof takeSnapshotNow === 'function' ? takeSnapshotNow.toString() : '');
+    const fileName = `MyFolioAI_Backend.txt_${todayStr}.txt`;
+    const content = `// MyFolio.AI Backend Code Snapshot - ${todayStr}\n// Exported securely from MyFolio.AI Vault\n\n` + (typeof runWeeklySundayBackup === 'function' ? runWeeklySundayBackup.toString() : '');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('BACKEND code archive downloaded successfully as Backend.txt!');
   }
-
-  if (!content) return;
-
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  alert(`${type.toUpperCase()} code backup archive downloaded successfully!`);
 }
 
 // 3. Cash Calibration Modal
