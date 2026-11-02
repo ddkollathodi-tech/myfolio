@@ -94,15 +94,6 @@ function ensureChartDomElements() {
   if (!canvas || !canvas.parentElement) return;
   const wrapper = canvas.parentElement;
 
-  if (!document.getElementById('chartYAxisBlurOverlay')) {
-    const overlay = document.createElement('div');
-    overlay.id = 'chartYAxisBlurOverlay';
-    // POINT 5: Integrated high-tier uniform .chart-yaxis-blur class styling
-    overlay.className = 'absolute top-0 left-0 pointer-events-none transition-all duration-200 z-10 hidden chart-yaxis-blur';
-    overlay.style.cssText = 'width: 65px; height: calc(100% - 28px);';
-    wrapper.appendChild(overlay);
-  }
-
   if (!document.getElementById('chartCustomTooltip')) {
     const tooltipEl = document.createElement('div');
     tooltipEl.id = 'chartCustomTooltip';
@@ -112,13 +103,8 @@ function ensureChartDomElements() {
 }
 
 function syncYAxisBlurOverlay() {
-  ensureChartDomElements();
-  const overlay = document.getElementById('chartYAxisBlurOverlay');
-  if (!overlay) return;
-  if (tabMaskStates.chart) {
-    overlay.classList.remove('hidden');
-  } else {
-    overlay.classList.add('hidden');
+  if (multiChartInstance) {
+    multiChartInstance.update();
   }
 }
 
@@ -1332,6 +1318,40 @@ function customHtmlTooltipHandler(context) {
   }
 }
 
+/* ---------------- INDIVIDUAL Y-AXIS SOFT TICK BLUR PLUGIN ---------------- */
+const yAxisIndividualBlurPlugin = {
+  id: 'yAxisIndividualBlur',
+  afterDraw(chart) {
+    if (!tabMaskStates || !tabMaskStates.chart) return;
+    const { ctx, scales } = chart;
+    const yAxis = scales.y;
+    if (!yAxis) return;
+
+    ctx.save();
+    const isDark = document.documentElement.classList.contains('dark');
+
+    yAxis.ticks.forEach((tick, index) => {
+      const y = yAxis.getPixelForTick(index);
+      const xStart = yAxis.left + 2;
+      const xEnd = yAxis.right - 4;
+      const boxWidth = xEnd - xStart;
+      const boxHeight = 16;
+      const boxY = y - (boxHeight / 2);
+
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(xStart, boxY, boxWidth, boxHeight, 4);
+      } else {
+        ctx.rect(xStart, boxY, boxWidth, boxHeight);
+      }
+      ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.10)';
+      ctx.filter = 'blur(6px)';
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+};
+
 /* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 6) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
@@ -1462,7 +1482,6 @@ function renderChart(computed) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        // POINT 6: Mobile touch-device event configuration to dismiss tooltips on outside tap or scroll
         events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
         onHover: (event, chartElement) => {
           if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
@@ -1500,7 +1519,9 @@ function renderChart(computed) {
               drawBorder: false
             },
             ticks: {
-              color: tickColor,
+              color: function() {
+                return (tabMaskStates && tabMaskStates.chart) ? 'transparent' : tickColor;
+              },
               font: { family: "'Inter', sans-serif", size: 11 },
               padding: 8,
               callback: function(val) {
@@ -1509,7 +1530,8 @@ function renderChart(computed) {
             }
           }
         }
-      }
+      },
+      plugins: [yAxisIndividualBlurPlugin]
     });
 
     return;
@@ -1623,7 +1645,6 @@ function renderChart(computed) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      // POINT 6: Mobile touch-device event configuration to dismiss tooltips on outside tap or scroll
       events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
       onHover: (event, chartElement) => {
         if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
@@ -1661,7 +1682,9 @@ function renderChart(computed) {
             drawBorder: false
           },
           ticks: {
-            color: tickColor,
+            color: function() {
+              return (tabMaskStates && tabMaskStates.chart) ? 'transparent' : tickColor;
+            },
             font: { family: "'Inter', sans-serif", size: 11 },
             padding: 8,
             callback: function(val) {
@@ -1670,7 +1693,8 @@ function renderChart(computed) {
           }
         }
       }
-    }
+    },
+    plugins: [yAxisIndividualBlurPlugin]
   });
 }
 
