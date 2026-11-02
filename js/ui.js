@@ -97,8 +97,9 @@ function ensureChartDomElements() {
   if (!document.getElementById('chartYAxisBlurOverlay')) {
     const overlay = document.createElement('div');
     overlay.id = 'chartYAxisBlurOverlay';
-    overlay.className = 'absolute top-0 left-0 pointer-events-none transition-all duration-200 z-10 hidden';
-    overlay.style.cssText = 'width: 65px; height: calc(100% - 28px); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.06);';
+    // POINT 5: Integrated high-tier uniform .chart-yaxis-blur class styling
+    overlay.className = 'absolute top-0 left-0 pointer-events-none transition-all duration-200 z-10 hidden chart-yaxis-blur';
+    overlay.style.cssText = 'width: 65px; height: calc(100% - 28px);';
     wrapper.appendChild(overlay);
   }
 
