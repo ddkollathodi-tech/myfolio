@@ -20,11 +20,11 @@ function updateSyncUI(status, isError) {
         ? 'w-2 h-2 rounded-full bg-rose-500 animate-pulse'
         : 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
     } else {
-      syncStatus.innerText = 'Connected & synchronized.';
+      syncStatus.innerText = 'Synced';
       syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
     }
   } else {
-    syncStatus.innerText = 'Not synced (running on local cache only).';
+    syncStatus.innerText = 'Not synced';
     syncDot.className = 'w-2 h-2 rounded-full bg-rose-500';
   }
 }
@@ -32,7 +32,7 @@ function updateSyncUI(status, isError) {
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return;
 
-  updateSyncUI('Syncing with Google Sheets...', false);
+  updateSyncUI('Syncing', false);
 
   try {
     let url = `${cloudScriptUrl}?action=getAll`;
@@ -46,7 +46,7 @@ async function fetchFromGoogleSheet() {
     const data = await response.json();
 
     if (data && data.status === 'error' && String(data.message).includes('Unauthorized')) {
-      updateSyncUI('Auth Error: Invalid API Secret Token', true);
+      updateSyncUI('Not synced', true);
       alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
       return;
     }
@@ -120,7 +120,7 @@ async function fetchFromGoogleSheet() {
 
   } catch (err) {
     console.error('Failed to sync with Google Sheet:', err);
-    updateSyncUI('Sync failed (offline cache active).', true);
+    updateSyncUI('Not synced', true);
     if (typeof recalculateAndRender === 'function') {
       recalculateAndRender();
     }
@@ -193,7 +193,7 @@ function saveAndFetchCloud() {
   localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
 
   closeSyncModal();
-  updateSyncUI('Connecting...', false);
+  updateSyncUI('Syncing', false);
 
   if (cloudScriptUrl) {
     fetchFromGoogleSheet();
