@@ -24,8 +24,8 @@ function updateSyncUI(status, isError) {
       syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
     }
   } else {
-    syncStatus.innerText = 'Running on local cache only.';
-    syncDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+    syncStatus.innerText = 'Not synced (running on local cache only).';
+    syncDot.className = 'w-2 h-2 rounded-full bg-rose-500';
   }
 }
 
