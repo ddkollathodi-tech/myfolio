@@ -53,6 +53,18 @@ table,
   transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* POINT 5: Pristine Uniform Y-Axis Frosted Blur Overlay */
+.chart-yaxis-blur {
+  backdrop-filter: blur(7px) !important;
+  -webkit-backdrop-filter: blur(7px) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  transition: backdrop-filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .chart-yaxis-blur {
+  background: rgba(13, 14, 17, 0.35) !important;
+}
+
 /* Unmasked State Smooth Transition */
 .mask-transition {
   transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
