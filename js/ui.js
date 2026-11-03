@@ -1098,49 +1098,115 @@ function renderTtmTable(computed) {
   }
 }
 
-/* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
+/* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) WITH STYLING ---------------- */
 function exportPortfolioToExcel() {
   if (typeof XLSX === 'undefined') return;
 
   const data = computeEngine();
   const wb = XLSX.utils.book_new();
 
+  // Helper to style headers, enable text wrapping, set widths, grid borders, and raw unformatted numbers
+  function formatWorksheet(ws, colWidths) {
+    if (!ws['!ref']) return;
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    // 1. Set explicit column widths
+    if (colWidths) {
+      ws['!cols'] = colWidths.map(w => ({ wch: w }));
+    }
+
+    // Define thin gray grid border style
+    const thinBorder = {
+      top: { style: "thin", color: { rgb: "CBD5E1" } },
+      bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+      left: { style: "thin", color: { rgb: "CBD5E1" } },
+      right: { style: "thin", color: { rgb: "CBD5E1" } }
+    };
+
+    // 2. Iterate through cells to apply styling
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!ws[cellAddress]) continue;
+
+        if (!ws[cellAddress].s) ws[cellAddress].s = {};
+        ws[cellAddress].s.border = thinBorder;
+
+        ws[cellAddress].s.alignment = { 
+          wrapText: true, 
+          vertical: "center",
+          horizontal: R === 0 ? "center" : "left" 
+        };
+
+        // Title Bolding & Header Styling (Row 0)
+        if (R === 0) {
+          ws[cellAddress].s.font = { 
+            name: "Inter", 
+            sz: 11, 
+            bold: true, 
+            color: { rgb: "FFFFFF" } 
+          };
+          ws[cellAddress].s.fill = { 
+            fgColor: { rgb: "0F172A" } // Dark Slate Header
+          };
+        } else {
+          ws[cellAddress].s.font = { 
+            name: "Inter", 
+            sz: 10, 
+            color: { rgb: "1E293B" } 
+          };
+        }
+
+        // Store numbers as raw unformatted numbers (no commas or currency symbols)
+        if (typeof ws[cellAddress].v === 'number') {
+          ws[cellAddress].z = "0.00";
+        }
+      }
+    }
+  }
+
   // Tab 1: Summary Dashboard
   const summaryRows = [
-    { "Metric": "Total Net Worth", "Value": data.netWorth },
-    { "Metric": "Contributed Corpus (Net Invested)", "Value": data.netInvested },
-    { "Metric": "Total Portfolio Valuation", "Value": data.totalPortfolioVal },
-    { "Metric": "Total Cash Balance", "Value": data.cashBalance },
-    { "Metric": "Lifetime P&L", "Value": data.lifetimePnL },
+    { "Metric": "Total Net Worth", "Value": Number(data.netWorth) },
+    { "Metric": "Contributed Corpus (Net Invested)", "Value": Number(data.netInvested) },
+    { "Metric": "Total Portfolio Valuation", "Value": Number(data.totalPortfolioVal) },
+    { "Metric": "Total Cash Balance", "Value": Number(data.cashBalance) },
+    { "Metric": "Lifetime P&L", "Value": Number(data.lifetimePnL) },
     { "Metric": "Lifetime P&L (%)", "Value": Number(data.lifetimePnLPct.toFixed(2)) },
     { "Metric": "Annualized XIRR (%)", "Value": Number(data.xirrValue.toFixed(2)) }
   ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summary Dashboard");
+  const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+  formatWorksheet(wsSummary, [38, 22]);
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Summary Dashboard");
 
   // Tab 2: Holdings
   const holdingsRows = data.holdings.map(h => ({
     "Stock Ticker": h.stock,
-    "Quantity": h.qty,
-    "Average Cost (WAP)": h.wap,
-    "Current LTP": h.ltp,
-    "Invested Value": h.investedVal,
-    "Current Value": h.currentVal,
+    "Quantity": Number(h.qty),
+    "Average Cost (WAP)": Number(h.wap),
+    "Current LTP": Number(h.ltp),
+    "Invested Value": Number(h.investedVal),
+    "Current Value": Number(h.currentVal),
     "Weight (%)": Number(h.weightPct.toFixed(2)),
-    "Unrealized P&L": h.pnlVal,
+    "Unrealized P&L": Number(h.pnlVal),
     "Return (%)": Number(h.pnlPct.toFixed(2))
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(holdingsRows), "Active Holdings");
+  const wsHoldings = XLSX.utils.json_to_sheet(holdingsRows);
+  formatWorksheet(wsHoldings, [16, 12, 18, 14, 16, 16, 12, 16, 12]);
+  XLSX.utils.book_append_sheet(wb, wsHoldings, "Active Holdings");
 
   // Tab 3: Closed Trades
   const closedRows = data.closedTrades.map(c => ({
     "Stock Ticker": c.stock,
-    "Total Sold Qty": c.totalQty,
-    "Total Cost Basis": c.totalCostBasis,
-    "Total Proceeds": c.totalProceeds,
-    "Net Realized P&L": c.netPnL,
+    "Total Sold Qty": Number(c.totalQty),
+    "Total Cost Basis": Number(c.totalCostBasis),
+    "Total Proceeds": Number(c.totalProceeds),
+    "Net Realized P&L": Number(c.netPnL),
     "Realized Return (%)": Number(c.retPct.toFixed(2))
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(closedRows), "Closed Trades");
+  const wsClosed = XLSX.utils.json_to_sheet(closedRows);
+  formatWorksheet(wsClosed, [16, 16, 18, 18, 18, 16]);
+  XLSX.utils.book_append_sheet(wb, wsClosed, "Closed Trades");
 
   // Tab 4: Tradebook
   const tradebookRows = data.ledgerEntries.map(l => ({
@@ -1148,14 +1214,16 @@ function exportPortfolioToExcel() {
     "Account": l.account,
     "Type": l.type,
     "Stock": l.stock,
-    "Qty": l.qty,
-    "Price": l.price,
-    "Cash Out": l.cashOut,
-    "Cash In": l.cashIn,
-    "Running Cash Balance": l.runningCash,
+    "Qty": Number(l.qty || 0),
+    "Price": Number(l.price || 0),
+    "Cash Out": Number(l.cashOut || 0),
+    "Cash In": Number(l.cashIn || 0),
+    "Running Cash Balance": Number(l.runningCash || 0),
     "Remarks": l.remarks
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tradebookRows), "Tradebook & Ledger");
+  const wsTradebook = XLSX.utils.json_to_sheet(tradebookRows);
+  formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 25]);
+  XLSX.utils.book_append_sheet(wb, wsTradebook, "Tradebook & Ledger");
 
   // Tab 5: Tax Audit
   const taxRows = data.taxClosedLots.map(t => ({
@@ -1163,28 +1231,32 @@ function exportPortfolioToExcel() {
     "Buy Date (FIFO)": t.buyDate,
     "Account": t.account,
     "Stock": t.stock,
-    "Qty": t.qty,
-    "Holding Days": t.days,
+    "Qty": Number(t.qty),
+    "Holding Days": Number(t.days),
     "Tax Class": t.isLtcg ? 'LTCG' : 'STCG',
-    "Cost Basis": t.costBasis,
-    "Proceeds": t.proceeds,
-    "Realized Gain/Loss": t.gain,
+    "Cost Basis": Number(t.costBasis),
+    "Proceeds": Number(t.proceeds),
+    "Realized Gain/Loss": Number(t.gain),
     "Quarter": t.quarter,
     "Financial Year": t.fy
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(taxRows), "Tax Audit Trail");
+  const wsTax = XLSX.utils.json_to_sheet(taxRows);
+  formatWorksheet(wsTax, [14, 14, 12, 16, 10, 14, 12, 16, 16, 18, 12, 14]);
+  XLSX.utils.book_append_sheet(wb, wsTax, "Tax Audit Trail");
 
   // Tab 6: Bank Ledger
   const bankRows = data.bankEntries.map(b => ({
     "Date": b.date,
     "Account": b.account,
     "Type": b.type,
-    "Deposit In": b.deposit,
-    "Withdrawal Out": b.withdrawal,
-    "Net Contributed Corpus": b.corpus,
+    "Deposit In": Number(b.deposit || 0),
+    "Withdrawal Out": Number(b.withdrawal || 0),
+    "Net Contributed Corpus": Number(b.corpus || 0),
     "Remarks": b.remarks
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bankRows), "Bank Ledger");
+  const wsBank = XLSX.utils.json_to_sheet(bankRows);
+  formatWorksheet(wsBank, [14, 12, 14, 16, 16, 22, 25]);
+  XLSX.utils.book_append_sheet(wb, wsBank, "Bank Ledger");
 
   // Tab 7: Performance Trajectory
   let trajectoryHistory = [];
@@ -1202,23 +1274,27 @@ function exportPortfolioToExcel() {
     "Net Capital": Math.round(data.netInvested || 0),
     "Profit": Math.round(data.lifetimePnL || 0)
   });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trajectoryHistory), "Performance Trajectory");
+  const wsTrajectory = XLSX.utils.json_to_sheet(trajectoryHistory);
+  formatWorksheet(wsTrajectory, [18, 18, 16, 16]);
+  XLSX.utils.book_append_sheet(wb, wsTrajectory, "Performance Trajectory");
 
   // Tab 8: Monthly RoC & Extreme Target
   const fourCurvePoints = computeRocFourCurves(data);
   const rocRows = fourCurvePoints.map(p => ({
     "Checkpoint": p.date,
-    "Start Capital": p.startCapital,
-    "Actual Value": p.actualVal,
-    "Net Capital Base": p.netCapBase,
-    "Monthly P&L (Delta Profit)": p.deltaProfit,
+    "Start Capital": Number(p.startCapital),
+    "Actual Value": Number(p.actualVal),
+    "Net Capital Base": Number(p.netCapBase),
+    "Monthly P&L (Delta Profit)": Number(p.deltaProfit),
     "Monthly RoC (%)": Number(p.rocPct.toFixed(2)),
-    "Pure 2% Target": p.pureTarget,
-    "Pure 2% Gap": p.pureGap,
-    "Extreme Target": p.ratchetTarget !== null ? p.ratchetTarget : "",
-    "Extreme Deficit": p.ratchetDeficit
+    "Pure 2% Target": Number(p.pureTarget),
+    "Pure 2% Gap": Number(p.pureGap),
+    "Extreme Target": p.ratchetTarget !== null ? Number(p.ratchetTarget) : 0,
+    "Extreme Deficit": Number(p.ratchetDeficit)
   }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rocRows), "Monthly RoC & Extreme Target");
+  const wsRoc = XLSX.utils.json_to_sheet(rocRows);
+  formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
+  XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
 
   const todayStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
@@ -2544,7 +2620,7 @@ window.addEventListener('click', function(e) {
   const txChevron = document.getElementById('txDropdownChevron');
   if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
     txMenu.classList.add('hidden');
-    if (chevron) chevron.classList.remove('rotate-180');
+    if (txChevron) txChevron.classList.remove('rotate-180');
     closeCorpActionSubmenu();
   }
 
