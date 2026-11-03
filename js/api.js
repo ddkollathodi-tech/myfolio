@@ -16,17 +16,20 @@ function updateSyncUI(status, isError) {
   if (cloudScriptUrl) {
     if (status) {
       syncStatus.innerText = status;
-      syncDot.className = isError
-        ? 'w-2 h-2 rounded-full bg-rose-500 animate-pulse'
-        : 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+      // Use rotating amber circular spinner during active sync states
+      syncDot.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
     } else {
       syncStatus.innerText = 'Synced';
-      syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+      // Solid green indicator dot on successful sync
+      syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
     }
   } else {
     syncStatus.innerText = 'Not synced';
-    syncDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+    // Solid red indicator dot when unlinked
+    syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
   }
+
+  if (window.lucide) lucide.createIcons();
 }
 
 async function fetchFromGoogleSheet() {
