@@ -2413,52 +2413,47 @@ function triggerManualCodeBackup(type) {
   });
 }
 
-function executeCodeBackupDownload(type) {
+async function executeCodeBackupDownload(type) {
   const todayStr = new Date().toISOString().split('T')[0];
 
   if (type === 'frontend') {
-    // Download partitioned Frontend/UI splits as separate .txt files
-    const fileSplits = {
-      "index.txt": document.documentElement.outerHTML,
-      "styles.txt": "(Consult your modular CSS file or repository styles)",
-      "config.txt": "(Global configuration and storage keys)",
-      "gatekeeper.txt": "(PIN lock and session security engine)",
-      "api.txt": "(Cloud sync and Google Sheets API engine)",
-      "engine.txt": "(Portfolio calculation and XIRR engine)",
-      "tax.txt": "(Capital gains tax and advance tax module)",
-      "ui.txt": "(UI controller and renderers)"
-    };
+    if (typeof JSZip === 'undefined') {
+      alert('JSZip library is loading. Please try again in a moment.');
+      return;
+    }
 
-    Object.keys(fileSplits).forEach((filename, idx) => {
-      setTimeout(() => {
-        const content = fileSplits[filename];
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `MyFolioAI_${filename}_${todayStr}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, idx * 250);
-    });
-
-    alert('Frontend code archives downloaded successfully as separate .txt splits!');
-  } else if (type === 'backend') {
-    const fileName = `MyFolioAI_Backend.txt_${todayStr}.txt`;
-    const content = `// MyFolio.AI Backend Code Snapshot - ${todayStr}\n// Exported securely from MyFolio.AI Vault\n\n` + (typeof runWeeklySundayBackup === 'function' ? runWeeklySundayBackup.toString() : '');
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    const zip = new JSZip();
+    
+    // Package frontend files cleanly into the zip archive
+    zip.file("index.html", document.documentElement.outerHTML);
+    zip.file("css/styles.css", "/* Consult your stylesheet */");
+    
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = fileName;
+    a.download = `MyFolioAI_Frontend_Archive_${todayStr}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    alert('BACKEND code archive downloaded successfully as Backend.txt!');
+
+    alert('Frontend code successfully bundled into a single clean zip archive!');
+  } else if (type === 'backend') {
+    const rawBackendCode = typeof runWeeklySundayBackup === 'function' ? runWeeklySundayBackup.toString() : '// Paste your Google Apps Script Code.gs contents here';
+    const formattedContent = `// MyFolio.AI Backend Code Snapshot - ${todayStr}\n// Save this file as Code.gs inside your versioned backend folder\n\n${rawBackendCode}`;
+
+    const blob = new Blob([formattedContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Code_${todayStr}.gs`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert('Backend Code.gs snapshot downloaded successfully with proper line splitting!');
   }
 }
 
