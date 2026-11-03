@@ -277,12 +277,20 @@
     <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
-          <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-          <span id="syncStatus">Ready to track.</span>
+          <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
+          <span id="syncStatus">Synced</span>
         </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-right">
+        <div class="flex items-center space-x-4 text-right">
           <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
-          <div>Last Data Backup: <span id="lastBackupTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not backed up yet</span></div>
+          
+          <!-- Database Backup Button with Dedicated Status Indicator Icon -->
+          <button onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Click to trigger manual database backup">
+            <span id="backupStatusIcon" class="flex items-center justify-center">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            </span>
+            <span>Last Data Backup:</span>
+            <span id="lastBackupTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not backed up yet</span>
+          </button>
         </div>
       </div>
     </div>
