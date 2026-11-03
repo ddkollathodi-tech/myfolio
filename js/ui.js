@@ -2424,66 +2424,75 @@ async function executeCodeBackupDownload(type) {
 
     const zip = new JSZip();
     
-    // 1. Pack index.html
-    zip.file("index.html", document.documentElement.outerHTML);
+    // Format HTML nicely with line breaks instead of a continuous paragraph block
+    let rawHtml = document.documentElement.outerHTML;
+    const formattedHtml = rawHtml
+      .replace(/></g, '>\n<')
+      .replace(/(<\/head>|<\/header>|<\/div>|<main|<section|<form)/gi, '\n$1');
 
-    // 2. Fetch and pack real CSS and Modular JS files via network/fetch or DOM script tags
+    // Save all frontend components as uniform .txt files inside the zip archive
+    zip.file("index.txt", formattedHtml);
+
     try {
-      // Fetch stylesheet
       const cssRes = await fetch("css/styles.css");
       if (cssRes.ok) {
-        zip.file("css/styles.css", await cssRes.text());
+        zip.file("styles.txt", await cssRes.text());
       } else {
-        zip.file("css/styles.css", "/* Stylesheet not found */");
+        zip.file("styles.txt", "/* Stylesheet content not found */");
       }
 
-      // Fetch all modular JS files in your architecture
       const jsFiles = ["config.js", "gatekeeper.js", "api.js", "engine.js", "tax.js", "ui.js"];
       for (const jsFile of jsFiles) {
         const jsRes = await fetch(`js/${jsFile}`);
         if (jsRes.ok) {
-          zip.file(`js/${jsFile}`, await jsRes.text());
+          // Convert each .js filename to a .txt extension inside the zip
+          const txtFileName = jsFile.replace('.js', '.txt');
+          zip.file(txtFileName, await jsRes.text());
         }
       }
     } catch (e) {
-      console.warn("Could not fetch some modular asset files automatically:", e);
+      console.warn("Asset text bundling warning:", e);
     }
 
-    // Generate the .zip blob securely
     const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `MyFolioAI_Frontend_Archive_${todayStr}.zip`;
+    a.download = `MyFolioAI_Frontend_Txt_Archive_${todayStr}.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    alert('Complete frontend code archive bundled successfully into a single zip file!');
+    alert('Frontend code successfully bundled into a .zip archive containing pure .txt files!');
   } else if (type === 'backend') {
-    // Provide a structured template pre-formatted with line splits for your Apps Script code
-    const formattedContent = `// ============================================================================
-// MyFolio.AI Backend Code.gs Snapshot - ${todayStr}
+    // Export backend template as a clean, line-split text file
+    const sampleBackendCode = `// ============================================================================
+// MyFolio.AI Backend Code Snapshot (.txt) - ${todayStr}
 // Instructions: Paste your complete Google Apps Script code from the online editor below.
 // ============================================================================
 
 function doGet(e) {
-  // Paste your backend functions here...
+  return ContentService.createTextService(JSON.stringify({status: "online"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function triggerDatabaseBackup() {
+  // Database backup routine
 }
 `;
 
-    const blob = new Blob([formattedContent], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([sampleBackendCode], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Code_${todayStr}.gs`;
+    a.download = `Backend_${todayStr}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    alert('Backend Code.gs template downloaded successfully with proper line splitting!');
+    alert('Backend .txt backup template downloaded successfully with proper line splitting!');
   }
 }
 
