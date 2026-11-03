@@ -90,7 +90,7 @@
     <header class="border-b border-slate-200/90 dark:border-gray-800/90 bg-white/95 dark:bg-gray-900/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
         
-        <!-- Brand Logo & Title (POINT 3: MyFolio.AI formatting) -->
+        <!-- Brand Logo & Title -->
         <div class="flex items-center space-x-3.5">
           <div class="h-10 w-10 rounded-xl bg-[#E6F6F1] dark:bg-emerald-950/60 border border-[#159A78]/25 flex items-center justify-center shadow-xs">
             <svg class="w-5 h-5 text-[#159A78] dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -106,10 +106,10 @@
           </div>
         </div>
 
-        <!-- Action Cluster: [Record Tx] [Live Prices] [Lock] [Settings ▾] -->
+        <!-- Action Cluster -->
         <div class="flex items-center flex-wrap gap-2 sm:gap-3">
           
-          <!-- 1. RECORD TRANSACTION DROPDOWN (POINT 2: Harmonized Neutral Styling) -->
+          <!-- 1. RECORD TRANSACTION DROPDOWN -->
           <div class="relative" id="txDropdownContainer">
             <button 
               id="txDropdownBtn" 
@@ -183,18 +183,21 @@
             </div>
           </div>
 
-          <!-- 2. LIVE PRICES -->
-          <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
-            <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-            <span id="refreshBtnText">Live Prices</span>
-          </button>
+          <!-- 2. LIVE PRICES & Price Timestamp Positioned -->
+          <div class="flex flex-col items-end">
+            <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition">
+              <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span id="refreshBtnText">Live Prices</span>
+            </button>
+            <span id="lastSyncedTime" class="text-[10px] text-slate-400 dark:text-gray-500 tabular-nums font-medium mt-0.5 mr-1">Not refreshed yet</span>
+          </div>
 
           <!-- 3. LOCK BUTTON -->
           <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-100/80 dark:hover:bg-gray-800/60 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-gray-300"></i>
           </button>
 
-          <!-- 4. SETTINGS DROPDOWN (POINT 9: Added Backup Section) -->
+          <!-- 4. SETTINGS DROPDOWN -->
           <div class="relative" id="settingsDropdownContainer">
             <button 
               onclick="toggleSettingsDropdown(event)" 
@@ -242,7 +245,7 @@
                 </button>
               </div>
 
-              <!-- POINT 9 & 10: Dedicated Backup Section in Settings (PIN text removed from brackets) -->
+              <!-- Dedicated Backup Section -->
               <div class="py-1">
                 <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Vault &amp; Code Backups</div>
                 <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
@@ -273,16 +276,21 @@
       </div>
     </header>
 
-    <!-- SYNC STATUS BAR -->
+    <!-- CLEAN SYNC & BACKUP STATUS BAR -->
     <div class="bg-white/60 dark:bg-gray-900/60 border-b border-slate-200/80 dark:border-gray-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-gray-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
-          <span id="syncDot" class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
-          <span id="syncStatus">Ready to track.</span>
+          <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
+          <span id="syncStatus">Synced</span>
         </div>
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-right">
-          <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not refreshed yet</span></div>
-          <div>Last Data Backup: <span id="lastBackupTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not backed up yet</span></div>
+        <div class="flex items-center space-x-2 text-right">
+          <button onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Click to trigger manual database backup">
+            <span id="backupStatusIcon" class="flex items-center justify-center">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            </span>
+            <span>Last Data Backup:</span>
+            <span id="lastBackupTime" class="text-slate-800 dark:text-gray-200 font-semibold tabular-nums">Not backed up yet</span>
+          </button>
         </div>
       </div>
     </div>
@@ -527,10 +535,9 @@
           </div>
         </div>
 
-        <!-- Chart Container with Y-Axis Frosted Overlay and Custom HTML Tooltip Container -->
+        <!-- Chart Container -->
         <div class="h-[330px] w-full relative overflow-hidden" id="chartCanvasWrapper">
           <canvas id="multiCurveChart"></canvas>
-          <div id="chartYAxisBlurOverlay" class="absolute top-0 left-0 bottom-7 pointer-events-none transition-all duration-200 z-10 hidden" style="width: 65px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(255,255,255,0.06);"></div>
           <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
         </div>
 
@@ -633,7 +640,6 @@
           </div>
 
           <div class="flex items-center space-x-2">
-            <!-- POINT 7: Subtle neutral grey card styling for cash available badge -->
             <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-xs font-bold text-slate-700 dark:text-gray-200 shadow-2xs">
               <i data-lucide="banknote" class="w-4 h-4 text-slate-500 dark:text-gray-400"></i>
               <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
@@ -689,6 +695,7 @@
           </table>
         </div>
       </div>
+
       <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
         <div class="flex items-center justify-between bg-white/70 dark:bg-gray-900/50 p-3 rounded-xl border border-slate-200 dark:border-gray-800">
@@ -904,7 +911,7 @@
         </div>
       </div>
 
-      <!-- TAB 6: TAX PLANNING COCKPIT (POINT 8: Stealth Eye Toggle Retained & Wired) -->
+      <!-- TAB 6: TAX PLANNING COCKPIT -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
         <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-900 p-4 rounded-xl border border-slate-200 dark:border-gray-800 shadow-xs">
           <div>
