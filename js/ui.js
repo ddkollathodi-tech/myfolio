@@ -158,16 +158,16 @@ function applyTheme(isDark) {
   }
 }
 
-/* ---------------- TIMESTAMP MANAGEMENT ---------------- */
+/* ---------------- TIMESTAMP MANAGEMENT (Streamlined Price Timestamp) ---------------- */
 function recordPriceUpdateTimestamp(customDate) {
   const d = customDate || new Date();
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = String(d.getFullYear()).slice(-2);
   const hours = String(d.getHours()).padStart(2, '0');
   const mins = String(d.getMinutes()).padStart(2, '0');
 
-  const formatted = `${day}-${month}-${year}, ${hours}:${mins}`;
+  // Streamlined format without year or prefix: e.g. 28-10, 15:48
+  const formatted = `${day}-${month}, ${hours}:${mins}`;
   localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
   renderLastPriceTimestamp();
 }
@@ -2269,7 +2269,7 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Manual Backup Triggers (POINT 9 & 10: PIN Gatekeeper for Code Backups)
+// 2. Manual Backup Trigger (Decoupled with Rotating Amber Spinner & Status Indicator)
 async function triggerManualDatabaseBackup() {
   closeSettingsDropdown();
   if (!cloudScriptUrl) {
@@ -2277,29 +2277,42 @@ async function triggerManualDatabaseBackup() {
     return;
   }
 
-  if (confirm('Execute manual backup of your Google Sheet database to the MyFolio_Vault_Backups folder?')) {
-    updateSyncUI('Backing up database...', false);
-    try {
-      let url = `${cloudScriptUrl}?action=triggerDatabaseBackup`;
-      if (apiToken) url += `&token=${encodeURIComponent(apiToken)}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if (json.status === 'success') {
-        const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
-        if (backupTime) {
-          recordBackupTimestamp(backupTime);
-        } else {
-          recordBackupTimestamp();
-        }
-        alert('Database backup created successfully in your Google Drive vault folder!');
-        updateSyncUI('Database backup complete.', false);
+  const iconEl = document.getElementById('backupStatusIcon');
+  if (iconEl) {
+    iconEl.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  try {
+    let url = `${cloudScriptUrl}?action=triggerDatabaseBackup`;
+    if (apiToken) url += `&token=${encodeURIComponent(apiToken)}`;
+    
+    const res = await fetch(url);
+    const json = await res.json();
+    
+    if (json.status === 'success') {
+      const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
+      if (backupTime) {
+        recordBackupTimestamp(backupTime);
       } else {
-        throw new Error(json.message || 'Unknown error');
+        recordBackupTimestamp();
       }
-    } catch (err) {
-      alert('Database backup failed: ' + err.toString());
-      updateSyncUI('Database backup failed.', true);
+
+      if (iconEl) {
+        iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+        if (window.lucide) lucide.createIcons();
+      }
+
+      alert('Database backup created successfully in your Google Drive vault folder!');
+    } else {
+      throw new Error(json.message || 'Unknown error');
     }
+  } catch (err) {
+    if (iconEl) {
+      iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block" title="Backup failed"></span>`;
+      if (window.lucide) lucide.createIcons();
+    }
+    alert('Database backup failed: ' + err.toString());
   }
 }
 
