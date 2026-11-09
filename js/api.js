@@ -16,16 +16,13 @@ function updateSyncUI(status, isError) {
   if (cloudScriptUrl) {
     if (status) {
       syncStatus.innerText = status;
-      // Use rotating amber circular spinner during active sync states
       syncDot.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
     } else {
       syncStatus.innerText = 'Synced';
-      // Solid green indicator dot on successful sync
       syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
     }
   } else {
     syncStatus.innerText = 'Not synced';
-    // Solid red indicator dot when unlinked
     syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
   }
 
@@ -91,18 +88,17 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
     }
 
-    // 6. Process Settings & PIN Hash (Strictly filtered to avoid offset pollution)
+    // 6. Process Settings & PIN Hash
     if (data && data.settings && typeof data.settings === 'object') {
       delete data.settings.cashOffsets;
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-      // ROBUST CROSS-DEVICE BACKUP TIMESTAMP SYNC FIX
+      // CROSS-DEVICE BACKUP TIMESTAMP SYNC FIX
       const cloudBackupTime = data.settings.lastDatabaseBackup;
-      if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
+      if (cloudBackupTime) {
         localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', cloudBackupTime);
       } else {
-        // Fallback or maintain local if sheet is uninitialized
         const existingLocalBackup = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
         if (!existingLocalBackup) {
           localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', 'Not backed up yet');
@@ -118,7 +114,7 @@ async function fetchFromGoogleSheet() {
       }
     }
 
-    // 7. Process Cash Calibration Map Independently (POINT 6)
+    // 7. Process Cash Calibration Map
     if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
       if (data.cashCalibration.offsets) {
         cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
