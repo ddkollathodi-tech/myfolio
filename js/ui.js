@@ -180,7 +180,31 @@ function renderLastPriceTimestamp() {
 }
 
 function recordBackupTimestamp(customStr) {
-  const formatted = customStr || `${String(new Date().getDate()).padStart(2, '0')}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getFullYear()).slice(-2)}, ${String(new Date().getHours()).padStart(2, '0')}:${String(new Date().getMinutes()).padStart(2, '0')}`;
+  let formatted = customStr;
+  
+  if (formatted && (formatted.includes('T') || formatted.length > 20 || formatted.includes('/'))) {
+    formatted = formatted.replace(/\//g, '-');
+    const parsedDate = new Date(formatted);
+    if (!isNaN(parsedDate.getTime())) {
+      const dd = String(parsedDate.getDate()).padStart(2, '0');
+      const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+      const yy = String(parsedDate.getFullYear()).slice(-2);
+      const hh = String(parsedDate.getHours()).padStart(2, '0');
+      const min = String(parsedDate.getMinutes()).padStart(2, '0');
+      formatted = `${dd}-${mm}-${yy}, ${hh}:${min}`;
+    }
+  }
+
+  if (!formatted) {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    formatted = `${dd}-${mm}-${yy}, ${hh}:${min}`;
+  }
+
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
 }
