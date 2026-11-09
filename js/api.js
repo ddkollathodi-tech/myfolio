@@ -96,6 +96,15 @@ async function fetchFromGoogleSheet() {
       delete data.settings.cashOffsets;
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+
+      // SYNC FIX: Pull lastDatabaseBackup from sheet settings into local storage and UI
+      if (data.settings.lastDatabaseBackup) {
+        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', data.settings.lastDatabaseBackup);
+        if (typeof renderLastBackupTimestamp === 'function') {
+          renderLastBackupTimestamp();
+        }
+      }
+
       if (typeof checkGatekeeperState === 'function') {
         checkGatekeeperState();
       }
