@@ -23,8 +23,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-  <!-- JSZip Library for Frontend Zip Packaging -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <!-- Modular Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
@@ -246,18 +244,10 @@
 
               <!-- Dedicated Backup Section -->
               <div class="py-1">
-                <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Vault &amp; Code Backups</div>
+                <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">Vault Backup</div>
                 <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
                   <i data-lucide="database-backup" class="w-4 h-4 text-emerald-600 mr-2.5"></i>
                   <span>Backup Database Now</span>
-                </button>
-                <button onclick="triggerManualCodeBackup('frontend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
-                  <i data-lucide="file-code" class="w-4 h-4 text-blue-600 mr-2.5"></i>
-                  <span>Backup Frontend Code</span>
-                </button>
-                <button onclick="triggerManualCodeBackup('backend')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-200 transition font-medium">
-                  <i data-lucide="terminal" class="w-4 h-4 text-purple-600 mr-2.5"></i>
-                  <span>Backup Backend Code</span>
                 </button>
               </div>
 
