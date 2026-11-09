@@ -97,12 +97,20 @@ async function fetchFromGoogleSheet() {
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-      // SYNC FIX: Pull lastDatabaseBackup from sheet settings into local storage and UI
-      if (data.settings.lastDatabaseBackup) {
-        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', data.settings.lastDatabaseBackup);
-        if (typeof renderLastBackupTimestamp === 'function') {
-          renderLastBackupTimestamp();
+      // ROBUST CROSS-DEVICE BACKUP TIMESTAMP SYNC FIX
+      const cloudBackupTime = data.settings.lastDatabaseBackup;
+      if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
+        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', cloudBackupTime);
+      } else {
+        // Fallback or maintain local if sheet is uninitialized
+        const existingLocalBackup = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
+        if (!existingLocalBackup) {
+          localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', 'Not backed up yet');
         }
+      }
+      
+      if (typeof renderLastBackupTimestamp === 'function') {
+        renderLastBackupTimestamp();
       }
 
       if (typeof checkGatekeeperState === 'function') {
