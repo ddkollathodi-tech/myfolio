@@ -5,7 +5,6 @@
 let multiChartInstance = null;
 let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
-let pendingCodeBackupType = null; // 'frontend' | 'backend' during PIN prompt
 
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
@@ -2345,7 +2344,7 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Manual Backup Trigger (Decoupled with Rotating Amber Spinner & Status Indicator)
+// 2. Manual Database Backup Trigger (Decoupled with Rotating Amber Spinner & Status Indicator)
 async function triggerManualDatabaseBackup() {
   closeSettingsDropdown();
   if (!cloudScriptUrl) {
@@ -2389,110 +2388,6 @@ async function triggerManualDatabaseBackup() {
       if (window.lucide) lucide.createIcons();
     }
     alert('Database backup failed: ' + err.toString());
-  }
-}
-
-function triggerManualCodeBackup(type) {
-  closeSettingsDropdown();
-  pendingCodeBackupType = type;
-
-  // POINT 10: Prompt for master security PIN verification before proceeding with code backup
-  const pinPrompt = prompt(`Enter your 4-digit Master Security PIN to authorize ${type.toUpperCase()} Code Backup:`);
-  if (!pinPrompt) {
-    pendingCodeBackupType = null;
-    return;
-  }
-
-  sha256Hex(pinPrompt.trim()).then(candidateHash => {
-    if (appSettings.pinHash && candidateHash === appSettings.pinHash) {
-      executeCodeBackupDownload(pendingCodeBackupType);
-    } else {
-      alert('Incorrect Security PIN. Code backup cancelled.');
-    }
-    pendingCodeBackupType = null;
-  });
-}
-
-async function executeCodeBackupDownload(type) {
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  if (type === 'frontend') {
-    if (typeof JSZip === 'undefined') {
-      alert('JSZip library is still loading. Please try again in a moment.');
-      return;
-    }
-
-    const zip = new JSZip();
-    
-    // Format HTML nicely with line breaks instead of a continuous paragraph block
-    let rawHtml = document.documentElement.outerHTML;
-    const formattedHtml = rawHtml
-      .replace(/></g, '>\n<')
-      .replace(/(<\/head>|<\/header>|<\/div>|<main|<section|<form)/gi, '\n$1');
-
-    // Save all frontend components as uniform .txt files inside the zip archive
-    zip.file("index.txt", formattedHtml);
-
-    try {
-      const cssRes = await fetch("css/styles.css");
-      if (cssRes.ok) {
-        zip.file("styles.txt", await cssRes.text());
-      } else {
-        zip.file("styles.txt", "/* Stylesheet content not found */");
-      }
-
-      const jsFiles = ["config.js", "gatekeeper.js", "api.js", "engine.js", "tax.js", "ui.js"];
-      for (const jsFile of jsFiles) {
-        const jsRes = await fetch(`js/${jsFile}`);
-        if (jsRes.ok) {
-          // Convert each .js filename to a .txt extension inside the zip
-          const txtFileName = jsFile.replace('.js', '.txt');
-          zip.file(txtFileName, await jsRes.text());
-        }
-      }
-    } catch (e) {
-      console.warn("Asset text bundling warning:", e);
-    }
-
-    const content = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(content);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `MyFolioAI_Frontend_Txt_Archive_${todayStr}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    alert('Frontend code successfully bundled into a .zip archive containing pure .txt files!');
-  } else if (type === 'backend') {
-    // Export backend template as a clean, line-split text file
-    const sampleBackendCode = `// ============================================================================
-// MyFolio.AI Backend Code Snapshot (.txt) - ${todayStr}
-// Instructions: Paste your complete Google Apps Script code from the online editor below.
-// ============================================================================
-
-function doGet(e) {
-  return ContentService.createTextService(JSON.stringify({status: "online"}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function triggerDatabaseBackup() {
-  // Database backup routine
-}
-`;
-
-    const blob = new Blob([sampleBackendCode], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Backend_${todayStr}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    alert('Backend .txt backup template downloaded successfully with proper line splitting!');
   }
 }
 
