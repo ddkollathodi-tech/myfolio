@@ -27,11 +27,11 @@
   <!-- Modular Stylesheet -->
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="bg-slate-50 dark:bg-[#090D16] text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-[#0A0C10] text-slate-800 dark:text-gray-100 min-h-screen flex flex-col antialiased custom-scroll transition-colors duration-200">
 
   <!-- PIN GATEKEEPER OVERLAY -->
-  <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-[#060910]/95 backdrop-blur-md p-4 transition-opacity duration-300">
-    <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-[#111622] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl p-7 text-center space-y-6">
+  <div id="pinGatekeeperOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 dark:bg-black/95 backdrop-blur-md p-4 transition-opacity duration-300">
+    <div id="pinCard" class="w-full max-w-sm bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-7 text-center space-y-6">
       
       <div class="flex flex-col items-center space-y-2">
         <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
@@ -53,29 +53,29 @@
 
       <!-- Numeric Keypad -->
       <div class="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
-        <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
-        <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
-        <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
-        <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
-        <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
-        <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
-        <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
-        <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
-        <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
+        <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
+        <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
+        <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
+        <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
+        <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
+        <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
+        <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
+        <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
+        <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
         <button onclick="clearPinInput()" class="h-13 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
-        <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
-        <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#182033] transition active:scale-95">
+        <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
+        <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
           <i data-lucide="delete" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="text-[11.5px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center space-x-1.5">
+      <div class="text-[11.5px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-[#222836] flex items-center justify-center space-x-1.5">
         <span>Type on keyboard or keypad. Reset:</span>
         <details class="relative inline-block text-left">
           <summary class="list-none cursor-pointer inline-flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none" title="Click for instructions">
             <i data-lucide="info" class="w-3.5 h-3.5"></i>
           </summary>
-          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-slate-900 dark:bg-[#182033] text-white text-[10.5px] rounded-xl shadow-2xl border border-slate-700 z-50 text-left leading-relaxed">
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-slate-900 dark:bg-[#1A1F2E] text-white text-[10.5px] rounded-xl shadow-2xl border border-slate-700 z-50 text-left leading-relaxed">
             Clear the <code class="font-mono text-emerald-400 bg-black/50 px-1 py-0.5 rounded">pinHash</code> row in your Google Sheet <b>Settings</b> tab to reset your PIN.
           </div>
         </details>
@@ -87,7 +87,7 @@
   <div id="app-root" class="flex-1 flex flex-col">
 
     <!-- TOP HEADER -->
-    <header class="border-b border-slate-200/90 dark:border-slate-800/80 bg-white/95 dark:bg-[#0C101A]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
+    <header class="border-b border-slate-200/90 dark:border-[#222836] bg-white/95 dark:bg-[#0E121B]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 py-3 flex flex-wrap items-center justify-between gap-4">
         
         <!-- Brand Logo & Title -->
@@ -114,7 +114,7 @@
             <button 
               id="txDropdownBtn" 
               onclick="toggleTxDropdown(event)" 
-              class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-400/40 bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800"
+              class="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold transition shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-400/40 bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#222836]"
             >
               <i data-lucide="file-pen-line" class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"></i>
               <span>Record Transaction</span>
@@ -124,38 +124,38 @@
             <!-- Dropdown Menu -->
             <div 
               id="txDropdownMenu" 
-              class="hidden absolute right-0 mt-2 w-52 bg-white dark:bg-[#111622] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-[12.5px]"
+              class="hidden absolute right-0 mt-2 w-52 bg-white dark:bg-[#131722] rounded-xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px]"
             >
-              <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition">
+              <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
                 <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
                 <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
               </button>
-              <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition">
+              <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
                 <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
                 <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
               </button>
-              <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition">
+              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
+              <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
                 <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
               </button>
-              <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition">
+              <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
                 <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
                 <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
               </button>
-              <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition">
+              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
+              <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
                 <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
                 <span class="font-semibold text-slate-500 dark:text-slate-400 mr-1.5">+</span> Record Fees
               </button>
 
               <!-- Corporate Actions Expandable Menu -->
-              <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
               <div class="relative">
                 <button 
                   type="button" 
                   onclick="toggleCorpActionSubmenu(event)" 
-                  class="w-full flex items-center justify-between px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium text-left"
+                  class="w-full flex items-center justify-between px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium text-left"
                 >
                   <span class="flex items-center">
                     <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
@@ -164,16 +164,16 @@
                   <i data-lucide="chevron-right" id="corpSubmenuChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150"></i>
                 </button>
 
-                <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-[#182033]/40 border-y border-slate-100 dark:border-slate-800">
-                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#202942] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
+                <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-[#1A1F2E]/40 border-y border-slate-100 dark:border-[#222836]">
+                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
                     <span>Bonus Issue (₹0 Cost)</span>
                   </button>
-                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#202942] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
+                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
                     <span>Stock Split (Ratio)</span>
                   </button>
-                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#202942] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
+                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
                     <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2"></span>
                     <span>Demerger Cost Adjust</span>
                   </button>
@@ -184,13 +184,13 @@
           </div>
 
           <!-- 2. LIVE PRICES -->
-          <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-[#182033]/60 transition">
+          <button id="refreshBtn" onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100/80 dark:hover:bg-[#1A1F2E]/60 transition">
             <i id="refreshIcon" data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span id="refreshBtnText">Live Prices</span>
           </button>
 
           <!-- 3. LOCK BUTTON -->
-          <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-[#182033]/60 transition" title="Instant PIN Lock Screen">
+          <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-[#1A1F2E]/60 transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
           </button>
 
@@ -199,7 +199,7 @@
             <button 
               onclick="toggleSettingsDropdown(event)" 
               id="settingsModalBtn" 
-              class="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-[#182033]/60 transition" 
+              class="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-[#1A1F2E]/60 transition" 
               title="Platform Settings"
             >
               <i data-lucide="settings" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i>
@@ -207,9 +207,9 @@
 
             <div 
               id="settingsDropdownMenu" 
-              class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-[#111622] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-slate-800"
+              class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-[#222836]"
             >
-              <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#182033] cursor-pointer flex items-center justify-between transition">
+              <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] cursor-pointer flex items-center justify-between transition">
                 <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-slate-200">
                   <i data-lucide="sun" id="settingsThemeIcon" class="w-4 h-4 text-amber-500"></i>
                   <span>Appearance</span>
@@ -224,19 +224,19 @@
 
               <!-- General Settings -->
               <div class="py-1">
-                <button onclick="openSyncModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="openSyncModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="cloud" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
                   <span>Google Sheets Sync</span>
                 </button>
-                <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="openPinSettingsModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 mr-2.5"></i>
                   <span>Master PIN &amp; Security</span>
                 </button>
-                <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="openCashCalibrateModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="sliders-horizontal" class="w-4 h-4 text-blue-500 mr-2.5"></i>
                   <span>Cash Calibration</span>
                 </button>
-                <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="openStockMasterModal()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="database" class="w-4 h-4 text-purple-500 mr-2.5"></i>
                   <span>Stock Master Registry</span>
                 </button>
@@ -245,7 +245,7 @@
               <!-- Dedicated Backup Section -->
               <div class="py-1">
                 <div class="px-3.5 py-1 text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Vault Backup</div>
-                <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="triggerManualDatabaseBackup()" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="database-backup" class="w-4 h-4 text-emerald-600 mr-2.5"></i>
                   <span>Backup Database Now</span>
                 </button>
@@ -253,7 +253,7 @@
 
               <!-- Export Excel -->
               <div class="py-1">
-                <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] text-slate-700 dark:text-slate-200 transition font-medium">
+                <button onclick="closeSettingsDropdown(); exportPortfolioToExcel();" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium">
                   <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2.5"></i>
                   <span>Export Excel Report (.xlsx)</span>
                 </button>
@@ -266,7 +266,7 @@
     </header>
 
     <!-- SYNC & STATUS BAR -->
-    <div class="bg-white/60 dark:bg-[#0C101A]/60 border-b border-slate-200/80 dark:border-slate-800/80 py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
+    <div class="bg-white/60 dark:bg-[#0E121B]/60 border-b border-slate-200/80 dark:border-[#222836]/80 py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
           <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
@@ -294,12 +294,12 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         
         <!-- 1. TOTAL NET WORTH -->
-        <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-[#111622] dark:via-[#111622] dark:to-[#182033] p-4 rounded-2xl border border-blue-100 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-blue-100 dark:border-[#222836] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Total Net Worth</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleSingleKpiMask('netWorth')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Worth Mask">
+                <button onclick="toggleSingleKpiMask('netWorth')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Worth Mask">
                   <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-4 h-4"></i>
                 </button>
                 <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
@@ -317,7 +317,7 @@
             </div>
           </div>
 
-          <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
               <span id="kpiNetWorthRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
@@ -329,12 +329,12 @@
         </div>
 
         <!-- 2. NET INVESTED -->
-        <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-[#111622] dark:via-[#111622] dark:to-[#182033] p-4 rounded-2xl border border-rose-100 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-rose-100 dark:border-[#222836] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Net Invested</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
+                <button onclick="toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
                   <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
@@ -347,7 +347,7 @@
             <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Contributed Corpus</div>
           </div>
 
-          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
               <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
@@ -359,12 +359,12 @@
         </div>
 
         <!-- 3. LIFETIME P&L -->
-        <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-[#111622] dark:via-[#111622] dark:to-[#182033] p-4 rounded-2xl border border-emerald-100 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-emerald-100 dark:border-[#222836] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Lifetime P&amp;L</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
+                <button onclick="toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
                   <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
@@ -377,7 +377,7 @@
             <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
           </div>
 
-          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
               <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
@@ -389,12 +389,12 @@
         </div>
 
         <!-- 4. CURRENT FY -->
-        <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-[#111622] dark:via-[#111622] dark:to-[#182033] p-4 rounded-2xl border border-amber-100 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-amber-100 dark:border-[#222836] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
               <div class="flex items-center space-x-1.5">
-                <button onclick="toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
+                <button onclick="toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
                   <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i>
                 </button>
                 <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
@@ -415,7 +415,7 @@
             </div>
           </div>
 
-          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
               <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
@@ -427,14 +427,14 @@
         </div>
 
         <!-- 5. ANNUALIZED XIRR -->
-        <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-[#111622] dark:via-[#111622] dark:to-[#182033] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+        <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-slate-200 dark:border-[#222836] shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-2">
               <div>
                 <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Annualized XIRR</span>
                 <span id="kpiXirrInception" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">Since —</span>
               </div>
-              <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#182033] text-slate-700 dark:text-slate-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
+              <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
                 <i data-lucide="percent" class="w-3.5 h-3.5"></i>
               </div>
             </div>
@@ -443,7 +443,7 @@
             <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Cash Flow IRR</div>
           </div>
 
-          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+          <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
               <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">0.00%</span>
               <span id="kpiXirrRem" class="text-slate-500 dark:text-slate-400">0.00% left</span>
@@ -457,7 +457,7 @@
       </div>
 
       <!-- PERFORMANCE CHART CARD -->
-      <div class="bg-white dark:bg-[#111622] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs transition-colors duration-200 space-y-4">
+      <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-xs transition-colors duration-200 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           
           <div class="flex items-center space-x-3.5">
@@ -472,24 +472,24 @@
 
               <div 
                 id="chartViewDropdownMenu" 
-                class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-[#111622] rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 z-50 text-[12.5px]"
+                class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px]"
               >
-                <button onclick="switchChartView('trajectory')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] transition">
+                <button onclick="switchChartView('trajectory')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] transition">
                   <div class="font-bold text-slate-800 dark:text-slate-100">Performance Trajectory</div>
                   <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
                 </button>
-                <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#182033] transition border-t border-slate-100 dark:border-slate-800">
+                <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] transition border-t border-slate-100 dark:border-[#222836]">
                   <div class="font-bold text-slate-800 dark:text-slate-100">Monthly RoC Curve</div>
                   <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure 2% &amp; Extreme Target</div>
                 </button>
               </div>
             </div>
             
-            <div class="inline-flex items-center bg-slate-100 dark:bg-[#182033] p-0.5 rounded-lg border border-slate-200/90 dark:border-slate-700/80 shadow-2xs">
+            <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs">
               <button 
                 id="chartRangeBtn-TTM" 
                 onclick="setChartRange('TTM')" 
-                class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-[#111622] text-slate-900 dark:text-white shadow-xs"
+                class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-xs"
               >
                 TTM
               </button>
@@ -519,7 +519,7 @@
             <button 
               id="chartMaskToggleBtn" 
               onclick="toggleTabMask('chart')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-200/90 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 transition" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-200/90 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition" 
               title="Toggle Chart Numbers Stealth Mask"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-3.5 h-3.5"></i>
@@ -530,15 +530,15 @@
         <!-- Chart Container -->
         <div class="h-[330px] w-full relative overflow-hidden" id="chartCanvasWrapper">
           <canvas id="multiCurveChart"></canvas>
-          <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#111622]/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
+          <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-[#222836] bg-white/95 dark:bg-[#131722]/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
         </div>
 
         <!-- Trailing 12 Months Accordion -->
-        <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80">
+        <div class="pt-2 border-t border-slate-100 dark:border-[#222836]/80">
           <button 
             type="button" 
             onclick="toggleTtmTableAccordion()" 
-            class="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-[#182033]/50 dark:hover:bg-[#182033] text-xs font-semibold text-slate-700 dark:text-slate-300 transition"
+            class="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-[#1A1F2E]/50 dark:hover:bg-[#1A1F2E] text-xs font-semibold text-slate-700 dark:text-slate-300 transition"
           >
             <span class="flex items-center space-x-2">
               <i data-lucide="table" class="w-4 h-4 text-emerald-500"></i>
@@ -547,9 +547,9 @@
             <i data-lucide="chevron-down" id="ttmAccordionChevron" class="w-4 h-4 transition-transform duration-200"></i>
           </button>
 
-          <div id="ttmTableContainer" class="hidden mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+          <div id="ttmTableContainer" class="hidden mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222836]">
             <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
-              <thead id="ttmTableHead" class="bg-slate-100 dark:bg-[#090D16]/70 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+              <thead id="ttmTableHead" class="bg-slate-100 dark:bg-[#0A0C10]/70 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
                   <th class="py-2.5 px-3">Month / Checkpoint</th>
                   <th class="py-2.5 px-3 text-right">Portfolio Value</th>
@@ -560,7 +560,7 @@
                   <th class="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">Return on Net Cap (%)</th>
                 </tr>
               </thead>
-              <tbody id="ttmTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+              <tbody id="ttmTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
             </table>
           </div>
         </div>
@@ -568,7 +568,7 @@
       </div>
 
       <!-- TABS NAVIGATION BAR -->
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 gap-2">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] gap-2">
         <div class="flex space-x-2 overflow-x-auto custom-scroll flex-1 py-0.5">
           <button onclick="switchTab('holdings')" id="tabBtn-holdings" class="tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap">
             <i data-lucide="briefcase" class="w-4 h-4"></i>
@@ -599,7 +599,7 @@
 
       <!-- TAB 1: ACTIVE HOLDINGS -->
       <div id="tabContent-holdings" class="space-y-4">
-        <div id="holdingsRatioBarContainer" class="bg-white dark:bg-[#111622] p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+        <div id="holdingsRatioBarContainer" class="bg-white dark:bg-[#131722] p-3 rounded-xl border border-slate-200 dark:border-[#222836] space-y-2">
           <div class="flex items-center justify-between text-xs font-semibold">
             <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -617,22 +617,22 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-[#111622]/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
           <div class="flex items-center flex-wrap gap-2.5">
-            <div class="inline-flex items-center bg-slate-100 dark:bg-[#182033] p-0.5 rounded-lg border border-slate-200/90 dark:border-slate-700/80 shadow-2xs text-xs font-semibold">
-              <button onclick="setHoldingsAccountFilter('ALL')" id="holdingsAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#111622] text-slate-900 dark:text-white shadow-xs">Combined</button>
+            <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs text-xs font-semibold">
+              <button onclick="setHoldingsAccountFilter('ALL')" id="holdingsAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-xs">Combined</button>
               <button onclick="setHoldingsAccountFilter('Me')" id="holdingsAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Me</button>
               <button onclick="setHoldingsAccountFilter('Wife')" id="holdingsAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
               <button onclick="setHoldingsAccountFilter('Mom')" id="holdingsAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
               <button onclick="setHoldingsAccountFilter('Brother')" id="holdingsAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
             </div>
 
-            <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
+            <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
             <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="holdingsCount">0 Open Positions</span>
           </div>
 
           <div class="flex items-center space-x-2">
-            <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#182033] border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs">
+            <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs">
               <i data-lucide="banknote" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
               <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
               <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-sm">₹0.00</span>
@@ -640,7 +640,7 @@
 
             <button 
               onclick="toggleTabMask('holdings')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition shrink-0" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0" 
               title="Toggle Holdings Privacy Mask"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
@@ -648,9 +648,9 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
                   <div class="flex items-center space-x-1.5">
@@ -683,27 +683,27 @@
                 <th class="py-3 px-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 font-normal"></tbody>
+            <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80 font-normal"></tbody>
           </table>
         </div>
       </div>
 
       <!-- TAB 2: CLOSED TRADES -->
       <div id="tabContent-closedTrades" class="space-y-4 hidden">
-        <div class="flex items-center justify-between bg-white/70 dark:bg-[#111622]/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
           <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Closed Trades Portfolio</div>
           <button 
             onclick="toggleTabMask('closedTrades')" 
-            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition" 
             title="Toggle Closed Trades Privacy Mask"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
           </button>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
                   <div class="flex items-center space-x-1.5">
@@ -740,14 +740,14 @@
                 </th>
               </tr>
             </thead>
-            <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80 font-normal"></tbody>
+            <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80 font-normal"></tbody>
           </table>
         </div>
 
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
-            <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Previous</button>
+            <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
               <span>Page</span>
               <input 
@@ -756,22 +756,22 @@
                 min="1" 
                 value="1" 
                 onchange="jumpToClosedPage(this.value)" 
-                class="w-12 text-center rounded bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
               <span id="closedTotalPagesLabel">of 1</span>
             </div>
-            <button id="closedNextBtn" onclick="nextClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Next</button>
+            <button id="closedNextBtn" onclick="nextClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
       </div>
 
       <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
       <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-        <div class="flex items-center justify-between bg-white/70 dark:bg-[#111622]/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
           <div class="text-xs font-bold text-slate-700 dark:text-slate-300">FIFO Realized History by Financial Year</div>
           <button 
             onclick="toggleTabMask('fyBreakdown')" 
-            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition" 
             title="Toggle FY P&L Privacy Mask"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-3.5 h-3.5"></i>
@@ -779,9 +779,9 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
                 <th class="py-3 px-4 text-right">Realized Sell Value</th>
@@ -790,30 +790,30 @@
                 <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Realized Return (%)</th>
               </tr>
             </thead>
-            <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
       </div>
 
       <!-- TAB 4: TRADEBOOK & LEDGER -->
       <div id="tabContent-transactions" class="space-y-4 hidden">
-        <div class="flex items-center justify-between bg-white/70 dark:bg-[#111622]/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800 gap-3">
+        <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836] gap-3">
           <div class="flex items-center space-x-2.5">
-            <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
+            <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
             <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="ledgerCountBadge">0 Entries</span>
           </div>
           <button 
             onclick="toggleTabMask('ledger')" 
-            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition shrink-0" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0" 
             title="Toggle Ledger Privacy Mask"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
           </button>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th class="py-3 px-4">Date</th>
                 <th class="py-3 px-2">Account</th>
@@ -827,14 +827,14 @@
                 <th class="py-3 px-4">Remarks</th>
               </tr>
             </thead>
-            <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
 
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
-            <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Previous</button>
+            <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
               <span>Page</span>
               <input 
@@ -843,31 +843,31 @@
                 min="1" 
                 value="1" 
                 onchange="jumpToLedgerPage(this.value)" 
-                class="w-12 text-center rounded bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
               <span id="ledgerTotalPagesLabel">of 1</span>
             </div>
-            <button id="ledgerNextBtn" onclick="nextLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Next</button>
+            <button id="ledgerNextBtn" onclick="nextLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
       </div>
 
       <!-- TAB 5: BANK LEDGER -->
       <div id="tabContent-bankLedger" class="space-y-4 hidden">
-        <div class="flex items-center justify-between bg-white/70 dark:bg-[#111622]/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
           <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Bank Capital Deposits &amp; Withdrawals</div>
           <button 
             onclick="toggleTabMask('bankLedger')" 
-            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 transition shrink-0" 
+            class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0" 
             title="Toggle Bank Ledger Privacy Mask"
           >
             <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
           </button>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th class="py-3 px-4">Date</th>
                 <th class="py-3 px-2">Account</th>
@@ -878,14 +878,14 @@
                 <th class="py-3 px-4">Remarks</th>
               </tr>
             </thead>
-            <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
 
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
           <div class="flex items-center space-x-2">
-            <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Previous</button>
+            <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
             <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
               <span>Page</span>
               <input 
@@ -894,18 +894,18 @@
                 min="1" 
                 value="1" 
                 onchange="jumpToBankLedgerPage(this.value)" 
-                class="w-12 text-center rounded bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
               />
               <span id="bankLedgerTotalPagesLabel">of 1</span>
             </div>
-            <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#182033] dark:hover:bg-[#202942] font-semibold disabled:opacity-40">Next</button>
+            <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
           </div>
         </div>
       </div>
 
       <!-- TAB 6: TAX PLANNING COCKPIT -->
       <div id="tabContent-taxPnl" class="space-y-5 hidden">
-        <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#111622] p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#131722] p-4 rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs">
           <div>
             <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <span>Capital Gains Tax &amp; Advance Tax Schedule</span>
@@ -917,11 +917,11 @@
           <div class="flex items-center flex-wrap gap-2">
             <div class="flex items-center space-x-1.5 text-xs">
               <span class="text-slate-500 dark:text-slate-400 font-medium">FY:</span>
-              <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
+              <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
             </div>
 
-            <div class="inline-flex items-center bg-slate-100 dark:bg-[#182033] p-0.5 rounded-lg border border-slate-200/90 dark:border-slate-700/80 shadow-2xs text-xs font-semibold">
-              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#111622] text-slate-900 dark:text-white shadow-xs">Me</button>
+            <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs text-xs font-semibold">
+              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-xs">Me</button>
               <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
               <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
               <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
@@ -930,7 +930,7 @@
 
             <button 
               onclick="toggleTabMask('taxPnl')" 
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] border border-slate-200/90 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 transition ml-2" 
+              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-200/90 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition ml-2" 
               title="Toggle Tax Cockpit Stealth Mask"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-3.5 h-3.5"></i>
@@ -967,8 +967,8 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-[#111622] rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-xs space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-[#222836] pb-3">
             <div class="flex items-center space-x-2.5">
               <div class="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <i data-lucide="radar" class="w-4 h-4"></i>
@@ -979,14 +979,14 @@
               </div>
             </div>
 
-            <div id="harvestLtcgTrackerPill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#182033] border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+            <div id="harvestLtcgTrackerPill" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] border border-slate-200 dark:border-slate-700 text-xs font-semibold">
               <span class="text-slate-500 dark:text-slate-400">₹1.25L LTCG Room:</span>
               <span id="harvestLtcgRoomVal" class="text-emerald-600 dark:text-emerald-400 font-extrabold tabular-nums">₹1,25,000 available</span>
             </div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#090D16]/40 border border-slate-200 dark:border-slate-800/80 space-y-2.5">
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0A0C10]/40 border border-slate-200 dark:border-[#222836]/80 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -998,7 +998,7 @@
               <div id="profitHarvestList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
             </div>
 
-            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#090D16]/40 border border-slate-200 dark:border-slate-800/80 space-y-2.5">
+            <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0A0C10]/40 border border-slate-200 dark:border-[#222836]/80 space-y-2.5">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-rose-500"></span>
@@ -1012,9 +1012,9 @@
           </div>
         </div>
 
-        <div class="overflow-x-auto bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs max-h-[550px] custom-scroll">
+        <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-            <thead class="bg-slate-100/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+            <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
               <tr>
                 <th class="py-3 px-4">Head of Capital Gain</th>
                 <th class="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Gross Realized Gains</th>
@@ -1027,11 +1027,11 @@
                 <th class="py-3 px-4 text-right font-bold text-rose-600 dark:text-rose-400">Net Tax Payable (₹)</th>
               </tr>
             </thead>
-            <tbody id="taxComputationTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+            <tbody id="taxComputationTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
 
-        <div class="bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3">
+        <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <div>
               <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -1045,7 +1045,7 @@
 
           <div class="overflow-x-auto max-h-[400px] custom-scroll">
             <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-50/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+              <thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
                   <th class="py-2.5 px-3">Quarter</th>
                   <th class="py-2.5 px-3">Due Date Period</th>
@@ -1057,12 +1057,12 @@
                   <th class="py-2.5 px-4 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody id="advanceTaxTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+              <tbody id="advanceTaxTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
             </table>
           </div>
         </div>
 
-        <div class="bg-white dark:bg-[#111622] rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3">
+        <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
               <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
@@ -1073,7 +1073,7 @@
 
           <div class="overflow-x-auto max-h-[450px] custom-scroll">
             <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-50/95 dark:bg-[#090D16]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur">
+              <thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
                   <th class="py-2.5 px-3">Sell Date</th>
                   <th class="py-2.5 px-2">Account</th>
@@ -1088,7 +1088,7 @@
                   <th class="py-2.5 px-2 text-center">Quarter</th>
                 </tr>
               </thead>
-              <tbody id="taxAuditTableBody" class="divide-y divide-slate-100 dark:divide-slate-800/80"></tbody>
+              <tbody id="taxAuditTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
             </table>
           </div>
         </div>
@@ -1100,8 +1100,8 @@
 
   <!-- MODAL: RECORD TRANSACTION & CORPORATE ACTIONS -->
   <div id="txModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Transaction</h3>
         <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -1113,11 +1113,11 @@
         <div class="grid grid-cols-3 gap-3">
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">Date</label>
-            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white">
+            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">Account</label>
-            <select id="txAccount" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+            <select id="txAccount" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
               <option value="Me">Me</option>
               <option value="Wife">Wife</option>
               <option value="Mom">Mom</option>
@@ -1126,7 +1126,7 @@
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1">Type</label>
-            <select id="txType" onchange="toggleFormFields()" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+            <select id="txType" onchange="toggleFormFields()" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
               <option value="BUY">BUY</option>
               <option value="SELL">SELL</option>
               <option value="DEPOSIT">DEPOSIT</option>
@@ -1148,32 +1148,32 @@
               list="stockSuggestionsList" 
               placeholder="e.g. RELIANCE" 
               autocomplete="off"
-              class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
+              class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
             >
             <datalist id="stockSuggestionsList"></datalist>
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1" id="txQtyLabel">Quantity / New Factor</label>
-            <input type="number" step="any" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
+            <input type="number" step="any" min="1" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
           </div>
           <div>
             <label class="block text-slate-500 dark:text-slate-400 mb-1" id="txPriceLabel">Price / Old Factor</label>
-            <input type="number" step="any" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
+            <input type="number" step="any" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
           </div>
         </div>
 
         <div id="txAmountFieldGroup">
           <label class="block text-slate-500 dark:text-slate-400 mb-1">Total Amount (₹)</label>
-          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white mono-font">
+          <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white mono-font">
         </div>
 
         <div>
           <label class="block text-slate-500 dark:text-slate-400 mb-1">Remarks</label>
-          <input type="text" id="txRemarks" placeholder="Note / Reference / Corporate Action Details" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white">
+          <input type="text" id="txRemarks" placeholder="Note / Reference / Corporate Action Details" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
+        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
           <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
         </div>
       </form>
@@ -1182,8 +1182,8 @@
 
   <!-- MODAL: MANUAL LTP ENTRY -->
   <div id="livePricesModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <i data-lucide="refresh-cw" class="w-5 h-5"></i>
@@ -1204,8 +1204,8 @@
 
       <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
 
-      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-        <button type="button" onclick="closeLivePricesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 text-xs font-semibold">Cancel</button>
+      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
+        <button type="button" onclick="closeLivePricesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Cancel</button>
         <button type="button" onclick="saveAllLivePrices()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-xs">Save &amp; Recalculate</button>
       </div>
     </div>
@@ -1213,8 +1213,8 @@
 
   <!-- MODAL: SET TARGET MILESTONES -->
   <div id="goalModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2">
           <div id="goalModalIconBadge" class="h-7 w-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
             <i id="goalModalIcon" data-lucide="target" class="w-4 h-4"></i>
@@ -1232,13 +1232,13 @@
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1" id="goalInputLabel">Target Value</label>
           <div class="relative">
             <span class="absolute left-3 top-2 text-slate-400 font-bold" id="goalInputPrefix">₹</span>
-            <input type="number" step="any" id="goalModalInput" class="w-full bg-slate-50 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg pl-7 pr-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-sm focus:outline-none focus:border-blue-500">
+            <input type="number" step="any" id="goalModalInput" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg pl-7 pr-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-sm focus:outline-none focus:border-blue-500">
           </div>
         </div>
       </div>
 
-      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-        <button type="button" onclick="closeGoalModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 text-xs font-medium">Cancel</button>
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-[#222836]">
+        <button type="button" onclick="closeGoalModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-medium">Cancel</button>
         <button type="button" onclick="saveGoalMilestone()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs">Save Target</button>
       </div>
     </div>
@@ -1246,8 +1246,8 @@
 
   <!-- MODAL: GOOGLE SHEETS SYNC -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2">
           <i data-lucide="cloud" class="w-5 h-5 text-emerald-500 dark:text-emerald-400"></i>
           <h3 class="text-base font-bold text-slate-900 dark:text-white">Google Sheets Cloud Sync</h3>
@@ -1260,20 +1260,20 @@
       <div class="space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
         <div>
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Web App Deployment URL</label>
-          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
         </div>
 
         <div>
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">API Secret Token (Handshake)</label>
-          <input type="password" id="apiTokenInput" placeholder="Enter matching API_SECRET key" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+          <input type="password" id="apiTokenInput" placeholder="Enter matching API_SECRET key" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
           <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1">Leave empty if you haven't configured an <code>API_SECRET</code> Script Property.</p>
         </div>
       </div>
 
-      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-[#222836]">
         <button onclick="disconnectCloudSync()" class="text-xs text-rose-500 hover:text-rose-600 dark:hover:text-rose-400">Disconnect</button>
         <div class="flex items-center space-x-2">
-          <button onclick="closeSyncModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 text-xs">Cancel</button>
+          <button onclick="closeSyncModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs">Cancel</button>
           <button onclick="saveAndFetchCloud()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs">Save &amp; Pull Data</button>
         </div>
       </div>
@@ -1282,8 +1282,8 @@
 
   <!-- DEDICATED MODAL 1: PIN & SECURITY SETTINGS -->
   <div id="pinSettingsModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-2xs">
             <i data-lucide="shield-check" class="w-5 h-5"></i>
@@ -1301,21 +1301,21 @@
       <div class="space-y-3 text-xs">
         <div id="currentPinFieldGroup">
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Current 4-Digit PIN</label>
-          <input type="password" maxlength="4" id="settingsCurrentPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <input type="password" maxlength="4" id="settingsCurrentPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
         </div>
         <div>
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">New 4-Digit PIN</label>
-          <input type="password" maxlength="4" id="settingsNewPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <input type="password" maxlength="4" id="settingsNewPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
         </div>
         <div>
           <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Confirm New PIN</label>
-          <input type="password" maxlength="4" id="settingsConfirmPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <input type="password" maxlength="4" id="settingsConfirmPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
         </div>
         <div id="settingsPinMsg" class="text-xs font-semibold h-4 text-rose-500 opacity-0 transition-opacity"></div>
       </div>
 
-      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-        <button type="button" onclick="closePinSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 font-medium text-xs">Cancel</button>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836]">
+        <button type="button" onclick="closePinSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium text-xs">Cancel</button>
         <button type="button" onclick="updatePinFromSettings()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-2xs">Update PIN</button>
       </div>
     </div>
@@ -1323,8 +1323,8 @@
 
   <!-- DEDICATED MODAL 2: CASH CALIBRATION -->
   <div id="cashCalibrateModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-2xs">
             <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
@@ -1351,8 +1351,8 @@
 
       <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1 text-xs" id="cashCalibrateRows"></div>
 
-      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-        <button type="button" onclick="closeCashCalibrateModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
+      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836] text-xs">
+        <button type="button" onclick="closeCashCalibrateModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
         <button type="button" onclick="saveCashCalibration()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-2xs">Save &amp; Calibrate Baseline</button>
       </div>
     </div>
@@ -1360,8 +1360,8 @@
 
   <!-- DEDICATED MODAL 3: STOCK MASTER REGISTRY -->
   <div id="stockMasterModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-2xs">
             <i data-lucide="database" class="w-5 h-5"></i>
@@ -1384,7 +1384,7 @@
             id="smSymbolInput" 
             required 
             placeholder="e.g. TATAMOTORS, DANISH" 
-            class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-purple-500"
+            class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-purple-500"
           >
         </div>
 
@@ -1395,14 +1395,14 @@
             id="smNameInput" 
             required 
             placeholder="e.g. Tata Motors Limited" 
-            class="w-full bg-slate-100 dark:bg-[#182033] border border-slate-300 dark:border-slate-700 rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
+            class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
           >
         </div>
 
         <div id="smStatusMsg" class="text-xs font-semibold h-4 text-emerald-500 opacity-0 transition-opacity"></div>
 
-        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <button type="button" onclick="closeStockMasterModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836]">
+          <button type="button" onclick="closeStockMasterModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
           <button type="submit" class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-2xs">Save Ticker</button>
         </div>
       </form>
@@ -1411,8 +1411,8 @@
 
   <!-- MODAL: AUTOMATIC MONTH-END REVIEW -->
   <div id="monthEndReviewModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#111622] border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+    <div class="bg-white dark:bg-[#131722] border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
         <div class="flex items-center space-x-2.5">
           <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
             <i data-lucide="calendar-check" class="w-5 h-5"></i>
@@ -1433,7 +1433,7 @@
 
       <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
 
-      <div class="bg-slate-50 dark:bg-[#090D16] p-3 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5">
+      <div class="bg-slate-50 dark:bg-[#0A0C10] p-3 rounded-2xl border border-slate-200 dark:border-[#222836] text-xs space-y-1.5">
         <div class="flex justify-between text-slate-500 dark:text-slate-400">
           <span>Total Stock Value:</span>
           <b id="meModalStockVal" class="text-slate-900 dark:text-white font-bold tabular-nums">₹0.00</b>
@@ -1442,14 +1442,14 @@
           <span>Cash Balance + Net Capital:</span>
           <span class="text-slate-700 dark:text-slate-300 tabular-nums"><b id="meModalCash">₹0</b> / <b id="meModalNetCap">₹0</b></span>
         </div>
-        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 font-bold text-slate-900 dark:text-white">
+        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-[#222836] font-bold text-slate-900 dark:text-white">
           <span>Computed Month-End Net Worth &amp; Profit:</span>
           <span class="text-emerald-600 dark:text-emerald-400 tabular-nums"><span id="meModalPortVal">₹0.00</span> (<span id="meModalProfit">₹0.00</span>)</span>
         </div>
       </div>
 
-      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#182033] hover:bg-slate-200 dark:hover:bg-[#202942] text-slate-700 dark:text-slate-300 text-xs font-semibold">Remind Me Later</button>
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-[#222836]">
+        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Remind Me Later</button>
         <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-xs">Confirm &amp; Record Month-End</button>
       </div>
     </div>
