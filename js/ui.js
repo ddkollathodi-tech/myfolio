@@ -1926,6 +1926,22 @@ async function handleTransactionSubmit(e) {
   if (['BUY', 'SELL'].includes(type) && !amount) amount = qty * price;
   if (type === 'BONUS') amount = 0;
 
+  // CRITICAL FIX: Overselling Validation Check
+  if (type === 'SELL') {
+    const engineData = computeEngine();
+    let availableQty = 0;
+    engineData.openLots.forEach(lot => {
+      if (lot.stock === stock && lot.account === account) {
+        availableQty += lot.qty;
+      }
+    });
+
+    if (qty > availableQty) {
+      alert(`Overselling Error: You are attempting to sell ${qty} shares of ${stock} from account '${account}', but only ${availableQty} shares are available in open lots.`);
+      return;
+    }
+  }
+
   const newEntry = {
     id: Date.now().toString(),
     date,
@@ -2113,6 +2129,8 @@ function getPrecedingMonthEndDate() {
 }
 
 function checkPendingMonthEndSnapshot() {
+  // CRITICAL SECURITY FIX: Block month-end popup if PIN lock-screen gatekeeper is active
+  if (typeof isAppLocked !== 'undefined' && isAppLocked) return;
   if (!transactions || transactions.length === 0) return;
 
   const lastMonthEnd = getPrecedingMonthEndDate();
@@ -2129,6 +2147,9 @@ function checkPendingMonthEndSnapshot() {
 }
 
 function openMonthEndReviewModal(cutoffDate, targetDateStr) {
+  // CRITICAL SECURITY FIX: Double check gatekeeper state
+  if (typeof isAppLocked !== 'undefined' && isAppLocked) return;
+
   currentPendingMonthEndDateStr = targetDateStr;
   document.getElementById('monthEndDateDisplay').innerText = targetDateStr;
   document.getElementById('monthEndModalSubtitle').innerText = `Provide closing prices as of ${targetDateStr}`;
@@ -2240,14 +2261,12 @@ async function commitMonthEndSnapshot() {
     stockVal += (qty * p);
 
     if (p > 0) {
+      // CRITICAL FIX: Snapshot Price-Overwrite Isolation. 
+      // Do NOT overwrite active live savedManualPrices/marketPrices globally with historical month-end closes.
+      // We only save them to the historical record payload.
       batchPrices[sym] = { ltp: p, prevClose: p };
-      savedManualPrices[sym] = { ltp: p, prevClose: p };
-      marketPrices[sym] = { ltp: p, prevClose: p };
     }
   });
-
-  localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-  recordPriceUpdateTimestamp();
 
   const portVal = cash + stockVal;
   const profit = portVal - netCap;
@@ -2264,9 +2283,6 @@ async function commitMonthEndSnapshot() {
 
   if (cloudScriptUrl) {
     sendToSheet(snapshotPayload);
-    if (Object.keys(batchPrices).length > 0) {
-      sendToSheet({ action: "savePrices", prices: batchPrices });
-    }
   }
 
   chartHistoryRecords.push({
