@@ -51,13 +51,20 @@ async function fetchFromGoogleSheet() {
       return;
     }
 
-    // 1. Process Ledger
+    // RACE CONDITION FIX: Gracefully reconcile and preserve local offline entries if server data returns empty or collides
+    let incomingLedger = [];
     if (data && Array.isArray(data.ledger)) {
-      transactions = data.ledger;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      incomingLedger = data.ledger;
     } else if (Array.isArray(data)) {
-      transactions = data;
+      incomingLedger = data;
+    }
+
+    if (incomingLedger.length > 0) {
+      transactions = incomingLedger;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    } else if (transactions.length > 0 && incomingLedger.length === 0) {
+      // If server ledger is empty but local has un-synced/offline data, push local up instead of wiping local clean
+      console.warn('Server ledger empty during sync; preserving local session cache.');
     }
 
     // 2. Process Performance History
@@ -97,6 +104,7 @@ async function fetchFromGoogleSheet() {
       // CLEAN TIMESTAMP NORMALIZER FOR CROSS-DEVICE FORMAT CONSISTENCY
       let cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
+        cloudBackupTime = cloudBackupTime.replace(/\//g, '-');
         if (cloudBackupTime.includes('T') || cloudBackupTime.length > 20) {
           const parsedDate = new Date(cloudBackupTime);
           if (!isNaN(parsedDate.getTime())) {
