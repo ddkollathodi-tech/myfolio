@@ -14,7 +14,6 @@ const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
 const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
-const KPI_MASK_STATES_KEY = 'MYFOLIOAI_KPI_MASK_STATES';
 const TAB_MASK_STATES_KEY = 'MYFOLIOAI_TAB_MASK_STATES'; // Stealth Tab Masks
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
 
@@ -97,10 +96,10 @@ try {
 }
 
 let marketPrices = Object.assign({
-  'RELIANCE': { ltp: 2980.50, prevClose: 2950.00 },
-  'TCS': { ltp: 4210.00, prevClose: 4185.00 },
-  'HDFCBANK': { ltp: 1680.25, prevClose: 1675.00 },
-  'INFY': { ltp: 1895.00, prevClose: 1910.00 }
+  'RELIANCE': { ltp: 2980.50 },
+  'TCS': { ltp: 4210.00 },
+  'HDFCBANK': { ltp: 1680.25 },
+  'INFY': { ltp: 1895.00 }
 }, savedManualPrices);
 
 // Active View & Filter State
