@@ -9,11 +9,7 @@ function computeEngine() {
     const da = new Date(a.date).getTime();
     const db = new Date(b.date).getTime();
     if (da !== db) return da - db;
-    
-    // Deterministic tie-breaker: Stock Ticker Alphabetical, then Amount
-    const sa = (a.stock || '').localeCompare(b.stock || '');
-    if (sa !== 0) return sa;
-    return Number(a.amount || 0) - Number(b.amount || 0);
+    return (a.id || '').localeCompare(b.id || '');
   });
 
   const openLots = [];
@@ -34,7 +30,7 @@ function computeEngine() {
 
   sortedTx.forEach(tx => {
     const amt = Number(tx.amount || 0);
-    const qty = tx.qty === 'NA' || tx.qty === '—' ? 0 : Number(tx.qty || 0);
+    const qty = Number(tx.qty || 0);
     const price = Number(tx.price || 0);
     const stock = (tx.stock || '').toUpperCase().trim();
     const acct = tx.account || 'Unassigned';
@@ -90,7 +86,7 @@ function computeEngine() {
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= buyCost;
 
         openLots.push({
-          id: String(Math.random()),
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -102,16 +98,6 @@ function computeEngine() {
 
       case 'SELL': {
         const sellProceeds = amt > 0 ? amt : (qty * price);
-        
-        // Engine-Level Oversell Protection
-        const availableQty = openLots
-          .filter(l => l.stock === stock && l.account === acct && l.qty > 0)
-          .reduce((sum, l) => sum + l.qty, 0);
-
-        if (qty > availableQty) {
-          console.warn(`[Engine Warning] Oversell detected for ${stock} in account '${acct}': Requested sell qty (${qty}) exceeds available open lots (${availableQty}). Proceeding with available stock allocation.`);
-        }
-
         runningCash += sellProceeds;
         cashIn = sellProceeds;
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] += sellProceeds;
@@ -175,7 +161,7 @@ function computeEngine() {
 
       case 'BONUS':
         openLots.push({
-          id: String(Math.random()),
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -199,7 +185,7 @@ function computeEngine() {
 
       case 'DEMERGER':
         openLots.push({
-          id: String(Math.random()),
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -331,7 +317,7 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// TIME-NORMALIZED 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
+// POINT 4: TIME-NORMALIZED 4-CURVE COMPOUNDING & ROC CALCULATIONS
 // ----------------------------------------------------------------------------
 function getElapsedMonths(dateStr1, dateStr2) {
   if (!dateStr1 || !dateStr2 || dateStr1 === 'Current' || dateStr2 === 'Current') return 1;
