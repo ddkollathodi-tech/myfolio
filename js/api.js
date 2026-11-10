@@ -73,11 +73,43 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
     }
 
-    // 3. Process Custom / Manual Prices
+    // 3. Process Custom / Manual Prices & Extract Latest Timestamp from Prices Sheet
     if (data && data.customPrices && typeof data.customPrices === 'object') {
       savedManualPrices = Object.assign(savedManualPrices, data.customPrices);
       marketPrices = Object.assign(marketPrices, savedManualPrices);
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+
+      // Extract the latest manual price update timestamp directly from the Prices tab records
+      let latestPriceTime = '';
+      Object.values(data.customPrices).forEach(pObj => {
+        if (pObj && pObj.lastUpdated) {
+          if (!latestPriceTime || new Date(pObj.lastUpdated) > new Date(latestPriceTime)) {
+            latestPriceTime = pObj.lastUpdated;
+          }
+        }
+      });
+
+      if (latestPriceTime) {
+        let formattedPriceTime = latestPriceTime.replace(/\//g, '-');
+        const parsedDate = new Date(formattedPriceTime);
+        if (!isNaN(parsedDate.getTime())) {
+          const dd = String(parsedDate.getDate()).padStart(2, '0');
+          const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const hh = String(parsedDate.getHours()).padStart(2, '0');
+          const min = String(parsedDate.getMinutes()).padStart(2, '0');
+          formattedPriceTime = `${dd}-${mm}, ${hh}:${min}`;
+        }
+        localStorage.setItem(LAST_PRICE_UPDATE_KEY, formattedPriceTime);
+      } else {
+        const existingPriceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
+        if (!existingPriceTime) {
+          localStorage.setItem(LAST_PRICE_UPDATE_KEY, 'Not refreshed yet');
+        }
+      }
+
+      if (typeof renderLastPriceTimestamp === 'function') {
+        renderLastPriceTimestamp();
+      }
     }
 
     // 4. Process Stock Master
