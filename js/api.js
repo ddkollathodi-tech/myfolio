@@ -1,7 +1,46 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
-// Integrates: Token Handshake Auth, Cross-Device Sync, Offline Cache & Modals
+// Integrates: Token Handshake Auth, Permanent UUID Backfill, ID-Based Merge & Modals
 // ============================================================================
+
+// Helper to generate secure UUID v4 for permanent transaction identity
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// Ensure every transaction has an immutable transactionId, timestamps, and status
+function ensureTransactionIdentity(txList) {
+  if (!Array.isArray(txList)) return [];
+  let modified = false;
+  const processed = txList.map(tx => {
+    let tId = tx.transactionId || tx.id;
+    if (!tId) {
+      tId = generateUUID();
+      modified = true;
+    }
+    return {
+      transactionId: tId,
+      date: tx.date || new Date().toISOString().split('T')[0],
+      account: tx.account || 'Me',
+      type: tx.type || 'BUY',
+      stock: (tx.stock || '').toUpperCase().trim(),
+      qty: Number(tx.qty || 0),
+      price: Number(tx.price || 0),
+      amount: Number(tx.amount || 0),
+      remarks: tx.remarks || '',
+      createdAt: tx.createdAt || new Date().toISOString(),
+      updatedAt: tx.updatedAt || new Date().toISOString(),
+      status: tx.status || 'active'
+    };
+  });
+  return { processed, modified };
+}
 
 function updateSyncUI(status, isError) {
   const syncDot = document.getElementById('syncDot');
@@ -51,19 +90,35 @@ async function fetchFromGoogleSheet() {
       return;
     }
 
-    // RACE CONDITION FIX: Gracefully reconcile and preserve local offline entries if server data returns empty or collides
-    let incomingLedger = [];
+    // 1. Process & Backfill Ledger Transactions with Permanent IDs
+    let rawIncoming = [];
     if (data && Array.isArray(data.ledger)) {
-      incomingLedger = data.ledger;
+      rawIncoming = data.ledger;
     } else if (Array.isArray(data)) {
-      incomingLedger = data;
+      rawIncoming = data;
     }
 
+    const { processed: incomingLedger, modified: ledgerBackfilled } = ensureTransactionIdentity(rawIncoming);
+
     if (incomingLedger.length > 0) {
-      transactions = incomingLedger;
+      // Safe ID-Based Merge: Keep server data as master, but preserve any local active entries not yet pushed
+      const serverMap = new Map(incomingLedger.map(t => [t.transactionId, t]));
+      
+      // Check local un-synced or newer items
+      transactions.forEach(localTx => {
+        const lId = localTx.transactionId || localTx.id;
+        if (lId && !serverMap.has(lId)) {
+          serverMap.set(lId, localTx); // Retain local offline items
+        }
+      });
+
+      transactions = Array.from(serverMap.values());
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      
+      if (ledgerBackfilled) {
+        console.log('[Migration] Historical transactions backfilled with permanent transactionIds.');
+      }
     } else if (transactions.length > 0 && incomingLedger.length === 0) {
-      // If server ledger is empty but local has un-synced/offline data, push local up instead of wiping local clean
       console.warn('Server ledger empty during sync; preserving local session cache.');
     }
 
@@ -170,6 +225,12 @@ async function sendToSheet(payload) {
       payload.token = apiToken;
     }
 
+    // Ensure payload transaction has permanent identity fields attached
+    if (payload.action === 'appendTx' && payload.tx) {
+      const { processed } = ensureTransactionIdentity([payload.tx]);
+      payload.tx = processed[0];
+    }
+
     await fetch(cloudScriptUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -182,7 +243,12 @@ async function sendToSheet(payload) {
 }
 
 async function appendToGoogleSheet(txData) {
-  await sendToSheet(txData);
+  // Guarantee transaction object has its permanent ID before sending
+  const { processed } = ensureTransactionIdentity([txData]);
+  await sendToSheet({
+    action: 'appendTx',
+    tx: processed[0]
+  });
 }
 
 function persistManualPrice(stock, ltp) {
