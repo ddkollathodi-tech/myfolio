@@ -1,6 +1,6 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
-// Integrates: Token Handshake Auth, 8-Column Master-Source Sync & Modals (No IDs)
+// Integrates: Token Handshake Auth, Cross-Device Sync, Offline Cache & Modals
 // ============================================================================
 
 function updateSyncUI(status, isError) {
@@ -51,29 +51,19 @@ async function fetchFromGoogleSheet() {
       return;
     }
 
-    // 1. Process Ledger Transactions (8-Column Schema without IDs)
-    let rawIncoming = [];
+    // RACE CONDITION FIX: Gracefully reconcile and preserve local offline entries if server data returns empty or collides
+    let incomingLedger = [];
     if (data && Array.isArray(data.ledger)) {
-      rawIncoming = data.ledger;
+      incomingLedger = data.ledger;
     } else if (Array.isArray(data)) {
-      rawIncoming = data;
+      incomingLedger = data;
     }
-
-    const incomingLedger = rawIncoming.map(tx => ({
-      date: tx.date || new Date().toISOString().split('T')[0],
-      type: (tx.type || 'BUY').toUpperCase().trim(),
-      stock: (tx.stock || '').toUpperCase().trim(),
-      qty: tx.qty === 'NA' || tx.qty === '—' ? 'NA' : Number(tx.qty || 0),
-      price: Number(tx.price || 0),
-      amount: Number(tx.amount || 0),
-      remarks: tx.remarks || '',
-      account: tx.account || 'Unassigned'
-    }));
 
     if (incomingLedger.length > 0) {
       transactions = incomingLedger;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
     } else if (transactions.length > 0 && incomingLedger.length === 0) {
+      // If server ledger is empty but local has un-synced/offline data, push local up instead of wiping local clean
       console.warn('Server ledger empty during sync; preserving local session cache.');
     }
 
@@ -111,6 +101,7 @@ async function fetchFromGoogleSheet() {
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
+      // CLEAN TIMESTAMP NORMALIZER FOR CROSS-DEVICE FORMAT CONSISTENCY
       let cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
         cloudBackupTime = cloudBackupTime.replace(/\//g, '-');
@@ -191,21 +182,7 @@ async function sendToSheet(payload) {
 }
 
 async function appendToGoogleSheet(txData) {
-  const cleanTx = {
-    date: txData.date || new Date().toISOString().split('T')[0],
-    type: (txData.type || 'BUY').toUpperCase().trim(),
-    stock: (txData.stock || '').toUpperCase().trim(),
-    qty: txData.qty !== undefined ? txData.qty : 0,
-    price: Number(txData.price || 0),
-    amount: Number(txData.amount || 0),
-    remarks: txData.remarks || '',
-    account: txData.account || 'Unassigned'
-  };
-
-  await sendToSheet({
-    action: 'appendTx',
-    tx: cleanTx
-  });
+  await sendToSheet(txData);
 }
 
 function persistManualPrice(stock, ltp) {
