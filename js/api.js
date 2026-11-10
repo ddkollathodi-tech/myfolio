@@ -14,7 +14,7 @@ function generateUUID() {
   });
 }
 
-// Ensure every transaction has an immutable transactionId, timestamps, and status
+// Ensure every transaction has an immutable transactionId, mirrored legacy id, timestamps, and status
 function ensureTransactionIdentity(txList) {
   if (!Array.isArray(txList)) return [];
   let modified = false;
@@ -26,6 +26,7 @@ function ensureTransactionIdentity(txList) {
     }
     return {
       transactionId: tId,
+      id: tId, // Mirror as id for absolute backward compatibility with UI and storage tables
       date: tx.date || new Date().toISOString().split('T')[0],
       account: tx.account || 'Me',
       type: tx.type || 'BUY',
