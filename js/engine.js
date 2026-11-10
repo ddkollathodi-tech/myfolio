@@ -1,7 +1,7 @@
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & 4-Curve Math (engine.js)
 // Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR, 
-//             Multi-Account Segregation, Tax Audit Trail & 4-Curve RoC
+//             Multi-Account Segregation, Tax Audit Trail & Time-Normalized 4-Curve RoC
 // ============================================================================
 
 function computeEngine() {
@@ -9,7 +9,11 @@ function computeEngine() {
     const da = new Date(a.date).getTime();
     const db = new Date(b.date).getTime();
     if (da !== db) return da - db;
-    return (a.id || '').localeCompare(b.id || '');
+    
+    // Deterministic tie-breaker: Stock Ticker Alphabetical, then Amount
+    const sa = (a.stock || '').localeCompare(b.stock || '');
+    if (sa !== 0) return sa;
+    return Number(a.amount || 0) - Number(b.amount || 0);
   });
 
   const openLots = [];
@@ -30,7 +34,7 @@ function computeEngine() {
 
   sortedTx.forEach(tx => {
     const amt = Number(tx.amount || 0);
-    const qty = Number(tx.qty || 0);
+    const qty = tx.qty === 'NA' || tx.qty === '—' ? 0 : Number(tx.qty || 0);
     const price = Number(tx.price || 0);
     const stock = (tx.stock || '').toUpperCase().trim();
     const acct = tx.account || 'Unassigned';
@@ -86,7 +90,7 @@ function computeEngine() {
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= buyCost;
 
         openLots.push({
-          id: tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -98,6 +102,16 @@ function computeEngine() {
 
       case 'SELL': {
         const sellProceeds = amt > 0 ? amt : (qty * price);
+        
+        // Engine-Level Oversell Protection
+        const availableQty = openLots
+          .filter(l => l.stock === stock && l.account === acct && l.qty > 0)
+          .reduce((sum, l) => sum + l.qty, 0);
+
+        if (qty > availableQty) {
+          console.warn(`[Engine Warning] Oversell detected for ${stock} in account '${acct}': Requested sell qty (${qty}) exceeds available open lots (${availableQty}). Proceeding with available stock allocation.`);
+        }
+
         runningCash += sellProceeds;
         cashIn = sellProceeds;
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] += sellProceeds;
@@ -161,7 +175,7 @@ function computeEngine() {
 
       case 'BONUS':
         openLots.push({
-          id: tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -171,7 +185,7 @@ function computeEngine() {
         break;
 
       case 'SPLIT': {
-        // POINT 5: Zero-division safeguard fallback
+        // Zero-division safeguard fallback
         const effectiveOldPrice = price > 0 ? price : 1;
         const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
         openLots.forEach(lot => {
@@ -185,7 +199,7 @@ function computeEngine() {
 
       case 'DEMERGER':
         openLots.push({
-          id: tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -317,8 +331,18 @@ function computeEngine() {
 }
 
 // ----------------------------------------------------------------------------
-// POINT 2: 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
+// TIME-NORMALIZED 4-CURVE COMPOUNDING ENGINE & ROC CALCULATIONS
 // ----------------------------------------------------------------------------
+function getElapsedMonths(dateStr1, dateStr2) {
+  if (!dateStr1 || !dateStr2 || dateStr1 === 'Current' || dateStr2 === 'Current') return 1;
+  const d1 = new Date(dateStr1);
+  const d2 = new Date(dateStr2);
+  if (isNaN(d1) || isNaN(d2)) return 1;
+  const diffYears = d2.getFullYear() - d1.getFullYear();
+  const diffMonths = d2.getMonth() - d1.getMonth();
+  return Math.max(1, diffYears * 12 + diffMonths);
+}
+
 function computeRocFourCurves(computed) {
   const points = [];
 
@@ -348,8 +372,8 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  // 3. Compute Recursive 4 Curves
-  const rate = ROC_TARGET_MONTHLY_RATE; // 2% per month
+  // 3. Compute Time-Normalized Recursive 4 Curves
+  const monthlyRate = typeof ROC_TARGET_MONTHLY_RATE !== 'undefined' ? ROC_TARGET_MONTHLY_RATE : 0.02; // 2% per month default
   let prevPureTarget = points[0].netCapital;
   let prevRatchetTarget = points[0].netCapital;
 
@@ -359,6 +383,10 @@ function computeRocFourCurves(computed) {
 
     // Delta Capital Injected this period
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
+    
+    // Calculate exact elapsed months between checkpoints for time-normalization
+    const deltaMonths = prev ? getElapsedMonths(prev.date, curr.date) : 1;
+    const compoundFactor = Math.pow(1 + monthlyRate, deltaMonths);
 
     // Curve 1: Actual Track
     const actualVal = curr.portfolioValue;
@@ -366,26 +394,26 @@ function computeRocFourCurves(computed) {
     // Curve 2: Contributed Capital Base
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Pure 2% Compound Hurdle
+    // Curve 3: Time-Normalized Compound Hurdle
     let pureTarget = 0;
     if (i === 0) {
       pureTarget = netCapBase;
     } else {
-      pureTarget = Math.round((prevPureTarget * (1 + rate)) + deltaCapital);
+      pureTarget = Math.round((prevPureTarget * compoundFactor) + deltaCapital);
     }
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target (demanding high-water mark benchmark)
+    // Curve 4: Aggressive Ratchet Target (Time-Normalized)
     let ratchetTarget = 0;
     if (i === 0) {
       ratchetTarget = netCapBase;
     } else {
       const peakBase = Math.max(prevRatchetTarget, prev.portfolioValue);
-      ratchetTarget = Math.round((peakBase * (1 + rate)) + deltaCapital);
+      ratchetTarget = Math.round((peakBase * compoundFactor) + deltaCapital);
     }
     prevRatchetTarget = ratchetTarget;
 
-    // RoC Analytics for the month
+    // RoC Analytics for the period
     const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
     const startCapital = prev ? prev.portfolioValue : netCapBase;
     const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
