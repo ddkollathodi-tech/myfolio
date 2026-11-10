@@ -3,7 +3,7 @@
 // Integrates: Token Handshake Auth, Cross-Device Sync, Offline Cache & Modals
 // ============================================================================
 
-function updateSyncUI(status, isError) {
+function updateSyncUI(status) {
   const syncDot = document.getElementById('syncDot');
   const syncStatus = document.getElementById('syncStatus');
   const cloudSyncText = document.getElementById('cloudSyncText');
@@ -32,7 +32,7 @@ function updateSyncUI(status, isError) {
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return;
 
-  updateSyncUI('Syncing', false);
+  updateSyncUI('Syncing');
 
   try {
     let url = `${cloudScriptUrl}?action=getAll`;
@@ -46,7 +46,7 @@ async function fetchFromGoogleSheet() {
     const data = await response.json();
 
     if (data && data.status === 'error' && String(data.message).includes('Unauthorized')) {
-      updateSyncUI('Not synced', true);
+      updateSyncUI('Not synced');
       alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
       return;
     }
@@ -144,7 +144,7 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
     }
 
-    updateSyncUI(null, false);
+    updateSyncUI(null);
     if (typeof recalculateAndRender === 'function') {
       recalculateAndRender();
     }
@@ -155,7 +155,7 @@ async function fetchFromGoogleSheet() {
 
   } catch (err) {
     console.error('Failed to sync with Google Sheet:', err);
-    updateSyncUI('Not synced', true);
+    updateSyncUI('Not synced');
     if (typeof recalculateAndRender === 'function') {
       recalculateAndRender();
     }
@@ -179,10 +179,6 @@ async function sendToSheet(payload) {
   } catch (err) {
     console.error('Background sendToSheet failed:', err);
   }
-}
-
-async function appendToGoogleSheet(txData) {
-  await sendToSheet(txData);
 }
 
 function persistManualPrice(stock, ltp) {
@@ -228,7 +224,7 @@ function saveAndFetchCloud() {
   localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
 
   closeSyncModal();
-  updateSyncUI('Syncing', false);
+  updateSyncUI('Syncing');
 
   if (cloudScriptUrl) {
     fetchFromGoogleSheet();
