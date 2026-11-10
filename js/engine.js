@@ -1,7 +1,7 @@
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & Hardened Math (engine.js)
 // Integrates: Strict FIFO, Deterministic Sorting, Oversell Safeguards, 
-//             Multi-Account Segregation, Tax Audit Trail & Time-Normalized RoC
+//             Multi-Account Segregation, Tax Audit Trail & Time-Normalized RoC (No IDs)
 // ============================================================================
 
 function computeEngine() {
@@ -10,13 +10,10 @@ function computeEngine() {
     const db = new Date(b.date).getTime();
     if (da !== db) return da - db;
     
-    // Secondary tie-breaker: Creation timestamp
-    const ca = new Date(a.createdAt || 0).getTime();
-    const cb = new Date(b.createdAt || 0).getTime();
-    if (ca !== cb) return ca - cb;
-
-    // Final deterministic tie-breaker: Permanent Transaction ID
-    return (a.transactionId || a.id || '').localeCompare(b.transactionId || b.id || '');
+    // Fallback deterministic tie-breaker using stock and amount
+    const sa = (a.stock || '').localeCompare(b.stock || '');
+    if (sa !== 0) return sa;
+    return Number(a.amount || 0) - Number(b.amount || 0);
   });
 
   const openLots = [];
@@ -36,11 +33,8 @@ function computeEngine() {
   const bankEntries = [];
 
   sortedTx.forEach(tx => {
-    // Skip soft-deleted transactions
-    if (tx.status === 'deleted') return;
-
     const amt = Number(tx.amount || 0);
-    const qty = Number(tx.qty || 0);
+    const qty = tx.qty === 'NA' || tx.qty === '—' ? 0 : Number(tx.qty || 0);
     const price = Number(tx.price || 0);
     const stock = (tx.stock || '').toUpperCase().trim();
     const acct = tx.account || 'Unassigned';
@@ -96,7 +90,7 @@ function computeEngine() {
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= buyCost;
 
         openLots.push({
-          id: tx.transactionId || tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -181,7 +175,7 @@ function computeEngine() {
 
       case 'BONUS':
         openLots.push({
-          id: tx.transactionId || tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -204,7 +198,7 @@ function computeEngine() {
 
       case 'DEMERGER':
         openLots.push({
-          id: tx.transactionId || tx.id || String(Math.random()),
+          id: String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -215,7 +209,6 @@ function computeEngine() {
     }
 
     ledgerEntries.push({
-      transactionId: tx.transactionId || tx.id || '',
       date: tx.date,
       account: acct,
       type: tx.type,
@@ -303,7 +296,6 @@ function computeEngine() {
   // Accurate Cash-Flow XIRR Calculation
   const cashFlows = [];
   sortedTx.forEach(t => {
-    if (t.status === 'deleted') return;
     const amt = Number(t.amount || 0);
     if (t.type === 'DEPOSIT') {
       cashFlows.push({ date: new Date(t.date), amount: -amt });
@@ -386,7 +378,7 @@ function computeRocFourCurves(computed) {
   if (points.length === 0) return [];
 
   // 3. Compute Time-Normalized Recursive 4 Curves
-  const monthlyRate = typeof ROC_TARGET_MONTHLY_RATE !== 'undefined' ? ROC_TARGET_MONTHLY_RATE : 0.02; // 2% per month default
+  const monthlyRate = typeof ROC_TARGET_MONTHLY_RATE !== 'undefined' ? ROC_TARGET_MONTHLY_RATE : 0.02;
   let prevPureTarget = points[0].netCapital;
   let prevRatchetTarget = points[0].netCapital;
 
@@ -394,20 +386,13 @@ function computeRocFourCurves(computed) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
-    // Delta Capital Injected this period
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
-    
-    // Calculate exact elapsed months between checkpoints for time-normalization
     const deltaMonths = prev ? getElapsedMonths(prev.date, curr.date) : 1;
     const compoundFactor = Math.pow(1 + monthlyRate, deltaMonths);
 
-    // Curve 1: Actual Track
     const actualVal = curr.portfolioValue;
-
-    // Curve 2: Contributed Capital Base
     const netCapBase = curr.netCapital;
 
-    // Curve 3: Time-Normalized Compound Hurdle
     let pureTarget = 0;
     if (i === 0) {
       pureTarget = netCapBase;
@@ -416,7 +401,6 @@ function computeRocFourCurves(computed) {
     }
     prevPureTarget = pureTarget;
 
-    // Curve 4: Aggressive Ratchet Target (Time-Normalized)
     let ratchetTarget = 0;
     if (i === 0) {
       ratchetTarget = netCapBase;
@@ -426,7 +410,6 @@ function computeRocFourCurves(computed) {
     }
     prevRatchetTarget = ratchetTarget;
 
-    // RoC Analytics for the period
     const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
     const startCapital = prev ? prev.portfolioValue : netCapBase;
     const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
