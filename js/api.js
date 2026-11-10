@@ -1,47 +1,7 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
-// Integrates: Token Handshake Auth, Permanent UUID Backfill, Master-Source Sync & Modals
+// Integrates: Token Handshake Auth, 8-Column Master-Source Sync & Modals (No IDs)
 // ============================================================================
-
-// Helper to generate secure UUID v4 for permanent transaction identity
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
-
-// Ensure every transaction has an immutable transactionId, mirrored legacy id, timestamps, and status
-function ensureTransactionIdentity(txList) {
-  if (!Array.isArray(txList)) return [];
-  let modified = false;
-  const processed = txList.map(tx => {
-    let tId = tx.transactionId || tx.id;
-    if (!tId) {
-      tId = generateUUID();
-      modified = true;
-    }
-    return {
-      transactionId: tId,
-      id: tId, // Mirror as id for absolute backward compatibility with UI and storage tables
-      date: tx.date || new Date().toISOString().split('T')[0],
-      account: tx.account || 'Me',
-      type: tx.type || 'BUY',
-      stock: (tx.stock || '').toUpperCase().trim(),
-      qty: Number(tx.qty || 0),
-      price: Number(tx.price || 0),
-      amount: Number(tx.amount || 0),
-      remarks: tx.remarks || '',
-      createdAt: tx.createdAt || new Date().toISOString(),
-      updatedAt: tx.updatedAt || new Date().toISOString(),
-      status: tx.status || 'active'
-    };
-  });
-  return { processed, modified };
-}
 
 function updateSyncUI(status, isError) {
   const syncDot = document.getElementById('syncDot');
@@ -91,7 +51,7 @@ async function fetchFromGoogleSheet() {
       return;
     }
 
-    // 1. Process & Backfill Ledger Transactions with Permanent IDs
+    // 1. Process Ledger Transactions (8-Column Schema without IDs)
     let rawIncoming = [];
     if (data && Array.isArray(data.ledger)) {
       rawIncoming = data.ledger;
@@ -99,16 +59,20 @@ async function fetchFromGoogleSheet() {
       rawIncoming = data;
     }
 
-    const { processed: incomingLedger, modified: ledgerBackfilled } = ensureTransactionIdentity(rawIncoming);
+    const incomingLedger = rawIncoming.map(tx => ({
+      date: tx.date || new Date().toISOString().split('T')[0],
+      type: (tx.type || 'BUY').toUpperCase().trim(),
+      stock: (tx.stock || '').toUpperCase().trim(),
+      qty: tx.qty === 'NA' || tx.qty === '—' ? 'NA' : Number(tx.qty || 0),
+      price: Number(tx.price || 0),
+      amount: Number(tx.amount || 0),
+      remarks: tx.remarks || '',
+      account: tx.account || 'Unassigned'
+    }));
 
     if (incomingLedger.length > 0) {
-      // Google Sheet is the master source: incoming server ledger dictates active state directly
       transactions = incomingLedger;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-      
-      if (ledgerBackfilled) {
-        console.log('[Migration] Historical transactions backfilled with permanent transactionIds.');
-      }
     } else if (transactions.length > 0 && incomingLedger.length === 0) {
       console.warn('Server ledger empty during sync; preserving local session cache.');
     }
@@ -147,7 +111,6 @@ async function fetchFromGoogleSheet() {
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-      // CLEAN TIMESTAMP NORMALIZER FOR CROSS-DEVICE FORMAT CONSISTENCY
       let cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
         cloudBackupTime = cloudBackupTime.replace(/\//g, '-');
@@ -216,12 +179,6 @@ async function sendToSheet(payload) {
       payload.token = apiToken;
     }
 
-    // Ensure payload transaction has permanent identity fields attached
-    if (payload.action === 'appendTx' && payload.tx) {
-      const { processed } = ensureTransactionIdentity([payload.tx]);
-      payload.tx = processed[0];
-    }
-
     await fetch(cloudScriptUrl, {
       method: 'POST',
       mode: 'no-cors',
@@ -234,11 +191,20 @@ async function sendToSheet(payload) {
 }
 
 async function appendToGoogleSheet(txData) {
-  // Guarantee transaction object has its permanent ID before sending
-  const { processed } = ensureTransactionIdentity([txData]);
+  const cleanTx = {
+    date: txData.date || new Date().toISOString().split('T')[0],
+    type: (txData.type || 'BUY').toUpperCase().trim(),
+    stock: (txData.stock || '').toUpperCase().trim(),
+    qty: txData.qty !== undefined ? txData.qty : 0,
+    price: Number(txData.price || 0),
+    amount: Number(txData.amount || 0),
+    remarks: txData.remarks || '',
+    account: txData.account || 'Unassigned'
+  };
+
   await sendToSheet({
     action: 'appendTx',
-    tx: processed[0]
+    tx: cleanTx
   });
 }
 
