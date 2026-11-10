@@ -1,6 +1,6 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
-// Integrates: Token Handshake Auth, Permanent UUID Backfill, ID-Based Merge & Modals
+// Integrates: Token Handshake Auth, Permanent UUID Backfill, Master-Source Sync & Modals
 // ============================================================================
 
 // Helper to generate secure UUID v4 for permanent transaction identity
@@ -102,18 +102,8 @@ async function fetchFromGoogleSheet() {
     const { processed: incomingLedger, modified: ledgerBackfilled } = ensureTransactionIdentity(rawIncoming);
 
     if (incomingLedger.length > 0) {
-      // Safe ID-Based Merge: Keep server data as master, but preserve any local active entries not yet pushed
-      const serverMap = new Map(incomingLedger.map(t => [t.transactionId, t]));
-      
-      // Check local un-synced or newer items
-      transactions.forEach(localTx => {
-        const lId = localTx.transactionId || localTx.id;
-        if (lId && !serverMap.has(lId)) {
-          serverMap.set(lId, localTx); // Retain local offline items
-        }
-      });
-
-      transactions = Array.from(serverMap.values());
+      // Google Sheet is the master source: incoming server ledger dictates active state directly
+      transactions = incomingLedger;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
       
       if (ledgerBackfilled) {
