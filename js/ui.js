@@ -394,7 +394,7 @@ function renderHoldings(data) {
     const item = aggMap[stock];
     if (item.totalQty > 0) {
       const wap = item.totalCost / item.totalQty;
-      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
+      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap };
       const ltp = liveData.ltp;
       const curVal = item.totalQty * ltp;
       const invVal = item.totalCost;
@@ -772,8 +772,16 @@ function prevLedgerPage() {
 }
 
 function nextLedgerPage() {
-  const filteredCount = computeEngine().ledgerEntries.length;
-  const totalPages = Math.ceil(filteredCount / PAGE_SIZE);
+  let list = computeEngine().ledgerEntries;
+  if (ledgerSearchTerm) {
+    list = list.filter(tx => 
+      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
+      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
+    );
+  }
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
   if (ledgerCurrentPage < totalPages) {
     ledgerCurrentPage++;
     renderLedger(computeEngine().ledgerEntries);
@@ -1848,7 +1856,6 @@ function selectDropdownPreset(type) {
 }
 
 function openPresetModal(type) {
-  document.getElementById('txEditingId').value = '';
   document.getElementById('txModal').classList.remove('hidden');
   document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('txType').value = type;
@@ -1858,7 +1865,6 @@ function openPresetModal(type) {
 }
 
 function closeTransactionModal() {
-  document.getElementById('txEditingId').value = '';
   document.getElementById('txModal').classList.add('hidden');
   document.getElementById('txForm').reset();
 }
@@ -1869,7 +1875,6 @@ function toggleFormFields() {
   const stockFields = document.getElementById('stockFields');
   const qtyLabel = document.getElementById('txQtyLabel');
   const priceLabel = document.getElementById('txPriceLabel');
-  const qtyInput = document.getElementById('txQty');
   const priceInput = document.getElementById('txPrice');
   const amtInput = document.getElementById('txAmount');
 
@@ -1912,7 +1917,7 @@ function autoComputeAmount() {
   if (qty && price) document.getElementById('txAmount').value = (qty * price).toFixed(2);
 }
 
-async function handleTransactionSubmit(e) {
+function handleTransactionSubmit(e) {
   e.preventDefault();
   const type = document.getElementById('txType').value;
   const account = document.getElementById('txAccount').value;
@@ -1956,7 +1961,7 @@ async function handleTransactionSubmit(e) {
 
   transactions.push(newEntry);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-  appendToGoogleSheet(newEntry);
+  sendToSheet(newEntry);
 
   updateStockAutocompleteOptions();
   closeTransactionModal();
@@ -2051,7 +2056,7 @@ function closeLivePricesModal() {
   document.getElementById('livePricesModal').classList.add('hidden');
 }
 
-async function saveAllLivePrices() {
+function saveAllLivePrices() {
   const inputs = document.querySelectorAll('#livePricesContainer input');
   const batchPrices = {};
 
@@ -2059,9 +2064,9 @@ async function saveAllLivePrices() {
     const sym = inp.id.replace('livePriceInp_', '');
     const val = Number(inp.value);
     if (!isNaN(val) && val > 0) {
-      batchPrices[sym] = { ltp: val, prevClose: val };
-      savedManualPrices[sym] = { ltp: val, prevClose: val };
-      marketPrices[sym] = { ltp: val, prevClose: val };
+      batchPrices[sym] = { ltp: val };
+      savedManualPrices[sym] = { ltp: val };
+      marketPrices[sym] = { ltp: val };
     }
   });
 
@@ -2103,7 +2108,7 @@ function closeGoalModal() {
   currentEditingGoalKey = null;
 }
 
-async function saveGoalMilestone() {
+function saveGoalMilestone() {
   if (!currentEditingGoalKey) return;
   const val = Number(document.getElementById('goalModalInput').value);
   if (isNaN(val) || val <= 0) return;
@@ -2129,8 +2134,9 @@ function getPrecedingMonthEndDate() {
 }
 
 function checkPendingMonthEndSnapshot() {
-  // CRITICAL SECURITY FIX: Block month-end popup if PIN lock-screen gatekeeper is active
-  if (typeof isAppLocked !== 'undefined' && isAppLocked) return;
+  // CRITICAL SECURITY FIX: Block month-end popup if PIN lock-screen gatekeeper is active (using session unlock check)
+  const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
+  if (!isSessionUnlocked) return;
   if (!transactions || transactions.length === 0) return;
 
   const lastMonthEnd = getPrecedingMonthEndDate();
@@ -2147,8 +2153,9 @@ function checkPendingMonthEndSnapshot() {
 }
 
 function openMonthEndReviewModal(cutoffDate, targetDateStr) {
-  // CRITICAL SECURITY FIX: Double check gatekeeper state
-  if (typeof isAppLocked !== 'undefined' && isAppLocked) return;
+  // CRITICAL SECURITY FIX: Double check session unlock state
+  const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
+  if (!isSessionUnlocked) return;
 
   currentPendingMonthEndDateStr = targetDateStr;
   document.getElementById('monthEndDateDisplay').innerText = targetDateStr;
@@ -2232,7 +2239,7 @@ function closeMonthEndModal() {
   document.getElementById('monthEndReviewModal').classList.add('hidden');
 }
 
-async function commitMonthEndSnapshot() {
+function commitMonthEndSnapshot() {
   if (!currentPendingMonthEndDateStr) return;
 
   const dateStr = currentPendingMonthEndDateStr;
@@ -2252,20 +2259,11 @@ async function commitMonthEndSnapshot() {
   });
 
   let stockVal = 0;
-  const batchPrices = {};
 
   document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
-    const sym = inp.id.replace('mePrice_', '');
     const qty = Number(inp.getAttribute('data-qty') || 0);
     const p = Number(inp.value || 0);
     stockVal += (qty * p);
-
-    if (p > 0) {
-      // CRITICAL FIX: Snapshot Price-Overwrite Isolation. 
-      // Do NOT overwrite active live savedManualPrices/marketPrices globally with historical month-end closes.
-      // We only save them to the historical record payload.
-      batchPrices[sym] = { ltp: p, prevClose: p };
-    }
   });
 
   const portVal = cash + stockVal;
@@ -2488,7 +2486,7 @@ function renderCashCalibrateRows() {
   });
 }
 
-async function saveCashCalibration() {
+function saveCashCalibration() {
   const todayStr = new Date().toISOString().split('T')[0];
   const payload = {};
   const newOffsets = Object.assign({}, cashCalibration.offsets);
@@ -2545,7 +2543,7 @@ function closeStockMasterModal() {
   document.getElementById('stockMasterModal').classList.add('hidden');
 }
 
-async function handleAddStockMasterSubmit(e) {
+function handleAddStockMasterSubmit(e) {
   e.preventDefault();
   const symInput = document.getElementById('smSymbolInput');
   const nameInput = document.getElementById('smNameInput');
