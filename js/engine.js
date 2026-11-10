@@ -218,7 +218,6 @@ function computeEngine() {
   // Total Open Holdings Value & Unrealized P&L
   let totalPortfolioVal = 0;
   let totalUnrealizedPnL = 0;
-  let totalOpenInvested = 0;
 
   const holdings = [];
   const activeLots = openLots.filter(l => l.qty > 0);
@@ -235,7 +234,7 @@ function computeEngine() {
     const item = stockGroup[stock];
     if (item.qty > 0) {
       const wap = item.cost / item.qty;
-      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap, prevClose: wap };
+      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap };
       const ltp = liveData.ltp;
       const curVal = item.qty * ltp;
       const invVal = item.cost;
@@ -244,7 +243,6 @@ function computeEngine() {
 
       totalPortfolioVal += curVal;
       totalUnrealizedPnL += pnlVal;
-      totalOpenInvested += invVal;
 
       holdings.push({
         stock,
@@ -299,7 +297,6 @@ function computeEngine() {
     cashBalance: runningCash,
     totalPortfolioVal,
     totalUnrealizedPnL,
-    totalOpenInvested,
     lifetimePnL,
     lifetimePnLPct,
     xirrValue,
