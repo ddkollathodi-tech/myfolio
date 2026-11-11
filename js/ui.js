@@ -76,7 +76,8 @@ function toggleForceDesktopMode() {
   closeSettingsDropdown();
   recalculateAndRender();
   
-  const statusMsg = forceDesktopMode ? 'Forced Desktop Mode enabled.' : 'Adaptive Mobile Mode enabled.';
+  // Refresh settings UI elements if open/rendered
+  const statusMsg = forceDesktopMode ? 'Desktop Mode enabled.' : 'Adaptive Mobile Mode enabled.';
   console.log(statusMsg);
 }
 
@@ -2503,12 +2504,52 @@ function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
   if (!menu) return;
+  
+  // Inject Desktop Mode toggle item dynamically if not present
+  ensureDesktopModeToggleInSettings(menu);
+
   const isHidden = menu.classList.contains('hidden');
   if (isHidden) {
     menu.classList.remove('hidden');
   } else {
     menu.classList.add('hidden');
   }
+}
+
+function ensureDesktopModeToggleInSettings(menu) {
+  let section = document.getElementById('desktopModeSettingsSection');
+  if (section) {
+    const badge = document.getElementById('desktopModeToggleBadge');
+    if (badge) {
+      badge.innerText = forceDesktopMode ? 'ON' : 'OFF';
+      badge.className = forceDesktopMode ? 'text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-gray-800';
+    }
+    return;
+  }
+
+  section = document.createElement('div');
+  section.id = 'desktopModeSettingsSection';
+  section.className = 'py-1';
+  section.innerHTML = `
+    <div onclick="toggleForceDesktopMode()" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] cursor-pointer flex items-center justify-between transition">
+      <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-slate-200">
+        <i data-lucide="monitor" class="w-4 h-4 text-blue-500"></i>
+        <span>Desktop Mode</span>
+      </div>
+      <div class="flex items-center space-x-1.5">
+        <span id="desktopModeToggleBadge" class="text-[10px] font-bold px-2 py-0.5 rounded ${forceDesktopMode ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-gray-800'}">${forceDesktopMode ? 'ON' : 'OFF'}</span>
+      </div>
+    </div>
+  `;
+  
+  // Insert right below appearance or at top of settings menu
+  const firstChild = menu.firstElementChild;
+  if (firstChild) {
+    menu.insertBefore(section, firstChild.nextSibling);
+  } else {
+    menu.appendChild(section);
+  }
+  if (window.lucide) lucide.createIcons();
 }
 
 function closeSettingsDropdown() {
@@ -2770,7 +2811,7 @@ function handleAddStockMasterSubmit(e) {
   }
 
   msg.innerText = `Added ${symbol} to Master!`;
-  msg.classList.remove('opacity-0');
+  msg.classList.add('opacity-0');
 
   setTimeout(() => {
     closeStockMasterModal();
