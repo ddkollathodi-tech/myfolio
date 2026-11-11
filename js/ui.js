@@ -361,7 +361,7 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested (POINT 3: Excess invested styling & dynamic progress bar coloring)
+  // Card 2: Net Invested (POINT 3 & POINT 4: Excess invested styling, dynamic progress bar coloring, and excess percentage breakdown)
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
   const invTarget = milestoneGoals.netInvested || 5000000;
   const isExcessInvested = data.netInvested > invTarget;
@@ -372,15 +372,16 @@ function recalculateAndRender() {
   const invPctEl = document.getElementById('kpiNetInvestedPct');
   const invRemEl = document.getElementById('kpiNetInvestedRem');
 
-  invPctEl.innerText = `${invPct.toFixed(2)}%`;
-  
   if (isExcessInvested) {
     const excessAmt = data.netInvested - invTarget;
+    const excessPct = invPct - 100;
+    invPctEl.innerText = `${invPct.toFixed(2)}% (+${excessPct.toFixed(2)}% excess)`;
     invRemEl.innerText = `${formatCompactIndian(excessAmt)} excess`;
     invRemEl.className = 'text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
     invPctEl.className = 'text-rose-600 dark:text-rose-400 font-bold';
     invBarEl.className = 'bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500';
   } else {
+    invPctEl.innerText = `${invPct.toFixed(2)}%`;
     const invRem = invTarget - data.netInvested;
     invRemEl.innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
     invRemEl.className = 'text-slate-500 dark:text-slate-400 transition-all duration-200';
@@ -1977,13 +1978,52 @@ function openPresetModal(type) {
   document.getElementById('txModal').classList.remove('hidden');
   document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('txType').value = type;
-  document.getElementById('txAccount').value = 'Me';
+  // POINT 5: Do not set any default account value; leave it blank / unselected
+  const accountSelect = document.getElementById('txAccount');
+  if (accountSelect) {
+    accountSelect.value = '';
+    accountSelect.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  }
+  clearInlineTxWarnings();
   document.getElementById('modalTitle').innerText = `Record ${type}`;
   toggleFormFields();
 }
 
+function clearInlineTxWarnings() {
+  const accountSelect = document.getElementById('txAccount');
+  if (accountSelect) {
+    accountSelect.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  }
+  const qtyInput = document.getElementById('txQty');
+  if (qtyInput) {
+    qtyInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  }
+  const amtInput = document.getElementById('txAmount');
+  if (amtInput) {
+    amtInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  }
+  
+  // Remove existing inline warning messages if any
+  document.querySelectorAll('.inline-tx-warning').forEach(el => el.remove());
+}
+
+function showInlineError(inputElement, message) {
+  if (!inputElement) return;
+  inputElement.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+  
+  // Check if warning already exists right after this element
+  let existingWarning = inputElement.parentElement.querySelector('.inline-tx-warning');
+  if (!existingWarning) {
+    existingWarning = document.createElement('div');
+    existingWarning.className = 'inline-tx-warning text-[10.5px] text-rose-500 dark:text-rose-400 font-semibold mt-1';
+    inputElement.parentElement.appendChild(existingWarning);
+  }
+  existingWarning.innerText = message;
+}
+
 function closeTransactionModal() {
   document.getElementById('txModal').classList.add('hidden');
+  clearInlineTxWarnings();
   document.getElementById('txForm').reset();
 }
 
@@ -2037,8 +2077,11 @@ function autoComputeAmount() {
 
 function handleTransactionSubmit(e) {
   e.preventDefault();
+  clearInlineTxWarnings();
+
   const type = document.getElementById('txType').value;
-  const account = document.getElementById('txAccount').value;
+  const accountSelect = document.getElementById('txAccount');
+  const account = accountSelect ? accountSelect.value.trim() : '';
   const stock = document.getElementById('txStock').value.trim().toUpperCase();
   const qty = Number(document.getElementById('txQty').value || 0);
   const price = Number(document.getElementById('txPrice').value || 0);
@@ -2046,12 +2089,19 @@ function handleTransactionSubmit(e) {
   const remarks = document.getElementById('txRemarks').value;
   const date = document.getElementById('txDate').value;
 
+  // POINT 5: Enforce mandatory account selection with inline red border and warning
+  if (!account) {
+    showInlineError(accountSelect, 'Please select an account.');
+    return;
+  }
+
   if (['BUY', 'SELL'].includes(type) && !amount) amount = qty * price;
   if (type === 'BONUS') amount = 0;
 
-  // CRITICAL FIX: Overselling Validation Check
+  const engineData = computeEngine();
+
+  // POINT 6: Inline validation for SELL (overselling check)
   if (type === 'SELL') {
-    const engineData = computeEngine();
     let availableQty = 0;
     engineData.openLots.forEach(lot => {
       if (lot.stock === stock && lot.account === account) {
@@ -2060,7 +2110,18 @@ function handleTransactionSubmit(e) {
     });
 
     if (qty > availableQty) {
-      alert(`Overselling Error: You are attempting to sell ${qty} shares of ${stock} from account '${account}', but only ${availableQty} shares are available in open lots.`);
+      const qtyInput = document.getElementById('txQty');
+      showInlineError(qtyInput, `Overselling error: Only ${availableQty} shares available in open lots.`);
+      return;
+    }
+  }
+
+  // POINT 6: Inline validation for BUY (insufficient cash check)
+  if (type === 'BUY') {
+    const cashAvailable = engineData.accountCashMap[account] || 0;
+    if (amount > cashAvailable) {
+      const amtInput = document.getElementById('txAmount');
+      showInlineError(amtInput, `Insufficient cash: Account balance is ${formatINR(cashAvailable)}.`);
       return;
     }
   }
