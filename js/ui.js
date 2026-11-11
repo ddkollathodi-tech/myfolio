@@ -6,6 +6,9 @@ let multiChartInstance = null;
 let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
 
+// Mobile View & Responsive Layout State
+let forceDesktopMode = localStorage.getItem('MYFOLIOAI_FORCE_DESKTOP') === 'true';
+
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
@@ -26,11 +29,105 @@ function init() {
   updateStockAutocompleteOptions();
   checkGatekeeperState();
 
+  // Apply responsive mobile UI mode if applicable
+  applyResponsiveLayoutMode();
+  window.addEventListener('resize', handleWindowResize);
+
   if (cloudScriptUrl) {
     fetchFromGoogleSheet();
   } else {
     recalculateAndRender();
   }
+}
+
+/* ---------------- RESPONSIVE MOBILE DETECTION & ADAPTIVE MODE ---------------- */
+function isMobileDeviceWidth() {
+  return window.innerWidth < 768;
+}
+
+function isMobileNativeActive() {
+  return isMobileDeviceWidth() && !forceDesktopMode;
+}
+
+function applyResponsiveLayoutMode() {
+  const isMobile = isMobileNativeActive();
+  const bodyEl = document.body;
+  
+  if (isMobile) {
+    bodyEl.classList.add('mobile-native-mode');
+    ensureMobileBottomNavBar();
+  } else {
+    bodyEl.classList.remove('mobile-native-mode');
+    removeMobileBottomNavBar();
+  }
+}
+
+function handleWindowResize() {
+  applyResponsiveLayoutMode();
+  if (multiChartInstance) {
+    multiChartInstance.resize();
+  }
+}
+
+function toggleForceDesktopMode(e) {
+  if (e) e.stopPropagation();
+  forceDesktopMode = !forceDesktopMode;
+  localStorage.setItem('MYFOLIOAI_FORCE_DESKTOP', forceDesktopMode ? 'true' : 'false');
+  applyResponsiveLayoutMode();
+  closeSettingsDropdown();
+  recalculateAndRender();
+}
+
+function ensureMobileBottomNavBar() {
+  let navBar = document.getElementById('mobileBottomNavBar');
+  if (navBar) return;
+
+  navBar = document.createElement('nav');
+  navBar.id = 'mobileBottomNavBar';
+  navBar.className = 'fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#131722]/95 border-t border-slate-200 dark:border-[#222836] px-4 py-2 flex items-center justify-around md:hidden';
+  
+  navBar.innerHTML = `
+    <button onclick="switchTab('holdings'); setActiveMobileNav('holdings')" id="mobNav-holdings" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
+      <i data-lucide="briefcase" class="w-5 h-5 text-emerald-500"></i>
+      <span>Holdings</span>
+    </button>
+    <button onclick="switchTab('closedTrades'); setActiveMobileNav('closedTrades')" id="mobNav-closedTrades" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
+      <i data-lucide="check-check" class="w-5 h-5"></i>
+      <span>Closed</span>
+    </button>
+    <button onclick="switchTab('fyBreakdown'); setActiveMobileNav('fyBreakdown')" id="mobNav-fyBreakdown" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
+      <i data-lucide="calendar-check" class="w-5 h-5"></i>
+      <span>FY P&L</span>
+    </button>
+    <button onclick="switchTab('transactions'); setActiveMobileNav('transactions')" id="mobNav-transactions" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
+      <i data-lucide="list" class="w-5 h-5"></i>
+      <span>Ledger</span>
+    </button>
+    <button onclick="switchTab('taxPnl'); setActiveMobileNav('taxPnl')" id="mobNav-taxPnl" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
+      <i data-lucide="calculator" class="w-5 h-5 text-rose-500"></i>
+      <span>Tax</span>
+    </button>
+  `;
+
+  document.body.appendChild(navBar);
+  if (window.lucide) lucide.createIcons();
+}
+
+function removeMobileBottomNavBar() {
+  const navBar = document.getElementById('mobileBottomNavBar');
+  if (navBar) navBar.remove();
+}
+
+function setActiveMobileNav(tabKey) {
+  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'taxPnl'].forEach(k => {
+    const btn = document.getElementById(`mobNav-${k}`);
+    if (!btn) return;
+    if (k === tabKey) {
+      btn.className = 'flex flex-col items-center space-y-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]';
+    } else {
+      btn.className = 'flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]';
+    }
+  });
 }
 
 /* ---------------- STEALTH MASKING SYSTEM (POINT 5) ---------------- */
@@ -264,14 +361,33 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested
+  // Card 2: Net Invested (POINT 3: Excess invested styling & dynamic progress bar coloring)
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
   const invTarget = milestoneGoals.netInvested || 5000000;
-  const invPct = invTarget > 0 ? Math.min(100, Math.max(0, (data.netInvested / invTarget) * 100)) : 0;
-  const invRem = Math.max(0, invTarget - data.netInvested);
-  document.getElementById('kpiNetInvestedPct').innerText = `${invPct.toFixed(2)}%`;
-  document.getElementById('kpiNetInvestedRem').innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
-  document.getElementById('kpiNetInvestedBar').style.width = `${invPct}%`;
+  const isExcessInvested = data.netInvested > invTarget;
+  const invPct = invTarget > 0 ? (data.netInvested / invTarget) * 100 : 0;
+  const displayPct = Math.min(100, invPct);
+  
+  const invBarEl = document.getElementById('kpiNetInvestedBar');
+  const invPctEl = document.getElementById('kpiNetInvestedPct');
+  const invRemEl = document.getElementById('kpiNetInvestedRem');
+
+  invPctEl.innerText = `${invPct.toFixed(2)}%`;
+  
+  if (isExcessInvested) {
+    const excessAmt = data.netInvested - invTarget;
+    invRemEl.innerText = `${formatCompactIndian(excessAmt)} excess`;
+    invRemEl.className = 'text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
+    invPctEl.className = 'text-rose-600 dark:text-rose-400 font-bold';
+    invBarEl.className = 'bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500';
+  } else {
+    const invRem = invTarget - data.netInvested;
+    invRemEl.innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
+    invRemEl.className = 'text-slate-500 dark:text-slate-400 transition-all duration-200';
+    invPctEl.className = 'text-rose-600 dark:text-rose-400';
+    invBarEl.className = 'bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500';
+  }
+  invBarEl.style.width = `${displayPct}%`;
 
   // Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
@@ -956,7 +1072,7 @@ function switchChartView(view) {
   renderTtmTable(data);
 }
 
-/* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
+/* ---------------- TTM BREAKDOWN ACCORDION (POINT 1: Column Rearrangement & Bold Entries) ---------------- */
 function toggleTtmTableAccordion() {
   const container = document.getElementById('ttmTableContainer');
   const chevron = document.getElementById('ttmAccordionChevron');
@@ -987,22 +1103,22 @@ function renderTtmTable(computed) {
 
     thead.innerHTML = `
       <tr>
-        <th class="py-2.5 px-3 font-semibold">Checkpoint</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Start Capital</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Actual Value</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Monthly P&L</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Monthly RoC</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Target</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Pure 2% Gap</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Extreme Target</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Extreme Deficit</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Recovery %</th>
+        <th class="py-2.5 px-3 font-bold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-bold">Initial Capital</th>
+        <th class="py-2.5 px-3 text-right font-bold">Close Value</th>
+        <th class="py-2.5 px-3 text-right font-bold">Monthly P&L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Monthly RoC</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure 2% Target</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure 2% Gap</th>
+        <th class="py-2.5 px-3 text-right font-bold">Extreme Target</th>
+        <th class="py-2.5 px-3 text-right font-bold">Extreme Deficit</th>
+        <th class="py-2.5 px-3 text-right font-bold">Recovery %</th>
       </tr>
     `;
 
     const fourCurvePoints = computeRocFourCurves(computed);
     if (!fourCurvePoints || fourCurvePoints.length < 2) {
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
       return;
     }
 
@@ -1020,26 +1136,26 @@ function renderTtmTable(computed) {
       }
 
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 font-bold';
       tr.innerHTML = `
-        <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 ${maskClass}">${formatINR(r.startCapital, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(r.actualVal, 0)}</td>
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${r.date}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 font-bold ${maskClass}">${formatINR(r.startCapital, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white ${maskClass}">${formatINR(r.actualVal, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isPosProfit ? '+' : ''}${r.rocPct.toFixed(2)}%
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(r.pureTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(r.pureTarget, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosGap ? '+' : ''}${formatINR(r.pureGap, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 ${maskClass}">${formatINR(r.ratchetTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-purple-600 dark:text-purple-400 ${maskClass}">${formatINR(r.ratchetTarget, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosRatchet ? '+' : ''}${formatINR(r.ratchetDeficit, 0)}
         </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-purple-600 dark:text-purple-400">
           ${recoveryPct > 0 ? recoveryPct.toFixed(2) + '%' : '—'}
         </td>
       `;
@@ -1049,15 +1165,16 @@ function renderTtmTable(computed) {
   } else {
     if (titleEl) titleEl.innerText = 'Trailing 12-Months (TTM) Performance Ledger';
 
+    // POINT 1: Rearranged columns: Checkpoint - Portfolio Value - Net Capital - Cumulative P&L - Cumulative RoC - Period P&L - Return %
     thead.innerHTML = `
       <tr>
-        <th class="py-2.5 px-3 font-semibold">Checkpoint</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Portfolio Value</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Net Capital</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Period P&L</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Return %</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Cumulative P&L</th>
-        <th class="py-2.5 px-3 text-right font-semibold">Cumulative RoC</th>
+        <th class="py-2.5 px-3 font-bold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-bold">Portfolio Value</th>
+        <th class="py-2.5 px-3 text-right font-bold">Net Capital</th>
+        <th class="py-2.5 px-3 text-right font-bold">Cumulative P&amp;L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Cumulative RoC</th>
+        <th class="py-2.5 px-3 text-right font-bold">Period P&amp;L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Return %</th>
       </tr>
     `;
 
@@ -1072,7 +1189,7 @@ function renderTtmTable(computed) {
     }
 
     if (history.length < 2) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
       return;
     }
 
@@ -1106,22 +1223,23 @@ function renderTtmTable(computed) {
       const isPos = r.deltaProfit >= 0;
       const isCumPos = r.cumProfit >= 0;
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      // POINT 1: Make entire entries in the table bold
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 font-bold';
       tr.innerHTML = `
-        <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${formatINR(r.portVal, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 ${maskClass}">${formatINR(r.netCap, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
-          ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
-        </td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-          ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
-        </td>
-        <td class="py-2.5 px-3 text-right tabular-nums ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${r.date}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-700 dark:text-gray-300 ${maskClass}">${formatINR(r.portVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(r.netCap, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
         </td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
           ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
         </td>
       `;
       tbody.appendChild(tr);
