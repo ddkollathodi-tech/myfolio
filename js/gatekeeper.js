@@ -29,6 +29,9 @@ function initKeyboardPinListener() {
     const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
     if (isSessionUnlocked) return;
 
+    // Do not intercept if user is typing into an input field on the link overlay
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
     if (e.key >= '0' && e.key <= '9') {
       e.preventDefault();
       pressPinDigit(e.key);
@@ -89,10 +92,162 @@ function checkGatekeeperState() {
 }
 
 function renderPinUI() {
+  const card = document.getElementById('pinCard');
+  if (!card) return;
+
+  // Check if Google Sheet URL is configured. If NOT linked yet, display the Sheet Link Screen first.
+  const isSheetLinked = cloudScriptUrl && cloudScriptUrl.trim() !== '';
+
+  if (!isSheetLinked && !appSettings.pinHash) {
+    renderSheetLinkOverlay(card);
+    return;
+  }
+
+  // Standard PIN screen layout template restoration if sheet is linked or pin exists
+  renderStandardPinLayout(card);
+}
+
+function renderSheetLinkOverlay(container) {
+  container.innerHTML = `
+    <div class="flex flex-col items-center space-y-2">
+      <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+        <i data-lucide="cloud-cog" class="w-7 h-7"></i>
+      </div>
+      <h2 class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Link Your Google Sheet</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Connect your existing cloud database to securely load your profile &amp; PIN</p>
+    </div>
+
+    <div class="space-y-3 text-left text-xs pt-1">
+      <div>
+        <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Web App Deployment URL</label>
+        <input type="text" id="gatekeeperScriptUrl" placeholder="https://script.google.com/macros/s/..." class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+      </div>
+      <div>
+        <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">API Secret Token (Handshake)</label>
+        <input type="password" id="gatekeeperApiToken" placeholder="Enter matching API_SECRET key" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
+      </div>
+      <div id="gatekeeperLinkMsg" class="text-xs font-semibold h-4 text-rose-500 opacity-0 transition-opacity text-center"></div>
+    </div>
+
+    <div class="pt-2">
+      <button onclick="handleGatekeeperSheetLink()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-extrabold text-xs shadow-md transition active:scale-95">
+        Connect &amp; Sync Portfolio
+      </button>
+    </div>
+
+    <div class="text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-[#222836] text-center">
+      New user? <button onclick="bypassToPinCreation()" class="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">Create a new PIN instead</button>
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function bypassToPinCreation() {
+  appSettings.pinHash = 'TEMP_FLAG'; // temporary bypass flag to render pin creation
+  renderPinUI();
+}
+
+async function handleGatekeeperSheetLink() {
+  const urlInp = document.getElementById('gatekeeperScriptUrl');
+  const tokenInp = document.getElementById('gatekeeperApiToken');
+  const msgEl = document.getElementById('gatekeeperLinkMsg');
+
+  const newUrl = urlInp ? urlInp.value.trim() : '';
+  const newToken = tokenInp ? tokenInp.value.trim() : '';
+
+  if (!newUrl) {
+    if (msgEl) {
+      msgEl.innerText = 'Please enter a valid Web App Deployment URL.';
+      msgEl.classList.remove('opacity-0');
+    }
+    return;
+  }
+
+  cloudScriptUrl = newUrl;
+  apiToken = newToken;
+
+  localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
+  localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
+
+  if (msgEl) {
+    msgEl.innerText = 'Connecting to Google Sheet...';
+    msgEl.classList.remove('opacity-0', 'text-rose-500');
+    msgEl.classList.add('text-emerald-500');
+  }
+
+  try {
+    await fetchFromGoogleSheet();
+    // After pulling from sheet, if pinHash is now loaded successfully, re-render gatekeeper to standard PIN view
+    checkGatekeeperState();
+  } catch (err) {
+    if (msgEl) {
+      msgEl.innerText = 'Connection failed. Check URL and Token.';
+      msgEl.classList.remove('text-emerald-500', 'opacity-0');
+      msgEl.classList.add('text-rose-500');
+    }
+  }
+}
+
+function renderStandardPinLayout(container) {
+  container.innerHTML = `
+    <div class="flex flex-col items-center space-y-2">
+      <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
+        <i data-lucide="shield-lock" class="w-7 h-7"></i>
+      </div>
+      <h2 id="pinTitle" class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Security Gatekeeper</h2>
+      <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Enter your PIN to unlock</p>
+    </div>
+
+    <!-- PIN Input Digits Display -->
+    <div class="flex justify-center items-center space-x-3.5 py-2">
+      <div id="pinDot-0" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
+      <div id="pinDot-1" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
+      <div id="pinDot-2" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
+      <div id="pinDot-3" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
+    </div>
+
+    <div id="pinStatusMsg" class="text-xs font-semibold h-4 text-rose-500 transition-opacity opacity-0">Incorrect PIN. Try again.</div>
+
+    <!-- Numeric Keypad -->
+    <div class="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
+      <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
+      <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
+      <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
+      <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
+      <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
+      <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
+      <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
+      <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
+      <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
+      <button onclick="clearPinInput()" class="h-13 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
+      <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
+      <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
+        <i data-lucide="delete" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="text-[11.5px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-[#222836] flex items-center justify-center space-x-1.5">
+      <span>Type on keyboard or keypad. Reset:</span>
+      <details class="relative inline-block text-left">
+        <summary class="list-none cursor-pointer inline-flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none" title="Click for instructions">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i>
+        </summary>
+        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-slate-900 dark:bg-[#1A1F2E] text-white text-[10.5px] rounded-xl shadow-2xl border border-slate-700 z-50 text-left leading-relaxed">
+          Clear the <code class="font-mono text-emerald-400 bg-black/50 px-1 py-0.5 rounded">pinHash</code> row in your Google Sheet <b>Settings</b> tab to reset your PIN.
+        </div>
+      </details>
+    </div>
+  `;
+
+  if (window.lucide) lucide.createIcons();
+
   const title = document.getElementById('pinTitle');
   const subtitle = document.getElementById('pinSubtitle');
 
-  if (!appSettings.pinHash) {
+  // If pinHash is empty or set to TEMP_FLAG, handle setup mode
+  if (!appSettings.pinHash || appSettings.pinHash === 'TEMP_FLAG') {
+    if (appSettings.pinHash === 'TEMP_FLAG') appSettings.pinHash = ''; // clear temp flag for setup
     isSettingUpNewPin = true;
     if (title) title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
     if (subtitle) subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio';
