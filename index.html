@@ -222,11 +222,11 @@
                 </div>
               </div>
 
-              <!-- Desktop View Toggle for Mobile Devices -->
-              <div onclick="toggleDesktopModeOverride(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] cursor-pointer flex items-center justify-between transition">
+              <!-- Desktop Mode Toggle for Mobile Devices -->
+              <div onclick="toggleForceDesktopMode(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] cursor-pointer flex items-center justify-between transition">
                 <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-slate-200">
                   <i data-lucide="monitor" class="w-4 h-4 text-blue-500"></i>
-                  <span>Desktop Table View</span>
+                  <span>Desktop Mode</span>
                 </div>
                 <div class="flex items-center space-x-1.5">
                   <span id="settingsDesktopViewLabel" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Off</span>
@@ -282,19 +282,26 @@
     <!-- SYNC & STATUS BAR -->
     <div class="bg-white/60 dark:bg-[#0E121B]/60 border-b border-slate-200/80 dark:border-[#222836]/80 py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
       <div class="w-full max-w-[1440px] mx-auto px-4 sm:px-5 md:px-7 lg:px-9 xl:px-11 flex flex-wrap items-center justify-between gap-2">
+        <!-- Sync Status (Always visible & prominent across mobile/desktop) -->
         <div class="flex items-center space-x-2">
           <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
-          <span id="syncStatus">Synced</span>
+          <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-300">Synced</span>
         </div>
-        <div class="flex items-center space-x-4 text-right">
-          <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">Not refreshed yet</span></div>
+        <!-- Timestamps: Streamlined on mobile via responsive hiding/clamping, full detail on desktop -->
+        <div class="flex items-center space-x-3 sm:space-x-4 text-right">
+          <div class="truncate max-w-[170px] sm:max-w-none">
+            <span class="hidden sm:inline">Last Manual Price Update: </span>
+            <span class="sm:hidden">Prices: </span>
+            <span id="lastSyncedTime" class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">Not refreshed yet</span>
+          </div>
           
-          <!-- Database Backup Button with Dedicated Status Indicator Icon -->
-          <button onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Click to trigger manual database backup">
-            <span id="backupStatusIcon" class="flex items-center justify-center">
+          <!-- Database Backup Status -->
+          <button onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 hover:text-slate-900 dark:hover:text-white transition cursor-pointer truncate max-w-[150px] sm:max-w-none" title="Click to trigger manual database backup">
+            <span id="backupStatusIcon" class="flex items-center justify-center shrink-0">
               <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
             </span>
-            <span>Last Data Backup:</span>
+            <span class="hidden sm:inline">Last Data Backup:</span>
+            <span class="sm:hidden">Backup:</span>
             <span id="lastBackupTime" class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">Not backed up yet</span>
           </button>
         </div>
@@ -662,7 +669,7 @@
           </div>
         </div>
 
-        <!-- Desktop Table View Container -->
+        <!-- Desktop Table View Container (Hidden on mobile native mode when desktop mode toggle is off) -->
         <div id="holdingsTableWrapper" class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-xs max-h-[550px] custom-scroll">
           <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
             <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
@@ -703,7 +710,7 @@
         </div>
 
         <!-- Mobile Card Feed Container -->
-        <div id="holdingsCardContainer" class="grid grid-cols-1 gap-3 hidden"></div>
+        <div id="holdingsMobileCardsContainer" class="grid grid-cols-1 gap-3"></div>
       </div>
 
       <!-- TAB 2: CLOSED TRADES -->
@@ -761,7 +768,7 @@
             <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80 font-normal"></tbody>
           </table>
         </div>
-        <div id="closedCardContainer" class="grid grid-cols-1 gap-3 hidden"></div>
+        <div id="closedMobileCardsContainer" class="grid grid-cols-1 gap-3"></div>
 
         <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="closedPageInfo">Showing 1–12 entries</span>
@@ -849,7 +856,7 @@
             <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
-        <div id="ledgerCardContainer" class="grid grid-cols-1 gap-3 hidden"></div>
+        <div id="ledgerMobileCardsContainer" class="grid grid-cols-1 gap-3"></div>
 
         <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="ledgerPageInfo">Showing 1–12 entries</span>
@@ -901,7 +908,7 @@
             <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
           </table>
         </div>
-        <div id="bankCardContainer" class="grid grid-cols-1 gap-3 hidden"></div>
+        <div id="bankCardContainer" class="grid grid-cols-1 gap-3"></div>
 
         <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
           <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
