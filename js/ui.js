@@ -361,7 +361,7 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested (POINT 3 & POINT 4: Excess invested styling, dynamic progress bar coloring, and excess percentage breakdown)
+  // Card 2: Net Invested (POINT 3 & NEW POINT 1: Excess invested styling, dynamic progress bar coloring, and absolute excess text without base percentage)
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
   const invTarget = milestoneGoals.netInvested || 5000000;
   const isExcessInvested = data.netInvested > invTarget;
@@ -375,7 +375,7 @@ function recalculateAndRender() {
   if (isExcessInvested) {
     const excessAmt = data.netInvested - invTarget;
     const excessPct = invPct - 100;
-    invPctEl.innerText = `${invPct.toFixed(2)}% (+${excessPct.toFixed(2)}% excess)`;
+    invPctEl.innerText = `${excessPct.toFixed(2)}% excess invested`;
     invRemEl.innerText = `${formatCompactIndian(excessAmt)} excess`;
     invRemEl.className = 'text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
     invPctEl.className = 'text-rose-600 dark:text-rose-400 font-bold';
@@ -1978,30 +1978,32 @@ function openPresetModal(type) {
   document.getElementById('txModal').classList.remove('hidden');
   document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('txType').value = type;
+  
   // POINT 5: Do not set any default account value; leave it blank / unselected
   const accountSelect = document.getElementById('txAccount');
   if (accountSelect) {
     accountSelect.value = '';
     accountSelect.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
   }
+
+  // Hide the redundant Type selection container in the modal if it exists
+  const typeContainer = document.getElementById('txType')?.closest('div');
+  if (typeContainer) {
+    typeContainer.classList.add('hidden');
+  }
+
   clearInlineTxWarnings();
   document.getElementById('modalTitle').innerText = `Record ${type}`;
   toggleFormFields();
 }
 
 function clearInlineTxWarnings() {
-  const accountSelect = document.getElementById('txAccount');
-  if (accountSelect) {
-    accountSelect.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
-  }
-  const qtyInput = document.getElementById('txQty');
-  if (qtyInput) {
-    qtyInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
-  }
-  const amtInput = document.getElementById('txAmount');
-  if (amtInput) {
-    amtInput.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
-  }
+  ['txAccount', 'txStock', 'txQty', 'txPrice', 'txAmount', 'txRemarks'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+    }
+  });
   
   // Remove existing inline warning messages if any
   document.querySelectorAll('.inline-tx-warning').forEach(el => el.remove());
@@ -2082,16 +2084,53 @@ function handleTransactionSubmit(e) {
   const type = document.getElementById('txType').value;
   const accountSelect = document.getElementById('txAccount');
   const account = accountSelect ? accountSelect.value.trim() : '';
-  const stock = document.getElementById('txStock').value.trim().toUpperCase();
-  const qty = Number(document.getElementById('txQty').value || 0);
-  const price = Number(document.getElementById('txPrice').value || 0);
-  let amount = Number(document.getElementById('txAmount').value || 0);
-  const remarks = document.getElementById('txRemarks').value;
+  const stockInput = document.getElementById('txStock');
+  const stock = stockInput ? stockInput.value.trim().toUpperCase() : '';
+  const qtyInput = document.getElementById('txQty');
+  const qty = Number(qtyInput ? qtyInput.value || 0 : 0);
+  const priceInput = document.getElementById('txPrice');
+  const price = Number(priceInput ? priceInput.value || 0 : 0);
+  const amtInput = document.getElementById('txAmount');
+  let amount = Number(amtInput ? amtInput.value || 0 : 0);
+  const remarksInput = document.getElementById('txRemarks');
+  const remarks = remarksInput ? remarksInput.value.trim() : '';
   const date = document.getElementById('txDate').value;
 
-  // POINT 5: Enforce mandatory account selection with inline red border and warning
+  // 1. Mandatory Account Validation
   if (!account) {
     showInlineError(accountSelect, 'Please select an account.');
+    return;
+  }
+
+  const isStock = ['BUY', 'SELL', 'BONUS', 'SPLIT', 'DEMERGER'].includes(type);
+
+  // 2. Mandatory Stock Ticker Validation for Stock Types
+  if (isStock && !stock) {
+    showInlineError(stockInput, 'Stock ticker symbol is required.');
+    return;
+  }
+
+  // 3. Mandatory Quantity Validation for Stock/Bonus/Split Types
+  if (isStock && type !== 'DEMERGER' && (!qty || qty <= 0)) {
+    showInlineError(qtyInput, 'Valid quantity is required.');
+    return;
+  }
+
+  // 4. Mandatory Price Validation for BUY / SELL
+  if (['BUY', 'SELL'].includes(type) && (!price || price <= 0)) {
+    showInlineError(priceInput, 'Price per share is required.');
+    return;
+  }
+
+  // 5. Mandatory Total Amount Validation for FEES (or general check)
+  if (type === 'FEES' && (!amount || amount <= 0)) {
+    showInlineError(amtInput, 'Total fee amount is mandatory.');
+    return;
+  }
+
+  // 6. Mandatory Remarks Validation across all types
+  if (!remarks) {
+    showInlineError(remarksInput, 'Remarks / reference is mandatory.');
     return;
   }
 
@@ -2100,7 +2139,7 @@ function handleTransactionSubmit(e) {
 
   const engineData = computeEngine();
 
-  // POINT 6: Inline validation for SELL (overselling check)
+  // 7. Inline validation for SELL (overselling check)
   if (type === 'SELL') {
     let availableQty = 0;
     engineData.openLots.forEach(lot => {
@@ -2110,17 +2149,15 @@ function handleTransactionSubmit(e) {
     });
 
     if (qty > availableQty) {
-      const qtyInput = document.getElementById('txQty');
       showInlineError(qtyInput, `Overselling error: Only ${availableQty} shares available in open lots.`);
       return;
     }
   }
 
-  // POINT 6: Inline validation for BUY (insufficient cash check)
+  // 8. Inline validation for BUY (insufficient cash check)
   if (type === 'BUY') {
     const cashAvailable = engineData.accountCashMap[account] || 0;
     if (amount > cashAvailable) {
-      const amtInput = document.getElementById('txAmount');
       showInlineError(amtInput, `Insufficient cash: Account balance is ${formatINR(cashAvailable)}.`);
       return;
     }
