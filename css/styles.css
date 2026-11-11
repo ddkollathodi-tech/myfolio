@@ -2,13 +2,13 @@
 
 /* Base Font & Typographic Feature Flags */
 :root {
-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
--webkit-font-smoothing: antialiased;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-font-family: 'Inter', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Tabular Numerics for Financial Tables & KPI Figures */
@@ -16,94 +16,125 @@ font-family: 'Inter', sans-serif;
 .tabular-nums,
 table,
 [id^="kpi"] {
-font-family: 'Inter', -apple-system, sans-serif !important;
-font-variant-numeric: tabular-nums normal !important;
-font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0 !important;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  font-variant-numeric: tabular-nums normal !important;
+  font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0 !important;
 }
 
 /* Visibility Utilities */
 .hidden {
-display: none !important;
+  display: none !important;
 }
 
 /* Anti-FOUC Gatekeeper Law: Conceals dashboard until master PIN unlock */
 #app-root {
-display: none;
+  display: none;
 }
 
 /* PIN Card Error Shake Animation */
 @keyframes shake {
-0%, 100% { transform: translateX(0); }
-20%, 60% { transform: translateX(-8px); }
-40%, 80% { transform: translateX(8px); }
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
 }
 
 .shake-animation {
-animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
+  animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 /* Gaussian Privacy Mask Utility (Granular Stealth Mode) */
 .blurred-mask,
 .privacy-blurred {
-filter: blur(7px) !important;
-user-select: none !important;
-pointer-events: none !important;
-transform: translateZ(0);
-will-change: filter;
-transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: blur(7px) !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transform: translateZ(0);
+  will-change: filter;
+  transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Unmasked State Smooth Transition */
 .mask-transition {
-transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Custom Scrollbar */
 .custom-scroll::-webkit-scrollbar {
-width: 5px;
-height: 5px;
+  width: 5px;
+  height: 5px;
 }
 
 .custom-scroll::-webkit-scrollbar-track {
-background: transparent;
+  background: transparent;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-background: #cbd5e1;
-border-radius: 4px;
+  background: #cbd5e1;
+  border-radius: 4px;
 }
 
 .dark .custom-scroll::-webkit-scrollbar-thumb {
-background: #2a2e39;
-border-radius: 4px;
+  background: #2a2e39;
+  border-radius: 4px;
 }
 
 /* Interactive Table Headers */
 th.sortable {
-cursor: pointer;
-user-select: none;
+  cursor: pointer;
+  user-select: none;
 }
 
 th.sortable:hover {
-background-color: rgba(148, 163, 184, 0.12);
+  background-color: rgba(148, 163, 184, 0.12);
 }
 
 /* POINT 7: Slimmer Active Holdings Win/Loss Distribution Bar */
 #holdingsRatioBarContainer .h-2 {
-height: 5px !important;
+  height: 5px !important;
 }
 
 /* POINT 4: Warm RPCI-Style Espresso/Obsidian Charcoal Dark Theme Overrides */
 .dark body {
-background-color: #0d0e11 !important;
+  background-color: #0d0e11 !important;
 }
 
 .dark header,
 .dark .bg-gray-950,
 .dark .bg-gray-900 {
-background-color: #13151b !important;
+  background-color: #13151b !important;
 }
 
 .dark .border-gray-800 {
-border-color: #22252e !important;
+  border-color: #22252e !important;
+}
+
+/* ============================================================================
+   MOBILE-FIRST APP VIEW & RESPONSIVE ADAPTIVE LAYOUTS (POINT 1 & C)
+   ============================================================================ */
+
+@media (max-width: 767px) {
+  /* Add bottom padding to main body/container when mobile bottom navigation bar is active */
+  body.mobile-native-mode {
+    padding-bottom: 72px;
+  }
+}
+
+/* Mobile Card View Transition Wrappers */
+.mobile-card-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.mobile-card-item:active {
+  transform: scale(0.99);
+}
+
+/* Mobile Bottom Navigation Bar Styling */
+#mobileBottomNavBar {
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark #mobileBottomNavBar {
+  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.4);
 }
