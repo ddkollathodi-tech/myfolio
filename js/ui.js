@@ -361,7 +361,7 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested (POINT 3 & NEW POINT 1: Excess invested styling, dynamic progress bar coloring, and absolute excess text without base percentage)
+  // Card 2: Net Invested (POINT 3 & NEW POINT 1: Excess invested styling, dynamic progress bar coloring, and color rules for percentage)
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
   const invTarget = milestoneGoals.netInvested || 5000000;
   const isExcessInvested = data.netInvested > invTarget;
@@ -385,7 +385,7 @@ function recalculateAndRender() {
     const invRem = invTarget - data.netInvested;
     invRemEl.innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
     invRemEl.className = 'text-slate-500 dark:text-slate-400 transition-all duration-200';
-    invPctEl.className = 'text-rose-600 dark:text-rose-400';
+    invPctEl.className = 'text-emerald-600 dark:text-emerald-400 font-bold';
     invBarEl.className = 'bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500';
   }
   invBarEl.style.width = `${displayPct}%`;
@@ -2160,6 +2160,33 @@ function handleTransactionSubmit(e) {
     if (amount > cashAvailable) {
       showInlineError(amtInput, `Insufficient cash: Account balance is ${formatINR(cashAvailable)}.`);
       return;
+    }
+  }
+
+  // 9. Withdrawal Validation (Prevent withdrawing funds not available)
+  if (type === 'WITHDRAWAL') {
+    const cashAvailable = engineData.accountCashMap[account] || 0;
+    if (amount > cashAvailable) {
+      showInlineError(amtInput, `Insufficient cash for withdrawal: Available balance is ${formatINR(cashAvailable)}.`);
+      return;
+    }
+  }
+
+  // 10. Fees Threshold Guardrails & Verification Checks
+  if (type === 'FEES') {
+    const cashAvailable = engineData.accountCashMap[account] || 0;
+    const projectedCash = cashAvailable - amount;
+
+    if (projectedCash < -2000) {
+      showInlineError(amtInput, `Warning: This fee plunges account balance to ${formatINR(projectedCash)} (exceeds -₹2,000 limit).`);
+      return;
+    }
+
+    if (amount > 2000) {
+      const confirmed = confirm(`High Fee Alert: You are recording a fee of ${formatINR(amount)}. Do you want to proceed and verify this transaction?`);
+      if (!confirmed) {
+        return;
+      }
     }
   }
 
