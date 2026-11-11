@@ -6,9 +6,6 @@ let multiChartInstance = null;
 let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
 
-// Mobile View & Responsive Layout State
-let forceDesktopMode = localStorage.getItem('MYFOLIOAI_FORCE_DESKTOP') === 'true';
-
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
@@ -29,10 +26,6 @@ function init() {
   updateStockAutocompleteOptions();
   checkGatekeeperState();
 
-  // Apply responsive mobile UI mode if applicable
-  applyResponsiveLayoutMode();
-  window.addEventListener('resize', handleWindowResize);
-
   if (cloudScriptUrl) {
     fetchFromGoogleSheet();
   } else {
@@ -40,100 +33,9 @@ function init() {
   }
 }
 
-/* ---------------- RESPONSIVE MOBILE DETECTION & ADAPTIVE MODE ---------------- */
-function isMobileDeviceWidth() {
-  return window.innerWidth < 768;
-}
-
-function isMobileNativeActive() {
-  return isMobileDeviceWidth() && !forceDesktopMode;
-}
-
-function applyResponsiveLayoutMode() {
-  const isMobile = isMobileNativeActive();
-  const bodyEl = document.body;
-  
-  if (isMobile) {
-    bodyEl.classList.add('mobile-native-mode');
-    ensureMobileBottomNavBar();
-  } else {
-    bodyEl.classList.remove('mobile-native-mode');
-    removeMobileBottomNavBar();
-  }
-}
-
-function handleWindowResize() {
-  applyResponsiveLayoutMode();
-  if (multiChartInstance) {
-    multiChartInstance.resize();
-  }
-}
-
-function toggleForceDesktopMode() {
-  forceDesktopMode = !forceDesktopMode;
-  localStorage.setItem('MYFOLIOAI_FORCE_DESKTOP', forceDesktopMode ? 'true' : 'false');
-  applyResponsiveLayoutMode();
-  closeSettingsDropdown();
-  recalculateAndRender();
-  
-  const statusMsg = forceDesktopMode ? 'Forced Desktop Mode enabled.' : 'Adaptive Mobile Mode enabled.';
-  console.log(statusMsg);
-}
-
-function ensureMobileBottomNavBar() {
-  let navBar = document.getElementById('mobileBottomNavBar');
-  if (navBar) return;
-
-  navBar = document.createElement('nav');
-  navBar.id = 'mobileBottomNavBar';
-  navBar.className = 'fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#131722]/95 border-t border-slate-200 dark:border-[#222836] px-4 py-2 flex items-center justify-around md:hidden';
-  
-  navBar.innerHTML = `
-    <button onclick="switchTab('holdings'); setActiveMobileNav('holdings')" id="mobNav-holdings" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="briefcase" class="w-5 h-5 text-emerald-500"></i>
-      <span>Holdings</span>
-    </button>
-    <button onclick="switchTab('closedTrades'); setActiveMobileNav('closedTrades')" id="mobNav-closedTrades" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="check-check" class="w-5 h-5"></i>
-      <span>Closed</span>
-    </button>
-    <button onclick="switchTab('fyBreakdown'); setActiveMobileNav('fyBreakdown')" id="mobNav-fyBreakdown" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="calendar-check" class="w-5 h-5"></i>
-      <span>FY P&L</span>
-    </button>
-    <button onclick="switchTab('transactions'); setActiveMobileNav('transactions')" id="mobNav-transactions" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="list" class="w-5 h-5"></i>
-      <span>Ledger</span>
-    </button>
-    <button onclick="switchTab('taxPnl'); setActiveMobileNav('taxPnl')" id="mobNav-taxPnl" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="calculator" class="w-5 h-5 text-rose-500"></i>
-      <span>Tax</span>
-    </button>
-  `;
-
-  document.body.appendChild(navBar);
-  if (window.lucide) lucide.createIcons();
-}
-
-function removeMobileBottomNavBar() {
-  const navBar = document.getElementById('mobileBottomNavBar');
-  if (navBar) navBar.remove();
-}
-
-function setActiveMobileNav(tabKey) {
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'taxPnl'].forEach(k => {
-    const btn = document.getElementById(`mobNav-${k}`);
-    if (!btn) return;
-    if (k === tabKey) {
-      btn.className = 'flex flex-col items-center space-y-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]';
-    } else {
-      btn.className = 'flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]';
-    }
-  });
-}
-
 /* ---------------- STEALTH MASKING SYSTEM (POINT 5) ---------------- */
 function initTabMaskStates() {
+  // POINT 5: Enforce blur-by-default across all privacy tabs on every login and refresh
   tabMaskStates = {
     chart: true,
     holdings: true,
@@ -263,6 +165,7 @@ function recordPriceUpdateTimestamp(customDate) {
   const hours = String(d.getHours()).padStart(2, '0');
   const mins = String(d.getMinutes()).padStart(2, '0');
 
+  // Streamlined format without year or prefix: e.g. 28-10, 15:48
   const formatted = `${day}-${month}, ${hours}:${mins}`;
   localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
   renderLastPriceTimestamp();
@@ -447,7 +350,7 @@ function recalculateAndRender() {
   if (window.lucide) lucide.createIcons();
 }
 
-/* ---------------- ACTIVE HOLDINGS TABLE & MOBILE CARDS ---------------- */
+/* ---------------- ACTIVE HOLDINGS TABLE ---------------- */
 function setHoldingsAccountFilter(acct) {
   currentHoldingsAccountFilter = acct;
   ['ALL', 'Me', 'Wife', 'Mom', 'Brother'].forEach(key => {
@@ -464,10 +367,8 @@ function setHoldingsAccountFilter(acct) {
 
 function renderHoldings(data) {
   const tbody = document.getElementById('holdingsTableBody');
-  const mobileContainer = document.getElementById('holdingsMobileCardsContainer');
   if (!tbody) return;
   tbody.innerHTML = '';
-  if (mobileContainer) mobileContainer.innerHTML = '';
 
   const maskClass = getMaskClass('holdings');
 
@@ -545,6 +446,7 @@ function renderHoldings(data) {
   }
 
   cashBadgeVal.innerText = formatINR(cashAmt);
+  // POINT 7: Dynamic green/red font color keeping neutral grey card background
   cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
   // Win / Loss bar
@@ -565,9 +467,6 @@ function renderHoldings(data) {
 
   if (filteredHoldings.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active holdings for ${currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : currentHoldingsAccountFilter}.</td></tr>`;
-    if (mobileContainer) {
-      mobileContainer.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs font-medium">No active holdings found.</div>`;
-    }
     return;
   }
 
@@ -583,8 +482,6 @@ function renderHoldings(data) {
 
   sorted.forEach(h => {
     const isPos = h.pnlVal >= 0;
-    
-    // 1. Desktop Table Row
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
     tr.innerHTML = `
@@ -609,47 +506,6 @@ function renderHoldings(data) {
       </td>
     `;
     tbody.appendChild(tr);
-
-    // 2. Mobile Responsive Card View
-    if (mobileContainer) {
-      const card = document.createElement('div');
-      card.className = 'mobile-card-item bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl p-4 shadow-xs space-y-3';
-      card.innerHTML = `
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <span class="font-extrabold text-sm text-slate-900 dark:text-white">${h.stock}</span>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#1A1F2E] text-slate-600 dark:text-slate-300">${h.weightPct.toFixed(1)}% wt</span>
-          </div>
-          <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-3 py-1 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900">Sell</button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-slate-100 dark:border-[#222836]">
-          <div>
-            <span class="text-slate-400 block text-[10px]">Qty &amp; Avg WAP</span>
-            <span class="font-semibold text-slate-700 dark:text-slate-300 ${maskClass}">${h.qty} shs @ ${formatINR(h.wap, 1)}</span>
-          </div>
-          <div class="text-right">
-            <span class="text-slate-400 block text-[10px]">Current LTP</span>
-            <span class="font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})">${formatINR(h.ltp, 2)}</span>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between pt-1">
-          <div>
-            <span class="text-slate-400 block text-[10px]">Invested Value</span>
-            <span class="font-medium text-slate-700 dark:text-slate-300 ${maskClass}">${formatINR(h.investedVal, 0)}</span>
-          </div>
-          <div class="text-right">
-            <span class="text-slate-400 block text-[10px]">Current Value / P&amp;L</span>
-            <div class="font-bold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal, 0)}</div>
-            <div class="text-[11px] font-extrabold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
-              ${isPos ? '+' : ''}${formatINR(h.pnlVal, 0)} (${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)
-            </div>
-          </div>
-        </div>
-      `;
-      mobileContainer.appendChild(card);
-    }
   });
   filterHoldingsTable();
 }
@@ -669,28 +525,19 @@ function filterHoldingsTable() {
   document.querySelectorAll('#holdingsTableBody tr').forEach(r => {
     r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
   });
-  const mobileContainer = document.getElementById('holdingsMobileCardsContainer');
-  if (mobileContainer) {
-    mobileContainer.querySelectorAll('.mobile-card-item').forEach(card => {
-      card.style.display = card.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
-  }
 }
 
-/* ---------------- CLOSED TRADES TABLE & MOBILE CARDS ---------------- */
+/* ---------------- CLOSED TRADES TABLE ---------------- */
 function renderClosedTrades(closedTrades) {
   const tbody = document.getElementById('closedTradesTableBody');
-  const mobileContainer = document.getElementById('closedMobileCardsContainer');
   if (!tbody) return;
   tbody.innerHTML = '';
-  if (mobileContainer) mobileContainer.innerHTML = '';
 
   const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
   if (closedTrades.length === 0) {
     tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No closed trades recorded yet.</td></tr>`;
-    if (mobileContainer) mobileContainer.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">No closed trades recorded yet.</div>`;
     document.getElementById('closedPaginationContainer').classList.add('hidden');
     return;
   }
@@ -733,7 +580,6 @@ function renderClosedTrades(closedTrades) {
     const retPct = c.retPct;
     const isPos = c.netPnL >= 0;
 
-    // Desktop Table Row
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
     tr.innerHTML = `
@@ -747,39 +593,6 @@ function renderClosedTrades(closedTrades) {
       <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
-
-    // Mobile Card View
-    if (mobileContainer) {
-      const card = document.createElement('div');
-      card.className = 'mobile-card-item bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl p-4 shadow-xs space-y-3';
-      card.innerHTML = `
-        <div class="flex items-center justify-between">
-          <span class="font-extrabold text-sm text-slate-900 dark:text-white">${c.stock}</span>
-          <span class="text-xs font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</span>
-        </div>
-        <div class="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-slate-100 dark:border-[#222836]">
-          <div>
-            <span class="text-slate-400 block text-[10px]">Total Qty Sold</span>
-            <span class="font-semibold text-slate-700 dark:text-slate-300 ${maskClass}">${c.totalQty} shs</span>
-          </div>
-          <div class="text-right">
-            <span class="text-slate-400 block text-[10px]">Avg Buy / Sell</span>
-            <span class="font-semibold text-slate-700 dark:text-slate-300">${formatINR(avgBuy, 1)} &rarr; ${formatINR(avgSell, 1)}</span>
-          </div>
-        </div>
-        <div class="flex items-center justify-between pt-1">
-          <div>
-            <span class="text-slate-400 block text-[10px]">Cost / Proceeds</span>
-            <span class="text-xs text-slate-600 dark:text-slate-400 ${maskClass}">${formatINR(c.totalCostBasis, 0)} &rarr; ${formatINR(c.totalProceeds, 0)}</span>
-          </div>
-          <div class="text-right">
-            <span class="text-slate-400 block text-[10px]">Net Realized P&amp;L</span>
-            <span class="font-extrabold text-sm ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL, 0)}</span>
-          </div>
-        </div>
-      `;
-      mobileContainer.appendChild(card);
-    }
   });
 }
 
@@ -868,7 +681,7 @@ function renderFY(fyRealized) {
   });
 }
 
-/* ---------------- TRADEBOOK LEDGER TABLE & MOBILE CARDS ---------------- */
+/* ---------------- TRADEBOOK LEDGER TABLE ---------------- */
 function handleLedgerSearch() {
   ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
   ledgerCurrentPage = 1;
@@ -877,10 +690,8 @@ function handleLedgerSearch() {
 
 function renderLedger(ledgerEntries) {
   const tbody = document.getElementById('txTableBody');
-  const mobileContainer = document.getElementById('ledgerMobileCardsContainer');
   if (!tbody) return;
   tbody.innerHTML = '';
-  if (mobileContainer) mobileContainer.innerHTML = '';
 
   const maskClass = getMaskClass('ledger');
   let list = [...ledgerEntries].reverse();
@@ -897,7 +708,6 @@ function renderLedger(ledgerEntries) {
 
   if (list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 font-medium">No matching transactions found.</td></tr>`;
-    if (mobileContainer) mobileContainer.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">No matching transactions found.</div>`;
     document.getElementById('ledgerPaginationContainer').classList.add('hidden');
     return;
   }
@@ -936,7 +746,6 @@ function renderLedger(ledgerEntries) {
   };
 
   pageSlice.forEach(tx => {
-    // Desktop Table Row
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
     tr.innerHTML = `
@@ -952,33 +761,6 @@ function renderLedger(ledgerEntries) {
       <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
     `;
     tbody.appendChild(tr);
-
-    // Mobile Card View
-    if (mobileContainer) {
-      const card = document.createElement('div');
-      card.className = 'mobile-card-item bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl p-4 shadow-xs space-y-2.5';
-      card.innerHTML = `
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${tx.type}</span>
-            <span class="font-extrabold text-sm text-slate-900 dark:text-white">${tx.stock || tx.account}</span>
-          </div>
-          <span class="text-[11px] text-slate-400">${tx.date}</span>
-        </div>
-        <div class="flex items-center justify-between text-xs py-1 border-y border-slate-100 dark:border-[#222836]">
-          <span class="text-slate-500">Account: <b class="text-slate-800 dark:text-slate-200">${tx.account || 'Unassigned'}</b></span>
-          <span class="text-slate-500">Qty/Price: <b class="text-slate-800 dark:text-slate-200">${tx.qty ? tx.qty + ' @ ' + formatINR(tx.price, 1) : '—'}</b></span>
-        </div>
-        <div class="flex items-center justify-between pt-0.5">
-          <div class="text-xs text-slate-500 truncate max-w-[180px]">${tx.remarks || ''}</div>
-          <div class="text-right">
-            <span class="text-[10px] text-slate-400 block">Running Cash</span>
-            <span class="font-extrabold text-sm text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash, 0)}</span>
-          </div>
-        </div>
-      `;
-      mobileContainer.appendChild(card);
-    }
   });
 }
 
@@ -1354,14 +1136,17 @@ function exportPortfolioToExcel() {
   const data = computeEngine();
   const wb = XLSX.utils.book_new();
 
+  // Helper to style headers, enable text wrapping, set widths, grid borders, and raw unformatted numbers
   function formatWorksheet(ws, colWidths) {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);
 
+    // 1. Set explicit column widths
     if (colWidths) {
       ws['!cols'] = colWidths.map(w => ({ wch: w }));
     }
 
+    // Define thin gray grid border style
     const thinBorder = {
       top: { style: "thin", color: { rgb: "CBD5E1" } },
       bottom: { style: "thin", color: { rgb: "CBD5E1" } },
@@ -1369,6 +1154,7 @@ function exportPortfolioToExcel() {
       right: { style: "thin", color: { rgb: "CBD5E1" } }
     };
 
+    // 2. Iterate through cells to apply styling
     for (let R = range.s.r; R <= range.e.r; ++R) {
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
@@ -1383,6 +1169,7 @@ function exportPortfolioToExcel() {
           horizontal: R === 0 ? "center" : "left" 
         };
 
+        // Title Bolding & Header Styling (Row 0)
         if (R === 0) {
           ws[cellAddress].s.font = { 
             name: "Inter", 
@@ -1391,7 +1178,7 @@ function exportPortfolioToExcel() {
             color: { rgb: "FFFFFF" } 
           };
           ws[cellAddress].s.fill = { 
-            fgColor: { rgb: "0F172A" }
+            fgColor: { rgb: "0F172A" } // Dark Slate Header
           };
         } else {
           ws[cellAddress].s.font = { 
@@ -1401,6 +1188,7 @@ function exportPortfolioToExcel() {
           };
         }
 
+        // Store numbers as raw unformatted numbers (no commas or currency symbols)
         if (typeof ws[cellAddress].v === 'number') {
           ws[cellAddress].z = "0.00";
         }
@@ -1408,6 +1196,7 @@ function exportPortfolioToExcel() {
     }
   }
 
+  // Tab 1: Summary Dashboard
   const summaryRows = [
     { "Metric": "Total Net Worth", "Value": Number(data.netWorth) },
     { "Metric": "Contributed Corpus (Net Invested)", "Value": Number(data.netInvested) },
@@ -1421,6 +1210,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsSummary, [38, 22]);
   XLSX.utils.book_append_sheet(wb, wsSummary, "Summary Dashboard");
 
+  // Tab 2: Holdings
   const holdingsRows = data.holdings.map(h => ({
     "Stock Ticker": h.stock,
     "Quantity": Number(h.qty),
@@ -1436,6 +1226,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsHoldings, [16, 12, 18, 14, 16, 16, 12, 16, 12]);
   XLSX.utils.book_append_sheet(wb, wsHoldings, "Active Holdings");
 
+  // Tab 3: Closed Trades
   const closedRows = data.closedTrades.map(c => ({
     "Stock Ticker": c.stock,
     "Total Sold Qty": Number(c.totalQty),
@@ -1448,6 +1239,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsClosed, [16, 16, 18, 18, 18, 16]);
   XLSX.utils.book_append_sheet(wb, wsClosed, "Closed Trades");
 
+  // Tab 4: Tradebook
   const tradebookRows = data.ledgerEntries.map(l => ({
     "Date": l.date,
     "Account": l.account,
@@ -1464,6 +1256,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 25]);
   XLSX.utils.book_append_sheet(wb, wsTradebook, "Tradebook & Ledger");
 
+  // Tab 5: Tax Audit
   const taxRows = data.taxClosedLots.map(t => ({
     "Sell Date": t.sellDate,
     "Buy Date (FIFO)": t.buyDate,
@@ -1482,6 +1275,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTax, [14, 14, 12, 16, 10, 14, 12, 16, 16, 18, 12, 14]);
   XLSX.utils.book_append_sheet(wb, wsTax, "Tax Audit Trail");
 
+  // Tab 6: Bank Ledger
   const bankRows = data.bankEntries.map(b => ({
     "Date": b.date,
     "Account": b.account,
@@ -1495,6 +1289,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsBank, [14, 12, 14, 16, 16, 22, 25]);
   XLSX.utils.book_append_sheet(wb, wsBank, "Bank Ledger");
 
+  // Tab 7: Performance Trajectory
   let trajectoryHistory = [];
   if (Array.isArray(chartHistoryRecords)) {
     trajectoryHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => ({
@@ -1514,6 +1309,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTrajectory, [18, 18, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsTrajectory, "Performance Trajectory");
 
+  // Tab 8: Monthly RoC & Extreme Target
   const fourCurvePoints = computeRocFourCurves(data);
   const rocRows = fourCurvePoints.map(p => ({
     "Checkpoint": p.date,
@@ -2135,6 +1931,7 @@ function handleTransactionSubmit(e) {
   if (['BUY', 'SELL'].includes(type) && !amount) amount = qty * price;
   if (type === 'BONUS') amount = 0;
 
+  // CRITICAL FIX: Overselling Validation Check
   if (type === 'SELL') {
     const engineData = computeEngine();
     let availableQty = 0;
@@ -2337,6 +2134,7 @@ function getPrecedingMonthEndDate() {
 }
 
 function checkPendingMonthEndSnapshot() {
+  // CRITICAL SECURITY FIX: Block month-end popup if PIN lock-screen gatekeeper is active (using session unlock check)
   const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
   if (!isSessionUnlocked) return;
   if (!transactions || transactions.length === 0) return;
@@ -2355,6 +2153,7 @@ function checkPendingMonthEndSnapshot() {
 }
 
 function openMonthEndReviewModal(cutoffDate, targetDateStr) {
+  // CRITICAL SECURITY FIX: Double check session unlock state
   const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
   if (!isSessionUnlocked) return;
 
@@ -2516,6 +2315,7 @@ function closeSettingsDropdown() {
   if (menu) menu.classList.add('hidden');
 }
 
+// 1. PIN Settings Modal
 function openPinSettingsModal() {
   closeSettingsDropdown();
   document.getElementById('settingsCurrentPin').value = '';
@@ -2582,6 +2382,7 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
+// 2. Manual Database Backup Trigger (Decoupled with Rotating Amber Spinner & Status Indicator)
 async function triggerManualDatabaseBackup() {
   closeSettingsDropdown();
   if (!cloudScriptUrl) {
@@ -2628,6 +2429,7 @@ async function triggerManualDatabaseBackup() {
   }
 }
 
+// 3. Cash Calibration Modal
 function openCashCalibrateModal() {
   closeSettingsDropdown();
   renderCashCalibrateRows();
@@ -2724,6 +2526,7 @@ function saveCashCalibration() {
   recalculateAndRender();
 }
 
+// 4. Stock Master Modal
 function openStockMasterModal() {
   closeSettingsDropdown();
   document.getElementById('smSymbolInput').value = '';
