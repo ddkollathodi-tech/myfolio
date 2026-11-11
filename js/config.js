@@ -16,7 +16,6 @@ const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
 const TAB_MASK_STATES_KEY = 'MYFOLIOAI_TAB_MASK_STATES'; // Stealth Tab Masks
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
-const FORCE_DESKTOP_KEY = 'MYFOLIOAI_FORCE_DESKTOP'; // Mobile Desktop-View Override
 
 // Core Account Definitions
 const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
@@ -132,19 +131,6 @@ let bankLedgerCurrentPage = 1;
 let ledgerSearchTerm = '';
 let holdingsSort = { key: 'currentVal', dir: 'desc' };
 let closedSort = { key: 'netPnL', dir: 'desc' };
-
-// Mobile View Detection & Desktop Toggle State
-function isMobileDeviceWidth() {
-  return window.innerWidth < 768;
-}
-
-function isDesktopModeForced() {
-  return localStorage.getItem(FORCE_DESKTOP_KEY) === 'true';
-}
-
-function isMobileActiveView() {
-  return isMobileDeviceWidth() && !isDesktopModeForced();
-}
 
 // ---------------- UTILITY & FORMATTING FUNCTIONS ----------------
 
