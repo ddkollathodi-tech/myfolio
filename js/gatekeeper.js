@@ -8,7 +8,10 @@ let tempPinForSetup = '';
 let lastActiveTimestamp = Date.now();
 const AUTO_LOCK_TIMEOUT_MS = 1 * 60 * 1000; // 1 minute
 
-// Default privacy mask states: all 4 key metric cards start masked
+// Secondary PIN Authorization Challenge State (for Edit/Delete in Last 10)
+let pendingPinChallengeCallback = null;
+let challengeEnteredPin = '';
+
 let kpiMaskStates = {
   netWorth: true,
   netInvested: true,
@@ -26,10 +29,26 @@ async function sha256Hex(str) {
 /* ---------------- PHYSICAL KEYBOARD LISTENER ---------------- */
 function initKeyboardPinListener() {
   window.addEventListener('keydown', (e) => {
+    // 1. Check if secondary PIN challenge modal is open
+    const challengeModal = document.getElementById('pinChallengeModal');
+    if (challengeModal && !challengeModal.classList.contains('hidden')) {
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        pressChallengePinDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        backspaceChallengePinDigit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closePinChallengeModal();
+      }
+      return;
+    }
+
+    // 2. Main Gatekeeper Lock Screen
     const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
     if (isSessionUnlocked) return;
 
-    // Do not intercept if user is typing into an input field on the link overlay
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
 
     if (e.key >= '0' && e.key <= '9') {
@@ -81,9 +100,7 @@ function checkGatekeeperState() {
   if (isSessionUnlocked) {
     if (overlay) overlay.classList.add('hidden');
     if (root) root.style.display = 'flex';
-    if (typeof checkPendingMonthEndSnapshot === 'function') {
-      checkPendingMonthEndSnapshot();
-    }
+    checkPendingMonthEndSnapshot();
   } else {
     if (root) root.style.display = 'none';
     if (overlay) overlay.classList.remove('hidden');
@@ -95,7 +112,6 @@ function renderPinUI() {
   const card = document.getElementById('pinCard');
   if (!card) return;
 
-  // Check if Google Sheet URL is configured. If NOT linked yet, display the Sheet Link Screen first.
   const isSheetLinked = cloudScriptUrl && cloudScriptUrl.trim() !== '';
 
   if (!isSheetLinked && !appSettings.pinHash) {
@@ -103,7 +119,6 @@ function renderPinUI() {
     return;
   }
 
-  // Standard PIN screen layout template restoration if sheet is linked or pin exists
   renderStandardPinLayout(card);
 }
 
@@ -140,11 +155,11 @@ function renderSheetLinkOverlay(container) {
     </div>
   `;
 
-  if (window.lucide) lucide.createIcons();
+  refreshIcons(container);
 }
 
 function bypassToPinCreation() {
-  appSettings.pinHash = 'TEMP_FLAG'; // temporary bypass flag to render pin creation
+  appSettings.pinHash = 'TEMP_FLAG';
   renderPinUI();
 }
 
@@ -159,7 +174,8 @@ async function handleGatekeeperSheetLink() {
   if (!newUrl) {
     if (msgEl) {
       msgEl.innerText = 'Please enter a valid Web App Deployment URL.';
-      msgEl.classList.remove('opacity-0');
+      msgEl.classList.remove('opacity-0', 'text-emerald-500');
+      msgEl.classList.add('text-rose-500');
     }
     return;
   }
@@ -176,13 +192,16 @@ async function handleGatekeeperSheetLink() {
     msgEl.classList.add('text-emerald-500');
   }
 
-  try {
-    await fetchFromGoogleSheet();
-    // After pulling from sheet, if pinHash is now loaded successfully, re-render gatekeeper to standard PIN view
+  const ok = await fetchFromGoogleSheet();
+  if (ok) {
     checkGatekeeperState();
-  } catch (err) {
+  } else {
+    cloudScriptUrl = '';
+    apiToken = '';
+    localStorage.removeItem(SCRIPT_URL_KEY);
+    localStorage.removeItem(API_TOKEN_STORAGE_KEY);
     if (msgEl) {
-      msgEl.innerText = 'Connection failed. Check URL and Token.';
+      msgEl.innerText = 'Connection failed. Check URL and API Token.';
       msgEl.classList.remove('text-emerald-500', 'opacity-0');
       msgEl.classList.add('text-rose-500');
     }
@@ -190,6 +209,11 @@ async function handleGatekeeperSheetLink() {
 }
 
 function renderStandardPinLayout(container) {
+  const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const keypadButtons = digits.map(d =>
+    `<button onclick="pressPinDigit('${d}')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">${d}</button>`
+  ).join('');
+
   container.innerHTML = `
     <div class="flex flex-col items-center space-y-2">
       <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
@@ -199,7 +223,6 @@ function renderStandardPinLayout(container) {
       <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Enter your PIN to unlock</p>
     </div>
 
-    <!-- PIN Input Digits Display -->
     <div class="flex justify-center items-center space-x-3.5 py-2">
       <div id="pinDot-0" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
       <div id="pinDot-1" class="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150"></div>
@@ -209,20 +232,11 @@ function renderStandardPinLayout(container) {
 
     <div id="pinStatusMsg" class="text-xs font-semibold h-4 text-rose-500 transition-opacity opacity-0">Incorrect PIN. Try again.</div>
 
-    <!-- Numeric Keypad -->
     <div class="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
-      <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
-      <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
-      <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
-      <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
-      <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
-      <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
-      <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
-      <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
-      <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
-      <button onclick="clearPinInput()" class="h-13 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
-      <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
-      <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
+      ${keypadButtons}
+      <button onclick="clearPinInput()" class="py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
+      <button onclick="pressPinDigit('0')" class="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
+      <button onclick="backspacePinDigit()" class="py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
         <i data-lucide="delete" class="w-5 h-5"></i>
       </button>
     </div>
@@ -240,14 +254,13 @@ function renderStandardPinLayout(container) {
     </div>
   `;
 
-  if (window.lucide) lucide.createIcons();
+  refreshIcons(container);
 
   const title = document.getElementById('pinTitle');
   const subtitle = document.getElementById('pinSubtitle');
 
-  // If pinHash is empty or set to TEMP_FLAG, handle setup mode
   if (!appSettings.pinHash || appSettings.pinHash === 'TEMP_FLAG') {
-    if (appSettings.pinHash === 'TEMP_FLAG') appSettings.pinHash = ''; // clear temp flag for setup
+    if (appSettings.pinHash === 'TEMP_FLAG') appSettings.pinHash = '';
     isSettingUpNewPin = true;
     if (title) title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
     if (subtitle) subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio';
@@ -305,9 +318,7 @@ function showPinError(msg) {
   }
   if (card) {
     card.classList.add('shake-animation');
-    setTimeout(() => {
-      card.classList.remove('shake-animation');
-    }, 400);
+    setTimeout(() => card.classList.remove('shake-animation'), 400);
   }
   enteredPin = '';
   updatePinDots();
@@ -330,18 +341,16 @@ async function handlePinVerification() {
         const hash = await sha256Hex(enteredPin);
         appSettings.pinHash = hash;
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-        
-        if (typeof sendToSheet === 'function') {
-          sendToSheet({ action: "setPinHash", pinHash: hash });
-        }
+
+        sendToSheet({ action: "setPinHash", pinHash: hash });
 
         tempPinForSetup = '';
         enteredPin = '';
         sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
         resetActivityTimer();
-        resetKpiMasksToDefault();
+        resetAllMasksToDefault();
         checkGatekeeperState();
-        if (typeof recalculateAndRender === 'function') recalculateAndRender();
+        recalculateAndRender();
         return;
       } else {
         showPinError('PINs do not match. Restarting setup.');
@@ -358,36 +367,143 @@ async function handlePinVerification() {
     sessionStorage.setItem('MYFOLIOAI_UNLOCKED', 'true');
     resetActivityTimer();
     enteredPin = '';
-    resetKpiMasksToDefault();
+    resetAllMasksToDefault();
     checkGatekeeperState();
-    if (typeof recalculateAndRender === 'function') recalculateAndRender();
+    recalculateAndRender();
   } else {
     showPinError('Incorrect PIN. Please re-enter.');
   }
 }
 
+function closeAllModalsOnLock() {
+  [
+    'txModal',
+    'livePricesModal',
+    'goalModal',
+    'syncModal',
+    'pinSettingsModal',
+    'cashCalibrateModal',
+    'stockMasterModal',
+    'monthEndReviewModal',
+    'recentTxModal',
+    'pinChallengeModal'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  pendingPinChallengeCallback = null;
+  challengeEnteredPin = '';
+}
+
 function lockApplicationNow() {
   sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
   enteredPin = '';
-  resetKpiMasksToDefault();
+  closeAllModalsOnLock();
+  resetAllMasksToDefault();
   checkGatekeeperState();
 }
 
+/* ---------------- SECONDARY PIN AUTHORIZATION MODAL (FOR EDIT/DELETE) ---------------- */
+function requestPinAuthorization(subtitleText, onSuccessCallback) {
+  if (!appSettings.pinHash) {
+    onSuccessCallback();
+    return;
+  }
+
+  pendingPinChallengeCallback = onSuccessCallback;
+  challengeEnteredPin = '';
+
+  const modal = document.getElementById('pinChallengeModal');
+  const sub = document.getElementById('pinChallengeSubtitle');
+  const err = document.getElementById('pinChallengeError');
+
+  if (sub) sub.innerText = subtitleText || 'Enter your 4-digit Master PIN to authorize this change';
+  if (err) err.classList.add('opacity-0');
+  updateChallengePinDots();
+
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closePinChallengeModal() {
+  const modal = document.getElementById('pinChallengeModal');
+  if (modal) modal.classList.add('hidden');
+  pendingPinChallengeCallback = null;
+  challengeEnteredPin = '';
+}
+
+function updateChallengePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(`challengeDot-${i}`);
+    if (dot) {
+      if (i < challengeEnteredPin.length) {
+        dot.className = 'w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-emerald-500 scale-110 transition-all duration-150';
+      } else {
+        dot.className = 'w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 transition-all duration-150';
+      }
+    }
+  }
+}
+
+async function pressChallengePinDigit(digit) {
+  if (challengeEnteredPin.length >= 4) return;
+  challengeEnteredPin += digit;
+  updateChallengePinDots();
+
+  if (challengeEnteredPin.length === 4) {
+    const candidateHash = await sha256Hex(challengeEnteredPin);
+    if (candidateHash === appSettings.pinHash) {
+      const cb = pendingPinChallengeCallback;
+      closePinChallengeModal();
+      if (typeof cb === 'function') cb();
+    } else {
+      const err = document.getElementById('pinChallengeError');
+      const card = document.getElementById('pinChallengeCard');
+      if (err) err.classList.remove('opacity-0');
+      if (card) {
+        card.classList.add('shake-animation');
+        setTimeout(() => card.classList.remove('shake-animation'), 400);
+      }
+      challengeEnteredPin = '';
+      updateChallengePinDots();
+    }
+  }
+}
+
+function backspaceChallengePinDigit() {
+  if (challengeEnteredPin.length > 0) {
+    challengeEnteredPin = challengeEnteredPin.slice(0, -1);
+    updateChallengePinDots();
+    const err = document.getElementById('pinChallengeError');
+    if (err) err.classList.add('opacity-0');
+  }
+}
+
 /* ---------------- GAUSSIAN PRIVACY MASKS ---------------- */
-function resetKpiMasksToDefault() {
+function resetAllMasksToDefault() {
   kpiMaskStates = {
     netWorth: true,
     netInvested: true,
     lifetimePnL: true,
     currentFy: true
   };
+  tabMaskStates = {
+    chart: true,
+    holdings: true,
+    closedTrades: true,
+    fyBreakdown: true,
+    ledger: true,
+    bankLedger: true,
+    taxPnl: true
+  };
   applyAllKpiMasks();
+  Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
 }
 
 function toggleSingleKpiMask(cardKey) {
   if (kpiMaskStates.hasOwnProperty(cardKey)) {
     kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
     updateSingleMaskUI(cardKey);
+    refreshIcons();
   }
 }
 
@@ -412,10 +528,6 @@ function updateSingleMaskUI(cardKey) {
       else el.classList.remove('privacy-blurred');
     }
   });
-
-  if (window.lucide && typeof lucide.createIcons === 'function') {
-    lucide.createIcons();
-  }
 }
 
 function applyAllKpiMasks() {
