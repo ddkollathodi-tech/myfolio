@@ -9,7 +9,7 @@ function populateTaxFyOptions(fyRealized) {
   const currentSelected = select.value;
   select.innerHTML = '';
 
-  const currentFy = getFinancialYear(new Date().toISOString().split('T')[0]);
+  const currentFy = getFinancialYear(todayLocalISO());
   const availableFys = new Set([currentFy, ...Object.keys(fyRealized)]);
 
   Array.from(availableFys).sort().reverse().forEach(fy => {
@@ -32,9 +32,9 @@ function setTaxAccountFilter(acct) {
     const btn = document.getElementById(`taxAcctBtn-${key}`);
     if (!btn) return;
     if (key === acct) {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
+      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-xs font-semibold';
     } else {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
+      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
     }
   });
   renderTaxView();
@@ -49,12 +49,10 @@ function toggleCurrentAccountExemption() {
   appSettings[key] = newVal;
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-  if (typeof sendToSheet === 'function') {
-    sendToSheet({
-      action: "saveSettings",
-      settings: { [key]: newVal }
-    });
-  }
+  sendToSheet({
+    action: "saveSettings",
+    settings: { [key]: newVal }
+  });
 
   renderTaxView();
 }
@@ -70,12 +68,12 @@ function recordTaxChallan(fy, acct, qKey, currentPaid) {
   }
 }
 
-function renderTaxView() {
+function renderTaxView(precomputedData) {
   const fySelect = document.getElementById('taxFyFilter');
   if (!fySelect) return;
-  const targetFy = fySelect.value || getFinancialYear(new Date().toISOString().split('T')[0]);
+  const targetFy = fySelect.value || getFinancialYear(todayLocalISO());
 
-  const data = computeEngine();
+  const data = precomputedData || computeEngine();
   const allLotsForFy = data.taxClosedLots.filter(l => l.fy === targetFy);
 
   const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
@@ -116,7 +114,6 @@ function renderTaxView() {
     ltcgGrossGain += aLtcgGain;
     ltcgGrossLoss += aLtcgLoss;
 
-    // Set-off cascade per account
     const aStclOffStcg = Math.min(aStcgGain, aStcgLoss);
     let aNetStcg = aStcgGain - aStclOffStcg;
     let aRemStcl = aStcgLoss - aStclOffStcg;
@@ -133,7 +130,7 @@ function renderTaxView() {
     let aStcgShortfall = 0;
     let aLtcgShortfall = 0;
     if (isLowIncome) {
-      const cap = 400000; // Updated to ₹4,00,000 New Regime limit
+      const cap = 400000;
       aStcgShortfall = Math.min(aNetStcg, cap);
       aLtcgShortfall = Math.min(aNetLtcg, cap - aStcgShortfall);
     }
@@ -173,10 +170,10 @@ function renderTaxView() {
     }
     if (explainer) explainer.innerText = `Absorbs up to ₹4,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
   } else {
-    if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300';
+    if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-[#1A1F2E] hover:bg-slate-300 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300';
     if (toggleText) toggleText.innerText = 'Regular Salary / Income';
     if (toggleBadge) {
-      toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 border border-slate-200 dark:border-gray-700';
+      toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#1A1F2E] text-slate-500 border border-slate-200 dark:border-[#222836]';
       toggleBadge.innerText = 'Standard Regime';
     }
     if (explainer) explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
@@ -185,7 +182,7 @@ function renderTaxView() {
   const matrixTbody = document.getElementById('taxComputationTableBody');
   if (matrixTbody) {
     matrixTbody.innerHTML = `
-      <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
+      <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80">
         <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
           <span>Short-Term Capital Gains (STCG)</span>
           <span class="block text-[11px] text-slate-500 font-normal">Holding period &le; 365 Days (Sec 111A)</span>
@@ -199,7 +196,7 @@ function renderTaxView() {
         <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">20.80%</span></td>
         <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(stcgTax)}</td>
       </tr>
-      <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
+      <tr class="hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80">
         <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
           <span>Long-Term Capital Gains (LTCG)</span>
           <span class="block text-[11px] text-slate-500 font-normal">Holding period &gt; 365 Days (Sec 112A)</span>
@@ -213,7 +210,7 @@ function renderTaxView() {
         <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">13.00%</span></td>
         <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(ltcgTax)}</td>
       </tr>
-      <tr class="bg-slate-50/70 dark:bg-gray-950/60 font-bold border-t border-slate-200 dark:border-gray-700">
+      <tr class="bg-slate-50/70 dark:bg-[#0A0C10]/60 font-bold border-t border-slate-200 dark:border-[#222836]">
         <td class="py-3 px-4 text-slate-900 dark:text-white uppercase tracking-wider text-xs">Total Net Position</td>
         <td class="py-3 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">${formatINR(stcgGrossGain + ltcgGrossGain)}</td>
         <td class="py-3 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">${formatINR(stcgGrossLoss + ltcgGrossLoss)}</td>
@@ -229,7 +226,6 @@ function renderTaxView() {
 
   renderTaxHarvestingRadar(data, exemptionClaimed);
 
-  // Advance Tax Schedule Calculation
   const advTbody = document.getElementById('advanceTaxTableBody');
   if (advTbody) {
     advTbody.innerHTML = '';
@@ -261,9 +257,9 @@ function renderTaxView() {
 
       let statusBadge = '';
       if (totalTaxLiability === 0) {
-        statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
+        statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-500">Nil Liability</span>`;
       } else if (remainingToPay === 0) {
-        statusBadge = excessPaid > 0 
+        statusBadge = excessPaid > 0
           ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+${formatCompactIndian(excessPaid)} Rolled Over</span>`
           : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
       } else {
@@ -271,17 +267,21 @@ function renderTaxView() {
       }
 
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80';
       tr.innerHTML = `
         <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${q.key}</td>
-        <td class="py-2.5 px-3 text-slate-500 dark:text-gray-400 text-xs">${q.title}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(cumulativeTaxAccrued)}</td>
-        <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded font-mono text-[11px] bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 font-bold">${Math.round(q.pct * 100)}%</span></td>
+        <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-xs">${q.title}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(cumulativeTaxAccrued)}</td>
+        <td class="py-2.5 px-3 text-center"><span class="px-1.5 py-0.5 rounded font-mono text-[11px] bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 font-bold">${Math.round(q.pct * 100)}%</span></td>
         <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(statutoryMinDue)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" onclick="recordTaxChallan('${targetFy}', '${currentTaxAccountFilter}', '${q.key}', ${actualPaid})" title="Click to update challan">${formatINR(actualPaid)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" data-challan-fy="${esc(targetFy)}" data-challan-acct="${esc(currentTaxAccountFilter)}" data-challan-q="${q.key}" data-challan-paid="${actualPaid}" title="Click to update challan">${formatINR(actualPaid)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${remainingToPay > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}">${formatINR(remainingToPay)}</td>
         <td class="py-2.5 px-4 text-center">${statusBadge}</td>
       `;
+      const challanCell = tr.querySelector('[data-challan-q]');
+      if (challanCell) {
+        challanCell.addEventListener('click', () => recordTaxChallan(targetFy, currentTaxAccountFilter, q.key, actualPaid));
+      }
       advTbody.appendChild(tr);
     });
 
@@ -290,11 +290,11 @@ function renderTaxView() {
       const netYearBalance = totalTaxLiability - totalPaidAllQuarters;
       if (netYearBalance <= 0 && totalTaxLiability > 0) {
         summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability 
+        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability
           ? `Surplus Advance Tax: +${formatINR(totalPaidAllQuarters - totalTaxLiability)} (Refundable at ITR)`
           : `Advance Tax 100% Cleared`;
       } else if (totalTaxLiability === 0) {
-        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300';
+        summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-600 dark:text-slate-300';
         summaryBadge.innerText = 'No Tax Liability for this Financial Year';
       } else {
         summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
@@ -303,35 +303,36 @@ function renderTaxView() {
     }
   }
 
-  // Closed Lots Tax Audit Trail
   const auditTbody = document.getElementById('taxAuditTableBody');
   const countBadge = document.getElementById('taxAuditCount');
-  const fyLotsForAudit = currentTaxAccountFilter === 'ALL' ? data.taxClosedLots.filter(l => l.fy === targetFy) : data.taxClosedLots.filter(l => l.fy === targetFy && l.account === currentTaxAccountFilter);
+  const fyLotsForAudit = currentTaxAccountFilter === 'ALL'
+    ? data.taxClosedLots.filter(l => l.fy === targetFy)
+    : data.taxClosedLots.filter(l => l.fy === targetFy && l.account === currentTaxAccountFilter);
   if (countBadge) countBadge.innerText = `${fyLotsForAudit.length} Lots`;
 
   if (auditTbody) {
     auditTbody.innerHTML = '';
     if (fyLotsForAudit.length === 0) {
-      auditTbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No sales recorded for ${targetFy} in this account filter.</td></tr>`;
+      auditTbody.innerHTML = `<tr><td colspan="11" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No sales recorded for ${esc(targetFy)} in this account filter.</td></tr>`;
       return;
     }
 
     [...fyLotsForAudit].reverse().forEach(lot => {
       const isPos = lot.gain >= 0;
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80';
       tr.innerHTML = `
-        <td class="py-2 px-3 tabular-nums text-slate-500 dark:text-gray-400">${lot.sellDate}</td>
-        <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${lot.account}</span></td>
-        <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">${lot.stock}</td>
+        <td class="py-2 px-3 tabular-nums text-slate-500 dark:text-slate-400">${esc(lot.sellDate)}</td>
+        <td class="py-2 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(lot.account)}</span></td>
+        <td class="py-2 px-3 font-semibold text-slate-900 dark:text-white">${esc(lot.stock)}</td>
         <td class="py-2 px-2 text-right tabular-nums">${lot.qty}</td>
-        <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${lot.buyDate}</td>
-        <td class="py-2 px-2 text-right tabular-nums text-slate-600 dark:text-gray-300 font-mono">${lot.days}d</td>
+        <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${esc(lot.buyDate)}</td>
+        <td class="py-2 px-2 text-right tabular-nums text-slate-600 dark:text-slate-300 font-mono">${lot.days}d</td>
         <td class="py-2 px-2 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${lot.isLtcg ? 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800' : 'bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800'}">${lot.isLtcg ? 'LTCG' : 'STCG'}</span></td>
-        <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(lot.costBasis)}</td>
+        <td class="py-2 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${formatINR(lot.costBasis)}</td>
         <td class="py-2 px-3 text-right tabular-nums">${formatINR(lot.proceeds)}</td>
         <td class="py-2 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${formatINR(lot.gain)}</td>
-        <td class="py-2 px-2 text-center font-bold text-slate-500">${lot.quarter}</td>
+        <td class="py-2 px-2 text-center font-bold text-slate-500">${esc(lot.quarter)}</td>
       `;
       auditTbody.appendChild(tr);
     });
@@ -356,7 +357,7 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
   const lossCandidates = [];
 
   openLots.forEach(lot => {
-    const livePrice = (marketPrices[lot.stock] ? marketPrices[lot.stock].ltp : null) || (savedManualPrices[lot.stock] ? savedManualPrices[lot.stock].ltp : lot.price);
+    const livePrice = (marketPrices[lot.stock] ? marketPrices[lot.stock].ltp : null) || lot.price;
     const lotCost = lot.qty * lot.price;
     const currentVal = lot.qty * livePrice;
     const unrealized = currentVal - lotCost;
@@ -391,25 +392,25 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
 
   const profitList = document.getElementById('profitHarvestList');
   const profitBadge = document.getElementById('profitHarvestCountBadge');
-  const maskClass = typeof getMaskClass === 'function' ? getMaskClass('taxPnl') : '';
+  const maskClass = getMaskClass('taxPnl');
 
   if (profitList && profitBadge) {
     profitList.innerHTML = '';
     profitBadge.innerText = `${profitCandidates.length} lot(s)`;
 
     if (profitCandidates.length === 0) {
-      profitList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
+      profitList.innerHTML = `<div class="text-slate-400 dark:text-slate-500 py-3 text-center">No open LTCG profit lots available to reset.</div>`;
     } else {
       profitCandidates.sort((a, b) => b.gain - a.gain).forEach(c => {
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+        row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836]';
         row.innerHTML = `
           <div>
             <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-              <span>${c.stock}</span>
-              <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.account})</span>
+              <span>${esc(c.stock)}</span>
+              <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${esc(c.account)})</span>
             </div>
-            <div class="text-[11px] text-slate-500 dark:text-gray-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
           </div>
           <div class="text-right">
             <span class="font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}">+${formatINR(c.gain, 0)}</span>
@@ -428,18 +429,18 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
     lossBadge.innerText = `${lossCandidates.length} lot(s)`;
 
     if (lossCandidates.length === 0) {
-      lossList.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
+      lossList.innerHTML = `<div class="text-slate-400 dark:text-slate-500 py-3 text-center">No open positions sitting at a paper loss.</div>`;
     } else {
       lossCandidates.sort((a, b) => b.loss - a.loss).forEach(c => {
         const row = document.createElement('div');
-        row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-gray-900 border border-slate-200/80 dark:border-gray-800';
+        row.className = 'flex items-center justify-between p-2 rounded-lg bg-white dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836]';
         row.innerHTML = `
           <div>
             <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-              <span>${c.stock}</span>
-              <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${c.account})</span>
+              <span>${esc(c.stock)}</span>
+              <span class="text-[10px] font-semibold text-slate-400">(${c.days}d • ${c.isLtcg ? 'LTCG' : 'STCG'} • ${esc(c.account)})</span>
             </div>
-            <div class="text-[11px] text-slate-500 dark:text-gray-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 ${maskClass}">${c.qty} shs @ ₹${c.cost.toFixed(1)} &rarr; LTP ₹${c.ltp.toFixed(1)}</div>
           </div>
           <div class="text-right">
             <span class="font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}">-${formatINR(c.loss, 0)}</span>
