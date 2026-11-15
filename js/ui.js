@@ -1,19 +1,77 @@
 // ============================================================================
-// MyFolioAI - UI Controller, Renderers, Chart & Event Handlers (ui.js)
+// MyFolioAI - UI Controller, Renderers, Chart & Event Handlers (js/ui.js)
 // ============================================================================
 
 let multiChartInstance = null;
 let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
+let activeTabKey = 'holdings';
+let pendingPinActionCallback = null;
 
-// Mobile View & Responsive Layout State
-let forceDesktopMode = localStorage.getItem('MYFOLIOAI_FORCE_DESKTOP') === 'true';
+// Memoization & Dirty-Tab Tracking
+let txVersion = 0;
+let cachedEngineVersion = -1;
+let cachedEngineResult = null;
+let dirtyTabs = {
+  holdings: true,
+  closedTrades: true,
+  fyBreakdown: true,
+  transactions: true,
+  bankLedger: true,
+  taxPnl: true
+};
+
+let iconRefreshQueued = false;
+
+/* ---------------- CORE HELPERS: ESCAPING, LOCAL IST DATE & MEMOIZATION ---------------- */
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function todayLocalISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function bumpTxVersion() {
+  txVersion++;
+  Object.keys(dirtyTabs).forEach(k => { dirtyTabs[k] = true; });
+}
+
+function getCachedEngineData() {
+  if (cachedEngineResult && cachedEngineVersion === txVersion) {
+    return cachedEngineResult;
+  }
+  cachedEngineResult = computeEngine();
+  cachedEngineVersion = txVersion;
+  return cachedEngineResult;
+}
+
+function refreshIcons() {
+  if (iconRefreshQueued) return;
+  iconRefreshQueued = true;
+  requestAnimationFrame(() => {
+    iconRefreshQueued = false;
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+      lucide.createIcons();
+    }
+  });
+}
 
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
   initTabMaskStates();
-  ensureChartDomElements();
+  buildDynamicAccountControls();
   updateSyncUI();
   renderLastPriceTimestamp();
   renderLastBackupTimestamp();
@@ -25,13 +83,10 @@ function init() {
   if (savedTx) {
     try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
   }
+  bumpTxVersion();
 
   updateStockAutocompleteOptions();
   checkGatekeeperState();
-
-  // Apply responsive mobile UI mode if applicable
-  applyResponsiveLayoutMode();
-  window.addEventListener('resize', handleWindowResize);
 
   if (cloudScriptUrl) {
     fetchFromGoogleSheet();
@@ -40,99 +95,29 @@ function init() {
   }
 }
 
-/* ---------------- RESPONSIVE MOBILE DETECTION & ADAPTIVE MODE ---------------- */
-function isMobileDeviceWidth() {
-  return window.innerWidth < 768;
-}
+function buildDynamicAccountControls() {
+  const filterGroup = document.getElementById('holdingsAccountFilterGroup');
+  if (filterGroup) {
+    const accounts = ['ALL', ...CALIB_ACCOUNTS];
+    filterGroup.innerHTML = accounts.map(acct => {
+      const label = acct === 'ALL' ? 'Combined' : esc(acct);
+      const isSelected = acct === currentHoldingsAccountFilter;
+      const cls = isSelected
+        ? 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold'
+        : 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
+      return `<button onclick="setHoldingsAccountFilter('${esc(acct)}')" id="holdingsAcctBtn-${esc(acct)}" class="${cls}">${label}</button>`;
+    }).join('');
+  }
 
-function isMobileNativeActive() {
-  return isMobileDeviceWidth() && !forceDesktopMode;
-}
-
-function applyResponsiveLayoutMode() {
-  const isMobile = isMobileNativeActive();
-  const bodyEl = document.body;
-  
-  if (isMobile) {
-    bodyEl.classList.add('mobile-native-mode');
-    ensureMobileBottomNavBar();
-  } else {
-    bodyEl.classList.remove('mobile-native-mode');
-    removeMobileBottomNavBar();
+  const txAccountSelect = document.getElementById('txAccount');
+  if (txAccountSelect) {
+    txAccountSelect.innerHTML = `<option value="">Select Account</option>` +
+      CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
   }
 }
 
-function handleWindowResize() {
-  applyResponsiveLayoutMode();
-  if (multiChartInstance) {
-    multiChartInstance.resize();
-  }
-}
-
-function toggleForceDesktopMode(e) {
-  if (e) e.stopPropagation();
-  forceDesktopMode = !forceDesktopMode;
-  localStorage.setItem('MYFOLIOAI_FORCE_DESKTOP', forceDesktopMode ? 'true' : 'false');
-  applyResponsiveLayoutMode();
-  closeSettingsDropdown();
-  recalculateAndRender();
-}
-
-function ensureMobileBottomNavBar() {
-  let navBar = document.getElementById('mobileBottomNavBar');
-  if (navBar) return;
-
-  navBar = document.createElement('nav');
-  navBar.id = 'mobileBottomNavBar';
-  navBar.className = 'fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#131722]/95 border-t border-slate-200 dark:border-[#222836] px-4 py-2 flex items-center justify-around md:hidden';
-  
-  navBar.innerHTML = `
-    <button onclick="switchTab('holdings'); setActiveMobileNav('holdings')" id="mobNav-holdings" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="briefcase" class="w-5 h-5 text-emerald-500"></i>
-      <span>Holdings</span>
-    </button>
-    <button onclick="switchTab('closedTrades'); setActiveMobileNav('closedTrades')" id="mobNav-closedTrades" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="check-check" class="w-5 h-5"></i>
-      <span>Closed</span>
-    </button>
-    <button onclick="switchTab('fyBreakdown'); setActiveMobileNav('fyBreakdown')" id="mobNav-fyBreakdown" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="calendar-check" class="w-5 h-5"></i>
-      <span>FY P&L</span>
-    </button>
-    <button onclick="switchTab('transactions'); setActiveMobileNav('transactions')" id="mobNav-transactions" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="list" class="w-5 h-5"></i>
-      <span>Ledger</span>
-    </button>
-    <button onclick="switchTab('taxPnl'); setActiveMobileNav('taxPnl')" id="mobNav-taxPnl" class="flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]">
-      <i data-lucide="calculator" class="w-5 h-5 text-rose-500"></i>
-      <span>Tax</span>
-    </button>
-  `;
-
-  document.body.appendChild(navBar);
-  if (window.lucide) lucide.createIcons();
-}
-
-function removeMobileBottomNavBar() {
-  const navBar = document.getElementById('mobileBottomNavBar');
-  if (navBar) navBar.remove();
-}
-
-function setActiveMobileNav(tabKey) {
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'taxPnl'].forEach(k => {
-    const btn = document.getElementById(`mobNav-${k}`);
-    if (!btn) return;
-    if (k === tabKey) {
-      btn.className = 'flex flex-col items-center space-y-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]';
-    } else {
-      btn.className = 'flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]';
-    }
-  });
-}
-
-/* ---------------- STEALTH MASKING SYSTEM (POINT 5) ---------------- */
+/* ---------------- STEALTH MASKING SYSTEM ---------------- */
 function initTabMaskStates() {
-  // POINT 5: Enforce blur-by-default across all privacy tabs on every login and refresh
   tabMaskStates = {
     chart: true,
     holdings: true,
@@ -142,21 +127,17 @@ function initTabMaskStates() {
     bankLedger: true,
     taxPnl: true
   };
-  localStorage.setItem(TAB_MASK_STATES_KEY, JSON.stringify(tabMaskStates));
-
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
-  syncYAxisBlurOverlay();
 }
 
 function toggleTabMask(tabKey) {
   if (!tabMaskStates.hasOwnProperty(tabKey)) return;
   tabMaskStates[tabKey] = !tabMaskStates[tabKey];
-  localStorage.setItem(TAB_MASK_STATES_KEY, JSON.stringify(tabMaskStates));
   updateTabMaskIcon(tabKey);
 
-  const data = computeEngine();
+  const data = getCachedEngineData();
   if (tabKey === 'chart') {
-    syncYAxisBlurOverlay();
+    if (multiChartInstance) multiChartInstance.update('none');
     renderTtmTable(data);
   } else if (tabKey === 'holdings') {
     renderHoldings(data);
@@ -169,45 +150,25 @@ function toggleTabMask(tabKey) {
   } else if (tabKey === 'bankLedger') {
     renderBankLedger(data.bankEntries);
   } else if (tabKey === 'taxPnl') {
-    renderTaxView();
+    renderTaxView(data);
   }
-  if (window.lucide) lucide.createIcons();
+  refreshIcons();
 }
 
 function updateTabMaskIcon(tabKey) {
   const icon = document.getElementById(`maskToggleIcon-${tabKey}`);
   if (!icon) return;
-  const isMasked = !!tabMaskStates[tabKey];
-  icon.setAttribute('data-lucide', isMasked ? 'eye-off' : 'eye');
+  icon.setAttribute('data-lucide', tabMaskStates[tabKey] ? 'eye-off' : 'eye');
 }
 
 function getMaskClass(tabKey) {
-  return tabMaskStates[tabKey] ? 'blurred-mask' : 'mask-transition';
+  return tabMaskStates[tabKey] ? 'privacy-blurred' : 'mask-transition';
 }
 
-function ensureChartDomElements() {
-  const canvas = document.getElementById('multiCurveChart');
-  if (!canvas || !canvas.parentElement) return;
-  const wrapper = canvas.parentElement;
-
-  if (!document.getElementById('chartCustomTooltip')) {
-    const tooltipEl = document.createElement('div');
-    tooltipEl.id = 'chartCustomTooltip';
-    tooltipEl.className = 'pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]';
-    wrapper.appendChild(tooltipEl);
-  }
-}
-
-function syncYAxisBlurOverlay() {
-  if (multiChartInstance) {
-    multiChartInstance.update();
-  }
-}
-
-/* ---------------- THEME TOGGLE (POINT 3: Default Light Mode) ---------------- */
+/* ---------------- THEME TOGGLE ---------------- */
 function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
-  const isDark = saved ? saved === 'dark' : false; 
+  const isDark = saved ? saved === 'dark' : false;
   applyTheme(isDark);
 }
 
@@ -247,14 +208,16 @@ function applyTheme(isDark) {
     }
   }
 
-  if (window.lucide) lucide.createIcons();
+  refreshIcons();
 
   if (multiChartInstance) {
-    renderChart(computeEngine());
+    multiChartInstance.destroy();
+    multiChartInstance = null;
+    renderChart(getCachedEngineData());
   }
 }
 
-/* ---------------- TIMESTAMP MANAGEMENT (Streamlined Price Timestamp) ---------------- */
+/* ---------------- TIMESTAMP MANAGEMENT ---------------- */
 function recordPriceUpdateTimestamp(customDate) {
   const d = customDate || new Date();
   const day = String(d.getDate()).padStart(2, '0');
@@ -262,7 +225,6 @@ function recordPriceUpdateTimestamp(customDate) {
   const hours = String(d.getHours()).padStart(2, '0');
   const mins = String(d.getMinutes()).padStart(2, '0');
 
-  // Streamlined format without year or prefix: e.g. 28-10, 15:48
   const formatted = `${day}-${month}, ${hours}:${mins}`;
   localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
   renderLastPriceTimestamp();
@@ -271,27 +233,11 @@ function recordPriceUpdateTimestamp(customDate) {
 function renderLastPriceTimestamp() {
   const val = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
   const el = document.getElementById('lastSyncedTime');
-  if (el) {
-    el.innerText = val || 'Not refreshed yet';
-  }
+  if (el) el.innerText = val || 'Not refreshed yet';
 }
 
 function recordBackupTimestamp(customStr) {
   let formatted = customStr;
-  
-  if (formatted && (formatted.includes('T') || formatted.length > 20 || formatted.includes('/'))) {
-    formatted = formatted.replace(/\//g, '-');
-    const parsedDate = new Date(formatted);
-    if (!isNaN(parsedDate.getTime())) {
-      const dd = String(parsedDate.getDate()).padStart(2, '0');
-      const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
-      const yy = String(parsedDate.getFullYear()).slice(-2);
-      const hh = String(parsedDate.getHours()).padStart(2, '0');
-      const min = String(parsedDate.getMinutes()).padStart(2, '0');
-      formatted = `${dd}-${mm}-${yy}, ${hh}:${min}`;
-    }
-  }
-
   if (!formatted) {
     const d = new Date();
     const dd = String(d.getDate()).padStart(2, '0');
@@ -301,7 +247,6 @@ function recordBackupTimestamp(customStr) {
     const min = String(d.getMinutes()).padStart(2, '0');
     formatted = `${dd}-${mm}-${yy}, ${hh}:${min}`;
   }
-
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
 }
@@ -309,9 +254,7 @@ function recordBackupTimestamp(customStr) {
 function renderLastBackupTimestamp() {
   const val = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
   const el = document.getElementById('lastBackupTime');
-  if (el) {
-    el.innerText = val || 'Not backed up yet';
-  }
+  if (el) el.innerText = val || 'Not backed up yet';
 }
 
 /* ---------------- AUTOCOMPLETE SUGGESTIONS ---------------- */
@@ -347,7 +290,8 @@ function updateStockAutocompleteOptions() {
 
 /* ---------------- MASTER RECALCULATE & RENDER ---------------- */
 function recalculateAndRender() {
-  const data = computeEngine();
+  bumpTxVersion();
+  const data = getCachedEngineData();
 
   // Card 1: Total Net Worth
   document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
@@ -361,13 +305,13 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested (POINT 3 & NEW POINT 1: Excess invested styling, dynamic progress bar coloring, and color rules for percentage)
+  // Card 2: Net Invested
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
   const invTarget = milestoneGoals.netInvested || 5000000;
   const isExcessInvested = data.netInvested > invTarget;
   const invPct = invTarget > 0 ? (data.netInvested / invTarget) * 100 : 0;
   const displayPct = Math.min(100, invPct);
-  
+
   const invBarEl = document.getElementById('kpiNetInvestedBar');
   const invPctEl = document.getElementById('kpiNetInvestedPct');
   const invRemEl = document.getElementById('kpiNetInvestedRem');
@@ -393,11 +337,11 @@ function recalculateAndRender() {
   // Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
-  lifeEl.className = `text-2xl font-bold tracking-tight tabular-nums transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  lifeEl.className = `text-xl font-bold tracking-tight tabular-nums leading-none mt-1 transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const lifePctEl = document.getElementById('kpiLifetimePnLPct');
   lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-  lifePctEl.className = `mt-1 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
   const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
@@ -407,7 +351,7 @@ function recalculateAndRender() {
   document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
 
   // Card 4: Current FY Realized & Unrealized
-  const curFy = getFinancialYear(new Date().toISOString().split('T')[0]);
+  const curFy = getFinancialYear(todayLocalISO());
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
 
@@ -427,12 +371,13 @@ function recalculateAndRender() {
   document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
 
   // Card 5: Annualized XIRR & Inception Date
-  document.getElementById('kpiXIRR').innerText = `${data.xirrValue.toFixed(2)}%`;
+  const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
+  document.getElementById('kpiXIRR').innerText = xirrValid ? `${data.xirrValue.toFixed(2)}%` : '—';
   const xirrTarget = milestoneGoals.xirr || 25;
-  const xirrProgress = xirrTarget > 0 ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
-  const xirrRem = Math.max(0, xirrTarget - data.xirrValue);
-  document.getElementById('kpiXirrPct').innerText = `${xirrProgress.toFixed(2)}%`;
-  document.getElementById('kpiXirrRem').innerText = xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved';
+  const xirrProgress = (xirrValid && xirrTarget > 0) ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
+  const xirrRem = xirrValid ? Math.max(0, xirrTarget - data.xirrValue) : xirrTarget;
+  document.getElementById('kpiXirrPct').innerText = xirrValid ? `${xirrProgress.toFixed(2)}%` : '—';
+  document.getElementById('kpiXirrRem').innerText = !xirrValid ? '< 90d period' : (xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved');
   document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
 
   const inceptionEl = document.getElementById('kpiXirrInception');
@@ -452,34 +397,51 @@ function recalculateAndRender() {
   }
 
   applyAllKpiMasks();
-  renderHoldings(data);
-  renderClosedTrades(data.closedTrades);
-  renderFY(data.fyRealized);
-  renderLedger(data.ledgerEntries);
-  renderBankLedger(data.bankEntries);
   populateTaxFyOptions(data.fyRealized);
-  renderTaxView();
+  renderActiveTabOnly(data);
   renderChartLegend();
   renderChart(data);
-  syncYAxisBlurOverlay();
   renderTtmTable(data);
+  refreshIcons();
+}
 
-  if (window.lucide) lucide.createIcons();
+function renderActiveTabOnly(data) {
+  const engineData = data || getCachedEngineData();
+  if (activeTabKey === 'holdings') {
+    renderHoldings(engineData);
+    dirtyTabs.holdings = false;
+  } else if (activeTabKey === 'closedTrades') {
+    renderClosedTrades(engineData.closedTrades);
+    dirtyTabs.closedTrades = false;
+  } else if (activeTabKey === 'fyBreakdown') {
+    renderFY(engineData.fyRealized);
+    dirtyTabs.fyBreakdown = false;
+  } else if (activeTabKey === 'transactions') {
+    renderLedger(engineData.ledgerEntries);
+    dirtyTabs.transactions = false;
+  } else if (activeTabKey === 'bankLedger') {
+    renderBankLedger(engineData.bankEntries);
+    dirtyTabs.bankLedger = false;
+  } else if (activeTabKey === 'taxPnl') {
+    renderTaxView(engineData);
+    dirtyTabs.taxPnl = false;
+  }
 }
 
 /* ---------------- ACTIVE HOLDINGS TABLE ---------------- */
 function setHoldingsAccountFilter(acct) {
   currentHoldingsAccountFilter = acct;
-  ['ALL', 'Me', 'Wife', 'Mom', 'Brother'].forEach(key => {
+  ['ALL', ...CALIB_ACCOUNTS].forEach(key => {
     const btn = document.getElementById(`holdingsAcctBtn-${key}`);
     if (!btn) return;
     if (key === acct) {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
+      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
     } else {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white font-medium';
+      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
     }
   });
-  renderHoldings(computeEngine());
+  renderHoldings(getCachedEngineData());
+  refreshIcons();
 }
 
 function renderHoldings(data) {
@@ -489,54 +451,49 @@ function renderHoldings(data) {
 
   const maskClass = getMaskClass('holdings');
 
-  let relevantLots = data.openLots;
-  if (currentHoldingsAccountFilter !== 'ALL') {
-    relevantLots = relevantLots.filter(l => l.account === currentHoldingsAccountFilter);
+  let filteredHoldings = [];
+  if (currentHoldingsAccountFilter === 'ALL') {
+    filteredHoldings = [...data.holdings];
+  } else {
+    const relevantLots = data.openLots.filter(l => l.account === currentHoldingsAccountFilter);
+    const aggMap = {};
+    let totalFilteredPortVal = 0;
+
+    relevantLots.forEach(lot => {
+      if (!aggMap[lot.stock]) aggMap[lot.stock] = { totalQty: 0, totalCost: 0 };
+      aggMap[lot.stock].totalQty += lot.qty;
+      aggMap[lot.stock].totalCost += (lot.qty * lot.price);
+    });
+
+    Object.keys(aggMap).forEach(stock => {
+      const item = aggMap[stock];
+      if (item.totalQty > 0) {
+        const wap = item.totalCost / item.totalQty;
+        const liveData = marketPrices[stock] || { ltp: wap };
+        const ltp = liveData.ltp;
+        const curVal = item.totalQty * ltp;
+        const invVal = item.totalCost;
+        const pnlVal = curVal - invVal;
+        const pnlPct = invVal > 0 ? (pnlVal / invVal) * 100 : 0;
+        totalFilteredPortVal += curVal;
+
+        filteredHoldings.push({
+          stock,
+          qty: item.totalQty,
+          wap,
+          ltp,
+          investedVal: invVal,
+          currentVal: curVal,
+          pnlVal,
+          pnlPct
+        });
+      }
+    });
+
+    filteredHoldings.forEach(h => {
+      h.weightPct = totalFilteredPortVal > 0 ? (h.currentVal / totalFilteredPortVal) * 100 : 0;
+    });
   }
-
-  const aggMap = {};
-  let totalFilteredPortVal = 0;
-  let totalFilteredInvested = 0;
-
-  relevantLots.forEach(lot => {
-    if (!aggMap[lot.stock]) {
-      aggMap[lot.stock] = { totalQty: 0, totalCost: 0 };
-    }
-    aggMap[lot.stock].totalQty += lot.qty;
-    aggMap[lot.stock].totalCost += (lot.qty * lot.price);
-  });
-
-  const filteredHoldings = [];
-  Object.keys(aggMap).forEach(stock => {
-    const item = aggMap[stock];
-    if (item.totalQty > 0) {
-      const wap = item.totalCost / item.totalQty;
-      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap };
-      const ltp = liveData.ltp;
-      const curVal = item.totalQty * ltp;
-      const invVal = item.totalCost;
-      const pnlVal = curVal - invVal;
-      const pnlPct = invVal > 0 ? (pnlVal / invVal) * 100 : 0;
-
-      totalFilteredPortVal += curVal;
-      totalFilteredInvested += invVal;
-
-      filteredHoldings.push({
-        stock,
-        qty: item.totalQty,
-        wap,
-        ltp,
-        investedVal: invVal,
-        currentVal: curVal,
-        pnlVal,
-        pnlPct
-      });
-    }
-  });
-
-  filteredHoldings.forEach(h => {
-    h.weightPct = totalFilteredPortVal > 0 ? (h.currentVal / totalFilteredPortVal) * 100 : 0;
-  });
 
   document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
@@ -563,7 +520,6 @@ function renderHoldings(data) {
   }
 
   cashBadgeVal.innerText = formatINR(cashAmt);
-  // POINT 7: Dynamic green/red font color keeping neutral grey card background
   cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
 
   // Win / Loss bar
@@ -583,14 +539,14 @@ function renderHoldings(data) {
   updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
 
   if (filteredHoldings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No active holdings for ${currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : currentHoldingsAccountFilter}.</td></tr>`;
+    const label = currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : esc(currentHoldingsAccountFilter);
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No active holdings for ${label}.</td></tr>`;
     return;
   }
 
   const sorted = [...filteredHoldings].sort((a, b) => {
-    let valA = a[holdingsSort.key];
-    let valB = b[holdingsSort.key];
-
+    const valA = a[holdingsSort.key];
+    const valB = b[holdingsSort.key];
     if (typeof valA === 'string') {
       return holdingsSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     }
@@ -599,18 +555,19 @@ function renderHoldings(data) {
 
   sorted.forEach(h => {
     const isPos = h.pnlVal >= 0;
+    const safeStock = esc(h.stock);
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${h.stock}</td>
+      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${safeStock}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${h.qty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(h.wap)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" onclick="manualOverridePrice('${h.stock}', ${h.ltp})" title="Click to override LTP">${formatINR(h.ltp)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(h.investedVal)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" data-action="override-ltp" data-stock="${safeStock}" data-ltp="${h.ltp}" title="Click to override LTP">${formatINR(h.ltp)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(h.investedVal)}</td>
       <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-gray-300">
+      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-300">
         <span>${h.weightPct.toFixed(1)}%</span>
-        <div class="w-full bg-slate-200 dark:bg-gray-700 h-1 rounded-full mt-1">
+        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full mt-1">
           <div class="bg-blue-600 h-1 rounded-full" style="width: ${Math.min(100, h.weightPct)}%"></div>
         </div>
       </td>
@@ -619,13 +576,26 @@ function renderHoldings(data) {
         <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
       </td>
       <td class="py-3 px-4 text-center">
-        <button onclick="quickSellModal('${h.stock}', ${h.qty}, ${h.ltp})" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
+        <button data-action="quick-sell" data-stock="${safeStock}" data-qty="${h.qty}" data-ltp="${h.ltp}" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
   filterHoldingsTable();
 }
+
+// Event delegation for Holdings table (XSS-safe)
+document.addEventListener('click', (e) => {
+  const overrideCell = e.target.closest('[data-action="override-ltp"]');
+  if (overrideCell) {
+    manualOverridePrice(overrideCell.dataset.stock, Number(overrideCell.dataset.ltp));
+    return;
+  }
+  const sellBtn = e.target.closest('[data-action="quick-sell"]');
+  if (sellBtn) {
+    quickSellModal(sellBtn.dataset.stock, Number(sellBtn.dataset.qty), Number(sellBtn.dataset.ltp));
+  }
+});
 
 function handleHoldingsSort(key) {
   if (holdingsSort.key === key) {
@@ -634,11 +604,13 @@ function handleHoldingsSort(key) {
     holdingsSort.key = key;
     holdingsSort.dir = 'desc';
   }
-  renderHoldings(computeEngine());
+  renderHoldings(getCachedEngineData());
+  refreshIcons();
 }
 
 function filterHoldingsTable() {
-  const q = (document.getElementById('holdingsSearch').value || '').toLowerCase();
+  const searchEl = document.getElementById('holdingsSearch');
+  const q = (searchEl ? searchEl.value : '').toLowerCase();
   document.querySelectorAll('#holdingsTableBody tr').forEach(r => {
     r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
   });
@@ -654,16 +626,15 @@ function renderClosedTrades(closedTrades) {
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
   if (closedTrades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No closed trades recorded yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No closed trades recorded yet.</td></tr>`;
     document.getElementById('closedPaginationContainer').classList.add('hidden');
     return;
   }
   document.getElementById('closedPaginationContainer').classList.remove('hidden');
 
   const sorted = [...closedTrades].sort((a, b) => {
-    let valA = a[closedSort.key];
-    let valB = b[closedSort.key];
-
+    const valA = a[closedSort.key];
+    const valB = b[closedSort.key];
     if (typeof valA === 'string') {
       return closedSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     }
@@ -694,20 +665,19 @@ function renderClosedTrades(closedTrades) {
   pageSlice.forEach(c => {
     const avgBuy = c.totalQty > 0 ? (c.totalCostBasis / c.totalQty) : 0;
     const avgSell = c.totalQty > 0 ? (c.totalProceeds / c.totalQty) : 0;
-    const retPct = c.retPct;
     const isPos = c.netPnL >= 0;
 
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${c.stock}</td>
+      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${esc(c.stock)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${c.totalQty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400">${formatINR(avgBuy)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300">${formatINR(avgSell)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${formatINR(avgBuy)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(avgSell)}</td>
+      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
       <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${c.retPct.toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -721,31 +691,32 @@ function handleClosedSort(key) {
     closedSort.dir = 'desc';
   }
   closedTradesCurrentPage = 1;
-  renderClosedTrades(computeEngine().closedTrades);
+  renderClosedTrades(getCachedEngineData().closedTrades);
+  refreshIcons();
 }
 
 function prevClosedPage() {
   if (closedTradesCurrentPage > 1) {
     closedTradesCurrentPage--;
-    renderClosedTrades(computeEngine().closedTrades);
+    renderClosedTrades(getCachedEngineData().closedTrades);
   }
 }
 
 function nextClosedPage() {
-  const totalPages = Math.ceil(computeEngine().closedTrades.length / PAGE_SIZE);
+  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PAGE_SIZE);
   if (closedTradesCurrentPage < totalPages) {
     closedTradesCurrentPage++;
-    renderClosedTrades(computeEngine().closedTrades);
+    renderClosedTrades(getCachedEngineData().closedTrades);
   }
 }
 
 function jumpToClosedPage(val) {
-  const totalPages = Math.ceil(computeEngine().closedTrades.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
   closedTradesCurrentPage = target;
-  renderClosedTrades(computeEngine().closedTrades);
+  renderClosedTrades(getCachedEngineData().closedTrades);
 }
 
 /* ---------------- FINANCIAL YEAR SUMMARY ---------------- */
@@ -764,11 +735,11 @@ function renderFY(fyRealized) {
     const retPct = item.costBasis > 0 ? (item.gain / item.costBasis) * 100 : 0;
 
     const card = document.createElement('div');
-    card.className = 'bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-xl p-4 shadow-xs transition-colors';
+    card.className = 'bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl p-4 shadow-2xs transition-colors';
     card.innerHTML = `
-      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-gray-400 mb-1">
-        <span class="font-bold text-slate-900 dark:text-white">${fy}</span>
-        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300">FIFO</span>
+      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
+        <span class="font-bold text-slate-900 dark:text-white">${esc(fy)}</span>
+        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300">FIFO</span>
       </div>
       <div class="flex items-baseline justify-between mt-1.5">
         <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
@@ -778,19 +749,19 @@ function renderFY(fyRealized) {
           ${isPos ? '+' : ''}${retPct.toFixed(2)}%
         </span>
       </div>
-      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-gray-400 border-t border-slate-100 dark:border-gray-800 pt-2">
-        <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-gray-200 font-medium ${maskClass}">${formatINR(item.sellProceeds)}</span></div>
-        <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-gray-200 font-medium ${maskClass}">${formatINR(item.costBasis)}</span></div>
+      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-[#222836] pt-2">
+        <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-slate-200 font-medium ${maskClass}">${formatINR(item.sellProceeds)}</span></div>
+        <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-slate-200 font-medium ${maskClass}">${formatINR(item.costBasis)}</span></div>
       </div>
     `;
     cards.appendChild(card);
 
     const tr = document.createElement('tr');
-    tr.className = 'border-b border-slate-100 dark:border-gray-800/60';
+    tr.className = 'border-b border-slate-100 dark:border-[#222836]/80';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${fy}</td>
+      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${esc(fy)}</td>
       <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(item.sellProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(item.costBasis)}</td>
+      <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(item.costBasis)}</td>
       <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
       <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
     `;
@@ -799,10 +770,21 @@ function renderFY(fyRealized) {
 }
 
 /* ---------------- TRADEBOOK LEDGER TABLE ---------------- */
+function getFilteredLedgerEntries(ledgerEntries) {
+  const reversed = [...ledgerEntries].reverse();
+  if (!ledgerSearchTerm) return reversed;
+  return reversed.filter(tx =>
+    (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
+    (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
+    (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
+    (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
+  );
+}
+
 function handleLedgerSearch() {
   ledgerSearchTerm = (document.getElementById('ledgerSearchInput').value || '').toLowerCase().trim();
   ledgerCurrentPage = 1;
-  renderLedger(computeEngine().ledgerEntries);
+  renderLedger(getCachedEngineData().ledgerEntries);
 }
 
 function renderLedger(ledgerEntries) {
@@ -811,15 +793,7 @@ function renderLedger(ledgerEntries) {
   tbody.innerHTML = '';
 
   const maskClass = getMaskClass('ledger');
-  let list = [...ledgerEntries].reverse();
-  if (ledgerSearchTerm) {
-    list = list.filter(tx => 
-      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-    );
-  }
+  const list = getFilteredLedgerEntries(ledgerEntries);
 
   document.getElementById('ledgerCountBadge').innerText = `${list.length} Entries`;
 
@@ -856,7 +830,7 @@ function renderLedger(ledgerEntries) {
     'SELL': 'bg-rose-50 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40',
     'DEPOSIT': 'bg-emerald-50 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40',
     'WITHDRAWAL': 'bg-amber-50 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40',
-    'FEES': 'bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-gray-700',
+    'FEES': 'bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#222836]',
     'BONUS': 'bg-purple-50 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700/40',
     'SPLIT': 'bg-indigo-50 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/40',
     'DEMERGER': 'bg-cyan-50 dark:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700/40'
@@ -864,18 +838,18 @@ function renderLedger(ledgerEntries) {
 
   pageSlice.forEach(tx => {
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${tx.date}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${tx.account || 'Unassigned'}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${tx.type}</span></td>
-      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${tx.stock || '—'}</td>
+      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-slate-400">${esc(tx.date)}</td>
+      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(tx.account || 'Unassigned')}</span></td>
+      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${esc(tx.type)}</span></td>
+      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${esc(tx.stock) || '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400 truncate max-w-xs">${tx.remarks || ''}</td>
+      <td class="py-2.5 px-4 text-slate-500 dark:text-slate-400 truncate max-w-xs">${esc(tx.remarks)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -884,43 +858,27 @@ function renderLedger(ledgerEntries) {
 function prevLedgerPage() {
   if (ledgerCurrentPage > 1) {
     ledgerCurrentPage--;
-    renderLedger(computeEngine().ledgerEntries);
+    renderLedger(getCachedEngineData().ledgerEntries);
   }
 }
 
 function nextLedgerPage() {
-  let list = computeEngine().ledgerEntries;
-  if (ledgerSearchTerm) {
-    list = list.filter(tx => 
-      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-    );
-  }
+  const list = getFilteredLedgerEntries(getCachedEngineData().ledgerEntries);
   const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
   if (ledgerCurrentPage < totalPages) {
     ledgerCurrentPage++;
-    renderLedger(computeEngine().ledgerEntries);
+    renderLedger(getCachedEngineData().ledgerEntries);
   }
 }
 
 function jumpToLedgerPage(val) {
-  let list = computeEngine().ledgerEntries;
-  if (ledgerSearchTerm) {
-    list = list.filter(tx => 
-      (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
-      (tx.remarks && tx.remarks.toLowerCase().includes(ledgerSearchTerm))
-    );
-  }
+  const list = getFilteredLedgerEntries(getCachedEngineData().ledgerEntries);
   const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
   ledgerCurrentPage = target;
-  renderLedger(computeEngine().ledgerEntries);
+  renderLedger(getCachedEngineData().ledgerEntries);
 }
 
 /* ---------------- BANK LEDGER TABLE ---------------- */
@@ -962,15 +920,15 @@ function renderBankLedger(bankEntries) {
 
   pageSlice.forEach(b => {
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 transition-colors';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-gray-400">${b.date}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">${b.account || 'Unassigned'}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${b.type}</span></td>
+      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-slate-400">${esc(b.date)}</td>
+      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(b.account || 'Unassigned')}</span></td>
+      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${esc(b.type)}</span></td>
       <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(b.corpus)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-gray-400">${b.remarks || ''}</td>
+      <td class="py-2.5 px-4 text-slate-500 dark:text-slate-400">${esc(b.remarks)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -979,63 +937,70 @@ function renderBankLedger(bankEntries) {
 function prevBankLedgerPage() {
   if (bankLedgerCurrentPage > 1) {
     bankLedgerCurrentPage--;
-    renderBankLedger(computeEngine().bankEntries);
+    renderBankLedger(getCachedEngineData().bankEntries);
   }
 }
 
 function nextBankLedgerPage() {
-  const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE);
+  const totalPages = Math.ceil(getCachedEngineData().bankEntries.length / PAGE_SIZE);
   if (bankLedgerCurrentPage < totalPages) {
     bankLedgerCurrentPage++;
-    renderBankLedger(computeEngine().bankEntries);
+    renderBankLedger(getCachedEngineData().bankEntries);
   }
 }
 
 function jumpToBankLedgerPage(val) {
-  const totalPages = Math.ceil(computeEngine().bankEntries.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(getCachedEngineData().bankEntries.length / PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
   bankLedgerCurrentPage = target;
-  renderBankLedger(computeEngine().bankEntries);
+  renderBankLedger(getCachedEngineData().bankEntries);
 }
 
-/* ---------------- DYNAMIC HEADER LEGEND RENDERER (POINT 4: Extreme Target) ---------------- */
+/* ---------------- DYNAMIC HEADER LEGEND & VIEW SWITCHER ---------------- */
+function getRocRateLabel() {
+  const pct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100)
+    .toFixed(2)
+    .replace(/\.00$/, '');
+  return `${pct}%`;
+}
+
 function renderChartLegend() {
   const container = document.getElementById('chartLegendContainer');
   if (!container) return;
+  const rateLbl = getRocRateLabel();
 
   if (currentChartView === 'roc') {
     container.innerHTML = `
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Actual Track
       </span>
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>Capital Base
       </span>
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
-        <span class="w-2.5 h-0.5 border-t-2 border-dotted border-amber-500 mr-1.5"></span>Pure 2% Hurdle
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2.5 h-0.5 border-t-2 border-dotted border-amber-500 mr-1.5"></span>Pure ${rateLbl} Hurdle
       </span>
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-600 mr-1.5"></span>Extreme Target
       </span>
     `;
   } else {
     container.innerHTML = `
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
       </span>
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
       </span>
-      <span class="inline-flex items-center text-slate-600 dark:text-gray-300 font-medium">
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
         <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
       </span>
     `;
   }
 }
 
-/* ---------------- VIEW SWITCHER DROPDOWN ---------------- */
 function toggleChartViewDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('chartViewDropdownMenu');
@@ -1043,13 +1008,8 @@ function toggleChartViewDropdown(e) {
   if (!menu) return;
 
   const isHidden = menu.classList.contains('hidden');
-  if (isHidden) {
-    menu.classList.remove('hidden');
-    if (chevron) chevron.classList.add('rotate-180');
-  } else {
-    menu.classList.add('hidden');
-    if (chevron) chevron.classList.remove('rotate-180');
-  }
+  menu.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
 }
 
 function closeChartViewDropdown() {
@@ -1067,25 +1027,18 @@ function switchChartView(view) {
   }
   closeChartViewDropdown();
   renderChartLegend();
-  const data = computeEngine();
+  const data = getCachedEngineData();
   renderChart(data);
-  syncYAxisBlurOverlay();
   renderTtmTable(data);
 }
 
-/* ---------------- TTM BREAKDOWN ACCORDION (POINT 1: Column Rearrangement & Bold Entries) ---------------- */
+/* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
 function toggleTtmTableAccordion() {
   const container = document.getElementById('ttmTableContainer');
   const chevron = document.getElementById('ttmAccordionChevron');
   const isHidden = container.classList.contains('hidden');
-
-  if (isHidden) {
-    container.classList.remove('hidden');
-    chevron.classList.add('rotate-180');
-  } else {
-    container.classList.add('hidden');
-    chevron.classList.remove('rotate-180');
-  }
+  container.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
 }
 
 function renderTtmTable(computed) {
@@ -1098,8 +1051,10 @@ function renderTtmTable(computed) {
   tbody.innerHTML = '';
 
   const maskClass = getMaskClass('chart');
+  const fourCurvePoints = computeRocFourCurves(computed);
 
   if (currentChartView === 'roc') {
+    const rateLbl = getRocRateLabel();
     if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
 
     thead.innerHTML = `
@@ -1107,24 +1062,22 @@ function renderTtmTable(computed) {
         <th class="py-2.5 px-3 font-bold">Checkpoint</th>
         <th class="py-2.5 px-3 text-right font-bold">Initial Capital</th>
         <th class="py-2.5 px-3 text-right font-bold">Close Value</th>
-        <th class="py-2.5 px-3 text-right font-bold">Monthly P&L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Monthly P&amp;L</th>
         <th class="py-2.5 px-3 text-right font-bold">Monthly RoC</th>
-        <th class="py-2.5 px-3 text-right font-bold">Pure 2% Target</th>
-        <th class="py-2.5 px-3 text-right font-bold">Pure 2% Gap</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure ${rateLbl} Target</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure ${rateLbl} Gap</th>
         <th class="py-2.5 px-3 text-right font-bold">Extreme Target</th>
         <th class="py-2.5 px-3 text-right font-bold">Extreme Deficit</th>
         <th class="py-2.5 px-3 text-right font-bold">Recovery %</th>
       </tr>
     `;
 
-    const fourCurvePoints = computeRocFourCurves(computed);
     if (!fourCurvePoints || fourCurvePoints.length < 2) {
       tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
       return;
     }
 
-    const ttmPoints = fourCurvePoints.slice(-13);
-    const rows = ttmPoints.slice(1).reverse();
+    const rows = fourCurvePoints.slice(-13).slice(1).reverse();
 
     rows.forEach(r => {
       const isPosProfit = r.deltaProfit >= 0;
@@ -1137,10 +1090,10 @@ function renderTtmTable(computed) {
       }
 
       const tr = document.createElement('tr');
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 font-bold';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 font-bold';
       tr.innerHTML = `
-        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-gray-300 font-bold ${maskClass}">${formatINR(r.startCapital, 0)}</td>
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(r.date)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300 font-bold ${maskClass}">${formatINR(r.startCapital, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white ${maskClass}">${formatINR(r.actualVal, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
@@ -1166,7 +1119,6 @@ function renderTtmTable(computed) {
   } else {
     if (titleEl) titleEl.innerText = 'Trailing 12-Months (TTM) Performance Ledger';
 
-    // POINT 1: Rearranged columns: Checkpoint - Portfolio Value - Net Capital - Cumulative P&L - Cumulative RoC - Period P&L - Return %
     thead.innerHTML = `
       <tr>
         <th class="py-2.5 px-3 font-bold">Checkpoint</th>
@@ -1179,43 +1131,29 @@ function renderTtmTable(computed) {
       </tr>
     `;
 
-    let history = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-    if (computed) {
-      history.push({
-        date: 'Current',
-        portfolioValue: computed.netWorth,
-        netCapital: computed.netInvested,
-        profit: computed.lifetimePnL
-      });
-    }
-
-    if (history.length < 2) {
+    if (!fourCurvePoints || fourCurvePoints.length < 2) {
       tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
       return;
     }
 
-    const ttmRecords = history.slice(-13);
+    const ttmRecords = fourCurvePoints.slice(-13);
     const rows = [];
 
     for (let i = 1; i < ttmRecords.length; i++) {
       const curr = ttmRecords[i];
       const prev = ttmRecords[i - 1];
 
-      const deltaProfit = Number(curr.profit || 0) - Number(prev.profit || 0);
-      const prevPortVal = Number(prev.portfolioValue || 0);
-      const monthlyReturnPct = prevPortVal > 0 ? (deltaProfit / prevPortVal) * 100 : 0;
-      
-      const currNetCap = Number(curr.netCapital || 0);
-      const currCumProfit = Number(curr.profit || 0);
-      const cumReturnOnCapPct = currNetCap > 0 ? (currCumProfit / currNetCap) * 100 : 0;
+      const deltaProfit = curr.profit - prev.profit;
+      const monthlyReturnPct = prev.portfolioValue > 0 ? (deltaProfit / prev.portfolioValue) * 100 : 0;
+      const cumReturnOnCapPct = curr.netCapital > 0 ? (curr.profit / curr.netCapital) * 100 : 0;
 
       rows.push({
         date: curr.date,
         portVal: curr.portfolioValue,
-        netCap: currNetCap,
+        netCap: curr.netCapital,
         deltaProfit,
         monthlyReturnPct,
-        cumProfit: currCumProfit,
+        cumProfit: curr.profit,
         cumReturnOnCapPct
       });
     }
@@ -1224,12 +1162,11 @@ function renderTtmTable(computed) {
       const isPos = r.deltaProfit >= 0;
       const isCumPos = r.cumProfit >= 0;
       const tr = document.createElement('tr');
-      // POINT 1: Make entire entries in the table bold
-      tr.className = 'hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60 font-bold';
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 font-bold';
       tr.innerHTML = `
-        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${r.date}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-700 dark:text-gray-300 ${maskClass}">${formatINR(r.portVal, 0)}</td>
-        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-500 dark:text-gray-400 ${maskClass}">${formatINR(r.netCap, 0)}</td>
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(r.date)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-700 dark:text-slate-300 ${maskClass}">${formatINR(r.portVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(r.netCap, 0)}</td>
         <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
           ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
         </td>
@@ -1248,24 +1185,21 @@ function renderTtmTable(computed) {
   }
 }
 
-/* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) WITH STYLING ---------------- */
+/* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
 function exportPortfolioToExcel() {
   if (typeof XLSX === 'undefined') return;
 
-  const data = computeEngine();
+  const data = getCachedEngineData();
   const wb = XLSX.utils.book_new();
 
-  // Helper to style headers, enable text wrapping, set widths, grid borders, and raw unformatted numbers
   function formatWorksheet(ws, colWidths) {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);
 
-    // 1. Set explicit column widths
     if (colWidths) {
       ws['!cols'] = colWidths.map(w => ({ wch: w }));
     }
 
-    // Define thin gray grid border style
     const thinBorder = {
       top: { style: "thin", color: { rgb: "CBD5E1" } },
       bottom: { style: "thin", color: { rgb: "CBD5E1" } },
@@ -1273,7 +1207,6 @@ function exportPortfolioToExcel() {
       right: { style: "thin", color: { rgb: "CBD5E1" } }
     };
 
-    // 2. Iterate through cells to apply styling
     for (let R = range.s.r; R <= range.e.r; ++R) {
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
@@ -1281,33 +1214,19 @@ function exportPortfolioToExcel() {
 
         if (!ws[cellAddress].s) ws[cellAddress].s = {};
         ws[cellAddress].s.border = thinBorder;
-
-        ws[cellAddress].s.alignment = { 
-          wrapText: true, 
+        ws[cellAddress].s.alignment = {
+          wrapText: true,
           vertical: "center",
-          horizontal: R === 0 ? "center" : "left" 
+          horizontal: R === 0 ? "center" : "left"
         };
 
-        // Title Bolding & Header Styling (Row 0)
         if (R === 0) {
-          ws[cellAddress].s.font = { 
-            name: "Inter", 
-            sz: 11, 
-            bold: true, 
-            color: { rgb: "FFFFFF" } 
-          };
-          ws[cellAddress].s.fill = { 
-            fgColor: { rgb: "0F172A" } // Dark Slate Header
-          };
+          ws[cellAddress].s.font = { name: "Inter", sz: 11, bold: true, color: { rgb: "FFFFFF" } };
+          ws[cellAddress].s.fill = { fgColor: { rgb: "0F172A" } };
         } else {
-          ws[cellAddress].s.font = { 
-            name: "Inter", 
-            sz: 10, 
-            color: { rgb: "1E293B" } 
-          };
+          ws[cellAddress].s.font = { name: "Inter", sz: 10, color: { rgb: "1E293B" } };
         }
 
-        // Store numbers as raw unformatted numbers (no commas or currency symbols)
         if (typeof ws[cellAddress].v === 'number') {
           ws[cellAddress].z = "0.00";
         }
@@ -1323,7 +1242,7 @@ function exportPortfolioToExcel() {
     { "Metric": "Total Cash Balance", "Value": Number(data.cashBalance) },
     { "Metric": "Lifetime P&L", "Value": Number(data.lifetimePnL) },
     { "Metric": "Lifetime P&L (%)", "Value": Number(data.lifetimePnLPct.toFixed(2)) },
-    { "Metric": "Annualized XIRR (%)", "Value": Number(data.xirrValue.toFixed(2)) }
+    { "Metric": "Annualized XIRR (%)", "Value": data.xirrValue !== null ? Number(data.xirrValue.toFixed(2)) : 0 }
   ];
   const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
   formatWorksheet(wsSummary, [38, 22]);
@@ -1408,28 +1327,19 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsBank, [14, 12, 14, 16, 16, 22, 25]);
   XLSX.utils.book_append_sheet(wb, wsBank, "Bank Ledger");
 
-  // Tab 7: Performance Trajectory
-  let trajectoryHistory = [];
-  if (Array.isArray(chartHistoryRecords)) {
-    trajectoryHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date)).map(r => ({
-      "Checkpoint Date": r.date,
-      "Portfolio Value": Number(r.portfolioValue || 0),
-      "Net Capital": Number(r.netCapital || 0),
-      "Profit": Number(r.profit || 0)
-    }));
-  }
-  trajectoryHistory.push({
-    "Checkpoint Date": "Current",
-    "Portfolio Value": Math.round(data.netWorth || 0),
-    "Net Capital": Math.round(data.netInvested || 0),
-    "Profit": Math.round(data.lifetimePnL || 0)
-  });
+  // Tab 7 & 8: Unified Checkpoint History & RoC Curves
+  const fourCurvePoints = computeRocFourCurves(data);
+  const trajectoryHistory = fourCurvePoints.map(p => ({
+    "Checkpoint Date": p.date,
+    "Portfolio Value": Number(p.portfolioValue || 0),
+    "Net Capital": Number(p.netCapital || 0),
+    "Profit": Number(p.profit || 0)
+  }));
   const wsTrajectory = XLSX.utils.json_to_sheet(trajectoryHistory);
   formatWorksheet(wsTrajectory, [18, 18, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsTrajectory, "Performance Trajectory");
 
-  // Tab 8: Monthly RoC & Extreme Target
-  const fourCurvePoints = computeRocFourCurves(data);
+  const rateLbl = getRocRateLabel();
   const rocRows = fourCurvePoints.map(p => ({
     "Checkpoint": p.date,
     "Start Capital": Number(p.startCapital),
@@ -1437,8 +1347,8 @@ function exportPortfolioToExcel() {
     "Net Capital Base": Number(p.netCapBase),
     "Monthly P&L (Delta Profit)": Number(p.deltaProfit),
     "Monthly RoC (%)": Number(p.rocPct.toFixed(2)),
-    "Pure 2% Target": Number(p.pureTarget),
-    "Pure 2% Gap": Number(p.pureGap),
+    [`Pure ${rateLbl} Target`]: Number(p.pureTarget),
+    [`Pure ${rateLbl} Gap`]: Number(p.pureGap),
     "Extreme Target": p.ratchetTarget !== null ? Number(p.ratchetTarget) : 0,
     "Extreme Deficit": Number(p.ratchetDeficit)
   }));
@@ -1446,16 +1356,13 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayStr}.xlsx`);
+  XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayLocalISO()}.xlsx`);
 }
 
-/* ---------------- CUSTOM HTML TOOLTIP HANDLER (POINT 5 & 6) ---------------- */
+/* ---------------- CUSTOM HTML TOOLTIP & IN-PLACE CHART RENDERER ---------------- */
 function customHtmlTooltipHandler(context) {
   const { chart, tooltip } = context;
-  ensureChartDomElements();
   const tooltipEl = document.getElementById('chartCustomTooltip');
-
   if (!tooltipEl) return;
 
   if (tooltip.opacity === 0) {
@@ -1464,14 +1371,14 @@ function customHtmlTooltipHandler(context) {
   }
 
   const isMasked = !!tabMaskStates.chart;
-  const maskClass = isMasked ? 'blurred-mask' : '';
+  const maskClass = isMasked ? 'privacy-blurred' : '';
 
   if (tooltip.body) {
     const titleLines = tooltip.title || [];
     let innerHtml = '<div class="space-y-1.5">';
 
     titleLines.forEach(title => {
-      innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-gray-800 text-[11.5px]">${title}</div>`;
+      innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-[#222836] text-[11.5px]">${esc(title)}</div>`;
     });
 
     innerHtml += '<div class="space-y-1 pt-0.5">';
@@ -1497,9 +1404,9 @@ function customHtmlTooltipHandler(context) {
 
       innerHtml += `
         <div class="flex items-center justify-between space-x-3 text-[11px]">
-          <span class="flex items-center text-slate-600 dark:text-gray-300">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
             <span class="w-2 h-2 rounded-full mr-1.5" style="background-color: ${color}"></span>
-            <span>${label}:</span>
+            <span>${esc(label)}:</span>
           </span>
           <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
             ${formattedVal}${variationHtml}
@@ -1508,7 +1415,6 @@ function customHtmlTooltipHandler(context) {
       `;
     });
     innerHtml += '</div></div>';
-
     tooltipEl.innerHTML = innerHtml;
   }
 
@@ -1517,34 +1423,29 @@ function customHtmlTooltipHandler(context) {
   const chartCanvasHeight = chart.height;
   const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
   const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
-  
+
   const isTtmMode = currentChartRange === 'TTM' || totalPoints <= 13;
   const edgeThreshold = isTtmMode ? 3 : 5;
   const isNearRightEdge = dataIndex >= totalPoints - edgeThreshold;
 
   tooltipEl.style.opacity = '1';
-  
+
   const tooltipWidth = tooltipEl.offsetWidth || 210;
   const tooltipHeight = tooltipEl.offsetHeight || 120;
   const caretX = tooltip.caretX;
   const caretY = tooltip.caretY;
 
   const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
-  if (isNearRightEdge || willOverflowRight) {
-    tooltipEl.style.left = (positionX + caretX - tooltipWidth - 12) + 'px';
-  } else {
-    tooltipEl.style.left = (positionX + caretX + 12) + 'px';
-  }
-  
+  tooltipEl.style.left = (isNearRightEdge || willOverflowRight)
+    ? (positionX + caretX - tooltipWidth - 12) + 'px'
+    : (positionX + caretX + 12) + 'px';
+
   const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
-  if (willOverflowBottom) {
-    tooltipEl.style.top = (positionY + caretY - tooltipHeight - 12) + 'px';
-  } else {
-    tooltipEl.style.top = (positionY + caretY - 12) + 'px';
-  }
+  tooltipEl.style.top = willOverflowBottom
+    ? (positionY + caretY - tooltipHeight - 12) + 'px'
+    : (positionY + caretY - 12) + 'px';
 }
 
-/* ---------------- INDIVIDUAL Y-AXIS SOFT TICK BLUR PLUGIN ---------------- */
 const yAxisIndividualBlurPlugin = {
   id: 'yAxisIndividualBlur',
   afterDraw(chart) {
@@ -1578,14 +1479,13 @@ const yAxisIndividualBlurPlugin = {
   }
 };
 
-/* ---------------- PERFORMANCE & 4-CURVE CHART RENDERER (POINT 6) ---------------- */
 function setChartRange(range) {
   currentChartRange = range;
   const ttmBtn = document.getElementById('chartRangeBtn-TTM');
   const allBtn = document.getElementById('chartRangeBtn-ALL');
 
-  const activeClasses = 'bg-white dark:bg-gray-900 text-slate-900 dark:text-white shadow-xs font-semibold';
-  const inactiveClasses = 'text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 font-medium';
+  const activeClasses = 'bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
+  const inactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium';
 
   if (ttmBtn && allBtn) {
     if (range === 'TTM') {
@@ -1597,14 +1497,59 @@ function setChartRange(range) {
     }
   }
 
-  renderChart(computeEngine());
+  renderChart(getCachedEngineData());
+}
+
+function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
+  const pointBorder = isDark ? '#131722' : '#FFFFFF';
+  const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+  blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
+  blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.03)');
+  blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+
+  const baseLine = (label, data, color, opts = {}) => ({
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: opts.bg || 'transparent',
+    fill: !!opts.fill,
+    borderWidth: opts.width || 2.0,
+    borderDash: opts.dash || [],
+    cubicInterpolationMode: 'monotone',
+    pointRadius: opts.radius || 3.5,
+    pointHoverRadius: 5.5,
+    pointBackgroundColor: color,
+    pointBorderColor: pointBorder,
+    pointBorderWidth: 1.5,
+    order: opts.order || 1
+  });
+
+  if (currentChartView === 'roc') {
+    const rateLbl = getRocRateLabel();
+    return [
+      baseLine('Actual Track', displayPoints.map(p => p.actualVal), '#2563eb', { bg: blueGradient, fill: true, width: 2.4, order: 1 }),
+      baseLine('Capital Base', displayPoints.map(p => p.netCapBase), '#dc2626', { order: 2 }),
+      baseLine(`Pure ${rateLbl} Hurdle`, displayPoints.map(p => p.pureTarget), '#f59e0b', { dash: [3, 3], radius: 3.0, order: 3 }),
+      baseLine('Extreme Target', displayPoints.map(p => p.ratchetTarget), '#9333ea', { dash: [6, 4], order: 4 })
+    ];
+  }
+
+  const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+  greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.14)' : 'rgba(22, 163, 74, 0.10)');
+  greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
+  greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
+
+  return [
+    baseLine('Net Worth', displayPoints.map(p => p.portfolioValue), '#2563eb', { bg: blueGradient, fill: true, width: 2.2, order: 1 }),
+    baseLine('My Capital', displayPoints.map(p => p.netCapital), '#dc2626', { order: 2 }),
+    baseLine('Profit', displayPoints.map(p => p.profit), '#16a34a', { bg: greenGradient, fill: true, dash: [4, 4], order: 3 })
+  ];
 }
 
 function renderChart(computed) {
   const canvas = document.getElementById('multiCurveChart');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  if (multiChartInstance) multiChartInstance.destroy();
 
   const isDark = document.documentElement.classList.contains('dark');
   const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
@@ -1612,262 +1557,28 @@ function renderChart(computed) {
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
 
-  const externalTooltipOptions = {
-    enabled: false,
-    external: customHtmlTooltipHandler
-  };
+  const fourPoints = computeRocFourCurves(computed);
+  let displayPoints = fourPoints;
+  if (currentChartRange === 'TTM' && fourPoints.length > 12) {
+    displayPoints = fourPoints.slice(-12);
+  }
 
-  if (currentChartView === 'roc') {
-    const fourPoints = computeRocFourCurves(computed);
-    let displayPoints = fourPoints;
+  const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
+  const datasets = displayPoints.length > 0
+    ? buildChartDatasets(ctx, chartHeight, isDark, displayPoints)
+    : buildChartDatasets(ctx, chartHeight, isDark, [{ portfolioValue: 0, netCapital: 0, profit: 0, actualVal: 0, netCapBase: 0, pureTarget: 0, ratchetTarget: 0 }]);
 
-    if (currentChartRange === 'TTM' && fourPoints.length > 12) {
-      displayPoints = fourPoints.slice(-12);
-    }
-
-    const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
-    const actualTrackData = displayPoints.map(p => p.actualVal);
-    const netCapBaseData = displayPoints.map(p => p.netCapBase);
-    const pureTargetData = displayPoints.map(p => p.pureTarget);
-    const ratchetTargetData = displayPoints.map(p => p.ratchetTarget);
-
-    const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-    blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
-    blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.03)');
-    blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
-
-    multiChartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Actual Track',
-            data: actualTrackData,
-            borderColor: '#2563eb',
-            backgroundColor: blueGradient,
-            fill: true,
-            borderWidth: 2.4,
-            cubicInterpolationMode: 'monotone',
-            pointRadius: 3.5,
-            pointHoverRadius: 5.5,
-            pointBackgroundColor: '#2563eb',
-            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-            pointBorderWidth: 1.5,
-            order: 1
-          },
-          {
-            label: 'Capital Base',
-            data: netCapBaseData,
-            borderColor: '#dc2626',
-            backgroundColor: 'transparent',
-            fill: false,
-            borderWidth: 2.0,
-            cubicInterpolationMode: 'monotone',
-            pointRadius: 3.5,
-            pointHoverRadius: 5.5,
-            pointBackgroundColor: '#dc2626',
-            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-            pointBorderWidth: 1.5,
-            order: 2
-          },
-          {
-            label: 'Pure 2% Hurdle',
-            data: pureTargetData,
-            borderColor: '#f59e0b',
-            backgroundColor: 'transparent',
-            fill: false,
-            borderWidth: 2.0,
-            borderDash: [3, 3],
-            cubicInterpolationMode: 'monotone',
-            pointRadius: 3.0,
-            pointHoverRadius: 5.0,
-            pointBackgroundColor: '#f59e0b',
-            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-            pointBorderWidth: 1.5,
-            order: 3
-          },
-          {
-            label: 'Extreme Target',
-            data: ratchetTargetData,
-            borderColor: '#9333ea',
-            backgroundColor: 'transparent',
-            fill: false,
-            borderWidth: 2.0,
-            borderDash: [6, 4],
-            cubicInterpolationMode: 'monotone',
-            pointRadius: 3.5,
-            pointHoverRadius: 5.5,
-            pointBackgroundColor: '#9333ea',
-            pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-            pointBorderWidth: 1.5,
-            order: 4
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
-        onHover: (event, chartElement) => {
-          if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
-            const tooltipEl = document.getElementById('chartCustomTooltip');
-            if (tooltipEl) tooltipEl.style.opacity = '0';
-          }
-        },
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: externalTooltipOptions
-        },
-        scales: {
-          x: {
-            grid: { display: false, drawBorder: false },
-            ticks: {
-              color: tickColor,
-              font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
-              maxRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 12,
-              padding: 6,
-              callback: function(val) {
-                return this.getLabelForValue(val);
-              }
-            }
-          },
-          y: {
-            grid: {
-              color: function(scaleCtx) {
-                if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
-                return horizontalGridColor;
-              },
-              lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; },
-              drawBorder: false
-            },
-            ticks: {
-              color: function() {
-                return (tabMaskStates && tabMaskStates.chart) ? 'transparent' : tickColor;
-              },
-              font: { family: "'Inter', sans-serif", size: 11 },
-              padding: 8,
-              callback: function(val) {
-                return formatINR(val, 0);
-              }
-            }
-          }
-        }
-      },
-      plugins: [yAxisIndividualBlurPlugin]
-    });
-
+  // Update existing chart in place to prevent canvas flicker and memory churn
+  if (multiChartInstance) {
+    multiChartInstance.data.labels = labels;
+    multiChartInstance.data.datasets = datasets;
+    multiChartInstance.update('none');
     return;
   }
 
-  let allPoints = [];
-
-  if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
-    const sortedHistory = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
-    sortedHistory.forEach(r => {
-      if (!r.date) return;
-      allPoints.push({
-        label: r.date,
-        netWorth: Number(r.portfolioValue || 0),
-        invested: Number(r.netCapital || 0),
-        profit: Number(r.profit || 0)
-      });
-    });
-  }
-
-  if (computed) {
-    allPoints.push({
-      label: 'Today',
-      netWorth: Math.round(computed.netWorth || 0),
-      invested: Math.round(computed.netInvested || 0),
-      profit: Math.round(computed.lifetimePnL || 0)
-    });
-  }
-
-  for (let i = 0; i < allPoints.length; i++) {
-    if (i === 0) {
-      allPoints[i].deltaProfit = null;
-    } else {
-      allPoints[i].deltaProfit = allPoints[i].profit - allPoints[i - 1].profit;
-    }
-  }
-
-  let displayPoints = allPoints;
-  if (currentChartRange === 'TTM' && allPoints.length > 12) {
-    displayPoints = allPoints.slice(-12);
-  }
-
-  const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date || p.label) : ['No Data'];
-  const netWorthData = displayPoints.length > 0 ? displayPoints.map(p => p.netWorth) : [0];
-  const investedData = displayPoints.length > 0 ? displayPoints.map(p => p.invested) : [0];
-  const profitData = displayPoints.length > 0 ? displayPoints.map(p => p.profit) : [0];
-
-  const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-  blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.18)' : 'rgba(37, 99, 235, 0.14)');
-  blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.04)');
-  blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
-
-  const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-  greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.14)' : 'rgba(22, 163, 74, 0.10)');
-  greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
-  greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
-
   multiChartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Net Worth',
-          data: netWorthData,
-          borderColor: '#2563eb',
-          backgroundColor: blueGradient,
-          fill: true,
-          borderWidth: 2.2,
-          cubicInterpolationMode: 'monotone',
-          pointRadius: 3.5,
-          pointHoverRadius: 5.5,
-          pointBackgroundColor: '#2563eb',
-          pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-          pointBorderWidth: 1.5,
-          order: 1
-        },
-        {
-          label: 'My Capital',
-          data: investedData,
-          borderColor: '#dc2626',
-          backgroundColor: 'transparent',
-          fill: false,
-          borderWidth: 2.0,
-          cubicInterpolationMode: 'monotone',
-          pointRadius: 3.5,
-          pointHoverRadius: 5.5,
-          pointBackgroundColor: '#dc2626',
-          pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-          pointBorderWidth: 1.5,
-          order: 2
-        },
-        {
-          label: 'Profit',
-          data: profitData,
-          borderColor: '#16a34a',
-          backgroundColor: greenGradient,
-          fill: true,
-          borderWidth: 2.0,
-          borderDash: [4, 4],
-          cubicInterpolationMode: 'monotone',
-          pointRadius: 3.5,
-          pointHoverRadius: 5.5,
-          pointBackgroundColor: '#16a34a',
-          pointBorderColor: isDark ? '#111827' : '#FFFFFF',
-          pointBorderWidth: 1.5,
-          order: 3
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1881,11 +1592,15 @@ function renderChart(computed) {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: externalTooltipOptions
+        tooltip: {
+          enabled: false,
+          external: customHtmlTooltipHandler
+        }
       },
       scales: {
         x: {
-          grid: { display: false, drawBorder: false },
+          border: { display: false },
+          grid: { display: false },
           ticks: {
             color: tickColor,
             font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
@@ -1899,13 +1614,13 @@ function renderChart(computed) {
           }
         },
         y: {
+          border: { display: false },
           grid: {
             color: function(scaleCtx) {
               if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
               return horizontalGridColor;
             },
-            lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; },
-            drawBorder: false
+            lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; }
           },
           ticks: {
             color: function() {
@@ -1924,7 +1639,7 @@ function renderChart(computed) {
   });
 }
 
-/* ---------------- RECORD TRANSACTION & CORPORATE ACTIONS (POINT 2) ---------------- */
+/* ---------------- RECORD / EDIT TRANSACTION & CORPORATE ACTIONS ---------------- */
 function toggleTxDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('txDropdownMenu');
@@ -1949,13 +1664,8 @@ function toggleCorpActionSubmenu(e) {
   if (!submenu) return;
 
   const isHidden = submenu.classList.contains('hidden');
-  if (isHidden) {
-    submenu.classList.remove('hidden');
-    if (chevron) chevron.classList.add('rotate-90');
-  } else {
-    submenu.classList.add('hidden');
-    if (chevron) chevron.classList.remove('rotate-90');
-  }
+  submenu.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-90', isHidden);
 }
 
 function closeCorpActionSubmenu() {
@@ -1974,46 +1684,45 @@ function selectDropdownPreset(type) {
   openPresetModal(type);
 }
 
-function openPresetModal(type) {
+function openPresetModal(type, existingTx = null) {
   document.getElementById('txModal').classList.remove('hidden');
-  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('txType').value = type;
-  
-  // POINT 5: Do not set any default account value; leave it blank / unselected
+  document.getElementById('txEditingId').value = existingTx ? (existingTx.id || '') : '';
+  document.getElementById('txDate').value = existingTx ? existingTx.date : todayLocalISO();
+  document.getElementById('txType').value = existingTx ? existingTx.type : type;
+
   const accountSelect = document.getElementById('txAccount');
   if (accountSelect) {
-    accountSelect.value = '';
+    accountSelect.value = existingTx ? (existingTx.account || '') : '';
     accountSelect.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
   }
 
-  // Hide the redundant Type selection container in the modal if it exists
-  const typeContainer = document.getElementById('txType')?.closest('div');
-  if (typeContainer) {
-    typeContainer.classList.add('hidden');
-  }
-
   clearInlineTxWarnings();
-  document.getElementById('modalTitle').innerText = `Record ${type}`;
+  const activeType = existingTx ? existingTx.type : type;
+  document.getElementById('modalTitle').innerText = existingTx ? `Edit ${activeType} Entry` : `Record ${activeType}`;
+  document.getElementById('txSubmitBtn').innerText = existingTx ? 'Authorize & Update' : 'Save Entry';
   toggleFormFields();
+
+  if (existingTx) {
+    document.getElementById('txStock').value = existingTx.stock || '';
+    document.getElementById('txQty').value = existingTx.qty || '';
+    document.getElementById('txPrice').value = existingTx.price || '';
+    document.getElementById('txAmount').value = existingTx.amount || '';
+    document.getElementById('txRemarks').value = existingTx.remarks || '';
+  }
 }
 
 function clearInlineTxWarnings() {
   ['txAccount', 'txStock', 'txQty', 'txPrice', 'txAmount', 'txRemarks'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) {
-      el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
-    }
+    if (el) el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
   });
-  
-  // Remove existing inline warning messages if any
   document.querySelectorAll('.inline-tx-warning').forEach(el => el.remove());
 }
 
 function showInlineError(inputElement, message) {
   if (!inputElement) return;
   inputElement.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
-  
-  // Check if warning already exists right after this element
+
   let existingWarning = inputElement.parentElement.querySelector('.inline-tx-warning');
   if (!existingWarning) {
     existingWarning = document.createElement('div');
@@ -2025,6 +1734,7 @@ function showInlineError(inputElement, message) {
 
 function closeTransactionModal() {
   document.getElementById('txModal').classList.add('hidden');
+  document.getElementById('txEditingId').value = '';
   clearInlineTxWarnings();
   document.getElementById('txForm').reset();
 }
@@ -2032,13 +1742,17 @@ function closeTransactionModal() {
 function toggleFormFields() {
   const type = document.getElementById('txType').value;
   const isStock = ['BUY', 'SELL', 'BONUS', 'SPLIT', 'DEMERGER'].includes(type);
+  const isCorpNoCash = ['BONUS', 'SPLIT', 'DEMERGER'].includes(type);
   const stockFields = document.getElementById('stockFields');
+  const amtGroup = document.getElementById('txAmountFieldGroup');
   const qtyLabel = document.getElementById('txQtyLabel');
   const priceLabel = document.getElementById('txPriceLabel');
   const priceInput = document.getElementById('txPrice');
   const amtInput = document.getElementById('txAmount');
 
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
+  if (amtGroup) amtGroup.style.display = isCorpNoCash ? 'none' : 'block';
+  if (amtInput) amtInput.required = !isCorpNoCash;
 
   if (type === 'BONUS') {
     qtyLabel.innerText = 'Bonus Shares Allotted';
@@ -2046,29 +1760,26 @@ function toggleFormFields() {
     priceInput.value = '0';
     priceInput.disabled = true;
     amtInput.value = '0';
-    amtInput.disabled = true;
   } else if (type === 'SPLIT') {
     qtyLabel.innerText = 'New Ratio (e.g. 10)';
     priceLabel.innerText = 'Old Ratio (e.g. 1)';
     priceInput.disabled = false;
-    amtInput.disabled = false;
+    amtInput.value = '0';
   } else if (type === 'DEMERGER') {
     qtyLabel.innerText = 'Shares Apportioned';
     priceLabel.innerText = 'Cost Retained (e.g. 0.90)';
     priceInput.disabled = false;
-    amtInput.disabled = false;
+    amtInput.value = '0';
   } else {
     qtyLabel.innerText = 'Quantity';
     priceLabel.innerText = 'Price / Share (₹)';
     priceInput.disabled = false;
-    amtInput.disabled = false;
   }
 }
 
 function autoComputeAmount() {
   const type = document.getElementById('txType').value;
-  if (type === 'BONUS') {
-    document.getElementById('txPrice').value = '0';
+  if (['BONUS', 'SPLIT', 'DEMERGER'].includes(type)) {
     document.getElementById('txAmount').value = '0';
     return;
   }
@@ -2081,6 +1792,7 @@ function handleTransactionSubmit(e) {
   e.preventDefault();
   clearInlineTxWarnings();
 
+  const editingId = document.getElementById('txEditingId').value.trim();
   const type = document.getElementById('txType').value;
   const accountSelect = document.getElementById('txAccount');
   const account = accountSelect ? accountSelect.value.trim() : '';
@@ -2096,53 +1808,49 @@ function handleTransactionSubmit(e) {
   const remarks = remarksInput ? remarksInput.value.trim() : '';
   const date = document.getElementById('txDate').value;
 
-  // 1. Mandatory Account Validation
   if (!account) {
     showInlineError(accountSelect, 'Please select an account.');
     return;
   }
 
   const isStock = ['BUY', 'SELL', 'BONUS', 'SPLIT', 'DEMERGER'].includes(type);
-
-  // 2. Mandatory Stock Ticker Validation for Stock Types
   if (isStock && !stock) {
     showInlineError(stockInput, 'Stock ticker symbol is required.');
     return;
   }
 
-  // 3. Mandatory Quantity Validation for Stock/Bonus/Split Types
   if (isStock && type !== 'DEMERGER' && (!qty || qty <= 0)) {
     showInlineError(qtyInput, 'Valid quantity is required.');
     return;
   }
 
-  // 4. Mandatory Price Validation for BUY / SELL
   if (['BUY', 'SELL'].includes(type) && (!price || price <= 0)) {
     showInlineError(priceInput, 'Price per share is required.');
     return;
   }
 
-  // 5. Mandatory Total Amount Validation for FEES (or general check)
   if (type === 'FEES' && (!amount || amount <= 0)) {
     showInlineError(amtInput, 'Total fee amount is mandatory.');
     return;
   }
 
-  // 6. Mandatory Remarks Validation across all types
   if (!remarks) {
     showInlineError(remarksInput, 'Remarks / reference is mandatory.');
     return;
   }
 
   if (['BUY', 'SELL'].includes(type) && !amount) amount = qty * price;
-  if (type === 'BONUS') amount = 0;
+  if (['BONUS', 'SPLIT', 'DEMERGER'].includes(type)) amount = 0;
 
-  const engineData = computeEngine();
+  // Exclude the transaction currently being edited when validating balances
+  const baseTransactions = editingId
+    ? transactions.filter(t => String(t.id) !== editingId)
+    : transactions;
+  const checkEngine = computeEngine(baseTransactions);
 
-  // 7. Inline validation for SELL (overselling check)
   if (type === 'SELL') {
     let availableQty = 0;
-    engineData.openLots.forEach(lot => {
+    checkEngine.openLots.forEach(lot => {
       if (lot.stock === stock && lot.account === account) {
         availableQty += lot.qty;
       }
@@ -2154,44 +1862,73 @@ function handleTransactionSubmit(e) {
     }
   }
 
-  // 8. Inline validation for BUY (insufficient cash check)
   if (type === 'BUY') {
-    const cashAvailable = engineData.accountCashMap[account] || 0;
+    const cashAvailable = checkEngine.accountCashMap[account] || 0;
     if (amount > cashAvailable) {
       showInlineError(amtInput, `Insufficient cash: Account balance is ${formatINR(cashAvailable)}.`);
       return;
     }
   }
 
-  // 9. Withdrawal Validation (Prevent withdrawing funds not available)
   if (type === 'WITHDRAWAL') {
-    const cashAvailable = engineData.accountCashMap[account] || 0;
+    const cashAvailable = checkEngine.accountCashMap[account] || 0;
     if (amount > cashAvailable) {
       showInlineError(amtInput, `Insufficient cash for withdrawal: Available balance is ${formatINR(cashAvailable)}.`);
       return;
     }
   }
 
-  // 10. Fees Threshold Guardrails & Verification Checks
   if (type === 'FEES') {
-    const cashAvailable = engineData.accountCashMap[account] || 0;
+    const cashAvailable = checkEngine.accountCashMap[account] || 0;
     const projectedCash = cashAvailable - amount;
-
     if (projectedCash < -2000) {
       showInlineError(amtInput, `Warning: This fee plunges account balance to ${formatINR(projectedCash)} (exceeds -₹2,000 limit).`);
       return;
     }
-
-    if (amount > 2000) {
-      const confirmed = confirm(`High Fee Alert: You are recording a fee of ${formatINR(amount)}. Do you want to proceed and verify this transaction?`);
-      if (!confirmed) {
-        return;
-      }
+    if (amount > 2000 && !confirm(`High Fee Alert: You are recording a fee of ${formatINR(amount)}. Proceed?`)) {
+      return;
     }
   }
 
+  // If editing an existing transaction, gate behind Master PIN verification
+  if (editingId) {
+    const updatedTx = {
+      id: editingId,
+      date,
+      account,
+      type,
+      stock,
+      qty,
+      price,
+      amount,
+      remarks
+    };
+
+    requestPinAuthorization(
+      'Authorize Transaction Edit',
+      `Enter Master PIN to update ${type} (${stock || account})`,
+      () => {
+        const idx = transactions.findIndex(t => String(t.id) === editingId);
+        if (idx >= 0) {
+          transactions[idx] = updatedTx;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+        sendToSheet({ action: 'updateTransaction', transaction: updatedTx });
+
+        updateStockAutocompleteOptions();
+        closeTransactionModal();
+        recalculateAndRender();
+        if (!document.getElementById('recentTxModal').classList.contains('hidden')) {
+          renderRecentTransactionsTable();
+        }
+      }
+    );
+    return;
+  }
+
+  // New transaction creation
   const newEntry = {
-    id: Date.now().toString(),
+    id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     date,
     account,
     type,
@@ -2214,27 +1951,192 @@ function handleTransactionSubmit(e) {
 function quickSellModal(stock, maxQty, currentPrice) {
   openPresetModal('SELL');
   document.getElementById('txStock').value = stock;
-  document.getElementById('txQty').value = maxQty;
+
+  let targetQty = maxQty;
+  if (currentHoldingsAccountFilter && currentHoldingsAccountFilter !== 'ALL') {
+    const acctSelect = document.getElementById('txAccount');
+    if (acctSelect) acctSelect.value = currentHoldingsAccountFilter;
+
+    const data = getCachedEngineData();
+    targetQty = data.openLots
+      .filter(l => l.stock === stock && l.account === currentHoldingsAccountFilter)
+      .reduce((sum, l) => sum + l.qty, 0);
+  }
+
+  document.getElementById('txQty').value = targetQty;
   document.getElementById('txPrice').value = currentPrice;
-  document.getElementById('txAmount').value = (maxQty * currentPrice).toFixed(2);
+  document.getElementById('txAmount').value = (targetQty * currentPrice).toFixed(2);
   document.getElementById('txRemarks').value = 'Liquidation';
 }
 
 function manualOverridePrice(stock, cur) {
   const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
-  if (p && !isNaN(Number(p))) {
+  if (p !== null && p.trim() !== '' && !isNaN(Number(p)) && Number(p) > 0) {
     persistManualPrice(stock, Number(p));
     recalculateAndRender();
   }
 }
 
-/* ---------------- NAVIGATION TABS ---------------- */
+/* ---------------- LAST 10 TRANSACTIONS & PIN-GATED EDIT / DELETE ---------------- */
+function openRecentTransactionsModal() {
+  closeSettingsDropdown();
+  renderRecentTransactionsTable();
+  document.getElementById('recentTxModal').classList.remove('hidden');
+  refreshIcons();
+}
+
+function closeRecentTransactionsModal() {
+  document.getElementById('recentTxModal').classList.add('hidden');
+}
+
+function renderRecentTransactionsTable() {
+  const tbody = document.getElementById('recentTxTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const recentTen = [...transactions].slice(-10).reverse();
+
+  if (recentTen.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">No transactions recorded yet.</td></tr>`;
+    return;
+  }
+
+  recentTen.forEach(tx => {
+    const txId = esc(String(tx.id || ''));
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80';
+    tr.innerHTML = `
+      <td class="py-2.5 px-3 tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap">${esc(tx.date)}</td>
+      <td class="py-2.5 px-2 font-semibold text-slate-700 dark:text-slate-300">${esc(tx.account || 'Unassigned')}</td>
+      <td class="py-2.5 px-2 font-bold text-slate-900 dark:text-white">${esc(tx.type)}</td>
+      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${esc(tx.stock) || '—'}</td>
+      <td class="py-2.5 px-2 text-right tabular-nums">${tx.qty || '—'}</td>
+      <td class="py-2.5 px-2 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(tx.amount || 0)}</td>
+      <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 truncate max-w-[160px]" title="${esc(tx.remarks)}">${esc(tx.remarks)}</td>
+      <td class="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
+        <button data-tx-action="edit" data-tx-id="${txId}" class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-[11px] font-bold transition">Edit</button>
+        <button data-tx-action="delete" data-tx-id="${txId}" class="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Event delegation for Last 10 Transactions modal buttons
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tx-action]');
+  if (!btn) return;
+  const txId = btn.dataset.txId;
+  const action = btn.dataset.txAction;
+  const targetTx = transactions.find(t => String(t.id) === txId);
+  if (!targetTx) return;
+
+  if (action === 'edit') {
+    openPresetModal(targetTx.type, targetTx);
+  } else if (action === 'delete') {
+    initiatePinGatedDelete(targetTx);
+  }
+});
+
+function initiatePinGatedDelete(targetTx) {
+  requestPinAuthorization(
+    'Authorize Deletion',
+    `Enter Master PIN to delete ${targetTx.type} (${targetTx.stock || targetTx.account}) on ${targetTx.date}`,
+    () => {
+      const idx = transactions.findIndex(t => String(t.id) === String(targetTx.id));
+      if (idx >= 0) {
+        transactions.splice(idx, 1);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      sendToSheet({ action: 'deleteTransaction', id: targetTx.id });
+
+      recalculateAndRender();
+      renderRecentTransactionsTable();
+    }
+  );
+}
+
+function requestPinAuthorization(title, desc, onSuccessCallback) {
+  // If no PIN is configured yet, execute directly
+  if (!appSettings.pinHash) {
+    if (typeof onSuccessCallback === 'function') onSuccessCallback();
+    return;
+  }
+
+  pendingPinActionCallback = onSuccessCallback;
+  document.getElementById('pinVerifyTitle').innerText = title || 'Authorize Action';
+  document.getElementById('pinVerifyDesc').innerText = desc || 'Enter your 4-digit Master PIN to confirm';
+
+  const inp = document.getElementById('pinVerifyInput');
+  const err = document.getElementById('pinVerifyError');
+  if (inp) inp.value = '';
+  if (err) err.classList.add('opacity-0');
+
+  document.getElementById('pinVerifyModal').classList.remove('hidden');
+  refreshIcons();
+  if (inp) setTimeout(() => inp.focus(), 50);
+}
+
+function closePinVerifyModal() {
+  document.getElementById('pinVerifyModal').classList.add('hidden');
+  pendingPinActionCallback = null;
+}
+
+async function submitPinVerifyChallenge(e) {
+  e.preventDefault();
+  const inp = document.getElementById('pinVerifyInput');
+  const err = document.getElementById('pinVerifyError');
+  const entered = inp ? inp.value.trim() : '';
+
+  if (entered.length !== 4) {
+    if (err) {
+      err.innerText = 'Enter all 4 digits.';
+      err.classList.remove('opacity-0');
+    }
+    return;
+  }
+
+  const candidateHash = await sha256Hex(entered);
+  if (candidateHash !== appSettings.pinHash) {
+    if (err) {
+      err.innerText = 'Incorrect Master PIN.';
+      err.classList.remove('opacity-0');
+    }
+    if (inp) {
+      inp.value = '';
+      inp.focus();
+    }
+    return;
+  }
+
+  const callback = pendingPinActionCallback;
+  closePinVerifyModal();
+  if (typeof callback === 'function') {
+    callback();
+  }
+}
+
+/* ---------------- NAVIGATION TABS & MOBILE NAV SYNC ---------------- */
+function setActiveMobileNav(tabKey) {
+  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(k => {
+    const btn = document.getElementById(`mobNav-${k}`);
+    if (!btn) return;
+    if (k === tabKey) {
+      btn.className = 'flex flex-col items-center space-y-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]';
+    } else {
+      btn.className = 'flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]';
+    }
+  });
+}
+
 function switchTab(t) {
+  activeTabKey = t;
   ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(id => {
     const el = document.getElementById(`tabContent-${id}`);
     const btn = document.getElementById(`tabBtn-${id}`);
     if (el) el.classList.add('hidden');
-    if (btn) btn.className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap';
+    if (btn) btn.className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap';
   });
 
   const activeContent = document.getElementById(`tabContent-${t}`);
@@ -2242,9 +2144,15 @@ function switchTab(t) {
   if (activeContent) activeContent.classList.remove('hidden');
   if (activeBtn) activeBtn.className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
 
+  setActiveMobileNav(t);
+
   if (t === 'taxPnl') {
     setTaxAccountFilter(currentTaxAccountFilter || 'Me');
+    dirtyTabs.taxPnl = false;
+  } else if (dirtyTabs[t]) {
+    renderActiveTabOnly(getCachedEngineData());
   }
+  refreshIcons();
 }
 
 function updateSortHeaderIcons(prefix, currentSort, columns) {
@@ -2252,14 +2160,13 @@ function updateSortHeaderIcons(prefix, currentSort, columns) {
     const el = document.getElementById(`sortIcon-${prefix}-${col}`);
     if (!el) return;
     if (currentSort.key === col) {
-      el.innerHTML = currentSort.dir === 'desc' 
-        ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>` 
+      el.innerHTML = currentSort.dir === 'desc'
+        ? `<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>`
         : `<i data-lucide="chevron-up" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline"></i>`;
     } else {
-      el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-slate-700 dark:text-gray-300 inline opacity-90"></i>`;
+      el.innerHTML = `<i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 inline opacity-90"></i>`;
     }
   });
-  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------------- MANUAL LTP ENTRY MODAL ---------------- */
@@ -2268,24 +2175,25 @@ function openLivePricesModal() {
   const container = document.getElementById('livePricesContainer');
   container.innerHTML = '';
 
-  const data = computeEngine();
+  const data = getCachedEngineData();
   const openHoldings = data.holdings;
 
   if (openHoldings.length === 0) {
-    container.innerHTML = `<div class="text-slate-400 dark:text-gray-500 py-4 text-center">No open holdings available to update.</div>`;
+    container.innerHTML = `<div class="text-slate-400 dark:text-slate-500 py-4 text-center">No open holdings available to update.</div>`;
   } else {
     openHoldings.forEach(h => {
       const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : h.ltp;
+      const safeStock = esc(h.stock);
       const row = document.createElement('div');
-      row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800/80 rounded-xl border border-slate-200 dark:border-gray-700/80';
+      row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-[#1A1F2E] rounded-xl border border-slate-200 dark:border-[#222836]';
       row.innerHTML = `
         <div>
-          <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
-          <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty: ${h.qty} • Cost: ${formatINR(h.wap)}</div>
+          <div class="font-bold text-slate-900 dark:text-white">${safeStock}</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400">Qty: ${h.qty} • Cost: ${formatINR(h.wap)}</div>
         </div>
         <div class="flex items-center space-x-1.5">
-          <span class="text-xs text-slate-500 dark:text-gray-400">₹</span>
-          <input type="number" step="0.05" id="livePriceInp_${h.stock}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500 font-bold">
+          <span class="text-xs text-slate-500 dark:text-slate-400">₹</span>
+          <input type="number" step="0.05" data-symbol="${safeStock}" data-orig="${Number(curPrice).toFixed(2)}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-[#131722] border border-slate-300 dark:border-[#222836] rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-emerald-500 font-bold">
         </div>
       `;
       container.appendChild(row);
@@ -2301,23 +2209,26 @@ function closeLivePricesModal() {
 
 function saveAllLivePrices() {
   const inputs = document.querySelectorAll('#livePricesContainer input');
-  const batchPrices = {};
+  const changedPrices = {};
 
   inputs.forEach(inp => {
-    const sym = inp.id.replace('livePriceInp_', '');
+    const sym = inp.dataset.symbol;
+    const orig = Number(inp.dataset.orig);
     const val = Number(inp.value);
-    if (!isNaN(val) && val > 0) {
-      batchPrices[sym] = { ltp: val };
+    if (sym && !isNaN(val) && val > 0 && val !== orig) {
+      changedPrices[sym] = { ltp: val };
       savedManualPrices[sym] = { ltp: val };
       marketPrices[sym] = { ltp: val };
     }
   });
 
-  localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-  recordPriceUpdateTimestamp();
+  if (Object.keys(changedPrices).length > 0) {
+    localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+    recordPriceUpdateTimestamp();
 
-  if (cloudScriptUrl && Object.keys(batchPrices).length > 0) {
-    sendToSheet({ action: "savePrices", prices: batchPrices });
+    if (cloudScriptUrl) {
+      sendToSheet({ action: "savePrices", prices: changedPrices });
+    }
   }
 
   closeLivePricesModal();
@@ -2326,11 +2237,11 @@ function saveAllLivePrices() {
 
 /* ---------------- MILESTONE GOALS MODAL ---------------- */
 const GOAL_CONFIGS = {
-  netWorth: { title: 'Net Worth Target', desc: 'Set your total portfolio net worth target milestone.', prefix: '₹', isCurrency: true },
-  netInvested: { title: 'Net Invested Target', desc: 'Set your target total contributed capital corpus.', prefix: '₹', isCurrency: true },
-  lifetimePnL: { title: 'Lifetime Profit Target', desc: 'Set your all-time cumulative portfolio profit target.', prefix: '₹', isCurrency: true },
-  currentFyPnL: { title: 'Current FY Realized Profit Target', desc: 'Set your strict FIFO realized profit target for the current financial year.', prefix: '₹', isCurrency: true },
-  xirr: { title: 'Annualized XIRR Target', desc: 'Set your target annualized cash-flow hurdle percentage.', prefix: '%', isCurrency: false }
+  netWorth: { title: 'Net Worth Target', desc: 'Set your total portfolio net worth target milestone.', prefix: '₹' },
+  netInvested: { title: 'Net Invested Target', desc: 'Set your target total contributed capital corpus.', prefix: '₹' },
+  lifetimePnL: { title: 'Lifetime Profit Target', desc: 'Set your all-time cumulative portfolio profit target.', prefix: '₹' },
+  currentFyPnL: { title: 'Current FY Realized Profit Target', desc: 'Set your strict FIFO realized profit target for the current financial year.', prefix: '₹' },
+  xirr: { title: 'Annualized XIRR Target', desc: 'Set your target annualized cash-flow hurdle percentage.', prefix: '%' }
 };
 
 function openGoalModal(key) {
@@ -2377,7 +2288,6 @@ function getPrecedingMonthEndDate() {
 }
 
 function checkPendingMonthEndSnapshot() {
-  // CRITICAL SECURITY FIX: Block month-end popup if PIN lock-screen gatekeeper is active (using session unlock check)
   const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
   if (!isSessionUnlocked) return;
   if (!transactions || transactions.length === 0) return;
@@ -2396,7 +2306,6 @@ function checkPendingMonthEndSnapshot() {
 }
 
 function openMonthEndReviewModal(cutoffDate, targetDateStr) {
-  // CRITICAL SECURITY FIX: Double check session unlock state
   const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
   if (!isSessionUnlocked) return;
 
@@ -2435,20 +2344,21 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
   container.innerHTML = '';
 
   if (openHoldings.length === 0) {
-    container.innerHTML = `<div class="text-slate-400 py-3 text-center">No open positions as of ${targetDateStr}.</div>`;
+    container.innerHTML = `<div class="text-slate-400 py-3 text-center">No open positions as of ${esc(targetDateStr)}.</div>`;
   } else {
     openHoldings.forEach(h => {
       const curPrice = savedManualPrices[h.stock] ? savedManualPrices[h.stock].ltp : (marketPrices[h.stock] ? marketPrices[h.stock].ltp : 0);
+      const safeStock = esc(h.stock);
       const row = document.createElement('div');
-      row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700';
+      row.className = 'flex items-center justify-between p-2.5 bg-slate-100 dark:bg-[#1A1F2E] rounded-xl border border-slate-200 dark:border-[#222836]';
       row.innerHTML = `
         <div>
-          <div class="font-bold text-slate-900 dark:text-white">${h.stock}</div>
-          <div class="text-[11px] text-slate-500 dark:text-gray-400">Qty at month-end: ${h.qty} shares</div>
+          <div class="font-bold text-slate-900 dark:text-white">${safeStock}</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400">Qty at month-end: ${h.qty} shares</div>
         </div>
         <div class="flex items-center space-x-1.5">
           <span class="text-xs text-slate-500">₹</span>
-          <input type="number" step="0.05" id="mePrice_${h.stock}" data-qty="${h.qty}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-blue-500 font-bold" oninput="recalcMonthEndModal(${netCap}, ${cash})">
+          <input type="number" step="0.05" data-qty="${h.qty}" value="${Number(curPrice).toFixed(2)}" class="w-28 bg-white dark:bg-[#131722] border border-slate-300 dark:border-[#222836] rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right focus:outline-none focus:border-blue-500 font-bold" oninput="recalcMonthEndModal(${netCap}, ${cash})">
         </div>
       `;
       container.appendChild(row);
@@ -2471,7 +2381,6 @@ function recalcMonthEndModal(netCap, cash) {
   const profit = portVal - netCap;
 
   document.getElementById('meModalStockVal').innerText = formatINR(stockVal);
-  document.getElementById('meModalStockVal').className = 'text-slate-900 dark:text-white font-bold tabular-nums';
   document.getElementById('meModalCash').innerText = formatCompactIndian(cash);
   document.getElementById('meModalNetCap').innerText = formatCompactIndian(netCap);
   document.getElementById('meModalPortVal').innerText = formatINR(portVal);
@@ -2502,7 +2411,6 @@ function commitMonthEndSnapshot() {
   });
 
   let stockVal = 0;
-
   document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
     const qty = Number(inp.getAttribute('data-qty') || 0);
     const p = Number(inp.value || 0);
@@ -2540,17 +2448,12 @@ function commitMonthEndSnapshot() {
   recalculateAndRender();
 }
 
-/* ---------------- SETTINGS DROPDOWN & BACKUP / PIN GATEKEEPERS (POINT 9 & 10) ---------------- */
+/* ---------------- SETTINGS DROPDOWN & MODALS ---------------- */
 function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
   if (!menu) return;
-  const isHidden = menu.classList.contains('hidden');
-  if (isHidden) {
-    menu.classList.remove('hidden');
-  } else {
-    menu.classList.add('hidden');
-  }
+  menu.classList.toggle('hidden');
 }
 
 function closeSettingsDropdown() {
@@ -2572,8 +2475,7 @@ function openPinSettingsModal() {
 
   const curGroup = document.getElementById('currentPinFieldGroup');
   if (curGroup) {
-    if (!appSettings.pinHash) curGroup.classList.add('hidden');
-    else curGroup.classList.remove('hidden');
+    curGroup.classList.toggle('hidden', !appSettings.pinHash);
   }
 
   document.getElementById('pinSettingsModal').classList.remove('hidden');
@@ -2625,7 +2527,7 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Manual Database Backup Trigger (Decoupled with Rotating Amber Spinner & Status Indicator)
+// 2. Manual Database Backup Trigger (POST request)
 async function triggerManualDatabaseBackup() {
   closeSettingsDropdown();
   if (!cloudScriptUrl) {
@@ -2636,37 +2538,25 @@ async function triggerManualDatabaseBackup() {
   const iconEl = document.getElementById('backupStatusIcon');
   if (iconEl) {
     iconEl.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
-    if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   try {
-    let url = `${cloudScriptUrl}?action=triggerDatabaseBackup`;
-    if (apiToken) url += `&token=${encodeURIComponent(apiToken)}`;
-    
-    const res = await fetch(url);
-    const json = await res.json();
-    
-    if (json.status === 'success') {
+    const json = await sendToSheet({ action: "triggerDatabaseBackup" }, true);
+    if (json && json.status === 'success') {
       const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
-      if (backupTime) {
-        recordBackupTimestamp(backupTime);
-      } else {
-        recordBackupTimestamp();
-      }
+      recordBackupTimestamp(backupTime);
 
       if (iconEl) {
         iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
-        if (window.lucide) lucide.createIcons();
       }
-
       alert('Database backup created successfully in your Google Drive vault folder!');
     } else {
-      throw new Error(json.message || 'Unknown error');
+      throw new Error((json && (json.message || json.error)) || 'Unknown error');
     }
   } catch (err) {
     if (iconEl) {
       iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block" title="Backup failed"></span>`;
-      if (window.lucide) lucide.createIcons();
     }
     alert('Database backup failed: ' + err.toString());
   }
@@ -2688,7 +2578,7 @@ function renderCashCalibrateRows() {
   if (!container) return;
   container.innerHTML = '';
 
-  const data = computeEngine();
+  const data = getCachedEngineData();
 
   CALIB_ACCOUNTS.forEach(acct => {
     const rawCash = data.rawAccountCashMap[acct] || 0;
@@ -2696,32 +2586,33 @@ function renderCashCalibrateRows() {
     const offset = getCalibOffset(acct);
     const rec = cashCalibration.records && cashCalibration.records[acct];
     const lastDate = rec && rec.date ? rec.date : null;
+    const safeAcct = esc(acct);
 
     const row = document.createElement('div');
-    row.className = 'p-3 bg-slate-50 dark:bg-gray-950/70 rounded-xl border border-slate-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-2.5';
+    row.className = 'p-3 bg-slate-50 dark:bg-[#0A0C10]/70 rounded-xl border border-slate-200 dark:border-[#222836] flex flex-wrap items-center justify-between gap-2.5';
     row.innerHTML = `
       <div>
         <div class="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-          <span>${acct}</span>
+          <span>${safeAcct}</span>
           <span class="text-[10px] text-slate-400 font-medium">(Raw Tagged: ${formatINR(rawCash)})</span>
         </div>
-        <div class="text-[10.5px] text-slate-500 dark:text-gray-400 mt-0.5">
+        <div class="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
           Active Offset: <span class="font-mono ${offset >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${offset >= 0 ? '+' : ''}${formatINR(offset)}</span>
         </div>
-        <div class="text-[10px] text-slate-400 dark:text-gray-500 mt-0.5">
-          ${lastDate ? `Last calibrated: ${lastDate}` : 'Not calibrated yet'}
+        <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+          ${lastDate ? `Last calibrated: ${esc(lastDate)}` : 'Not calibrated yet'}
         </div>
       </div>
       <div class="flex items-center space-x-1.5">
         <span class="text-xs font-semibold text-slate-500">₹</span>
-        <input 
-          type="number" 
-          step="0.01" 
-          id="calibrateInp_${acct}" 
-          data-raw="${rawCash}" 
-          value="${Number(currentEffective).toFixed(2)}" 
+        <input
+          type="number"
+          step="0.01"
+          id="calibrateInp_${safeAcct}"
+          data-raw="${rawCash}"
+          value="${Number(currentEffective).toFixed(2)}"
           placeholder="0.00"
-          class="w-32 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-700 rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right font-bold focus:outline-none focus:border-emerald-500"
+          class="w-32 bg-white dark:bg-[#131722] border border-slate-300 dark:border-[#222836] rounded-lg p-1.5 text-slate-900 dark:text-white mono-font text-xs text-right font-bold focus:outline-none focus:border-emerald-500"
         >
       </div>
     `;
@@ -2730,7 +2621,7 @@ function renderCashCalibrateRows() {
 }
 
 function saveCashCalibration() {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayLocalISO();
   const payload = {};
   const newOffsets = Object.assign({}, cashCalibration.offsets);
   const newRecords = Object.assign({}, cashCalibration.records);
@@ -2794,7 +2685,6 @@ function handleAddStockMasterSubmit(e) {
 
   const symbol = symInput.value.trim().toUpperCase();
   const name = nameInput.value.trim();
-
   if (!symbol) return;
 
   const existingIndex = stockMasterList.findIndex(item => (item.symbol || '').toUpperCase() === symbol);
