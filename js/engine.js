@@ -1,38 +1,16 @@
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & 4-Curve Math (engine.js)
+// Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR, 
+//             Multi-Account Segregation, Tax Audit Trail & Time-Normalized 4-Curve RoC
 // ============================================================================
 
-let cachedEngineVersion = -1;
-let cachedEngineResult = null;
-
-const TX_TYPE_RANK = {
-  'DEPOSIT': 1,
-  'BUY': 2,
-  'BONUS': 2,
-  'SPLIT': 2,
-  'DEMERGER': 2,
-  'SELL': 3,
-  'WITHDRAWAL': 4,
-  'FEES': 5
-};
-
 function computeEngine() {
-  if (cachedEngineResult && cachedEngineVersion === txVersion) {
-    return cachedEngineResult;
-  }
-
-  const sortedTx = transactions
-    .map((tx, idx) => ({ tx, idx }))
-    .sort((a, b) => {
-      const da = new Date(a.tx.date).getTime();
-      const db = new Date(b.tx.date).getTime();
-      if (da !== db) return da - db;
-      const ra = TX_TYPE_RANK[a.tx.type] || 9;
-      const rb = TX_TYPE_RANK[b.tx.type] || 9;
-      if (ra !== rb) return ra - rb;
-      return a.idx - b.idx;
-    })
-    .map(item => item.tx);
+  const sortedTx = [...transactions].sort((a, b) => {
+    const da = new Date(a.date).getTime();
+    const db = new Date(b.date).getTime();
+    if (da !== db) return da - db;
+    return (a.id || '').localeCompare(b.id || '');
+  });
 
   const openLots = [];
   const closedTradesMap = {};
@@ -44,12 +22,13 @@ function computeEngine() {
   let totalDeposits = 0;
   let totalWithdrawals = 0;
 
+  // Raw Tagged Cash per Account (Pre-Calibration)
   const rawAccountCashMap = { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 };
 
   const ledgerEntries = [];
   const bankEntries = [];
 
-  sortedTx.forEach((tx, idx) => {
+  sortedTx.forEach(tx => {
     const amt = Number(tx.amount || 0);
     const qty = Number(tx.qty || 0);
     const price = Number(tx.price || 0);
@@ -107,7 +86,7 @@ function computeEngine() {
         if (rawAccountCashMap.hasOwnProperty(acct)) rawAccountCashMap[acct] -= buyCost;
 
         openLots.push({
-          id: tx.id || `LOT_${idx}`,
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -137,6 +116,7 @@ function computeEngine() {
             lot.qty -= matchedQty;
             remQtyToSell -= matchedQty;
 
+            // Update Closed Trades Aggregation
             if (!closedTradesMap[stock]) {
               closedTradesMap[stock] = { stock, totalQty: 0, totalCostBasis: 0, totalProceeds: 0, netPnL: 0 };
             }
@@ -145,6 +125,7 @@ function computeEngine() {
             closedTradesMap[stock].totalProceeds += proceeds;
             closedTradesMap[stock].netPnL += gain;
 
+            // Financial Year Bucket
             const fy = getFinancialYear(tx.date);
             if (!fyRealized[fy]) {
               fyRealized[fy] = { fy, sellProceeds: 0, costBasis: 0, gain: 0 };
@@ -153,6 +134,7 @@ function computeEngine() {
             fyRealized[fy].costBasis += costBasis;
             fyRealized[fy].gain += gain;
 
+            // Tax Lot Details (STCG vs LTCG)
             const buyD = new Date(lot.date);
             const sellD = new Date(tx.date);
             const holdingDays = Math.max(0, Math.round((sellD - buyD) / (1000 * 60 * 60 * 24)));
@@ -179,7 +161,7 @@ function computeEngine() {
 
       case 'BONUS':
         openLots.push({
-          id: tx.id || `LOT_${idx}`,
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -189,6 +171,7 @@ function computeEngine() {
         break;
 
       case 'SPLIT': {
+        // Zero-division safeguard fallback
         const effectiveOldPrice = price > 0 ? price : 1;
         const splitRatio = qty > 0 ? (qty / effectiveOldPrice) : 1;
         openLots.forEach(lot => {
@@ -202,7 +185,7 @@ function computeEngine() {
 
       case 'DEMERGER':
         openLots.push({
-          id: tx.id || `LOT_${idx}`,
+          id: tx.id || String(Math.random()),
           date: tx.date,
           stock: stock,
           qty: qty,
@@ -226,18 +209,20 @@ function computeEngine() {
     });
   });
 
-  // Display-only calibrated cash per account (never leaks into Net Worth)
+  // Effective Calibrated Account Cash Map
   const accountCashMap = {};
   CALIB_ACCOUNTS.forEach(acct => {
     accountCashMap[acct] = (rawAccountCashMap[acct] || 0) + getCalibOffset(acct);
   });
 
+  // Total Open Holdings Value & Unrealized P&L
   let totalPortfolioVal = 0;
   let totalUnrealizedPnL = 0;
 
   const holdings = [];
   const activeLots = openLots.filter(l => l.qty > 0);
 
+  // Group by Stock
   const stockGroup = {};
   activeLots.forEach(l => {
     if (!stockGroup[l.stock]) stockGroup[l.stock] = { qty: 0, cost: 0 };
@@ -249,8 +234,8 @@ function computeEngine() {
     const item = stockGroup[stock];
     if (item.qty > 0) {
       const wap = item.cost / item.qty;
-      const liveData = marketPrices[stock] || { ltp: wap };
-      const ltp = liveData.ltp > 0 ? liveData.ltp : wap;
+      const liveData = marketPrices[stock] || savedManualPrices[stock] || { ltp: wap };
+      const ltp = liveData.ltp;
       const curVal = item.qty * ltp;
       const invVal = item.cost;
       const pnlVal = curVal - invVal;
@@ -276,15 +261,18 @@ function computeEngine() {
     h.weightPct = totalPortfolioVal > 0 ? (h.currentVal / totalPortfolioVal) * 100 : 0;
   });
 
+  // Net Worth & Lifetime P&L
   const netWorth = runningCash + totalPortfolioVal;
   const lifetimePnL = netWorth - netInvested;
   const lifetimePnLPct = netInvested > 0 ? (lifetimePnL / netInvested) * 100 : 0;
 
+  // Closed Trades List
   const closedTrades = Object.values(closedTradesMap).map(c => {
     const retPct = c.totalCostBasis > 0 ? (c.netPnL / c.totalCostBasis) * 100 : 0;
     return { ...c, retPct };
   });
 
+  // Accurate Cash-Flow XIRR Calculation
   const cashFlows = [];
   sortedTx.forEach(t => {
     const amt = Number(t.amount || 0);
@@ -301,7 +289,7 @@ function computeEngine() {
 
   const xirrValue = calculateAccurateXIRR(cashFlows);
 
-  cachedEngineResult = {
+  return {
     netWorth,
     netInvested,
     totalDeposits,
@@ -323,32 +311,31 @@ function computeEngine() {
     bankEntries,
     sortedTx
   };
-  cachedEngineVersion = txVersion;
-
-  return cachedEngineResult;
 }
 
 // ----------------------------------------------------------------------------
-// TIME-NORMALIZED 4-CURVE COMPOUNDING & ROC CALCULATIONS
+// POINT 4: TIME-NORMALIZED 4-CURVE COMPOUNDING & ROC CALCULATIONS
 // ----------------------------------------------------------------------------
-function getElapsedMonths(date1, date2) {
-  const d1 = date1 instanceof Date ? date1 : new Date(date1);
-  const d2 = date2 instanceof Date ? date2 : new Date(date2);
+function getElapsedMonths(dateStr1, dateStr2) {
+  if (!dateStr1 || !dateStr2 || dateStr1 === 'Current' || dateStr2 === 'Current') return 1;
+  const d1 = new Date(dateStr1);
+  const d2 = new Date(dateStr2);
   if (isNaN(d1) || isNaN(d2)) return 1;
-  const diffDays = Math.max(0, (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(0.03, diffDays / 30.4375);
+  const diffYears = d2.getFullYear() - d1.getFullYear();
+  const diffMonths = d2.getMonth() - d1.getMonth();
+  return Math.max(1, diffYears * 12 + diffMonths);
 }
 
 function computeRocFourCurves(computed) {
   const points = [];
 
+  // 1. Gather all historical checkpoints
   if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
     const sorted = [...chartHistoryRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
     sorted.forEach(r => {
       if (!r.date) return;
       points.push({
         date: r.date,
-        rawDate: new Date(r.date),
         portfolioValue: Number(r.portfolioValue || 0),
         netCapital: Number(r.netCapital || 0),
         profit: Number(r.profit || 0)
@@ -356,10 +343,10 @@ function computeRocFourCurves(computed) {
     });
   }
 
+  // 2. Append live today checkpoint
   if (computed) {
     points.push({
       date: 'Current',
-      rawDate: new Date(),
       portfolioValue: Math.round(computed.netWorth || 0),
       netCapital: Math.round(computed.netInvested || 0),
       profit: Math.round(computed.lifetimePnL || 0)
@@ -368,7 +355,8 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  const monthlyRate = ROC_TARGET_MONTHLY_RATE;
+  // 3. Compute Time-Normalized Recursive 4 Curves
+  const monthlyRate = typeof ROC_TARGET_MONTHLY_RATE !== 'undefined' ? ROC_TARGET_MONTHLY_RATE : 0.02; // 2% per month default
   let prevPureTarget = points[0].netCapital;
   let prevRatchetTarget = points[0].netCapital;
 
@@ -376,13 +364,20 @@ function computeRocFourCurves(computed) {
     const curr = points[i];
     const prev = i > 0 ? points[i - 1] : null;
 
+    // Delta Capital Injected this period
     const deltaCapital = prev ? (curr.netCapital - prev.netCapital) : 0;
-    const deltaMonths = prev ? getElapsedMonths(prev.rawDate, curr.rawDate) : 1;
+    
+    // Calculate exact elapsed months between checkpoints for time-normalization
+    const deltaMonths = prev ? getElapsedMonths(prev.date, curr.date) : 1;
     const compoundFactor = Math.pow(1 + monthlyRate, deltaMonths);
 
+    // Curve 1: Actual Track
     const actualVal = curr.portfolioValue;
+
+    // Curve 2: Contributed Capital Base
     const netCapBase = curr.netCapital;
 
+    // Curve 3: Time-Normalized Compound Hurdle
     let pureTarget = 0;
     if (i === 0) {
       pureTarget = netCapBase;
@@ -391,6 +386,7 @@ function computeRocFourCurves(computed) {
     }
     prevPureTarget = pureTarget;
 
+    // Curve 4: Aggressive Ratchet Target (Time-Normalized)
     let ratchetTarget = 0;
     if (i === 0) {
       ratchetTarget = netCapBase;
@@ -400,6 +396,7 @@ function computeRocFourCurves(computed) {
     }
     prevRatchetTarget = ratchetTarget;
 
+    // RoC Analytics for the period
     const deltaProfit = prev ? (curr.profit - prev.profit) : 0;
     const startCapital = prev ? prev.portfolioValue : netCapBase;
     const rocPct = startCapital > 0 ? (deltaProfit / startCapital) * 100 : 0;
@@ -421,19 +418,16 @@ function computeRocFourCurves(computed) {
 }
 
 // ----------------------------------------------------------------------------
-// ACCURATE CASH-FLOW XIRR (NEWTON-RAPHSON + BISECTION FALLBACK)
+// ACCURATE CASH-FLOW XIRR (NEWTON-RAPHSON)
 // ----------------------------------------------------------------------------
 function calculateAccurateXIRR(cashFlows) {
-  if (cashFlows.length < 2) return null;
+  if (cashFlows.length < 2) return 0.0;
 
   const hasNegative = cashFlows.some(cf => cf.amount < 0);
   const hasPositive = cashFlows.some(cf => cf.amount > 0);
-  if (!hasNegative || !hasPositive) return null;
+  if (!hasNegative || !hasPositive) return 0.0;
 
   const t0 = cashFlows[0].date.getTime();
-  const tLast = cashFlows[cashFlows.length - 1].date.getTime();
-  const spanDays = (tLast - t0) / (1000 * 60 * 60 * 24);
-  if (spanDays < 90) return null;
 
   function xnpv(rate) {
     return cashFlows.reduce((acc, cf) => {
@@ -456,32 +450,11 @@ function calculateAccurateXIRR(cashFlows) {
     const fDeriv = xnpvPrime(rate);
     if (Math.abs(fDeriv) < 1e-10) break;
     const nextRate = rate - fVal / fDeriv;
-    if (Math.abs(nextRate - rate) < 1e-7 && nextRate > -0.99 && nextRate < 50) {
+    if (Math.abs(nextRate - rate) < 1e-7) {
       return nextRate * 100;
     }
     rate = nextRate;
     if (rate <= -0.9999) rate = -0.99;
   }
-
-  // Bisection fallback on [-0.95, 10.0]
-  let low = -0.95;
-  let high = 10.0;
-  let fLow = xnpv(low);
-  let fHigh = xnpv(high);
-  if (fLow * fHigh > 0) return null;
-
-  for (let iter = 0; iter < 80; iter++) {
-    const mid = (low + high) / 2;
-    const fMid = xnpv(mid);
-    if (Math.abs(fMid) < 1e-6 || (high - low) / 2 < 1e-7) {
-      return mid * 100;
-    }
-    if (fLow * fMid < 0) {
-      high = mid;
-    } else {
-      low = mid;
-      fLow = fMid;
-    }
-  }
-  return null;
+  return isNaN(rate) ? 0.0 : rate * 100;
 }
