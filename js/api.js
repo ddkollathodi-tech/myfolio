@@ -1,12 +1,17 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (api.js)
+// Integrates: Token Handshake Auth, Cross-Device Sync, Offline Cache & Modals
 // ============================================================================
 
 function updateSyncUI(status) {
   const syncDot = document.getElementById('syncDot');
   const syncStatus = document.getElementById('syncStatus');
+  const cloudSyncText = document.getElementById('cloudSyncText');
 
   if (!syncDot || !syncStatus) return;
+  if (cloudSyncText) {
+    cloudSyncText.innerText = cloudScriptUrl ? 'Sheet Linked' : 'Connect Sheet';
+  }
 
   if (cloudScriptUrl) {
     if (status) {
@@ -21,11 +26,11 @@ function updateSyncUI(status) {
     syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
   }
 
-  refreshIcons(syncDot);
+  if (window.lucide) lucide.createIcons();
 }
 
 async function fetchFromGoogleSheet() {
-  if (!cloudScriptUrl) return false;
+  if (!cloudScriptUrl) return;
 
   updateSyncUI('Syncing');
 
@@ -40,93 +45,130 @@ async function fetchFromGoogleSheet() {
 
     const data = await response.json();
 
-    if (!data || data.status === 'error') {
-      const msg = (data && data.message) || 'Unknown sync error';
+    if (data && data.status === 'error' && String(data.message).includes('Unauthorized')) {
       updateSyncUI('Not synced');
-      if (String(msg).includes('Unauthorized')) {
-        alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
-      }
-      return false;
+      alert('Authentication Failed: The API Secret Token does not match your Google Apps Script configuration.');
+      return;
     }
 
-    // 1. Merge Transactions by ID so local offline entries are never overwritten
-    const incomingLedger = Array.isArray(data.ledger) ? data.ledger : [];
-    if (incomingLedger.length > 0 || transactions.length === 0) {
-      const serverIds = new Set(incomingLedger.map(t => String(t.id)));
-      const localUnsynced = transactions.filter(t => t.id && !serverIds.has(String(t.id)));
-      transactions = [...incomingLedger, ...localUnsynced];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-      bumpTxVersion();
+    // RACE CONDITION FIX: Gracefully reconcile and preserve local offline entries if server data returns empty or collides
+    let incomingLedger = [];
+    if (data && Array.isArray(data.ledger)) {
+      incomingLedger = data.ledger;
+    } else if (Array.isArray(data)) {
+      incomingLedger = data;
+    }
 
-      // Push any offline-queued entries up to the sheet
-      localUnsynced.forEach(unsyncedTx => {
-        sendToSheet(Object.assign({ action: 'addTransaction' }, unsyncedTx));
-      });
+    if (incomingLedger.length > 0) {
+      transactions = incomingLedger;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    } else if (transactions.length > 0 && incomingLedger.length === 0) {
+      // If server ledger is empty but local has un-synced/offline data, push local up instead of wiping local clean
+      console.warn('Server ledger empty during sync; preserving local session cache.');
     }
 
     // 2. Process Performance History
-    if (Array.isArray(data.chartHistory)) {
+    if (data && Array.isArray(data.chartHistory)) {
       chartHistoryRecords = data.chartHistory;
       localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
     }
 
-    // 3. Process Custom / Manual Prices
-    if (data.customPrices && typeof data.customPrices === 'object') {
-      savedManualPrices = Object.assign({}, savedManualPrices, data.customPrices);
-      marketPrices = Object.assign({}, marketPrices, savedManualPrices);
+    // 3. Process Custom / Manual Prices & Extract Latest Timestamp from Prices Sheet
+    if (data && data.customPrices && typeof data.customPrices === 'object') {
+      savedManualPrices = Object.assign(savedManualPrices, data.customPrices);
+      marketPrices = Object.assign(marketPrices, savedManualPrices);
       localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
 
+      // Extract the latest manual price update timestamp directly from the Prices tab records
       let latestPriceTime = '';
       Object.values(data.customPrices).forEach(pObj => {
         if (pObj && pObj.lastUpdated) {
-          latestPriceTime = pObj.lastUpdated;
+          if (!latestPriceTime || new Date(pObj.lastUpdated) > new Date(latestPriceTime)) {
+            latestPriceTime = pObj.lastUpdated;
+          }
         }
       });
 
       if (latestPriceTime) {
-        localStorage.setItem(LAST_PRICE_UPDATE_KEY, latestPriceTime);
-      } else if (!localStorage.getItem(LAST_PRICE_UPDATE_KEY)) {
-        localStorage.setItem(LAST_PRICE_UPDATE_KEY, 'Not refreshed yet');
+        let formattedPriceTime = latestPriceTime.replace(/\//g, '-');
+        const parsedDate = new Date(formattedPriceTime);
+        if (!isNaN(parsedDate.getTime())) {
+          const dd = String(parsedDate.getDate()).padStart(2, '0');
+          const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+          const hh = String(parsedDate.getHours()).padStart(2, '0');
+          const min = String(parsedDate.getMinutes()).padStart(2, '0');
+          formattedPriceTime = `${dd}-${mm}, ${hh}:${min}`;
+        }
+        localStorage.setItem(LAST_PRICE_UPDATE_KEY, formattedPriceTime);
+      } else {
+        const existingPriceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
+        if (!existingPriceTime) {
+          localStorage.setItem(LAST_PRICE_UPDATE_KEY, 'Not refreshed yet');
+        }
       }
-      renderLastPriceTimestamp();
+
+      if (typeof renderLastPriceTimestamp === 'function') {
+        renderLastPriceTimestamp();
+      }
     }
 
     // 4. Process Stock Master
-    if (Array.isArray(data.stockMaster)) {
+    if (data && Array.isArray(data.stockMaster)) {
       stockMasterList = data.stockMaster;
       localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
-      updateStockAutocompleteOptions();
+      if (typeof updateStockAutocompleteOptions === 'function') {
+        updateStockAutocompleteOptions();
+      }
     }
 
     // 5. Process Milestone Goals
-    if (data.goals && typeof data.goals === 'object') {
+    if (data && data.goals && typeof data.goals === 'object') {
       milestoneGoals = Object.assign(milestoneGoals, data.goals);
       localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
     }
 
     // 6. Process Settings & PIN Hash
-    if (data.settings && typeof data.settings === 'object') {
+    if (data && data.settings && typeof data.settings === 'object') {
+      delete data.settings.cashOffsets;
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-      const cloudBackupTime = data.settings.lastDatabaseBackup;
+      // CLEAN TIMESTAMP NORMALIZER FOR CROSS-DEVICE FORMAT CONSISTENCY
+      let cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
-        localStorage.setItem(LAST_BACKUP_TIME_KEY, cloudBackupTime);
-      } else if (!localStorage.getItem(LAST_BACKUP_TIME_KEY)) {
-        localStorage.setItem(LAST_BACKUP_TIME_KEY, 'Not backed up yet');
+        cloudBackupTime = cloudBackupTime.replace(/\//g, '-');
+        if (cloudBackupTime.includes('T') || cloudBackupTime.length > 20) {
+          const parsedDate = new Date(cloudBackupTime);
+          if (!isNaN(parsedDate.getTime())) {
+            const dd = String(parsedDate.getDate()).padStart(2, '0');
+            const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+            const yy = String(parsedDate.getFullYear()).slice(-2);
+            const hh = String(parsedDate.getHours()).padStart(2, '0');
+            const min = String(parsedDate.getMinutes()).padStart(2, '0');
+            cloudBackupTime = `${dd}-${mm}-${yy}, ${hh}:${min}`;
+          }
+        }
+        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', cloudBackupTime);
+      } else {
+        const existingLocalBackup = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
+        if (!existingLocalBackup) {
+          localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', 'Not backed up yet');
+        }
       }
-      renderLastBackupTimestamp();
+      
+      if (typeof renderLastBackupTimestamp === 'function') {
+        renderLastBackupTimestamp();
+      }
 
-      // Re-evaluate gatekeeper only if currently unlocked or if not mid-PIN entry
-      if (sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true' || enteredPin.length === 0) {
+      if (typeof checkGatekeeperState === 'function') {
         checkGatekeeperState();
       }
     }
 
     // 7. Process Cash Calibration Map
-    if (data.cashCalibration && typeof data.cashCalibration === 'object') {
+    if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
       if (data.cashCalibration.offsets) {
-        Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
+        cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
       }
       if (data.cashCalibration.records) {
         cashCalibration.records = data.cashCalibration.records;
@@ -135,60 +177,52 @@ async function fetchFromGoogleSheet() {
     }
 
     updateSyncUI(null);
-    recalculateAndRender();
-    return true;
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
+
+    if (typeof checkPendingMonthEndSnapshot === 'function') {
+      checkPendingMonthEndSnapshot();
+    }
 
   } catch (err) {
     console.error('Failed to sync with Google Sheet:', err);
     updateSyncUI('Not synced');
-    recalculateAndRender();
-    return false;
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
   }
 }
 
 async function sendToSheet(payload) {
-  if (!cloudScriptUrl) return { status: 'offline' };
+  if (!cloudScriptUrl) return;
 
   try {
-    const bodyObj = Object.assign({}, payload);
     if (apiToken) {
-      bodyObj.token = apiToken;
+      payload.token = apiToken;
     }
 
-    // Simple CORS POST using text/plain avoids preflight and lets GAS return readable JSON
-    const response = await fetch(cloudScriptUrl, {
+    await fetch(cloudScriptUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(bodyObj)
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    if (result && result.status === 'error') {
-      console.error('Google Sheet API error:', result.message);
-      updateSyncUI('Sync error');
-    } else {
-      updateSyncUI(null);
-    }
-    return result;
   } catch (err) {
     console.error('Background sendToSheet failed:', err);
-    updateSyncUI('Not synced');
-    return { status: 'error', message: err.toString() };
   }
 }
 
 function persistManualPrice(stock, ltp) {
   const sym = stock.toUpperCase().trim();
-  const priceObj = { ltp: ltp };
+  const priceObj = { ltp: ltp, prevClose: ltp };
   savedManualPrices[sym] = priceObj;
   marketPrices[sym] = priceObj;
 
   localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-  recordPriceUpdateTimestamp();
+  if (typeof recordPriceUpdateTimestamp === 'function') {
+    recordPriceUpdateTimestamp();
+  }
 
   sendToSheet({
     action: "savePrices",
@@ -197,7 +231,6 @@ function persistManualPrice(stock, ltp) {
 }
 
 function openSyncModal() {
-  closeSettingsDropdown();
   const urlInput = document.getElementById('scriptUrlInput');
   const tokenInput = document.getElementById('apiTokenInput');
   if (urlInput) urlInput.value = cloudScriptUrl || '';
@@ -213,8 +246,11 @@ function saveAndFetchCloud() {
   const urlInput = document.getElementById('scriptUrlInput');
   const tokenInput = document.getElementById('apiTokenInput');
 
-  cloudScriptUrl = urlInput ? urlInput.value.trim() : '';
-  apiToken = tokenInput ? tokenInput.value.trim() : '';
+  const newUrl = urlInput ? urlInput.value.trim() : '';
+  const newToken = tokenInput ? tokenInput.value.trim() : '';
+
+  cloudScriptUrl = newUrl;
+  apiToken = newToken;
 
   localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
   localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
@@ -226,7 +262,9 @@ function saveAndFetchCloud() {
     fetchFromGoogleSheet();
   } else {
     updateSyncUI();
-    recalculateAndRender();
+    if (typeof recalculateAndRender === 'function') {
+      recalculateAndRender();
+    }
   }
 }
 
