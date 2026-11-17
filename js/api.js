@@ -1,6 +1,7 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
-// Integrates: Token Handshake Auth, ID-Based Offline Merge, Verified POSTs & Modals
+// Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
+//             Verified POSTs & Modals
 // ============================================================================
 
 function updateSyncUI(status) {
@@ -50,6 +51,26 @@ function mergeLedgerById(incomingLedger) {
   return [...incomingLedger, ...unsyncedLocal];
 }
 
+function mergeDonationsById(incomingDonations) {
+  const serverIds = new Set(
+    incomingDonations
+      .map(d => String(d.id || '').trim())
+      .filter(Boolean)
+  );
+
+  // Preserve any local offline donations whose IDs have not yet reached the Donations sheet
+  const unsyncedLocal = (Array.isArray(donations) ? donations : []).filter(d => {
+    const localId = String(d.id || '').trim();
+    return localId && !serverIds.has(localId);
+  });
+
+  unsyncedLocal.forEach(d => {
+    sendToSheet({ action: 'addDonation', donation: d });
+  });
+
+  return [...incomingDonations, ...unsyncedLocal];
+}
+
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return false;
 
@@ -87,13 +108,19 @@ async function fetchFromGoogleSheet() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
     }
 
-    // 2. Process Performance History
+    // 2. Process Isolated Purification Donations Sheet
+    if (data && Array.isArray(data.donations)) {
+      donations = mergeDonationsById(data.donations);
+      localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+    }
+
+    // 3. Process Performance History
     if (data && Array.isArray(data.chartHistory)) {
       chartHistoryRecords = data.chartHistory;
       localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
     }
 
-    // 3. Process Custom / Manual Prices & Extract Latest Timestamp from Prices Sheet
+    // 4. Process Custom / Manual Prices & Extract Latest Timestamp from Prices Sheet
     if (data && data.customPrices && typeof data.customPrices === 'object') {
       savedManualPrices = Object.assign({}, data.customPrices);
       marketPrices = Object.assign({}, savedManualPrices);
@@ -117,7 +144,7 @@ async function fetchFromGoogleSheet() {
       }
     }
 
-    // 4. Process Stock Master
+    // 5. Process Stock Master
     if (data && Array.isArray(data.stockMaster)) {
       stockMasterList = data.stockMaster;
       localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
@@ -126,13 +153,13 @@ async function fetchFromGoogleSheet() {
       }
     }
 
-    // 5. Process Milestone Goals
+    // 6. Process Milestone Goals
     if (data && data.goals && typeof data.goals === 'object') {
       milestoneGoals = Object.assign(milestoneGoals, data.goals);
       localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
     }
 
-    // 6. Process Settings & PIN Hash
+    // 7. Process Settings & PIN Hash
     if (data && data.settings && typeof data.settings === 'object') {
       appSettings = Object.assign(appSettings, data.settings);
       localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
@@ -153,7 +180,7 @@ async function fetchFromGoogleSheet() {
       }
     }
 
-    // 7. Process Cash Calibration Map
+    // 8. Process Cash Calibration Map
     if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
       if (data.cashCalibration.offsets) {
         cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
