@@ -202,7 +202,7 @@ function renderStandardPinLayout(container) {
   container.innerHTML = `
     <div class="flex flex-col items-center space-y-2">
       <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
-        <i data-lucide="shield-lock" class="w-7 h-7"></i>
+        <i data-lucide="lock" class="w-7 h-7"></i>
       </div>
       <h2 id="pinTitle" class="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">Security Gatekeeper</h2>
       <p id="pinSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Enter your PIN to unlock</p>
