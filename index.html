@@ -94,12 +94,53 @@
     </div>
   </div>
 
+  <!-- BLOCKING DATABASE BACKUP OVERLAY (Matches Cloud Sync Overlay behavior) -->
+  <div id="databaseBackupOverlay" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 dark:bg-black/65 backdrop-blur-sm p-4 hidden">
+    <div class="w-full max-w-xs bg-white/95 dark:bg-[#131722]/95 rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-6 text-center space-y-4">
+      <div class="flex items-center justify-center space-x-3 pt-1">
+        <div class="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
+          <i data-lucide="database" class="w-5 h-5"></i>
+        </div>
+
+        <div class="flex items-center space-x-1.5 px-1" aria-hidden="true">
+          <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block"></span>
+          <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block"></span>
+          <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block"></span>
+          <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:text-emerald-400 inline-block"></span>
+          <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:text-emerald-400 inline-block"></span>
+        </div>
+
+        <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-2xs">
+          <i data-lucide="cloud" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Backing Up Database...</h3>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          Archiving portfolio state to your Google Drive vault folder
+        </p>
+      </div>
+
+      <div class="pt-1">
+        <button
+          id="backupWorkOfflineBtn"
+          type="button"
+          onclick="cancelBackupAndDismiss()"
+          class="hidden opacity-0 transition-opacity duration-300 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] border border-slate-200 dark:border-[#222836] text-[11px] font-bold text-slate-600 dark:text-slate-300"
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- APPLICATION ROOT -->
   <div id="app-root" class="flex-1 flex flex-col">
 
-    <!-- TOP HEADER (Point 3: 0.75x Left/Right Boundaries) -->
+    <!-- TOP HEADER (Intermediate Left/Right Boundaries) -->
     <header class="border-b border-slate-200/90 dark:border-[#222836] bg-white/95 dark:bg-[#0E121B]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
-      <div class="w-full max-w-[1600px] mx-auto px-3 sm:px-[15px] md:px-[21px] lg:px-[27px] xl:px-[33px] py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 flex flex-wrap items-center justify-between gap-4">
 
         <!-- Point 2: Institutional Ascending-Bars Brand Logo & Typography Lockup -->
         <div class="flex items-center space-x-3 select-none">
@@ -277,9 +318,9 @@
       </div>
     </header>
 
-    <!-- SYNC & STATUS BAR (Point 3: 0.75x Left/Right Boundaries) -->
+    <!-- SYNC & STATUS BAR (Intermediate Left/Right Boundaries) -->
     <div class="bg-white/60 dark:bg-[#0E121B]/60 border-b border-slate-200/80 dark:border-[#222836]/80 py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
-      <div class="w-full max-w-[1600px] mx-auto px-3 sm:px-[15px] md:px-[21px] lg:px-[27px] xl:px-[33px] flex flex-wrap items-center justify-between gap-2">
+      <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
           <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
           <span id="syncStatus">Synced</span>
@@ -298,8 +339,8 @@
       </div>
     </div>
 
-    <!-- MAIN VIEW CONTAINER (Point 3: 0.75x Left/Right Boundaries) -->
-    <main class="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-[15px] md:px-[21px] lg:px-[27px] xl:px-[33px] py-6 lg:py-8 space-y-6">
+    <!-- MAIN VIEW CONTAINER (Intermediate Left/Right Boundaries) -->
+    <main class="flex-1 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6">
 
       <!-- KPI METRIC CARDS -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -605,6 +646,7 @@
               <span id="holdingsLossSummary">0 Loss</span>
               <span class="w-2 h-2 rounded-full bg-rose-500"></span>
             </span>
+
           </div>
           <div class="w-full bg-slate-100 dark:bg-slate-800 h-[5px] rounded-full overflow-hidden flex">
             <div id="holdingsWinBar" class="bg-emerald-500 h-[5px] transition-all duration-300" style="width: 50%"></div>
