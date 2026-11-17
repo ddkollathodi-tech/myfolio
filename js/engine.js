@@ -1,7 +1,8 @@
 // ============================================================================
 // MyFolioAI - Computational Portfolio Engine & 4-Curve Math (js/engine.js)
 // Integrates: Strict FIFO, Corporate Actions, Cash Calibration, XIRR,
-//             Multi-Account Segregation, Tax Audit Trail & Time-Normalized 4-Curve RoC
+//             Multi-Account Segregation, Tax Audit Trail, Purification Math &
+//             Time-Normalized 4-Curve RoC
 // ============================================================================
 
 function computeEngine(txListOverride) {
@@ -22,6 +23,7 @@ function computeEngine(txListOverride) {
   const closedTradesMap = {};
   const fyRealized = {};
   const taxClosedLots = [];
+  const purificationLots = [];
 
   let runningCash = 0;
   let netInvested = 0;
@@ -121,6 +123,12 @@ function computeEngine(txListOverride) {
         let remQtyToSell = qty;
         const effectiveSellPrice = price > 0 ? price : (sellProceeds / (qty || 1));
 
+        // Parse Debt-to-Asset % (0 for historical/NA entries)
+        const rawDebt = tx.debtToAsset;
+        const parsedDebt = (rawDebt !== undefined && rawDebt !== null && String(rawDebt).trim() !== '' && String(rawDebt).trim().toUpperCase() !== 'NA')
+          ? Math.max(0, Number(rawDebt) || 0)
+          : 0;
+
         for (let i = 0; i < openLots.length && remQtyToSell > 0; i++) {
           const lot = openLots[i];
           if (lot.stock === stock && lot.account === acct && lot.qty > 0) {
@@ -165,6 +173,24 @@ function computeEngine(txListOverride) {
               proceeds: proceeds,
               gain: gain,
               quarter: getTaxQuarter(tx.date),
+              fy: fy
+            });
+
+            // Purification / Donation Obligation (only on positive realized gain)
+            const purificationDue = gain > 0 ? (gain * (parsedDebt / 100)) : 0;
+
+            purificationLots.push({
+              txId: tx.id || '',
+              sellDate: tx.date,
+              buyDate: lot.date,
+              account: acct,
+              stock: stock,
+              qty: matchedQty,
+              costBasis: costBasis,
+              proceeds: proceeds,
+              gain: gain,
+              debtToAsset: parsedDebt,
+              purificationDue: purificationDue,
               fy: fy
             });
           }
@@ -218,7 +244,8 @@ function computeEngine(txListOverride) {
       cashOut: cashOut,
       cashIn: cashIn,
       runningCash: runningCash,
-      remarks: tx.remarks || ''
+      remarks: tx.remarks || '',
+      debtToAsset: tx.type === 'SELL' ? Number(tx.debtToAsset || 0) : 'NA'
     });
   });
 
@@ -319,6 +346,7 @@ function computeEngine(txListOverride) {
     closedTrades,
     fyRealized,
     taxClosedLots,
+    purificationLots,
     ledgerEntries,
     bankEntries,
     sortedTx
