@@ -1,12 +1,12 @@
 // ============================================================================
-// MyFolioAI - Configuration, Shared State & Utility Formatters (config.js)
+// MyFolioAI - Configuration, Shared State & Utility Formatters (js/config.js)
 // ============================================================================
 
-// LocalStorage & SessionStorage Keys
+// LocalStorage Keys
 const THEME_KEY = 'MYFOLIOAI_THEME';
 const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
 const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
-const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN'; // Secret Handshake Token
+const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN';
 const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
 const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
@@ -14,7 +14,6 @@ const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
 const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
-const TAB_MASK_STATES_KEY = 'MYFOLIOAI_TAB_MASK_STATES'; // Stealth Tab Masks
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
 
 // Core Account Definitions
@@ -58,16 +57,13 @@ let appSettings = {
 };
 try {
   const localSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
-  if (localSettings) {
-    Object.assign(appSettings, localSettings);
-    delete appSettings.cashOffsets;
-  }
+  if (localSettings) Object.assign(appSettings, localSettings);
 } catch (e) {}
 
-// POINT 6: Strict Runtime Isolation of Cash Calibration State
-let cashCalibration = { 
-  offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 }, 
-  records: {} 
+// Strict Runtime Isolation of Cash Calibration State
+let cashCalibration = {
+  offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 },
+  records: {}
 };
 try {
   const localCalib = JSON.parse(localStorage.getItem(CASH_CALIB_KEY));
@@ -95,12 +91,8 @@ try {
   savedManualPrices = {};
 }
 
-let marketPrices = Object.assign({
-  'RELIANCE': { ltp: 2980.50 },
-  'TCS': { ltp: 4210.00 },
-  'HDFCBANK': { ltp: 1680.25 },
-  'INFY': { ltp: 1895.00 }
-}, savedManualPrices);
+// Live Market Prices (falls back cleanly to WAP when unpriced)
+let marketPrices = Object.assign({}, savedManualPrices);
 
 // Active View & Filter State
 let currentHoldingsAccountFilter = 'ALL';
@@ -111,13 +103,13 @@ const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
 
 // Stealth Masking State (All blurred by default)
 let tabMaskStates = {
-  chart: true,        // Chart Y-axis ticks & tooltip numbers
-  holdings: true,     // Holdings table (qty, wap, invested, current, p&l) + cash badge
-  closedTrades: true, // Closed trades quantities, proceeds & gains
-  fyBreakdown: true,  // FY P&L cards & summary table
-  ledger: true,       // Tradebook & Ledger numeric columns
-  bankLedger: true,   // Bank Ledger numeric columns
-  taxPnl: true        // Tax Cockpit gains & advance tax numbers
+  chart: true,
+  holdings: true,
+  closedTrades: true,
+  fyBreakdown: true,
+  ledger: true,
+  bankLedger: true,
+  taxPnl: true
 };
 
 // Cloud Sync & Handshake State
@@ -133,6 +125,14 @@ let holdingsSort = { key: 'currentVal', dir: 'desc' };
 let closedSort = { key: 'netPnL', dir: 'desc' };
 
 // ---------------- UTILITY & FORMATTING FUNCTIONS ----------------
+
+function todayLocalISO() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
 function getCalibOffset(acct) {
   const v = Number(cashCalibration.offsets && cashCalibration.offsets[acct]);
