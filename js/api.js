@@ -1,29 +1,86 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
 // Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
-//             Verified POSTs & Modals
+//             Blocking Sync Overlay with 15s Timeout & Work Offline Fail-Safe
 // ============================================================================
+
+let activeSyncAbortController = null;
+let syncOfflineBtnTimer = null;
+
+function showCloudSyncOverlay() {
+  const overlay = document.getElementById('cloudSyncOverlay');
+  const offlineBtn = document.getElementById('syncWorkOfflineBtn');
+  if (!overlay) return;
+
+  overlay.classList.remove('hidden');
+
+  if (offlineBtn) {
+    offlineBtn.classList.add('hidden', 'opacity-0');
+    if (syncOfflineBtnTimer) clearTimeout(syncOfflineBtnTimer);
+    // Reveal "Work Offline" escape hatch after 4 seconds on slow connections
+    syncOfflineBtnTimer = setTimeout(() => {
+      offlineBtn.classList.remove('hidden');
+      requestAnimationFrame(() => offlineBtn.classList.remove('opacity-0'));
+    }, 4000);
+  }
+}
+
+function hideCloudSyncOverlay() {
+  const overlay = document.getElementById('cloudSyncOverlay');
+  const offlineBtn = document.getElementById('syncWorkOfflineBtn');
+  if (syncOfflineBtnTimer) {
+    clearTimeout(syncOfflineBtnTimer);
+    syncOfflineBtnTimer = null;
+  }
+  if (offlineBtn) {
+    offlineBtn.classList.add('hidden', 'opacity-0');
+  }
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+function cancelSyncAndWorkOffline() {
+  if (activeSyncAbortController) {
+    try {
+      activeSyncAbortController.abort();
+    } catch (e) {}
+    activeSyncAbortController = null;
+  }
+  hideCloudSyncOverlay();
+  updateSyncUI('Not synced');
+  if (typeof recalculateAndRender === 'function') {
+    recalculateAndRender();
+  }
+}
 
 function updateSyncUI(status) {
   const syncDot = document.getElementById('syncDot');
   const syncStatus = document.getElementById('syncStatus');
 
-  if (!syncDot || !syncStatus) return;
-
-  if (cloudScriptUrl) {
-    if (status === 'Syncing') {
-      syncStatus.innerText = 'Syncing';
-      syncDot.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
-    } else if (status === 'Not synced' || status === 'Sync error') {
-      syncStatus.innerText = status;
-      syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
+  if (syncDot && syncStatus) {
+    if (cloudScriptUrl) {
+      if (status === 'Syncing') {
+        syncStatus.innerText = 'Syncing';
+        syncDot.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
+      } else if (status === 'Not synced' || status === 'Sync error') {
+        syncStatus.innerText = status;
+        syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
+      } else {
+        syncStatus.innerText = 'Synced';
+        syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+      }
     } else {
-      syncStatus.innerText = 'Synced';
-      syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+      syncStatus.innerText = 'Not synced';
+      syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
     }
+  }
+
+  // Toggle centered blocking sync overlay alongside top-bar status pill
+  if (cloudScriptUrl && status === 'Syncing') {
+    showCloudSyncOverlay();
   } else {
-    syncStatus.innerText = 'Not synced';
-    syncDot.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>`;
+    hideCloudSyncOverlay();
   }
 
   if (typeof refreshIcons === 'function') refreshIcons();
@@ -74,6 +131,17 @@ function mergeDonationsById(incomingDonations) {
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return false;
 
+  // Cancel any stale in-flight request before starting a fresh sync
+  if (activeSyncAbortController) {
+    try { activeSyncAbortController.abort(); } catch (e) {}
+  }
+
+  const controller = new AbortController();
+  activeSyncAbortController = controller;
+  const timeoutId = setTimeout(() => {
+    try { controller.abort(); } catch (e) {}
+  }, 15000); // 15-second hard timeout fail-safe
+
   updateSyncUI('Syncing');
 
   try {
@@ -82,7 +150,7 @@ async function fetchFromGoogleSheet() {
       url += `&token=${encodeURIComponent(apiToken)}`;
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
     const data = await response.json();
@@ -203,6 +271,13 @@ async function fetchFromGoogleSheet() {
       recalculateAndRender();
     }
     return false;
+  } finally {
+    clearTimeout(timeoutId);
+    if (activeSyncAbortController === controller) {
+      activeSyncAbortController = null;
+    }
+    // Guarantee the blocking sync overlay is always dismissed
+    hideCloudSyncOverlay();
   }
 }
 
