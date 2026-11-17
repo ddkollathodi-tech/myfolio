@@ -2008,6 +2008,7 @@ function renderChart(computed) {
 
 /* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
 function switchMainView(view) {
+  const homeEl = document.getElementById('mainViewHome');
   const dashEl = document.getElementById('mainViewDashboard');
   const portEl = document.getElementById('mainViewPortfolio');
   const prodEl = document.getElementById('mainViewProducts');
@@ -2019,6 +2020,7 @@ function switchMainView(view) {
   const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
   const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
 
+  if (homeEl) homeEl.classList.add('hidden');
   if (dashEl) dashEl.classList.add('hidden');
   if (portEl) portEl.classList.add('hidden');
   if (prodEl) prodEl.classList.add('hidden');
@@ -2028,8 +2030,11 @@ function switchMainView(view) {
   if (btnProd) btnProd.className = inactiveClasses;
 
   closeProductsDropdown();
+  closeTxDropdown();
 
-  if (view === 'dashboard') {
+  if (view === 'home') {
+    if (homeEl) homeEl.classList.remove('hidden');
+  } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
   } else if (view === 'portfolio') {
@@ -2041,6 +2046,7 @@ function switchMainView(view) {
 
 function switchSubTab(subTabKey) {
   activeTabKey = subTabKey;
+  const homeEl = document.getElementById('mainViewHome');
   const prodEl = document.getElementById('mainViewProducts');
   const portEl = document.getElementById('mainViewPortfolio');
   const dashEl = document.getElementById('mainViewDashboard');
@@ -2052,6 +2058,7 @@ function switchSubTab(subTabKey) {
   const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
   const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
 
+  if (homeEl) homeEl.classList.add('hidden');
   if (dashEl) dashEl.classList.add('hidden');
   if (portEl) portEl.classList.add('hidden');
   if (prodEl) prodEl.classList.add('hidden');
@@ -2077,6 +2084,7 @@ function switchSubTab(subTabKey) {
   }
 
   closeProductsDropdown();
+  closeTxDropdown();
 
   if (subTabKey === 'taxPnl') {
     setTaxAccountFilter(currentTaxAccountFilter || 'Me');
@@ -2104,11 +2112,12 @@ function closeProductsDropdown() {
   if (chevron) chevron.classList.remove('rotate-180');
 }
 
-function scrollToGraphsSection() {
-  const section = document.getElementById('graphsSection');
-  if (section) {
-    section.scrollIntoView({ behavior: 'smooth' });
-  }
+function closeTxDropdown() {
+  const menu = document.getElementById('txDropdownMenu');
+  const chevron = document.getElementById('txDropdownChevron');
+  if (menu) menu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+  closeCorpActionSubmenu();
 }
 
 // Keep backward compatibility for legacy switchTab calls if any
