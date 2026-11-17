@@ -131,6 +131,7 @@ let apiToken = localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
 let closedTradesCurrentPage = 1;
 let ledgerCurrentPage = 1;
 let bankLedgerCurrentPage = 1;
+let purificationLotsCurrentPage = 1; // Point 4: Pagination pointer for Profit-Only Purification Lots table
 let purificationLogCurrentPage = 1;
 let ledgerSearchTerm = '';
 let holdingsSort = { key: 'currentVal', dir: 'desc' };
