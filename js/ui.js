@@ -2006,6 +2006,120 @@ function renderChart(computed) {
   });
 }
 
+/* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
+function switchMainView(view) {
+  const dashEl = document.getElementById('mainViewDashboard');
+  const portEl = document.getElementById('mainViewPortfolio');
+  const prodEl = document.getElementById('mainViewProducts');
+
+  const btnDash = document.getElementById('navLink-dashboard');
+  const btnPort = document.getElementById('navLink-portfolio');
+  const btnProd = document.getElementById('navLink-products');
+
+  const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
+  const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
+
+  if (dashEl) dashEl.classList.add('hidden');
+  if (portEl) portEl.classList.add('hidden');
+  if (prodEl) prodEl.classList.add('hidden');
+
+  if (btnDash) btnDash.className = inactiveClasses;
+  if (btnPort) btnPort.className = inactiveClasses;
+  if (btnProd) btnProd.className = inactiveClasses;
+
+  closeProductsDropdown();
+
+  if (view === 'dashboard') {
+    if (dashEl) dashEl.classList.remove('hidden');
+    if (btnDash) btnDash.className = activeClasses;
+  } else if (view === 'portfolio') {
+    if (portEl) portEl.classList.remove('hidden');
+    if (btnPort) btnPort.className = activeClasses;
+    switchSubTab('holdings');
+  }
+}
+
+function switchSubTab(subTabKey) {
+  activeTabKey = subTabKey;
+  const prodEl = document.getElementById('mainViewProducts');
+  const portEl = document.getElementById('mainViewPortfolio');
+  const dashEl = document.getElementById('mainViewDashboard');
+
+  const btnPort = document.getElementById('navLink-portfolio');
+  const btnProd = document.getElementById('navLink-products');
+  const btnDash = document.getElementById('navLink-dashboard');
+
+  const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
+  const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
+
+  if (dashEl) dashEl.classList.add('hidden');
+  if (portEl) portEl.classList.add('hidden');
+  if (prodEl) prodEl.classList.add('hidden');
+
+  if (btnDash) btnDash.className = inactiveClasses;
+  if (btnPort) btnPort.className = inactiveClasses;
+  if (btnProd) btnProd.className = inactiveClasses;
+
+  if (subTabKey === 'holdings') {
+    if (portEl) portEl.classList.remove('hidden');
+    if (btnPort) btnPort.className = activeClasses;
+  } else {
+    if (prodEl) prodEl.classList.remove('hidden');
+    if (btnProd) btnProd.className = activeClasses;
+
+    ['closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(id => {
+      const el = document.getElementById(`tabContent-${id}`);
+      if (el) el.classList.add('hidden');
+    });
+
+    const activeContent = document.getElementById(`tabContent-${subTabKey}`);
+    if (activeContent) activeContent.classList.remove('hidden');
+  }
+
+  closeProductsDropdown();
+
+  if (subTabKey === 'taxPnl') {
+    setTaxAccountFilter(currentTaxAccountFilter || 'Me');
+    dirtyTabs.taxPnl = false;
+  } else if (dirtyTabs[subTabKey]) {
+    renderActiveTabOnly(getCachedEngineData());
+  }
+  refreshIcons();
+}
+
+function toggleProductsDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('productsDropdownMenu');
+  const chevron = document.getElementById('productsDropdownChevron');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  menu.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
+}
+
+function closeProductsDropdown() {
+  const menu = document.getElementById('productsDropdownMenu');
+  const chevron = document.getElementById('productsDropdownChevron');
+  if (menu) menu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+}
+
+function scrollToGraphsSection() {
+  const section = document.getElementById('graphsSection');
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// Keep backward compatibility for legacy switchTab calls if any
+function switchTab(t) {
+  if (t === 'holdings') {
+    switchMainView('portfolio');
+  } else {
+    switchSubTab(t);
+  }
+}
+
 /* ---------------- RECORD / EDIT TRANSACTION & CORPORATE ACTIONS ---------------- */
 function toggleTxDropdown(e) {
   if (e) e.stopPropagation();
@@ -2566,44 +2680,6 @@ async function submitPinVerifyChallenge(e) {
   if (typeof callback === 'function') {
     callback();
   }
-}
-
-/* ---------------- NAVIGATION TABS & MOBILE NAV SYNC ---------------- */
-function setActiveMobileNav(tabKey) {
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(k => {
-    const btn = document.getElementById(`mobNav-${k}`);
-    if (!btn) return;
-    if (k === tabKey) {
-      btn.className = 'flex flex-col items-center space-y-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]';
-    } else {
-      btn.className = 'flex flex-col items-center space-y-1 text-slate-600 dark:text-slate-400 font-medium text-[10px]';
-    }
-  });
-}
-
-function switchTab(t) {
-  activeTabKey = t;
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(id => {
-    const el = document.getElementById(`tabContent-${id}`);
-    const btn = document.getElementById(`tabBtn-${id}`);
-    if (el) el.classList.add('hidden');
-    if (btn) btn.className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 flex items-center space-x-2 whitespace-nowrap';
-  });
-
-  const activeContent = document.getElementById(`tabContent-${t}`);
-  const activeBtn = document.getElementById(`tabBtn-${t}`);
-  if (activeContent) activeContent.classList.remove('hidden');
-  if (activeBtn) activeBtn.className = 'tab-btn px-4 py-2.5 text-xs font-semibold border-b-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 flex items-center space-x-2 whitespace-nowrap';
-
-  setActiveMobileNav(t);
-
-  if (t === 'taxPnl') {
-    setTaxAccountFilter(currentTaxAccountFilter || 'Me');
-    dirtyTabs.taxPnl = false;
-  } else if (dirtyTabs[t]) {
-    renderActiveTabOnly(getCachedEngineData());
-  }
-  refreshIcons();
 }
 
 function updateSortHeaderIcons(prefix, currentSort, columns) {
@@ -3199,6 +3275,14 @@ window.addEventListener('click', function(e) {
   if (chartViewDropdown && !chartViewDropdown.contains(e.target) && chartMenu && !chartMenu.classList.contains('hidden')) {
     chartMenu.classList.add('hidden');
     if (chartChevron) chartChevron.classList.remove('rotate-180');
+  }
+
+  const productsDropdown = document.getElementById('productsDropdownContainer');
+  const productsMenu = document.getElementById('productsDropdownMenu');
+  const productsChevron = document.getElementById('productsDropdownChevron');
+  if (productsDropdown && !productsDropdown.contains(e.target) && productsMenu && !productsMenu.classList.contains('hidden')) {
+    productsMenu.classList.add('hidden');
+    if (productsChevron) productsChevron.classList.remove('rotate-180');
   }
 });
 
