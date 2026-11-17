@@ -979,6 +979,55 @@ function jumpToBankLedgerPage(val) {
 }
 
 /* ---------------- TAB 7: PURIFICATION & DONATIONS VIEW ---------------- */
+function togglePurificationTableAccordion() {
+  const container = document.getElementById('purifTableContainer');
+  const chevron = document.getElementById('purifAccordionChevron');
+  if (!container) return;
+  const isHidden = container.classList.contains('hidden');
+  container.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
+}
+
+function getFilteredProfitablePurificationLots(engineData) {
+  const source = engineData || getCachedEngineData();
+  const acctFilter = currentPurificationAccountFilter || 'ALL';
+  const fyFilter = currentPurificationFyFilter || 'ALL';
+
+  // Point 4: Filter strictly to profitable closed lots (gain > 0)
+  return (source.purificationLots || []).filter(lot => {
+    if (Number(lot.gain || 0) <= 0) return false;
+    if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
+    if (fyFilter !== 'ALL' && lot.fy !== fyFilter) return false;
+    return true;
+  });
+}
+
+function prevPurifPage() {
+  if (purificationLotsCurrentPage > 1) {
+    purificationLotsCurrentPage--;
+    renderPurificationView(getCachedEngineData());
+  }
+}
+
+function nextPurifPage() {
+  const list = getFilteredProfitablePurificationLots(getCachedEngineData());
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  if (purificationLotsCurrentPage < totalPages) {
+    purificationLotsCurrentPage++;
+    renderPurificationView(getCachedEngineData());
+  }
+}
+
+function jumpToPurifPage(val) {
+  const list = getFilteredProfitablePurificationLots(getCachedEngineData());
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  let target = parseInt(val, 10);
+  if (isNaN(target) || target < 1) target = 1;
+  if (target > totalPages) target = totalPages;
+  purificationLotsCurrentPage = target;
+  renderPurificationView(getCachedEngineData());
+}
+
 function populatePurificationFyOptions(purificationLots) {
   const select = document.getElementById('purificationFyFilter');
   if (!select) return;
@@ -999,12 +1048,14 @@ function populatePurificationFyOptions(purificationLots) {
 
 function setPurificationFyFilter(fy) {
   currentPurificationFyFilter = fy || 'ALL';
+  purificationLotsCurrentPage = 1;
   renderPurificationView(getCachedEngineData());
   refreshIcons();
 }
 
 function setPurificationAccountFilter(acct) {
   currentPurificationAccountFilter = acct;
+  purificationLotsCurrentPage = 1;
   ['ALL', ...CALIB_ACCOUNTS].forEach(key => {
     const btn = document.getElementById(`purifAcctBtn-${key}`);
     if (!btn) return;
@@ -1025,11 +1076,8 @@ function renderPurificationView(data) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
-  const filteredLots = (engineData.purificationLots || []).filter(lot => {
-    if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
-    if (fyFilter !== 'ALL' && lot.fy !== fyFilter) return false;
-    return true;
-  });
+  // Profitable closed lots only (gain > 0)
+  const profitableLots = getFilteredProfitablePurificationLots(engineData);
 
   const filteredDonations = (donations || []).filter(d => {
     if (acctFilter !== 'ALL' && d.account !== acctFilter) return false;
@@ -1039,8 +1087,8 @@ function renderPurificationView(data) {
 
   let totalPositiveGain = 0;
   let totalPurifDue = 0;
-  filteredLots.forEach(lot => {
-    if (lot.gain > 0) totalPositiveGain += lot.gain;
+  profitableLots.forEach(lot => {
+    totalPositiveGain += Number(lot.gain || 0);
     totalPurifDue += Number(lot.purificationDue || 0);
   });
 
@@ -1086,19 +1134,47 @@ function renderPurificationView(data) {
     }
   }
 
-  // 2. Render Table A: Trade-by-Trade Purification Breakdown (Newest first)
+  // 2. Render Table A: Profit-Only Paginated Purification Breakdown (Newest first)
   const lotsBadge = document.getElementById('purifLotsCountBadge');
-  if (lotsBadge) lotsBadge.innerText = `${filteredLots.length} Closed Lots`;
+  if (lotsBadge) lotsBadge.innerText = `${profitableLots.length} Profitable Lots`;
 
   const lotsTbody = document.getElementById('purificationLotsTableBody');
+  const pagContainer = document.getElementById('purifPaginationContainer');
   if (lotsTbody) {
     lotsTbody.innerHTML = '';
-    const displayLots = [...filteredLots].reverse();
+    const displayLots = [...profitableLots].reverse();
+
     if (displayLots.length === 0) {
-      lotsTbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No closed SELL lots matching the selected filter.</td></tr>`;
+      lotsTbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No profit-making closed SELL lots matching the selected filter.</td></tr>`;
+      if (pagContainer) pagContainer.classList.add('hidden');
     } else {
-      displayLots.forEach(lot => {
-        const isGain = lot.gain >= 0;
+      if (pagContainer) pagContainer.classList.remove('hidden');
+
+      const totalItems = displayLots.length;
+      const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+      if (purificationLotsCurrentPage > totalPages) purificationLotsCurrentPage = totalPages;
+
+      const startIndex = (purificationLotsCurrentPage - 1) * PAGE_SIZE;
+      const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+      const pageSlice = displayLots.slice(startIndex, endIndex);
+
+      const pageInfoEl = document.getElementById('purifPageInfo');
+      if (pageInfoEl) pageInfoEl.innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} profitable entries`;
+
+      const jumpInput = document.getElementById('purifJumpInput');
+      const totalLabel = document.getElementById('purifTotalPagesLabel');
+      if (jumpInput) {
+        jumpInput.value = purificationLotsCurrentPage;
+        jumpInput.max = totalPages;
+      }
+      if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
+
+      const prevBtn = document.getElementById('purifPrevBtn');
+      const nextBtn = document.getElementById('purifNextBtn');
+      if (prevBtn) prevBtn.disabled = purificationLotsCurrentPage <= 1;
+      if (nextBtn) nextBtn.disabled = purificationLotsCurrentPage >= totalPages;
+
+      pageSlice.forEach(lot => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
         tr.innerHTML = `
@@ -1108,7 +1184,7 @@ function renderPurificationView(data) {
           <td class="py-2.5 px-2 text-right tabular-nums">${lot.qty}</td>
           <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(lot.costBasis)}</td>
           <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${formatINR(lot.proceeds)}</td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isGain ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isGain ? '+' : ''}${formatINR(lot.gain)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 ${maskClass}">+${formatINR(lot.gain)}</td>
           <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-teal-600 dark:text-teal-400">${Number(lot.debtToAsset || 0).toFixed(2)}%</td>
           <td class="py-2.5 px-3 text-right tabular-nums font-bold text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(lot.purificationDue)}</td>
         `;
@@ -1617,19 +1693,21 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
 
-  // Tab 9: Purification Ledger
-  const purifRows = (data.purificationLots || []).map(p => ({
-    "Sell Date": p.sellDate,
-    "Account": p.account,
-    "Stock": p.stock,
-    "Qty": Number(p.qty),
-    "Cost Basis": Number(p.costBasis),
-    "Proceeds": Number(p.proceeds),
-    "Realized Gain/Loss": Number(p.gain),
-    "Debt to Asset (%)": Number(p.debtToAsset || 0),
-    "Purification Due": Number(p.purificationDue || 0),
-    "Financial Year": p.fy
-  }));
+  // Tab 9: Purification Ledger (Profitable Trades Only)
+  const purifRows = (data.purificationLots || [])
+    .filter(p => Number(p.gain || 0) > 0)
+    .map(p => ({
+      "Sell Date": p.sellDate,
+      "Account": p.account,
+      "Stock": p.stock,
+      "Qty": Number(p.qty),
+      "Cost Basis": Number(p.costBasis),
+      "Proceeds": Number(p.proceeds),
+      "Realized Profit": Number(p.gain),
+      "Debt to Asset (%)": Number(p.debtToAsset || 0),
+      "Purification Due": Number(p.purificationDue || 0),
+      "Financial Year": p.fy
+    }));
   const wsPurif = XLSX.utils.json_to_sheet(purifRows);
   formatWorksheet(wsPurif, [14, 12, 16, 10, 16, 16, 18, 16, 18, 14]);
   XLSX.utils.book_append_sheet(wb, wsPurif, "Purification Ledger");
