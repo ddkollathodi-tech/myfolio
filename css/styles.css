@@ -1,16 +1,21 @@
 /* ============================================================================
-   MyFolioAI - Optimized Stylesheet (css/styles.css)
-   ============================================================================ */
+MyFolioAI - Optimized Stylesheet (css/styles.css)
+============================================================================ */
+
+/* Enable Smooth Scrolling for Hero 'Open Graphs' Anchor Jump */
+html {
+scroll-behavior: smooth;
+}
 
 /* Base Font & Typographic Feature Flags */
 :root {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-  -webkit-font-smoothing: antialiased;
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+-webkit-font-smoothing: antialiased;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Tabular Numerics for Financial Tables & KPI Figures */
@@ -18,41 +23,41 @@ body {
 .tabular-nums,
 table,
 [id^="kpi"] {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0;
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+font-variant-numeric: tabular-nums;
+font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0;
 }
 
 /* Anti-FOUC Gatekeeper: Conceals dashboard until master PIN unlock */
 #app-root {
-  display: none;
+display: none;
 }
 
 /* PIN Card Error Shake Animation */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-8px); }
-  40%, 80% { transform: translateX(8px); }
+0%, 100% { transform: translateX(0); }
+20%, 60% { transform: translateX(-8px); }
+40%, 80% { transform: translateX(8px); }
 }
 
 .shake-animation {
-  animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
+animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
 }
 
 /* Classic Sequential Moving-Dots Sync / File-Transfer Animation (Point 1) */
 @keyframes syncDotTravel {
-  0%, 100% {
-    transform: translateY(0) scale(0.85);
-    opacity: 0.3;
-  }
-  40% {
-    transform: translateY(-5px) scale(1.2);
-    opacity: 1;
-  }
+0%, 100% {
+transform: translateY(0) scale(0.85);
+opacity: 0.3;
+}
+40% {
+transform: translateY(-5px) scale(1.2);
+opacity: 1;
+}
 }
 
 .sync-transfer-dot {
-  animation: syncDotTravel 1.2s infinite ease-in-out both;
+animation: syncDotTravel 1.2s infinite ease-in-out both;
 }
 
 .sync-transfer-dot:nth-child(1) { animation-delay: 0s; }
@@ -63,70 +68,70 @@ table,
 
 /* Gaussian Privacy Mask (Granular Stealth Mode) */
 .privacy-blurred {
-  filter: blur(7px) !important;
-  user-select: none !important;
-  pointer-events: none !important;
-  transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+filter: blur(7px) !important;
+user-select: none !important;
+pointer-events: none !important;
+transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Unmasked State Smooth Transition */
 .mask-transition {
-  transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Custom Scrollbar */
 .custom-scroll::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+width: 5px;
+height: 5px;
 }
 
 .custom-scroll::-webkit-scrollbar-track {
-  background: transparent;
+background: transparent;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+background: #cbd5e1;
+border-radius: 4px;
 }
 
 .dark .custom-scroll::-webkit-scrollbar-thumb {
-  background: #2a2e39;
-  border-radius: 4px;
+background: #2a2e39;
+border-radius: 4px;
 }
 
 /* Interactive Sortable Table Headers */
 th.sortable {
-  cursor: pointer;
-  user-select: none;
+cursor: pointer;
+user-select: none;
 }
 
 th.sortable:hover {
-  background-color: rgba(148, 163, 184, 0.12);
+background-color: rgba(148, 163, 184, 0.12);
 }
 
 /* Mobile Bottom Navigation Bar & Safe-Area Support */
 @media (max-width: 767px) {
-  body {
-    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
-  }
+body {
+padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+}
 }
 
 #mobileBottomNavBar {
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
 }
 
 .dark #mobileBottomNavBar {
-  box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.4);
+box-shadow: 0 -4px 25px rgba(0, 0, 0, 0.4);
 }
 
 /* Accessibility: Respect Reduced Motion Preferences */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+*, *::before, *::after {
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
+}
 }
