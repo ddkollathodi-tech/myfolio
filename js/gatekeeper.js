@@ -1,9 +1,10 @@
 // ============================================================================
-// MyFolioAI - Security Gatekeeper, PIN Crypto & Privacy Masks (gatekeeper.js)
+// MyFolioAI - Security Gatekeeper, PIN Crypto & Privacy Masks (js/gatekeeper.js)
 // ============================================================================
 
 let enteredPin = '';
 let isSettingUpNewPin = false;
+let forcePinSetup = false;
 let tempPinForSetup = '';
 let lastActiveTimestamp = Date.now();
 const AUTO_LOCK_TIMEOUT_MS = 1 * 60 * 1000; // 1 minute
@@ -95,15 +96,13 @@ function renderPinUI() {
   const card = document.getElementById('pinCard');
   if (!card) return;
 
-  // Check if Google Sheet URL is configured. If NOT linked yet, display the Sheet Link Screen first.
   const isSheetLinked = cloudScriptUrl && cloudScriptUrl.trim() !== '';
 
-  if (!isSheetLinked && !appSettings.pinHash) {
+  if (!isSheetLinked && !appSettings.pinHash && !forcePinSetup) {
     renderSheetLinkOverlay(card);
     return;
   }
 
-  // Standard PIN screen layout template restoration if sheet is linked or pin exists
   renderStandardPinLayout(card);
 }
 
@@ -140,11 +139,12 @@ function renderSheetLinkOverlay(container) {
     </div>
   `;
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof refreshIcons === 'function') refreshIcons();
+  else if (window.lucide) lucide.createIcons();
 }
 
 function bypassToPinCreation() {
-  appSettings.pinHash = 'TEMP_FLAG'; // temporary bypass flag to render pin creation
+  forcePinSetup = true;
   renderPinUI();
 }
 
@@ -159,7 +159,8 @@ async function handleGatekeeperSheetLink() {
   if (!newUrl) {
     if (msgEl) {
       msgEl.innerText = 'Please enter a valid Web App Deployment URL.';
-      msgEl.classList.remove('opacity-0');
+      msgEl.classList.remove('opacity-0', 'text-emerald-500');
+      msgEl.classList.add('text-rose-500');
     }
     return;
   }
@@ -176,13 +177,16 @@ async function handleGatekeeperSheetLink() {
     msgEl.classList.add('text-emerald-500');
   }
 
-  try {
-    await fetchFromGoogleSheet();
-    // After pulling from sheet, if pinHash is now loaded successfully, re-render gatekeeper to standard PIN view
+  const ok = await fetchFromGoogleSheet();
+  if (ok) {
     checkGatekeeperState();
-  } catch (err) {
+  } else {
+    cloudScriptUrl = '';
+    apiToken = '';
+    localStorage.removeItem(SCRIPT_URL_KEY);
+    localStorage.removeItem(API_TOKEN_STORAGE_KEY);
     if (msgEl) {
-      msgEl.innerText = 'Connection failed. Check URL and Token.';
+      msgEl.innerText = 'Connection failed. Check Web App URL and API Secret Token.';
       msgEl.classList.remove('text-emerald-500', 'opacity-0');
       msgEl.classList.add('text-rose-500');
     }
@@ -190,6 +194,11 @@ async function handleGatekeeperSheetLink() {
 }
 
 function renderStandardPinLayout(container) {
+  const digitBtnClass = 'py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95';
+  const digitsHtml = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+    .map(d => `<button onclick="pressPinDigit('${d}')" class="${digitBtnClass}">${d}</button>`)
+    .join('');
+
   container.innerHTML = `
     <div class="flex flex-col items-center space-y-2">
       <div class="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm">
@@ -211,18 +220,10 @@ function renderStandardPinLayout(container) {
 
     <!-- Numeric Keypad -->
     <div class="grid grid-cols-3 gap-3 max-w-[260px] mx-auto">
-      <button onclick="pressPinDigit('1')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">1</button>
-      <button onclick="pressPinDigit('2')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">2</button>
-      <button onclick="pressPinDigit('3')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">3</button>
-      <button onclick="pressPinDigit('4')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">4</button>
-      <button onclick="pressPinDigit('5')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">5</button>
-      <button onclick="pressPinDigit('6')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">6</button>
-      <button onclick="pressPinDigit('7')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">7</button>
-      <button onclick="pressPinDigit('8')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">8</button>
-      <button onclick="pressPinDigit('9')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">9</button>
-      <button onclick="clearPinInput()" class="h-13 py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
-      <button onclick="pressPinDigit('0')" class="h-13 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] text-slate-900 dark:text-white font-bold text-lg transition active:scale-95">0</button>
-      <button onclick="backspacePinDigit()" class="h-13 py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
+      ${digitsHtml}
+      <button onclick="clearPinInput()" class="py-3 rounded-2xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition">Clear</button>
+      <button onclick="pressPinDigit('0')" class="${digitBtnClass}">0</button>
+      <button onclick="backspacePinDigit()" class="py-3 rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition active:scale-95">
         <i data-lucide="delete" class="w-5 h-5"></i>
       </button>
     </div>
@@ -240,19 +241,19 @@ function renderStandardPinLayout(container) {
     </div>
   `;
 
-  if (window.lucide) lucide.createIcons();
+  if (typeof refreshIcons === 'function') refreshIcons();
+  else if (window.lucide) lucide.createIcons();
 
   const title = document.getElementById('pinTitle');
   const subtitle = document.getElementById('pinSubtitle');
 
-  // If pinHash is empty or set to TEMP_FLAG, handle setup mode
-  if (!appSettings.pinHash || appSettings.pinHash === 'TEMP_FLAG') {
-    if (appSettings.pinHash === 'TEMP_FLAG') appSettings.pinHash = ''; // clear temp flag for setup
+  if (!appSettings.pinHash) {
     isSettingUpNewPin = true;
     if (title) title.innerText = tempPinForSetup ? 'Confirm New PIN' : 'Create Master PIN';
     if (subtitle) subtitle.innerText = tempPinForSetup ? 'Re-enter your 4-digit PIN to confirm' : 'Set a 4-digit PIN to secure your portfolio';
   } else {
     isSettingUpNewPin = false;
+    forcePinSetup = false;
     if (title) title.innerText = 'Security Gatekeeper';
     if (subtitle) subtitle.innerText = 'Enter your PIN to unlock';
   }
@@ -266,7 +267,7 @@ function updatePinDots() {
       if (i < enteredPin.length) {
         dot.className = 'w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-500 scale-110 transition-all duration-150';
       } else {
-        dot.className = 'w-4 h-4 rounded-full border-2 border-slate-300 dark:border-gray-600 transition-all duration-150';
+        dot.className = 'w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-700 transition-all duration-150';
       }
     }
   }
@@ -329,10 +330,11 @@ async function handlePinVerification() {
       if (enteredPin === tempPinForSetup) {
         const hash = await sha256Hex(enteredPin);
         appSettings.pinHash = hash;
+        forcePinSetup = false;
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
-        
+
         if (typeof sendToSheet === 'function') {
-          sendToSheet({ action: "setPinHash", pinHash: hash });
+          sendToSheet({ action: 'setPinHash', pinHash: hash });
         }
 
         tempPinForSetup = '';
@@ -369,7 +371,17 @@ async function handlePinVerification() {
 function lockApplicationNow() {
   sessionStorage.removeItem('MYFOLIOAI_UNLOCKED');
   enteredPin = '';
+  tempPinForSetup = '';
+
+  // Close all open modals so nothing sits visible over the lock screen
+  document.querySelectorAll('.app-modal').forEach(modal => modal.classList.add('hidden'));
+
+  // Re-blur all KPI cards and table tabs
   resetKpiMasksToDefault();
+  if (typeof initTabMaskStates === 'function') {
+    initTabMaskStates();
+  }
+
   checkGatekeeperState();
 }
 
@@ -385,7 +397,7 @@ function resetKpiMasksToDefault() {
 }
 
 function toggleSingleKpiMask(cardKey) {
-  if (kpiMaskStates.hasOwnProperty(cardKey)) {
+  if (Object.prototype.hasOwnProperty.call(kpiMaskStates, cardKey)) {
     kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
     updateSingleMaskUI(cardKey);
   }
@@ -408,14 +420,12 @@ function updateSingleMaskUI(cardKey) {
   (targetsMap[cardKey] || []).forEach(elemId => {
     const el = document.getElementById(elemId);
     if (el) {
-      if (isMasked) el.classList.add('privacy-blurred');
-      else el.classList.remove('privacy-blurred');
+      el.classList.toggle('privacy-blurred', isMasked);
     }
   });
 
-  if (window.lucide && typeof lucide.createIcons === 'function') {
-    lucide.createIcons();
-  }
+  if (typeof refreshIcons === 'function') refreshIcons();
+  else if (window.lucide) lucide.createIcons();
 }
 
 function applyAllKpiMasks() {
