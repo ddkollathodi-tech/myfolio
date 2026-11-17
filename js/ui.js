@@ -18,7 +18,8 @@ let dirtyTabs = {
   fyBreakdown: true,
   transactions: true,
   bankLedger: true,
-  taxPnl: true
+  taxPnl: true,
+  purification: true
 };
 
 let iconRefreshQueued = false;
@@ -75,6 +76,10 @@ function init() {
   if (savedTx) {
     try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
   }
+  const savedDonations = localStorage.getItem(DONATIONS_STORAGE_KEY);
+  if (savedDonations) {
+    try { donations = JSON.parse(savedDonations); } catch (e) { donations = []; }
+  }
   bumpTxVersion();
 
   updateStockAutocompleteOptions();
@@ -88,9 +93,10 @@ function init() {
 }
 
 function buildDynamicAccountControls() {
+  const accounts = ['ALL', ...CALIB_ACCOUNTS];
+
   const filterGroup = document.getElementById('holdingsAccountFilterGroup');
   if (filterGroup) {
-    const accounts = ['ALL', ...CALIB_ACCOUNTS];
     filterGroup.innerHTML = accounts.map(acct => {
       const label = acct === 'ALL' ? 'Combined' : esc(acct);
       const isSelected = acct === currentHoldingsAccountFilter;
@@ -101,11 +107,26 @@ function buildDynamicAccountControls() {
     }).join('');
   }
 
-  const txAccountSelect = document.getElementById('txAccount');
-  if (txAccountSelect) {
-    txAccountSelect.innerHTML = `<option value="">Select Account</option>` +
-      CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
+  const purifFilterGroup = document.getElementById('purificationAccountFilterGroup');
+  if (purifFilterGroup) {
+    purifFilterGroup.innerHTML = accounts.map(acct => {
+      const label = acct === 'ALL' ? 'Combined' : esc(acct);
+      const isSelected = acct === currentPurificationAccountFilter;
+      const cls = isSelected
+        ? 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold'
+        : 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
+      return `<button onclick="setPurificationAccountFilter('${esc(acct)}')" id="purifAcctBtn-${esc(acct)}" class="${cls}">${label}</button>`;
+    }).join('');
   }
+
+  const acctOptionsHtml = `<option value="">Select Account</option>` +
+    CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
+
+  const txAccountSelect = document.getElementById('txAccount');
+  if (txAccountSelect) txAccountSelect.innerHTML = acctOptionsHtml;
+
+  const donationAccountSelect = document.getElementById('donationAccount');
+  if (donationAccountSelect) donationAccountSelect.innerHTML = acctOptionsHtml;
 }
 
 /* ---------------- STEALTH MASKING SYSTEM ---------------- */
@@ -117,7 +138,8 @@ function initTabMaskStates() {
     fyBreakdown: true,
     ledger: true,
     bankLedger: true,
-    taxPnl: true
+    taxPnl: true,
+    purification: true
   };
   Object.keys(tabMaskStates).forEach(k => updateTabMaskIcon(k));
 }
@@ -143,6 +165,8 @@ function toggleTabMask(tabKey) {
     renderBankLedger(data.bankEntries);
   } else if (tabKey === 'taxPnl') {
     renderTaxView();
+  } else if (tabKey === 'purification') {
+    renderPurificationView(data);
   }
   refreshIcons();
 }
@@ -390,6 +414,7 @@ function recalculateAndRender() {
 
   applyAllKpiMasks();
   populateTaxFyOptions(data.fyRealized);
+  populatePurificationFyOptions(data.purificationLots);
   renderActiveTabOnly(data);
   renderChartLegend();
   renderChart(data);
@@ -417,6 +442,9 @@ function renderActiveTabOnly(data) {
   } else if (activeTabKey === 'taxPnl') {
     renderTaxView();
     dirtyTabs.taxPnl = false;
+  } else if (activeTabKey === 'purification') {
+    renderPurificationView(engineData);
+    dirtyTabs.purification = false;
   }
 }
 
@@ -950,6 +978,246 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(getCachedEngineData().bankEntries);
 }
 
+/* ---------------- TAB 7: PURIFICATION & DONATIONS VIEW ---------------- */
+function populatePurificationFyOptions(purificationLots) {
+  const select = document.getElementById('purificationFyFilter');
+  if (!select) return;
+
+  const fySet = new Set();
+  (purificationLots || []).forEach(lot => { if (lot.fy) fySet.add(lot.fy); });
+  (donations || []).forEach(d => { if (d.date) fySet.add(getFinancialYear(d.date)); });
+
+  const sortedFys = Array.from(fySet).sort().reverse();
+  const prevVal = currentPurificationFyFilter || 'ALL';
+
+  select.innerHTML = `<option value="ALL">All Financial Years</option>` +
+    sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+
+  select.value = (prevVal === 'ALL' || fySet.has(prevVal)) ? prevVal : 'ALL';
+  currentPurificationFyFilter = select.value;
+}
+
+function setPurificationFyFilter(fy) {
+  currentPurificationFyFilter = fy || 'ALL';
+  renderPurificationView(getCachedEngineData());
+  refreshIcons();
+}
+
+function setPurificationAccountFilter(acct) {
+  currentPurificationAccountFilter = acct;
+  ['ALL', ...CALIB_ACCOUNTS].forEach(key => {
+    const btn = document.getElementById(`purifAcctBtn-${key}`);
+    if (!btn) return;
+    if (key === acct) {
+      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
+    } else {
+      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
+    }
+  });
+  renderPurificationView(getCachedEngineData());
+  refreshIcons();
+}
+
+function renderPurificationView(data) {
+  const engineData = data || getCachedEngineData();
+  const maskClass = getMaskClass('purification');
+
+  const acctFilter = currentPurificationAccountFilter || 'ALL';
+  const fyFilter = currentPurificationFyFilter || 'ALL';
+
+  const filteredLots = (engineData.purificationLots || []).filter(lot => {
+    if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
+    if (fyFilter !== 'ALL' && lot.fy !== fyFilter) return false;
+    return true;
+  });
+
+  const filteredDonations = (donations || []).filter(d => {
+    if (acctFilter !== 'ALL' && d.account !== acctFilter) return false;
+    if (fyFilter !== 'ALL' && getFinancialYear(d.date) !== fyFilter) return false;
+    return true;
+  });
+
+  let totalPositiveGain = 0;
+  let totalPurifDue = 0;
+  filteredLots.forEach(lot => {
+    if (lot.gain > 0) totalPositiveGain += lot.gain;
+    totalPurifDue += Number(lot.purificationDue || 0);
+  });
+
+  const totalDonated = filteredDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const remainingDue = totalPurifDue - totalDonated;
+
+  // 1. Update 3 Purification KPI Cards
+  const dueEl = document.getElementById('purifTotalDueVal');
+  const profitSubEl = document.getElementById('purifTotalProfitSub');
+  if (dueEl) {
+    dueEl.innerText = formatINR(totalPurifDue);
+    dueEl.className = `text-2xl font-extrabold text-amber-600 dark:text-amber-400 tabular-nums ${maskClass}`;
+  }
+  if (profitSubEl) {
+    profitSubEl.innerHTML = `From <span class="${maskClass} font-semibold">${formatINR(totalPositiveGain)}</span> positive realized profit`;
+  }
+
+  const donatedEl = document.getElementById('purifTotalDonatedVal');
+  const countSubEl = document.getElementById('purifDonationCountSub');
+  if (donatedEl) {
+    donatedEl.innerText = formatINR(totalDonated);
+    donatedEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+  }
+  if (countSubEl) {
+    countSubEl.innerText = `${filteredDonations.length} donation ${filteredDonations.length === 1 ? 'entry' : 'entries'} recorded`;
+  }
+
+  const remEl = document.getElementById('purifRemainingVal');
+  const statusSubEl = document.getElementById('purifStatusSub');
+  if (remEl) {
+    if (remainingDue > 0.005) {
+      remEl.innerText = formatINR(remainingDue);
+      remEl.className = `text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Pending purification donation balance';
+    } else if (remainingDue < -0.005) {
+      remEl.innerText = `+${formatINR(Math.abs(remainingDue))}`;
+      remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Surplus donated above obligation';
+    } else {
+      remEl.innerText = '₹0.00';
+      remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Fully purified & settled';
+    }
+  }
+
+  // 2. Render Table A: Trade-by-Trade Purification Breakdown (Newest first)
+  const lotsBadge = document.getElementById('purifLotsCountBadge');
+  if (lotsBadge) lotsBadge.innerText = `${filteredLots.length} Closed Lots`;
+
+  const lotsTbody = document.getElementById('purificationLotsTableBody');
+  if (lotsTbody) {
+    lotsTbody.innerHTML = '';
+    const displayLots = [...filteredLots].reverse();
+    if (displayLots.length === 0) {
+      lotsTbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No closed SELL lots matching the selected filter.</td></tr>`;
+    } else {
+      displayLots.forEach(lot => {
+        const isGain = lot.gain >= 0;
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 tabular-nums text-slate-500 dark:text-slate-400">${esc(lot.sellDate)}</td>
+          <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(lot.account)}</span></td>
+          <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${esc(lot.stock)}</td>
+          <td class="py-2.5 px-2 text-right tabular-nums">${lot.qty}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(lot.costBasis)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums ${maskClass}">${formatINR(lot.proceeds)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-semibold ${isGain ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isGain ? '+' : ''}${formatINR(lot.gain)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-teal-600 dark:text-teal-400">${Number(lot.debtToAsset || 0).toFixed(2)}%</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(lot.purificationDue)}</td>
+        `;
+        lotsTbody.appendChild(tr);
+      });
+    }
+  }
+
+  // 3. Render Table B: Recorded Donations Log (Newest first)
+  const donTbody = document.getElementById('donationsLogTableBody');
+  if (donTbody) {
+    donTbody.innerHTML = '';
+    const sortedDonations = [...filteredDonations].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sortedDonations.length === 0) {
+      donTbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No donations recorded yet. Click "+ Record Donation" to log a contribution.</td></tr>`;
+    } else {
+      sortedDonations.forEach(don => {
+        const donId = esc(String(don.id || ''));
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 tabular-nums text-slate-500 dark:text-slate-400">${esc(don.date)}</td>
+          <td class="py-2.5 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(don.account)}</span></td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 ${maskClass}">${formatINR(don.amount)}</td>
+          <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">${esc(don.remarks)}</td>
+          <td class="py-2.5 px-3 text-center">
+            <button data-donation-delete-id="${donId}" class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
+          </td>
+        `;
+        donTbody.appendChild(tr);
+      });
+    }
+  }
+}
+
+// Event delegation for Deleting a Donation record (PIN-gated)
+document.addEventListener('click', (e) => {
+  const delBtn = e.target.closest('[data-donation-delete-id]');
+  if (!delBtn) return;
+  const donId = delBtn.dataset.donationDeleteId;
+  const targetDon = donations.find(d => String(d.id) === donId);
+  if (!targetDon) return;
+
+  requestPinAuthorization(
+    'Authorize Donation Deletion',
+    `Enter Master PIN to delete donation of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+    () => {
+      const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
+      if (idx >= 0) {
+        donations.splice(idx, 1);
+      }
+      localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+      sendToSheet({ action: 'deleteDonation', id: targetDon.id });
+      renderPurificationView(getCachedEngineData());
+      refreshIcons();
+    }
+  );
+});
+
+function openRecordDonationModal() {
+  const modal = document.getElementById('recordDonationModal');
+  if (!modal) return;
+  document.getElementById('donationForm').reset();
+  document.getElementById('donationDate').value = todayLocalISO();
+
+  const acctSelect = document.getElementById('donationAccount');
+  if (acctSelect) {
+    acctSelect.value = (currentPurificationAccountFilter && currentPurificationAccountFilter !== 'ALL')
+      ? currentPurificationAccountFilter
+      : '';
+  }
+
+  modal.classList.remove('hidden');
+  refreshIcons();
+}
+
+function closeRecordDonationModal() {
+  const modal = document.getElementById('recordDonationModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleDonationSubmit(e) {
+  e.preventDefault();
+  const date = document.getElementById('donationDate').value;
+  const account = document.getElementById('donationAccount').value.trim();
+  const amount = Number(document.getElementById('donationAmount').value || 0);
+  const remarks = document.getElementById('donationRemarks').value.trim();
+
+  if (!date || !account || amount <= 0 || !remarks) return;
+
+  const newDonation = {
+    id: `DON_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    date,
+    account,
+    amount,
+    remarks
+  };
+
+  donations.push(newDonation);
+  localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+  sendToSheet({ action: 'addDonation', donation: newDonation });
+
+  closeRecordDonationModal();
+  populatePurificationFyOptions(getCachedEngineData().purificationLots);
+  renderPurificationView(getCachedEngineData());
+  refreshIcons();
+}
+
 /* ---------------- DYNAMIC HEADER LEGEND & VIEW SWITCHER ---------------- */
 function getRocRateLabel() {
   const pct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100)
@@ -1280,10 +1548,11 @@ function exportPortfolioToExcel() {
     "Cash Out": Number(l.cashOut || 0),
     "Cash In": Number(l.cashIn || 0),
     "Running Cash Balance": Number(l.runningCash || 0),
+    "Debt_To_Asset": l.debtToAsset,
     "Remarks": l.remarks
   }));
   const wsTradebook = XLSX.utils.json_to_sheet(tradebookRows);
-  formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 25]);
+  formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 15, 25]);
   XLSX.utils.book_append_sheet(wb, wsTradebook, "Tradebook & Ledger");
 
   // Tab 5: Tax Audit
@@ -1347,6 +1616,34 @@ function exportPortfolioToExcel() {
   const wsRoc = XLSX.utils.json_to_sheet(rocRows);
   formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
+
+  // Tab 9: Purification Ledger
+  const purifRows = (data.purificationLots || []).map(p => ({
+    "Sell Date": p.sellDate,
+    "Account": p.account,
+    "Stock": p.stock,
+    "Qty": Number(p.qty),
+    "Cost Basis": Number(p.costBasis),
+    "Proceeds": Number(p.proceeds),
+    "Realized Gain/Loss": Number(p.gain),
+    "Debt to Asset (%)": Number(p.debtToAsset || 0),
+    "Purification Due": Number(p.purificationDue || 0),
+    "Financial Year": p.fy
+  }));
+  const wsPurif = XLSX.utils.json_to_sheet(purifRows);
+  formatWorksheet(wsPurif, [14, 12, 16, 10, 16, 16, 18, 16, 18, 14]);
+  XLSX.utils.book_append_sheet(wb, wsPurif, "Purification Ledger");
+
+  // Tab 10: Recorded Donations
+  const donRows = (donations || []).map(d => ({
+    "Date": d.date,
+    "Account": d.account,
+    "Donated Amount": Number(d.amount || 0),
+    "Remarks": d.remarks
+  }));
+  const wsDon = XLSX.utils.json_to_sheet(donRows);
+  formatWorksheet(wsDon, [14, 14, 18, 32]);
+  XLSX.utils.book_append_sheet(wb, wsDon, "Purification Donations");
 
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayLocalISO()}.xlsx`);
 }
@@ -1700,11 +1997,17 @@ function openPresetModal(type, existingTx = null) {
     document.getElementById('txPrice').value = existingTx.price || '';
     document.getElementById('txAmount').value = existingTx.amount || '';
     document.getElementById('txRemarks').value = existingTx.remarks || '';
+    const debtInp = document.getElementById('txDebtToAsset');
+    if (debtInp) {
+      debtInp.value = (existingTx.type === 'SELL' && existingTx.debtToAsset !== undefined && existingTx.debtToAsset !== 'NA')
+        ? existingTx.debtToAsset
+        : '';
+    }
   }
 }
 
 function clearInlineTxWarnings() {
-  ['txAccount', 'txStock', 'txQty', 'txPrice', 'txAmount', 'txRemarks'].forEach(id => {
+  ['txAccount', 'txStock', 'txQty', 'txPrice', 'txAmount', 'txDebtToAsset', 'txRemarks'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
   });
@@ -1739,8 +2042,27 @@ function toggleFormFields() {
   const priceLabel = document.getElementById('txPriceLabel');
   const priceInput = document.getElementById('txPrice');
   const amtInput = document.getElementById('txAmount');
+  const amtGroup = document.getElementById('txAmountFieldGroup');
+  const debtGroup = document.getElementById('txDebtToAssetGroup');
+  const debtInp = document.getElementById('txDebtToAsset');
 
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
+
+  // Show mandatory Debt-to-Asset % input only for SELL transactions
+  if (debtGroup && amtGroup) {
+    if (type === 'SELL') {
+      debtGroup.classList.remove('hidden');
+      amtGroup.classList.remove('sm:col-span-2');
+      if (debtInp) debtInp.required = true;
+    } else {
+      debtGroup.classList.add('hidden');
+      amtGroup.classList.add('sm:col-span-2');
+      if (debtInp) {
+        debtInp.required = false;
+        debtInp.value = '';
+      }
+    }
+  }
 
   if (type === 'BONUS') {
     qtyLabel.innerText = 'Bonus Shares Allotted';
@@ -1825,6 +2147,8 @@ function handleTransactionSubmit(e) {
   const price = Number(priceInput ? priceInput.value || 0 : 0);
   const amtInput = document.getElementById('txAmount');
   let amount = Number(amtInput ? amtInput.value || 0 : 0);
+  const debtInput = document.getElementById('txDebtToAsset');
+  const rawDebtStr = debtInput ? debtInput.value.trim() : '';
   const remarksInput = document.getElementById('txRemarks');
   const remarks = remarksInput ? remarksInput.value.trim() : '';
   const date = document.getElementById('txDate').value;
@@ -1848,6 +2172,17 @@ function handleTransactionSubmit(e) {
   if (['BUY', 'SELL'].includes(type) && (!price || price <= 0)) {
     showInlineError(priceInput, 'Price per share is required.');
     return;
+  }
+
+  // Mandatory Debt-to-Asset (%) validation for SELL transactions
+  let debtToAssetVal = 'NA';
+  if (type === 'SELL') {
+    const parsedDebt = Number(rawDebtStr);
+    if (rawDebtStr === '' || isNaN(parsedDebt) || parsedDebt < 0 || parsedDebt > 100) {
+      showInlineError(debtInput, 'Enter Debt to Total Assets % (0 to 100).');
+      return;
+    }
+    debtToAssetVal = parsedDebt;
   }
 
   if (type === 'FEES' && (!amount || amount <= 0)) {
@@ -1921,7 +2256,8 @@ function handleTransactionSubmit(e) {
       qty,
       price,
       amount,
-      remarks
+      remarks,
+      debtToAsset: debtToAssetVal
     };
 
     const proposedList = transactions.map(t => (String(t.id) === editingId ? updatedTx : t));
@@ -1963,7 +2299,8 @@ function handleTransactionSubmit(e) {
     qty,
     price,
     amount,
-    remarks
+    remarks,
+    debtToAsset: debtToAssetVal
   };
 
   transactions.push(newEntry);
@@ -2024,12 +2361,13 @@ function renderRecentTransactionsTable() {
   const recentTen = [...transactions].slice(-10).reverse();
 
   if (recentTen.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">No transactions recorded yet.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 font-medium">No transactions recorded yet.</td></tr>`;
     return;
   }
 
   recentTen.forEach(tx => {
     const txId = esc(String(tx.id || ''));
+    const debtDisplay = tx.type === 'SELL' ? `${Number(tx.debtToAsset || 0).toFixed(2)}%` : 'NA';
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80';
     tr.innerHTML = `
@@ -2040,6 +2378,7 @@ function renderRecentTransactionsTable() {
       <td class="py-2.5 px-2 text-right tabular-nums">${tx.qty || '—'}</td>
       <td class="py-2.5 px-2 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white">${formatINR(tx.amount || 0)}</td>
+      <td class="py-2.5 px-2 text-right tabular-nums text-xs ${tx.type === 'SELL' ? 'font-semibold text-teal-600 dark:text-teal-400' : 'text-slate-400'}">${debtDisplay}</td>
       <td class="py-2.5 px-3 text-slate-500 dark:text-slate-400 truncate max-w-[160px]" title="${esc(tx.remarks)}">${esc(tx.remarks)}</td>
       <td class="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
         <button data-tx-action="edit" data-tx-id="${txId}" class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-[11px] font-bold transition">Edit</button>
@@ -2153,7 +2492,7 @@ async function submitPinVerifyChallenge(e) {
 
 /* ---------------- NAVIGATION TABS & MOBILE NAV SYNC ---------------- */
 function setActiveMobileNav(tabKey) {
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(k => {
+  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(k => {
     const btn = document.getElementById(`mobNav-${k}`);
     if (!btn) return;
     if (k === tabKey) {
@@ -2166,7 +2505,7 @@ function setActiveMobileNav(tabKey) {
 
 function switchTab(t) {
   activeTabKey = t;
-  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl'].forEach(id => {
+  ['holdings', 'closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(id => {
     const el = document.getElementById(`tabContent-${id}`);
     const btn = document.getElementById(`tabBtn-${id}`);
     if (el) el.classList.add('hidden');
@@ -2561,11 +2900,61 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Manual Database Backup Trigger (POST request)
+// 2. Custom In-App Backup Status Modal & Trigger
+function openBackupResultModal(isSuccess, title, message, details = null) {
+  const modal = document.getElementById('backupResultModal');
+  if (!modal) return;
+
+  const iconWrap = document.getElementById('backupModalIconWrap');
+  const iconEl = document.getElementById('backupModalIcon');
+  const titleEl = document.getElementById('backupModalTitle');
+  const msgEl = document.getElementById('backupModalMessage');
+  const metaEl = document.getElementById('backupModalMeta');
+
+  if (titleEl) titleEl.innerText = title;
+  if (msgEl) msgEl.innerText = message;
+
+  if (iconWrap && iconEl) {
+    if (isSuccess) {
+      iconWrap.className = 'h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400';
+      iconEl.setAttribute('data-lucide', 'check-circle-2');
+    } else {
+      iconWrap.className = 'h-12 w-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400';
+      iconEl.setAttribute('data-lucide', 'alert-triangle');
+    }
+  }
+
+  if (metaEl) {
+    if (isSuccess && details) {
+      metaEl.classList.remove('hidden');
+      metaEl.innerHTML = `
+        <div class="flex justify-between"><span>Snapshot File:</span> <b class="text-slate-800 dark:text-slate-200">${esc(details.backupName || 'MyFolio_DB_Backup')}</b></div>
+        <div class="flex justify-between"><span>Completed At:</span> <b class="text-slate-800 dark:text-slate-200">${esc(details.backupTime || '')}</b></div>
+        <div class="flex justify-between"><span>Rolling Vault Slots:</span> <b class="text-emerald-600 dark:text-emerald-400">${esc(String(details.totalStored || 1))} / 4 stored</b></div>
+      `;
+    } else {
+      metaEl.classList.add('hidden');
+      metaEl.innerHTML = '';
+    }
+  }
+
+  modal.classList.remove('hidden');
+  refreshIcons();
+}
+
+function closeBackupResultModal() {
+  const modal = document.getElementById('backupResultModal');
+  if (modal) modal.classList.add('hidden');
+}
+
 async function triggerManualDatabaseBackup() {
   closeSettingsDropdown();
   if (!cloudScriptUrl) {
-    alert('Google Sheets Sync is not connected. Please connect your Web App Deployment URL first.');
+    openBackupResultModal(
+      false,
+      'Google Sheet Not Linked',
+      'Please connect your Google Apps Script Web App Deployment URL before running a database backup.'
+    );
     return;
   }
 
@@ -2584,7 +2973,12 @@ async function triggerManualDatabaseBackup() {
       if (iconEl) {
         iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
       }
-      alert('Database backup created successfully in your Google Drive vault folder!');
+      openBackupResultModal(
+        true,
+        'Vault Backup Complete',
+        'A timestamped copy of your database has been safely archived in your Google Drive vault folder.',
+        json.details || null
+      );
     } else {
       throw new Error((json && (json.message || json.error)) || 'Unknown error');
     }
@@ -2592,7 +2986,11 @@ async function triggerManualDatabaseBackup() {
     if (iconEl) {
       iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block" title="Backup failed"></span>`;
     }
-    alert('Database backup failed: ' + err.toString());
+    openBackupResultModal(
+      false,
+      'Database Backup Failed',
+      err.message || String(err)
+    );
   }
 }
 
