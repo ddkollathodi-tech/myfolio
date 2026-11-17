@@ -3025,53 +3025,6 @@ function closeBackupResultModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-async function triggerManualDatabaseBackup() {
-  closeSettingsDropdown();
-  if (!cloudScriptUrl) {
-    openBackupResultModal(
-      false,
-      'Google Sheet Not Linked',
-      'Please connect your Google Apps Script Web App Deployment URL before running a database backup.'
-    );
-    return;
-  }
-
-  const iconEl = document.getElementById('backupStatusIcon');
-  if (iconEl) {
-    iconEl.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
-    refreshIcons();
-  }
-
-  try {
-    const json = await sendToSheet({ action: "triggerDatabaseBackup" }, true);
-    if (json && json.status === 'success') {
-      const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
-      recordBackupTimestamp(backupTime);
-
-      if (iconEl) {
-        iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
-      }
-      openBackupResultModal(
-        true,
-        'Vault Backup Complete',
-        'A timestamped copy of your database has been safely archived in your Google Drive vault folder.',
-        json.details || null
-      );
-    } else {
-      throw new Error((json && (json.message || json.error)) || 'Unknown error');
-    }
-  } catch (err) {
-    if (iconEl) {
-      iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block" title="Backup failed"></span>`;
-    }
-    openBackupResultModal(
-      false,
-      'Database Backup Failed',
-      err.message || String(err)
-    );
-  }
-}
-
 // 3. Cash Calibration Modal
 function openCashCalibrateModal() {
   closeSettingsDropdown();
