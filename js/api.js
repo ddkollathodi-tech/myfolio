@@ -1,11 +1,14 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
 // Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
-//             Blocking Sync Overlay with 15s Timeout & Work Offline Fail-Safe
+//             Blocking Sync Overlay with 15s Timeout & Work Offline Fail-Safe,
+//             and Blocking Database Backup Overlay with 4s Dismissal.
 // ============================================================================
 
 let activeSyncAbortController = null;
 let syncOfflineBtnTimer = null;
+let activeBackupAbortController = null;
+let backupOfflineBtnTimer = null;
 
 function showCloudSyncOverlay() {
   const overlay = document.getElementById('cloudSyncOverlay');
@@ -52,6 +55,50 @@ function cancelSyncAndWorkOffline() {
   if (typeof recalculateAndRender === 'function') {
     recalculateAndRender();
   }
+}
+
+// Database Backup Blocking Overlay Helpers
+function showDatabaseBackupOverlay() {
+  const overlay = document.getElementById('databaseBackupOverlay');
+  const offlineBtn = document.getElementById('backupWorkOfflineBtn');
+  if (!overlay) return;
+
+  overlay.classList.remove('hidden');
+
+  if (offlineBtn) {
+    offlineBtn.classList.add('hidden', 'opacity-0');
+    if (backupOfflineBtnTimer) clearTimeout(backupOfflineBtnTimer);
+    // Reveal "Dismiss / Cancel" escape hatch after 4 seconds
+    backupOfflineBtnTimer = setTimeout(() => {
+      offlineBtn.classList.remove('hidden');
+      requestAnimationFrame(() => offlineBtn.classList.remove('opacity-0'));
+    }, 4000);
+  }
+}
+
+function hideDatabaseBackupOverlay() {
+  const overlay = document.getElementById('databaseBackupOverlay');
+  const offlineBtn = document.getElementById('backupWorkOfflineBtn');
+  if (backupOfflineBtnTimer) {
+    clearTimeout(backupOfflineBtnTimer);
+    backupOfflineBtnTimer = null;
+  }
+  if (offlineBtn) {
+    offlineBtn.classList.add('hidden', 'opacity-0');
+  }
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+function cancelBackupAndDismiss() {
+  if (activeBackupAbortController) {
+    try {
+      activeBackupAbortController.abort();
+    } catch (e) {}
+    activeBackupAbortController = null;
+  }
+  hideDatabaseBackupOverlay();
 }
 
 function updateSyncUI(status) {
@@ -336,6 +383,72 @@ function persistManualPrice(stock, ltp) {
     action: 'savePrices',
     prices: { [sym]: priceObj }
   });
+}
+
+async function triggerManualDatabaseBackup() {
+  closeSettingsDropdown();
+  if (!cloudScriptUrl) {
+    openBackupResultModal(
+      false,
+      'Google Sheet Not Linked',
+      'Please connect your Google Apps Script Web App Deployment URL before running a database backup.'
+    );
+    return;
+  }
+
+  const iconEl = document.getElementById('backupStatusIcon');
+  if (iconEl) {
+    iconEl.innerHTML = `<i data-lucide="loader-circle" class="w-3.5 h-3.5 text-amber-500 animate-spin inline-block"></i>`;
+    refreshIcons();
+  }
+
+  // Cancel any stale backup request
+  if (activeBackupAbortController) {
+    try { activeBackupAbortController.abort(); } catch (e) {}
+  }
+
+  const controller = new AbortController();
+  activeBackupAbortController = controller;
+  const timeoutId = setTimeout(() => {
+    try { controller.abort(); } catch (e) {}
+  }, 25000); // 25s timeout for drive file creation
+
+  showDatabaseBackupOverlay();
+
+  try {
+    const json = await sendToSheet({ action: "triggerDatabaseBackup" }, true);
+    if (json && json.status === 'success') {
+      const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
+      recordBackupTimestamp(backupTime);
+
+      if (iconEl) {
+        iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>`;
+      }
+      openBackupResultModal(
+        true,
+        'Vault Backup Complete',
+        'A timestamped copy of your database has been safely archived in your Google Drive vault folder.',
+        json.details || null
+      );
+    } else {
+      throw new Error((json && (json.message || json.error)) || 'Unknown error');
+    }
+  } catch (err) {
+    if (iconEl) {
+      iconEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block" title="Backup failed"></span>`;
+    }
+    openBackupResultModal(
+      false,
+      'Database Backup Failed',
+      err.message || String(err)
+    );
+  } finally {
+    clearTimeout(timeoutId);
+    if (activeBackupAbortController === controller) {
+      activeBackupAbortController = null;
+    }
+    hideDatabaseBackupOverlay();
+  }
 }
 
 function openSyncModal() {
