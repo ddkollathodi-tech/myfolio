@@ -15,7 +15,7 @@ const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
-const DONATIONS_STORAGE_KEY = 'MYFOLIOAI_DONATIONS'; // Added for Point 4 (Purification Donations)
+const DONATIONS_STORAGE_KEY = 'MYFOLIOAI_DONATIONS';
 
 // Core Account Definitions
 const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
@@ -23,7 +23,7 @@ const PAGE_SIZE = 12;
 
 // ---------------- SHARED RUNTIME STATE ----------------
 let transactions = [];
-let donations = []; // Added for Point 4 (Purification Donations runtime list)
+let donations = [];
 try {
   donations = JSON.parse(localStorage.getItem(DONATIONS_STORAGE_KEY)) || [];
 } catch (e) {
@@ -105,8 +105,8 @@ let marketPrices = Object.assign({}, savedManualPrices);
 // Active View & Filter State
 let currentHoldingsAccountFilter = 'ALL';
 let currentTaxAccountFilter = 'Me';
-let currentPurificationAccountFilter = 'ALL'; // Added for Point 4 (Purification tab account filter)
-let currentPurificationFyFilter = 'ALL';     // Added for Point 4 (Purification tab FY filter)
+let currentPurificationAccountFilter = 'ALL';
+let currentPurificationFyFilter = 'ALL';
 let currentChartRange = 'TTM';
 let currentChartView = 'trajectory'; // 'trajectory' | 'roc'
 const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
@@ -120,7 +120,7 @@ let tabMaskStates = {
   ledger: true,
   bankLedger: true,
   taxPnl: true,
-  purification: true // Added for Point 4 (Purification & Donation stealth mask)
+  purification: true
 };
 
 // Cloud Sync & Handshake State
@@ -131,7 +131,7 @@ let apiToken = localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
 let closedTradesCurrentPage = 1;
 let ledgerCurrentPage = 1;
 let bankLedgerCurrentPage = 1;
-let purificationLogCurrentPage = 1; // Added for Point 4 donations table pagination
+let purificationLogCurrentPage = 1;
 let ledgerSearchTerm = '';
 let holdingsSort = { key: 'currentVal', dir: 'desc' };
 let closedSort = { key: 'netPnL', dir: 'desc' };
