@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyFolio.AI - Portfolio Tracker Engine</title>
 
-  <!-- Point 2: Inline SVG Brand Favicon (Three Ascending Slanted Bars) -->
+  <!-- Inline SVG Brand Favicon (Three Ascending Slanted Bars) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 32'%3E%3Cpolygon points='2,30 6.5,17 12.5,15.2 8,30' fill='%231D4ED8'/%3E%3Cpolygon points='13,30 19.2,10.5 25.2,8.7 19,30' fill='%231D4ED8'/%3E%3Cpolygon points='24,30 31.8,4 37.8,2.2 30,30' fill='%232563EB'/%3E%3C/svg%3E">
 
   <!-- Non-blocking Google Fonts -->
@@ -50,16 +50,13 @@
     </div>
   </div>
 
-  <!-- Point 1: BLOCKING CENTERED CLOUD SYNC OVERLAY (z-[90] below PIN Gatekeeper, above app UI) -->
+  <!-- BLOCKING CENTERED CLOUD SYNC OVERLAY -->
   <div id="cloudSyncOverlay" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 dark:bg-black/65 backdrop-blur-sm p-4 hidden">
     <div class="w-full max-w-xs bg-white/95 dark:bg-[#131722]/95 rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-6 text-center space-y-4">
-      <!-- Cloud-to-Device File Transfer Visual with Classic Moving Dots -->
       <div class="flex items-center justify-center space-x-3 pt-1">
         <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-2xs">
           <i data-lucide="cloud" class="w-5 h-5"></i>
         </div>
-
-        <!-- Classic Sequential Moving-Dots Animation -->
         <div class="flex items-center space-x-1.5 px-1" aria-hidden="true">
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 inline-block"></span>
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 inline-block"></span>
@@ -67,7 +64,6 @@
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 inline-block"></span>
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 inline-block"></span>
         </div>
-
         <div class="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
           <i data-lucide="database" class="w-5 h-5"></i>
         </div>
@@ -80,7 +76,6 @@
         </p>
       </div>
 
-      <!-- Fail-safe escape button (revealed after 4s on slow networks) -->
       <div class="pt-1">
         <button
           id="syncWorkOfflineBtn"
@@ -94,14 +89,13 @@
     </div>
   </div>
 
-  <!-- BLOCKING DATABASE BACKUP OVERLAY (Matches Cloud Sync Overlay behavior) -->
+  <!-- BLOCKING DATABASE BACKUP OVERLAY -->
   <div id="databaseBackupOverlay" class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-900/45 dark:bg-black/65 backdrop-blur-sm p-4 hidden">
     <div class="w-full max-w-xs bg-white/95 dark:bg-[#131722]/95 rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-6 text-center space-y-4">
       <div class="flex items-center justify-center space-x-3 pt-1">
         <div class="h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
           <i data-lucide="database" class="w-5 h-5"></i>
         </div>
-
         <div class="flex items-center space-x-1.5 px-1" aria-hidden="true">
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block"></span>
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block"></span>
@@ -109,7 +103,6 @@
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:text-emerald-400 inline-block"></span>
           <span class="sync-transfer-dot w-2 h-2 rounded-full bg-emerald-600 dark:text-emerald-400 inline-block"></span>
         </div>
-
         <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-2xs">
           <i data-lucide="cloud" class="w-5 h-5"></i>
         </div>
@@ -138,181 +131,208 @@
   <!-- APPLICATION ROOT -->
   <div id="app-root" class="flex-1 flex flex-col">
 
-    <!-- TOP HEADER (Intermediate Left/Right Boundaries matching Hero layout style) -->
+    <!-- TOP HEADER -->
     <header class="border-b border-slate-200/90 dark:border-[#222836] bg-white/95 dark:bg-[#0E121B]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
-      <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3.5 flex flex-wrap items-center justify-between gap-4">
 
-        <!-- Logo & Brand Lockup (Clicking logo returns to home landing page) -->
-        <div onclick="switchMainView('home')" class="flex items-center space-x-3 select-none cursor-pointer">
-          <svg class="w-9 h-8 shrink-0" viewBox="0 0 38 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <polygon points="1,30 5.5,17 11.5,15.2 7,30" class="fill-[#1D4ED8] dark:fill-blue-500" />
-            <polygon points="12,30 18.2,10.5 24.2,8.7 18,30" class="fill-[#1D4ED8] dark:fill-blue-500" />
-            <polygon points="23,30 30.8,4 36.8,2.2 29,30" class="fill-[#2563EB] dark:fill-blue-400" />
-          </svg>
-          <div class="flex flex-col justify-center">
-            <div class="flex items-baseline leading-none">
-              <span class="text-[20px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">MyFolio.</span><span class="text-[20px] font-extrabold tracking-tight text-[#1D4ED8] dark:text-blue-400">AI</span>
+        <!-- Left Cluster: Brand Logo + Primary Navigation Shifted Left -->
+        <div class="flex items-center space-x-6 lg:space-x-8">
+          <!-- Point 4: Bolded 3 Ascending Slanted Bars + Scaled MyFolio.AI Lockup (Clicking returns to Home) -->
+          <div onclick="switchMainView('home')" class="flex items-center space-x-3 select-none cursor-pointer group">
+            <svg class="w-11 h-9 shrink-0 transition-transform duration-200 group-hover:scale-[1.03]" viewBox="0 0 40 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <polygon points="1,32 6,17 13,15 8,32" class="fill-[#1E40AF] dark:fill-blue-500" />
+              <polygon points="13,32 19.8,10.5 26.8,8.5 20,32" class="fill-[#1D4ED8] dark:fill-blue-400" />
+              <polygon points="25,32 33.2,4 40,2 32,32" class="fill-[#2563EB] dark:fill-blue-300" />
+            </svg>
+            <div class="flex flex-col justify-center">
+              <div class="flex items-baseline leading-none">
+                <span class="text-[22px] sm:text-[23px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">MyFolio.</span><span class="text-[22px] sm:text-[23px] font-extrabold tracking-tight text-[#1D4ED8] dark:text-blue-400">AI</span>
+              </div>
+              <p class="text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 tracking-tight mt-0.5 leading-none">Portfolio Tracker Engine</p>
             </div>
-            <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400 tracking-tight mt-0.5 leading-none">Portfolio Tracker Engine</p>
           </div>
-        </div>
 
-        <!-- Center Nav Links -->
-        <nav class="hidden md:flex items-center space-x-1 lg:space-x-2 text-[13px] font-semibold">
-          <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
-            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-            <span>Dashboard</span>
-          </button>
-          <button onclick="switchMainView('portfolio')" id="navLink-portfolio" class="px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
-            <i data-lucide="layers" class="w-4 h-4"></i>
-            <span>Portfolio</span>
-          </button>
+          <div class="hidden md:block h-6 w-px bg-slate-200 dark:bg-[#222836]"></div>
 
-          <!-- Transactions Dropdown Menu matching original detailed options -->
-          <div class="relative" id="txDropdownContainer">
-            <button
-              id="txDropdownBtn"
-              onclick="toggleTxDropdown(event)"
-              class="px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2 focus:outline-none"
-            >
-              <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
-              <span>Transactions</span>
-              <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
+          <!-- Center/Left Nav Links (Dashboard, Chart, Transactions, Products, Live Prices) -->
+          <nav class="hidden md:flex items-center space-x-1 lg:space-x-2 text-[14px] font-semibold">
+            <!-- 1. Dashboard (KPI Cards Full Page) -->
+            <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>Dashboard</span>
             </button>
 
-            <!-- Dropdown Menu -->
-            <div
-              id="txDropdownMenu"
-              class="hidden absolute left-0 mt-2 w-52 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px]"
-            >
-              <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
-                <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
-                <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
-              </button>
-              <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
-                <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
-                <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
-              </button>
-              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
-              <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
-                <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
-              </button>
-              <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
-                <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
-                <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
-              </button>
-              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
-              <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
-                <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
-                <span class="font-semibold text-slate-500 dark:text-slate-400 mr-1.5">+</span> Record Fees
+            <!-- 2. Chart (Point 3: Swapped Portfolio for Chart -> Opens Chart + TTM/RoC Tables Full Page) -->
+            <button onclick="switchMainView('chart')" id="navLink-chart" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+              <span>Chart</span>
+            </button>
+
+            <!-- 3. Transactions Dropdown (Full original menu + Point 1 Auto-Collapse) -->
+            <div class="relative" id="txDropdownContainer">
+              <button
+                id="txDropdownBtn"
+                onclick="toggleTxDropdown(event)"
+                class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2 focus:outline-none"
+              >
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                <span>Transactions</span>
+                <i data-lucide="chevron-down" id="txDropdownChevron" class="w-4 h-4 transition-transform duration-150"></i>
               </button>
 
-              <!-- Corporate Actions Expandable Menu -->
-              <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
-              <div class="relative">
-                <button
-                  type="button"
-                  onclick="toggleCorpActionSubmenu(event)"
-                  class="w-full flex items-center justify-between px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium text-left"
-                >
-                  <span class="flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
-                    <span>Corporate Actions</span>
-                  </span>
-                  <i data-lucide="chevron-right" id="corpSubmenuChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150"></i>
+              <!-- Dropdown Menu -->
+              <div
+                id="txDropdownMenu"
+                class="hidden absolute left-0 mt-2 w-56 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[13px]"
+              >
+                <button onclick="selectDropdownPreset('BUY')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
+                  <span class="w-2 h-2 rounded-full bg-blue-500 mr-2.5"></span>
+                  <span class="font-semibold text-blue-600 dark:text-blue-400 mr-1.5">+</span> Buy Stock
+                </button>
+                <button onclick="selectDropdownPreset('SELL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
+                  <span class="w-2 h-2 rounded-full bg-rose-500 mr-2.5"></span>
+                  <span class="font-semibold text-rose-600 dark:text-rose-400 mr-1.5">-</span> Sell Stock
+                </button>
+                <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
+                <button onclick="selectDropdownPreset('DEPOSIT')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2.5"></span>
+                  <span class="font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">+</span> Deposit Cash
+                </button>
+                <button onclick="selectDropdownPreset('WITHDRAWAL')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
+                  <span class="w-2 h-2 rounded-full bg-amber-500 mr-2.5"></span>
+                  <span class="font-semibold text-amber-600 dark:text-amber-400 mr-1.5">-</span> Withdraw Cash
+                </button>
+                <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
+                <button onclick="selectDropdownPreset('FEES')" class="w-full flex items-center px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition">
+                  <span class="w-2 h-2 rounded-full bg-slate-400 mr-2.5"></span>
+                  <span class="font-semibold text-slate-500 dark:text-slate-400 mr-1.5">+</span> Record Fees
                 </button>
 
-                <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-[#1A1F2E]/40 border-y border-slate-100 dark:border-[#222836]">
-                  <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
-                    <span>Bonus Issue (₹0 Cost)</span>
+                <!-- Corporate Actions Expandable Menu -->
+                <div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
+                <div class="relative">
+                  <button
+                    type="button"
+                    onclick="toggleCorpActionSubmenu(event)"
+                    class="w-full flex items-center justify-between px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition font-medium text-left"
+                  >
+                    <span class="flex items-center">
+                      <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5"></span>
+                      <span>Corporate Actions</span>
+                    </span>
+                    <i data-lucide="chevron-right" id="corpSubmenuChevron" class="w-3.5 h-3.5 text-slate-400 transition-transform duration-150"></i>
                   </button>
-                  <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
-                    <span>Stock Split (Ratio)</span>
+
+                  <div id="corpActionSubmenu" class="hidden pl-4 pr-1 py-1 space-y-0.5 bg-slate-50/80 dark:bg-[#1A1F2E]/40 border-y border-slate-100 dark:border-[#222836]">
+                    <button onclick="selectDropdownPreset('BONUS')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[12px] text-slate-600 dark:text-slate-300 transition">
+                      <span class="w-1.5 h-1.5 rounded-full bg-purple-500 mr-2"></span>
+                      <span>Bonus Issue (₹0 Cost)</span>
+                    </button>
+                    <button onclick="selectDropdownPreset('SPLIT')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[12px] text-slate-600 dark:text-slate-300 transition">
+                      <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-2"></span>
+                      <span>Stock Split (Ratio)</span>
+                    </button>
+                    <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[12px] text-slate-600 dark:text-slate-300 transition">
+                      <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2"></span>
+                      <span>Demerger Cost Adjust</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Products Dropdown (Remaining specialized views) -->
+            <div class="relative" id="productsDropdownContainer">
+              <button
+                onclick="toggleProductsDropdown(event)"
+                id="navLink-products"
+                class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2 focus:outline-none"
+              >
+                <i data-lucide="box" class="w-4 h-4"></i>
+                <span>Products</span>
+                <i data-lucide="chevron-down" id="productsDropdownChevron" class="w-4 h-4 transition-transform duration-150"></i>
+              </button>
+
+              <div
+                id="productsDropdownMenu"
+                class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[13px] divide-y divide-slate-100 dark:divide-[#222836]"
+              >
+                <div class="py-1">
+                  <button onclick="switchSubTab('closedTrades')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="check-check" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Closed Trades Book</span>
                   </button>
-                  <button onclick="selectDropdownPreset('DEMERGER')" class="w-full flex items-center px-3.5 py-1.5 rounded-lg hover:bg-white dark:hover:bg-[#232A3B] text-[11.5px] text-slate-600 dark:text-slate-300 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 mr-2"></span>
-                    <span>Demerger Cost Adjust</span>
+                  <button onclick="switchSubTab('fyBreakdown')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="calendar-check" class="w-4 h-4 text-blue-500"></i>
+                    <span>Financial Year P&amp;L (FIFO)</span>
+                  </button>
+                  <button onclick="switchSubTab('transactions')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="list" class="w-4 h-4 text-purple-500"></i>
+                    <span>Tradebook &amp; Cash Ledger</span>
+                  </button>
+                  <button onclick="switchSubTab('bankLedger')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="landmark" class="w-4 h-4 text-amber-500"></i>
+                    <span>Bank Ledger</span>
+                  </button>
+                  <button onclick="switchSubTab('taxPnl')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="calculator" class="w-4 h-4 text-rose-500"></i>
+                    <span>Tax P&amp;L Cockpit</span>
+                  </button>
+                  <button onclick="switchSubTab('purification')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
+                    <i data-lucide="hand-heart" class="w-4 h-4 text-teal-500"></i>
+                    <span>Purification &amp; Donation</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Products Dropdown housing remaining specialized views -->
-          <div class="relative" id="productsDropdownContainer">
-            <button
-              onclick="toggleProductsDropdown(event)"
-              id="navLink-products"
-              class="px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2 focus:outline-none"
-            >
-              <i data-lucide="box" class="w-4 h-4"></i>
-              <span>Products</span>
-              <i data-lucide="chevron-down" id="productsDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
+            <!-- 5. Live Prices (Point 2: Aligned next to Products, matching theme & double-arrow refresh icon) -->
+            <button onclick="openLivePricesModal()" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              <span>Live Prices</span>
             </button>
+          </nav>
+        </div>
 
-            <div
-              id="productsDropdownMenu"
-              class="hidden absolute left-0 mt-2 w-60 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-[#222836]"
-            >
-              <div class="py-1">
-                <button onclick="switchSubTab('closedTrades')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="check-check" class="w-4 h-4 text-emerald-500"></i>
-                  <span>Closed Trades Book</span>
-                </button>
-                <button onclick="switchSubTab('fyBreakdown')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="calendar-check" class="w-4 h-4 text-blue-500"></i>
-                  <span>Financial Year P&amp;L (FIFO)</span>
-                </button>
-                <button onclick="switchSubTab('transactions')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="list" class="w-4 h-4 text-purple-500"></i>
-                  <span>Tradebook &amp; Cash Ledger</span>
-                </button>
-                <button onclick="switchSubTab('bankLedger')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="landmark" class="w-4 h-4 text-amber-500"></i>
-                  <span>Bank Ledger</span>
-                </button>
-                <button onclick="switchSubTab('taxPnl')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="calculator" class="w-4 h-4 text-rose-500"></i>
-                  <span>Tax P&amp;L Cockpit</span>
-                </button>
-                <button onclick="switchSubTab('purification')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2 transition font-medium">
-                  <i data-lucide="hand-heart" class="w-4 h-4 text-teal-500"></i>
-                  <span>Purification &amp; Donation</span>
-                </button>
-              </div>
+        <!-- Right Cluster: Rotating Info Ticker + Borderless Lock + Borderless Settings (with Chevron) + "D" Avatar -->
+        <div class="flex items-center space-x-3 sm:space-x-4">
+
+          <!-- Point 2: Rotating Status Ticker (Sync / Last Price / Data Backup) -->
+          <div id="headerInfoTicker" class="hidden lg:flex items-center px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-[#1A1F2E]/80 border border-slate-200/70 dark:border-[#222836] text-[12px] font-medium text-slate-600 dark:text-slate-300 min-w-[235px] justify-end overflow-hidden h-8">
+            <div id="tickerActiveItem" class="flex items-center space-x-2 truncate transition-all duration-300">
+              <span id="syncDot" class="inline-flex items-center shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
+              <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200">Synced</span>
             </div>
+            <!-- Hidden backing spans kept in DOM so api.js / ui.js timestamp updaters work seamlessly -->
+            <span id="lastSyncedTime" class="hidden">Not refreshed yet</span>
+            <span id="lastBackupTime" class="hidden">Not backed up yet</span>
+            <span id="backupStatusIcon" class="hidden"></span>
           </div>
-        </nav>
 
-        <!-- Action Cluster (Live Prices, Lock, Settings, and Final "D" Avatar) -->
-        <div class="flex items-center space-x-2.5">
-          <!-- Live Prices -->
-          <button onclick="openLivePricesModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-[12.5px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/60 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">
-            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            <span>Live Prices</span>
+          <!-- Mobile Live Prices Trigger -->
+          <button onclick="openLivePricesModal()" class="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition" title="Update Live Prices">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           </button>
 
-          <!-- Lock Button -->
-          <button onclick="lockApplicationNow()" class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition border border-slate-200 dark:border-[#222836]" title="Instant PIN Lock Screen">
-            <i data-lucide="lock" class="w-4 h-4"></i>
+          <!-- Point 4: Borderless Lock Button -->
+          <button onclick="lockApplicationNow()" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition" title="Instant PIN Lock Screen">
+            <i data-lucide="lock" class="w-5 h-5"></i>
           </button>
 
-          <!-- Settings Dropdown -->
+          <!-- Point 4: Borderless Settings Dropdown with Down Chevron Arrow -->
           <div class="relative" id="settingsDropdownContainer">
             <button
               onclick="toggleSettingsDropdown(event)"
-              class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition border border-slate-200 dark:border-[#222836]"
+              class="flex items-center space-x-1 p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition focus:outline-none"
               title="Platform Settings"
             >
-              <i data-lucide="settings" class="w-4 h-4"></i>
+              <i data-lucide="settings" class="w-5 h-5"></i>
+              <i data-lucide="chevron-down" id="settingsDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
             </button>
 
             <div
               id="settingsDropdownMenu"
-              class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px] divide-y divide-slate-100 dark:divide-[#222836]"
+              class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[13px] divide-y divide-slate-100 dark:divide-[#222836]"
             >
               <div onclick="toggleTheme(event)" class="px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] cursor-pointer flex items-center justify-between transition">
                 <div class="flex items-center space-x-2.5 font-medium text-slate-700 dark:text-slate-200">
@@ -371,8 +391,8 @@
           </div>
 
           <!-- Final "D" Avatar -->
-          <div class="flex items-center pl-1">
-            <div class="w-9 h-9 rounded-full bg-slate-900 dark:bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shadow-sm ring-2 ring-slate-200 dark:ring-[#222836]">
+          <div class="flex items-center space-x-1 pl-0.5">
+            <div class="w-9 h-9 rounded-full bg-[#0B1736] dark:bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
               D
             </div>
           </div>
@@ -381,99 +401,88 @@
       </div>
     </header>
 
-    <!-- SYNC & STATUS BAR -->
-    <div class="bg-white/60 dark:bg-[#0E121B]/60 border-b border-slate-200/80 dark:border-[#222836]/80 py-1.5 text-[11.5px] text-slate-500 dark:text-slate-400">
-      <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center space-x-2">
-          <span id="syncDot" class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
-          <span id="syncStatus">Synced</span>
-        </div>
-        <div class="flex items-center space-x-4 text-right">
-          <div>Last Manual Price Update: <span id="lastSyncedTime" class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">Not refreshed yet</span></div>
-
-          <button onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Click to trigger manual database backup">
-            <span id="backupStatusIcon" class="flex items-center justify-center">
-              <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
-            </span>
-            <span>Last Data Backup:</span>
-            <span id="lastBackupTime" class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">Not backed up yet</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-8">
+    <main class="flex-1 w-full flex flex-col">
 
       <!-- ========================================================== -->
-      <!-- VIEW 0: HOME / LANDING PAGE VIEW (Default Landing) -->
+      <!-- VIEW 0: HOME / LANDING PAGE VIEW (Default Landing - Full Bleed SaaS Hero) -->
       <!-- ========================================================== -->
-      <section id="mainViewHome" class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50/80 via-white to-blue-100/40 dark:from-[#131722] dark:via-[#0E121B] dark:to-[#1A1F2E] border border-blue-100/80 dark:border-[#222836] p-8 md:p-12 shadow-sm">
-        <!-- Background decorative ascending bars matching design exactly -->
-        <div class="absolute right-0 bottom-0 opacity-15 dark:opacity-20 pointer-events-none select-none flex items-end space-x-3 p-8">
-          <div class="w-24 h-48 bg-blue-500 rounded-t-xl"></div>
-          <div class="w-24 h-72 bg-blue-600 rounded-t-xl"></div>
-          <div class="w-24 h-96 bg-blue-700 rounded-t-xl"></div>
-        </div>
+      <section id="mainViewHome" class="relative flex-1 w-full overflow-hidden bg-gradient-to-br from-white via-[#F5F8FF] to-[#E6EEFF] dark:from-[#0A0C10] dark:via-[#0E1320] dark:to-[#131C31] flex items-center">
+        <!-- Soft Diagonal Wave & Institutional Ascending Bars Backdrop matching Reference Image -->
+        <svg class="absolute inset-0 w-full h-full pointer-events-none select-none" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="heroWaveGrad" x1="200" y1="760" x2="1440" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#DBEAFE" stop-opacity="0.15" />
+              <stop offset="55%" stop-color="#BFDBFE" stop-opacity="0.45" />
+              <stop offset="100%" stop-color="#93C5FD" stop-opacity="0.65" />
+            </linearGradient>
+            <linearGradient id="heroBarGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.06" />
+            </linearGradient>
+          </defs>
 
-        <div class="relative z-10 max-w-2xl space-y-6">
-          <div class="space-y-2">
-            <!-- Updated spacing after each dot -->
-            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-              Record.&nbsp;&nbsp;Track.&nbsp;&nbsp;<span class="text-blue-600 dark:text-blue-400 italic">Grow.</span>
-            </h1>
-            <p class="text-base md:text-lg text-slate-600 dark:text-slate-300 font-normal leading-relaxed">
-              Personal stock portfolio tracker and performance engine.
-            </p>
-          </div>
+          <!-- Sweeping diagonal wave -->
+          <path d="M-100 760 C 420 710, 960 440, 1480 40 L 1480 760 Z" fill="url(#heroWaveGrad)" class="dark:opacity-20" />
 
-          <!-- The 4 Aesthetic Cards Above CTA -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-            <div class="bg-white/80 dark:bg-[#1A1F2E]/80 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs space-y-1">
-              <div class="text-blue-600 dark:text-blue-400"><i data-lucide="layers" class="w-4 h-4"></i></div>
-              <div class="text-xs font-bold text-slate-900 dark:text-white">Holdings &amp; P&amp;L</div>
-              <div class="text-[10px] text-slate-400">WAP &amp; LTP Engine</div>
-            </div>
-            <div class="bg-white/80 dark:bg-[#1A1F2E]/80 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs space-y-1">
-              <div class="text-blue-600 dark:text-blue-400"><i data-lucide="bar-chart-3" class="w-4 h-4"></i></div>
-              <div class="text-xs font-bold text-slate-900 dark:text-white">Portfolio Analytics</div>
-              <div class="text-[10px] text-slate-400">4-Curve Compounding</div>
-            </div>
-            <div class="bg-white/80 dark:bg-[#1A1F2E]/80 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs space-y-1">
-              <div class="text-blue-600 dark:text-blue-400"><i data-lucide="arrow-left-right" class="w-4 h-4"></i></div>
-              <div class="text-xs font-bold text-slate-900 dark:text-white">Cash &amp; Transactions</div>
-              <div class="text-[10px] text-slate-400">Strict FIFO Ledger</div>
-            </div>
-            <div class="bg-white/80 dark:bg-[#1A1F2E]/80 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs space-y-1">
-              <div class="text-blue-600 dark:text-blue-400"><i data-lucide="trending-up" class="w-4 h-4"></i></div>
-              <div class="text-xs font-bold text-slate-900 dark:text-white">IRR &amp; Performance</div>
-              <div class="text-[10px] text-slate-400">Cash Flow XIRR</div>
-            </div>
-          </div>
+          <!-- Three slanted ascending bars on the right side -->
+          <polygon points="935,595 985,435 1095,405 1045,595" fill="url(#heroBarGrad)" />
+          <polygon points="1075,595 1145,355 1255,325 1185,595" fill="url(#heroBarGrad)" />
+          <polygon points="1215,595 1305,275 1415,245 1325,595" fill="url(#heroBarGrad)" />
+        </svg>
 
-          <!-- CTA Buttons -->
-          <div class="pt-2 flex flex-wrap items-center gap-3">
-            <button
-              onclick="switchMainView('dashboard')"
-              class="inline-flex items-center space-x-3 px-6 py-3.5 rounded-2xl bg-[#0A0C10] dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white font-extrabold text-sm shadow-lg transition transform active:scale-95 cursor-pointer"
-            >
-              <span>Open My Portfolio</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
-            <button
-              onclick="switchMainView('portfolio')"
-              class="inline-flex items-center space-x-2 px-6 py-3.5 rounded-2xl bg-white dark:bg-[#1A1F2E] hover:bg-slate-100 dark:hover:bg-[#232A3B] text-slate-800 dark:text-white font-bold text-sm border border-slate-200 dark:border-[#222836] shadow-sm transition cursor-pointer"
-            >
-              <span>Learn More</span>
-            </button>
+        <div class="relative z-10 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-12 lg:py-20">
+          <div class="max-w-2xl space-y-7">
+            <div class="space-y-4">
+              <!-- Point 4: Refined spacing after Record. and Track. -->
+              <h1 class="text-4xl sm:text-5xl lg:text-[62px] font-extrabold tracking-tight text-[#071330] dark:text-white leading-[1.08]">
+                Record. Track. <span class="text-[#1D4ED8] dark:text-blue-400 italic">Grow.</span>
+              </h1>
+              <!-- Point 4: Exact 2-line subtitle break -->
+              <p class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                Personal stock portfolio tracker and<br>
+                performance engine.
+              </p>
+            </div>
+
+            <!-- The 4 Aesthetic Feature Pills Above CTA -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+              <div class="bg-white/90 dark:bg-[#131722]/85 backdrop-blur-sm px-3.5 py-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs flex items-center space-x-2.5">
+                <div class="text-[#0F172A] dark:text-blue-400 shrink-0"><i data-lucide="layers" class="w-5 h-5"></i></div>
+                <div class="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">Holdings<br>&amp; P&amp;L</div>
+              </div>
+              <div class="bg-white/90 dark:bg-[#131722]/85 backdrop-blur-sm px-3.5 py-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs flex items-center space-x-2.5">
+                <div class="text-[#0F172A] dark:text-blue-400 shrink-0"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
+                <div class="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">Portfolio<br>Analytics</div>
+              </div>
+              <div class="bg-white/90 dark:bg-[#131722]/85 backdrop-blur-sm px-3.5 py-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs flex items-center space-x-2.5">
+                <div class="text-[#0F172A] dark:text-blue-400 shrink-0"><i data-lucide="arrow-left-right" class="w-5 h-5"></i></div>
+                <div class="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">Cash &amp;<br>Transactions</div>
+              </div>
+              <div class="bg-white/90 dark:bg-[#131722]/85 backdrop-blur-sm px-3.5 py-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs flex items-center space-x-2.5">
+                <div class="text-[#0F172A] dark:text-blue-400 shrink-0"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
+                <div class="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">IRR &amp;<br>Performance</div>
+              </div>
+            </div>
+
+            <!-- Point 3 & Point 4: Single Primary CTA ("Open My Portfolio" linked directly to Portfolio Holdings View, Learn More removed) -->
+            <div class="pt-2">
+              <button
+                onclick="switchMainView('portfolio')"
+                class="inline-flex items-center space-x-3 px-7 py-4 rounded-2xl bg-[#071330] dark:bg-blue-600 hover:bg-[#0F2354] dark:hover:bg-blue-500 text-white font-bold text-[15px] shadow-lg shadow-blue-950/15 transition transform active:scale-95 cursor-pointer"
+              >
+                <span>Open My Portfolio</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- ========================================================== -->
-      <!-- VIEW 1: DASHBOARD VIEW (Dedicated Full Page) -->
+      <!-- VIEW 1: DASHBOARD VIEW (Dedicated Full Page - KPI Cards) -->
       <!-- ========================================================== -->
-      <div id="mainViewDashboard" class="space-y-8 hidden">
+      <div id="mainViewDashboard" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
         <!-- KPI METRIC CARDS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
 
@@ -639,8 +648,12 @@
           </div>
 
         </div>
+      </div>
 
-        <!-- PERFORMANCE CHART CARD -->
+      <!-- ========================================================== -->
+      <!-- VIEW 2: CHART VIEW (Point 3: Dedicated Full Page for Chart + Tables) -->
+      <!-- ========================================================== -->
+      <div id="mainViewChart" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
         <div id="graphsSection" class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-2xs transition-colors duration-200 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
 
@@ -732,9 +745,9 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 2: PORTFOLIO VIEW (Active Holdings Tab Full Page) -->
+      <!-- VIEW 3: PORTFOLIO VIEW (Active Holdings Tab Full Page) -->
       <!-- ========================================================== -->
-      <div id="mainViewPortfolio" class="space-y-4 hidden">
+      <div id="mainViewPortfolio" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-4 hidden">
         <div id="tabContent-holdings" class="space-y-4">
           <div id="holdingsRatioBarContainer" class="bg-white dark:bg-[#131722] p-3 rounded-xl border border-slate-200 dark:border-[#222836] space-y-2">
             <div class="flex items-center justify-between text-xs font-semibold">
@@ -821,9 +834,9 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 3: PRODUCTS SUB-VIEWS CONTAINER (Closed Trades, FY, Tradebook, Bank, Tax, Purification) -->
+      <!-- VIEW 4: PRODUCTS SUB-VIEWS CONTAINER (Dedicated Full Page) -->
       <!-- ========================================================== -->
-      <div id="mainViewProducts" class="space-y-6 hidden">
+      <div id="mainViewProducts" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
         <!-- TAB 2: CLOSED TRADES -->
         <div id="tabContent-closedTrades" class="space-y-4 hidden">
           <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
@@ -1307,7 +1320,7 @@
             </div>
           </div>
 
-          <!-- Point 4: Collapsible, Paginated, Profit-Only Purification Breakdown Accordion -->
+          <!-- Collapsible, Paginated, Profit-Only Purification Breakdown Accordion -->
           <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs">
             <button
               type="button"
@@ -1326,7 +1339,6 @@
             </button>
 
             <div id="purifTableContainer" class="hidden mt-3 space-y-3">
-              <!-- Explicit Profit-Only Filter Notice -->
               <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/80 dark:border-teal-800/60 text-[11px] text-teal-800 dark:text-teal-300">
                 <span class="flex items-center space-x-1.5">
                   <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
@@ -1353,7 +1365,6 @@
                 </table>
               </div>
 
-              <!-- Pagination Footer -->
               <div id="purifPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
                 <span id="purifPageInfo">Showing 1–12 entries</span>
                 <div class="flex items-center space-x-2">
@@ -1462,7 +1473,6 @@
             <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white mono-font">
           </div>
 
-          <!-- Mandatory Debt-to-Asset % Field (Shown only on SELL) -->
           <div id="txDebtToAssetGroup" class="hidden">
             <label class="block text-teal-700 dark:text-teal-400 font-semibold mb-1">Debt to Total Assets (%) *</label>
             <input type="number" step="0.01" min="0" max="100" id="txDebtToAsset" placeholder="e.g. 14.50" class="w-full bg-teal-50/60 dark:bg-[#1A1F2E] border border-teal-300 dark:border-teal-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums font-bold focus:outline-none focus:border-teal-500">
