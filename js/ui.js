@@ -10,9 +10,6 @@ let pendingPinActionCallback = null;
 let headerTickerInterval = null;
 let headerTickerStep = 0;
 
-// Dashboard Redesign State (Point 2)
-let activeSelectedKpi = 'netWorth'; // 'netWorth' | 'netInvested' | 'lifetimePnL' | 'currentFy' | 'xirr'
-
 // Memoization & Dirty-Tab Tracking
 let txVersion = 0;
 let cachedEngineVersion = -1;
@@ -65,7 +62,7 @@ function refreshIcons() {
   });
 }
 
-/* ---------------- ROTATING HEADER INFO TICKER (POINT 1 & TICKER ALIGNMENT) ---------------- */
+/* ---------------- ROTATING HEADER INFO TICKER (POINT 1) ---------------- */
 function initHeaderInfoTicker() {
   if (headerTickerInterval) clearInterval(headerTickerInterval);
   updateHeaderTickerDisplay();
@@ -299,7 +296,7 @@ function applyTheme(isDark) {
   if (multiChartInstance) {
     multiChartInstance.destroy();
     multiChartInstance = null;
-    renderDashboardChart(getCachedEngineData());
+    renderChart(getCachedEngineData());
   }
 }
 
@@ -327,8 +324,10 @@ function recordBackupTimestamp(customStr) {
   let formatted = customStr;
   
   if (formatted) {
+    // If a string was passed, let's extract digits to rebuild it cleanly as dd - mm, time
     const matches = String(formatted).match(/\d+/g);
     if (matches && matches.length >= 4) {
+      // matches[0] = day, matches[1] = month, [matches[2] = year if present], matches[last-1] = hours, matches[last] = mins
       const dd = matches[0];
       const mm = matches[1];
       const hh = matches[matches.length - 2];
@@ -393,470 +392,118 @@ function recalculateAndRender() {
   bumpTxVersion();
   const data = getCachedEngineData();
 
-  // Render Redesigned Dashboard KPI Panel (Point 2)
-  renderDashboardKpiPanel(data);
+  // Card 1: Total Net Worth
+  document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
+  document.getElementById('subPortfolioVal').innerText = formatCompactIndian(data.totalPortfolioVal);
+  document.getElementById('subCashVal').innerText = formatCompactIndian(data.cashBalance);
+
+  const nwTarget = milestoneGoals.netWorth || 10000000;
+  const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
+  const nwRem = Math.max(0, nwTarget - data.netWorth);
+  document.getElementById('kpiNetWorthPct').innerText = `${nwPct.toFixed(2)}%`;
+  document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
+  document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
+
+  // Card 2: Net Invested
+  document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
+  const invTarget = milestoneGoals.netInvested || 5000000;
+  const isExcessInvested = data.netInvested > invTarget;
+  const invPct = invTarget > 0 ? (data.netInvested / invTarget) * 100 : 0;
+  const displayPct = Math.min(100, invPct);
+
+  const invBarEl = document.getElementById('kpiNetInvestedBar');
+  const invPctEl = document.getElementById('kpiNetInvestedPct');
+  const invRemEl = document.getElementById('kpiNetInvestedRem');
+
+  if (isExcessInvested) {
+    const excessAmt = data.netInvested - invTarget;
+    const excessPct = invPct - 100;
+    invPctEl.innerText = `${excessPct.toFixed(2)}% excess invested`;
+    invRemEl.innerText = `${formatCompactIndian(excessAmt)} excess`;
+    invRemEl.className = 'text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
+    invPctEl.className = 'text-rose-600 dark:text-rose-400 font-bold';
+    invBarEl.className = 'bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500';
+  } else {
+    invPctEl.innerText = `${invPct.toFixed(2)}%`;
+    const invRem = invTarget - data.netInvested;
+    invRemEl.innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
+    invRemEl.className = 'text-slate-500 dark:text-slate-400 transition-all duration-200';
+    invPctEl.className = 'text-emerald-600 dark:text-emerald-400 font-bold';
+    invBarEl.className = 'bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500';
+  }
+  invBarEl.style.width = `${displayPct}%`;
+
+  // Card 3: Lifetime P&L
+  const lifeEl = document.getElementById('kpiLifetimePnL');
+  lifeEl.innerText = formatINR(data.lifetimePnL);
+  lifeEl.className = `text-xl font-bold tracking-tight tabular-nums leading-none mt-1 transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+
+  const lifePctEl = document.getElementById('kpiLifetimePnLPct');
+  lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
+  lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+
+  const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
+  const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
+  const lifeRem = Math.max(0, pnlTarget - data.lifetimePnL);
+  document.getElementById('kpiLifetimeTargetPct').innerText = `${lifeTargetPct.toFixed(2)}%`;
+  document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
+  document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
+
+  // Card 4: Current FY Realized & Unrealized
+  const curFy = getFinancialYear(todayLocalISO());
+  document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
+  const curFyData = data.fyRealized[curFy] || { gain: 0 };
+
+  const curFyEl = document.getElementById('kpiCurrentFyPnL');
+  curFyEl.innerText = formatINR(curFyData.gain);
+  curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
+
+  const curFyUnrealEl = document.getElementById('kpiCurrentFyUnrealized');
+  curFyUnrealEl.innerText = formatINR(data.totalUnrealizedPnL);
+  curFyUnrealEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+
+  const fyTarget = milestoneGoals.currentFyPnL || 1000000;
+  const fyPct = fyTarget > 0 ? Math.min(100, Math.max(0, (curFyData.gain / fyTarget) * 100)) : 0;
+  const fyRem = Math.max(0, fyTarget - curFyData.gain);
+  document.getElementById('kpiCurrentFyPct').innerText = `${fyPct.toFixed(2)}%`;
+  document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
+  document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
+
+  // Card 5: Annualized XIRR & Inception Date
+  const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
+  document.getElementById('kpiXIRR').innerText = xirrValid ? `${data.xirrValue.toFixed(2)}%` : '—';
+  const xirrTarget = milestoneGoals.xirr || 25;
+  const xirrProgress = (xirrValid && xirrTarget > 0) ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
+  const xirrRem = xirrValid ? Math.max(0, xirrTarget - data.xirrValue) : xirrTarget;
+  document.getElementById('kpiXirrPct').innerText = xirrValid ? `${xirrProgress.toFixed(2)}%` : '—';
+  document.getElementById('kpiXirrRem').innerText = !xirrValid ? '< 90d period' : (xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved');
+  document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
+
+  const inceptionEl = document.getElementById('kpiXirrInception');
+  if (inceptionEl) {
+    const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
+    if (capitalTxs.length > 0 && capitalTxs[0].date) {
+      const d = new Date(capitalTxs[0].date);
+      if (!isNaN(d.getTime())) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        inceptionEl.innerText = `Since ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      } else {
+        inceptionEl.innerText = 'Since —';
+      }
+    } else {
+      inceptionEl.innerText = 'Since —';
+    }
+  }
 
   applyAllKpiMasks();
   populateTaxFyOptions(data.fyRealized);
   populatePurificationFyOptions(data.purificationLots);
   renderActiveTabOnly(data);
-  renderDashboardChart(data);
+  renderChartLegend();
+  renderChart(data);
+  renderTtmTable(data);
   updateHeaderTickerDisplay();
   refreshIcons();
-}
-
-/* ---------------- DASHBOARD REDESIGN RENDERING (POINT 2) ---------------- */
-function setDashboardKpiSelection(kpiKey) {
-  activeSelectedKpi = kpiKey;
-  renderDashboardKpiPanel(getCachedEngineData());
-  renderDashboardChart(getCachedEngineData());
-}
-
-function renderDashboardKpiPanel(data) {
-  const container = document.getElementById('dashboardKpiPanel');
-  if (!container) return;
-
-  const isMaskedNW = !!kpiMaskStates.netWorth;
-  const isMaskedInv = !!kpiMaskStates.netInvested;
-  const isMaskedLife = !!kpiMaskStates.lifetimePnL;
-  const isMaskedFy = !!kpiMaskStates.currentFy;
-
-  const maskClassNW = isMaskedNW ? 'privacy-blurred' : '';
-  const maskClassInv = isMaskedInv ? 'privacy-blurred' : '';
-  const maskClassLife = isMaskedLife ? 'privacy-blurred' : '';
-  const maskClassFy = isMaskedFy ? 'privacy-blurred' : '';
-
-  // 1. Calculations
-  const nwTarget = milestoneGoals.netWorth || 10000000;
-  const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
-  const nwRem = Math.max(0, nwTarget - data.netWorth);
-
-  const invTarget = milestoneGoals.netInvested || 5000000;
-  const isExcessInvested = data.netInvested > invTarget;
-  const invPct = invTarget > 0 ? (data.netInvested / invTarget) * 100 : 0;
-  const displayInvPct = Math.min(100, invPct);
-  const invRem = Math.max(0, invTarget - data.netInvested);
-
-  const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
-  const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
-  const lifeRem = Math.max(0, pnlTarget - data.lifetimePnL);
-
-  const curFy = getFinancialYear(todayLocalISO());
-  const curFyData = data.fyRealized[curFy] || { gain: 0 };
-  const fyTarget = milestoneGoals.currentFyPnL || 1000000;
-  const fyPct = fyTarget > 0 ? Math.min(100, Math.max(0, (curFyData.gain / fyTarget) * 100)) : 0;
-  const fyRem = Math.max(0, fyTarget - curFyData.gain);
-
-  const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
-  const xirrTarget = milestoneGoals.xirr || 25;
-  const xirrProgress = (xirrValid && xirrTarget > 0) ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
-  const xirrRem = xirrValid ? Math.max(0, xirrTarget - data.xirrValue) : xirrTarget;
-
-  // Inception date string
-  let inceptionStr = 'Since —';
-  const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
-  if (capitalTxs.length > 0 && capitalTxs[0].date) {
-    const d = new Date(capitalTxs[0].date);
-    if (!isNaN(d.getTime())) {
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      inceptionStr = `Since ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-    }
-  }
-
-  // Highlight classes
-  const isSelNW = activeSelectedKpi === 'netWorth';
-  const isSelInv = activeSelectedKpi === 'netInvested';
-  const isSelLife = activeSelectedKpi === 'lifetimePnL';
-  const isSelFy = activeSelectedKpi === 'currentFy';
-  const isSelXirr = activeSelectedKpi === 'xirr';
-
-  // Hero Card styling (Deep Navy when selected, normal white/gradient when not)
-  const nwCardClasses = isSelNW
-    ? 'col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-[#0B1736] via-[#0F2354] to-[#1E3A8A] text-white p-4 rounded-2xl shadow-lg ring-2 ring-blue-600 cursor-pointer transition-all duration-200 flex flex-col justify-between'
-    : 'col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-blue-100 dark:border-[#222836] shadow-2xs hover:shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-between';
-
-  const otherCardClass = (isSel) => isSel
-    ? 'col-span-1 bg-white dark:bg-[#1A1F2E] p-4 rounded-2xl border-2 border-blue-600 shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-between relative'
-    : 'col-span-1 bg-white dark:bg-[#131722] p-4 rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs hover:shadow-md cursor-pointer transition-all duration-200 flex flex-col justify-between relative';
-
-  container.innerHTML = `
-    <!-- 1. TOTAL NET WORTH (HERO CARD) -->
-    <div class="${nwCardClasses}" onclick="setDashboardKpiSelection('netWorth')">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-semibold ${isSelNW ? 'text-blue-200' : 'text-slate-700 dark:text-slate-300'} tracking-tight flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <span class="p-1.5 rounded-xl ${isSelNW ? 'bg-white/10 text-blue-300' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'}">
-              <i data-lucide="wallet" class="w-4 h-4"></i>
-            </span>
-            <span>Total Net Worth</span>
-          </span>
-          <div class="flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <button onclick="toggleSingleKpiMask('netWorth')" class="h-8 w-8 rounded-lg ${isSelNW ? 'bg-white/10 hover:bg-white/20 text-white' : 'bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300'} flex items-center justify-center transition" title="Toggle Net Worth Mask">
-              <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-4 h-4"></i>
-            </button>
-            <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg ${isSelNW ? 'bg-white/10 text-white' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'} flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
-              <i data-lucide="target" class="w-4 h-4"></i>
-            </div>
-          </div>
-        </div>
-
-        <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold ${isSelNW ? 'text-white' : 'text-blue-600 dark:text-blue-400'} tabular-nums tracking-tight leading-none mt-1 transition-all duration-200 ${maskClassNW}">${formatINR(data.netWorth)}</div>
-
-        <div class="mt-2 text-[11.5px] flex items-center space-x-2 ${isSelNW ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}">
-          <span>Holdings: <b class="${isSelNW ? 'text-white' : 'text-slate-700 dark:text-slate-300'} font-semibold tabular-nums ${maskClassNW}">${formatCompactIndian(data.totalPortfolioVal)}</b></span>
-          <span>•</span>
-          <span>Cash: <b class="${isSelNW ? 'text-white' : 'text-slate-700 dark:text-slate-300'} font-semibold tabular-nums ${maskClassNW}">${formatCompactIndian(data.cashBalance)}</b></span>
-        </div>
-      </div>
-
-      <div class="mt-3.5 pt-2 border-t ${isSelNW ? 'border-white/15' : 'border-slate-100 dark:border-[#222836]/80'}">
-        <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-          <span class="${isSelNW ? 'text-blue-200' : 'text-blue-600 dark:text-blue-400'}">${nwPct.toFixed(2)}%</span>
-          <span class="${isSelNW ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}">${nwRem > 0 ? formatCompactIndian(nwRem) + ' left' : 'Achieved'}</span>
-        </div>
-        <div class="w-full ${isSelNW ? 'bg-white/20' : 'bg-blue-100/70 dark:bg-blue-950/60'} rounded-full h-1.5 overflow-hidden">
-          <div class="bg-gradient-to-r ${isSelNW ? 'from-white to-blue-200' : 'from-blue-600 to-blue-400'} h-1.5 rounded-full transition-all duration-500" style="width: ${nwPct}%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. NET INVESTED -->
-    <div class="${otherCardClass(isSelInv)}" onclick="setDashboardKpiSelection('netInvested')">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <span class="p-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400"><i data-lucide="layers" class="w-3.5 h-3.5"></i></span>
-            <span>Net Invested</span>
-          </span>
-          <div class="flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <button onclick="toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
-              <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i>
-            </button>
-            <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
-              <i data-lucide="target" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-        </div>
-
-        <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200 ${maskClassInv}">${formatINR(data.netInvested)}</div>
-        <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Contributed Corpus</div>
-      </div>
-
-      <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
-        <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-          <span id="kpiNetInvestedPct" class="${isExcessInvested ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${isExcessInvested ? (invPct - 100).toFixed(2) + '% excess' : invPct.toFixed(2) + '%'}</span>
-          <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-slate-400">${isExcessInvested ? formatCompactIndian(data.netInvested - invTarget) + ' excess' : (invRem > 0 ? formatCompactIndian(invRem) + ' left' : 'Achieved')}</span>
-        </div>
-        <div class="w-full bg-rose-100/70 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
-          <div id="kpiNetInvestedBar" class="bg-gradient-to-r ${isExcessInvested ? 'from-rose-600 to-rose-400' : 'from-emerald-600 to-emerald-400'} h-1.5 rounded-full transition-all duration-500" style="width: ${displayInvPct}%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. LIFETIME P&L -->
-    <div class="${otherCardClass(isSelLife)}" onclick="setDashboardKpiSelection('lifetimePnL')">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <span class="p-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"><i data-lucide="award" class="w-3.5 h-3.5"></i></span>
-            <span>Lifetime P&amp;L</span>
-          </span>
-          <div class="flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <button onclick="toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
-              <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i>
-            </button>
-            <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
-              <i data-lucide="target" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-        </div>
-
-        <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} tracking-tight leading-none mt-1 transition-all duration-200 ${maskClassLife}">${formatINR(data.lifetimePnL)}</div>
-        <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%</div>
-      </div>
-
-      <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
-        <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-          <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">${lifeTargetPct.toFixed(2)}%</span>
-          <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-slate-400">${lifeRem > 0 ? formatCompactIndian(lifeRem) + ' left' : 'Achieved'}</span>
-        </div>
-        <div class="w-full bg-emerald-100/70 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
-          <div id="kpiLifetimeBar" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: ${lifeTargetPct}%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. FY P&L -->
-    <div class="${otherCardClass(isSelFy)}" onclick="setDashboardKpiSelection('currentFy')">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <span class="p-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"><i data-lucide="calendar" class="w-3.5 h-3.5"></i></span>
-            <span id="kpiCurrentFyCardTitle">${curFy}</span>
-          </span>
-          <div class="flex items-center space-x-1.5" onclick="event.stopPropagation();">
-            <button onclick="toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
-              <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i>
-            </button>
-            <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
-              <i data-lucide="target" class="w-3.5 h-3.5"></i>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-1 mt-1">
-          <div class="flex items-baseline justify-between">
-            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Realized:</span>
-            <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'} ${maskClassFy}">${formatINR(curFyData.gain)}</span>
-          </div>
-          <div class="flex items-baseline justify-between">
-            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Unrealized:</span>
-            <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-300 ${maskClassFy}">${formatINR(data.totalUnrealizedPnL)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
-        <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-          <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">${fyPct.toFixed(2)}%</span>
-          <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-slate-400">${fyRem > 0 ? formatCompactIndian(fyRem) + ' left' : 'Achieved'}</span>
-        </div>
-        <div class="w-full bg-amber-100/70 dark:bg-amber-950/60 rounded-full h-1.5 overflow-hidden">
-          <div id="kpiCurrentFyBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-1.5 rounded-full transition-all duration-500" style="width: ${fyPct}%"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. ANNUALIZED XIRR -->
-    <div class="${otherCardClass(isSelXirr)}" onclick="setDashboardKpiSelection('xirr')">
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <div>
-            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight flex items-center space-x-1.5">
-              <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"><i data-lucide="percent" class="w-3.5 h-3.5"></i></span>
-              <span>Annualized XIRR</span>
-            </span>
-            <span id="kpiXirrInception" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">${inceptionStr}</span>
-          </div>
-          <div onclick="event.stopPropagation(); openGoalModal('xirr');" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
-            <i data-lucide="target" class="w-3.5 h-3.5"></i>
-          </div>
-        </div>
-
-        <div id="kpiXIRR" class="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1">${xirrValid ? data.xirrValue.toFixed(2) + '%' : '—'}</div>
-        <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Cash Flow IRR</div>
-      </div>
-
-      <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
-        <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
-          <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">${xirrValid ? xirrProgress.toFixed(2) + '%' : '—'}</span>
-          <span id="kpiXirrRem" class="text-slate-500 dark:text-slate-400">${!xirrValid ? '< 90d period' : (xirrRem > 0 ? xirrRem.toFixed(2) + '% left' : 'Achieved')}</span>
-        </div>
-        <div class="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-          <div id="kpiXirrBar" class="bg-gradient-to-r from-slate-600 to-slate-400 h-1.5 rounded-full transition-all duration-500" style="width: ${xirrProgress}%"></div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-/* ---------------- DASHBOARD DYNAMIC TREND CHART (POINT 2) ---------------- */
-function renderDashboardChart(data) {
-  const canvas = document.getElementById('dashboardTrendChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const titleEl = document.getElementById('dashboardChartTitle');
-  const subtitleEl = document.getElementById('dashboardChartSubtitle');
-
-  const fourPoints = computeRocFourCurves(data);
-  let rawPoints = fourPoints;
-
-  // Configure Title, Subtitle, and Series Data based on activeSelectedKpi
-  let seriesLabel = 'Net Worth';
-  let seriesColor = '#2563eb';
-  let rawValues = [];
-  let labels = [];
-
-  if (activeSelectedKpi === 'netWorth') {
-    if (titleEl) titleEl.innerText = 'Total Net Worth – Trend';
-    if (subtitleEl) subtitleEl.innerText = 'Portfolio value over time';
-    seriesLabel = 'Net Worth';
-    seriesColor = '#2563eb';
-    rawValues = fourPoints.map(p => p.portfolioValue);
-    labels = fourPoints.map(p => p.date);
-  } else if (activeSelectedKpi === 'netInvested') {
-    if (titleEl) titleEl.innerText = 'Net Invested – Trend';
-    if (subtitleEl) subtitleEl.innerText = 'Historical invested capital';
-    seriesLabel = 'Net Invested';
-    seriesColor = '#dc2626';
-    rawValues = fourPoints.map(p => p.netCapital);
-    labels = fourPoints.map(p => p.date);
-  } else if (activeSelectedKpi === 'lifetimePnL') {
-    if (titleEl) titleEl.innerText = 'Lifetime P&L – Trend';
-    if (subtitleEl) subtitleEl.innerText = 'Historical cumulative profit/loss';
-    seriesLabel = 'Lifetime P&L';
-    seriesColor = '#16a34a';
-    rawValues = fourPoints.map(p => p.profit);
-    labels = fourPoints.map(p => p.date);
-  } else if (activeSelectedKpi === 'currentFy') {
-    if (titleEl) titleEl.innerText = 'FY P&L – Trend';
-    if (subtitleEl) subtitleEl.innerText = 'Financial-year performance';
-    seriesLabel = 'Realized P&L';
-    seriesColor = '#d97706';
-    // Use FY realized profit trajectory
-    rawValues = fourPoints.map(p => p.profit); // or filtered FY deltas
-    labels = fourPoints.map(p => p.date);
-  } else if (activeSelectedKpi === 'xirr') {
-    if (titleEl) titleEl.innerText = 'Annualized XIRR – Trend';
-    if (subtitleEl) subtitleEl.innerText = 'Historical annualized XIRR';
-    seriesLabel = 'Annualized XIRR (%)';
-    seriesColor = '#4f46e5';
-    // Compute historical XIRR or map approximate returns
-    rawValues = fourPoints.map((p, idx) => {
-      if (idx === 0) return 0;
-      const netCap = p.netCapital || 1;
-      const profit = p.profit || 0;
-      return Number(((profit / netCap) * 100).toFixed(2));
-    });
-    labels = fourPoints.map(p => p.date);
-  }
-
-  // Apply Time Range Filter (1M, 3M, 6M, 1Y, 3Y, 5Y, All)
-  let sliceCount = labels.length;
-  if (currentDashboardChartRange === '1M') sliceCount = Math.min(labels.length, 2);
-  else if (currentDashboardChartRange === '3M') sliceCount = Math.min(labels.length, 4);
-  else if (currentDashboardChartRange === '6M') sliceCount = Math.min(labels.length, 7);
-  else if (currentDashboardChartRange === '1Y') sliceCount = Math.min(labels.length, 13);
-  else if (currentDashboardChartRange === '3Y') sliceCount = Math.min(labels.length, 37);
-  else if (currentDashboardChartRange === '5Y') sliceCount = Math.min(labels.length, 61);
-
-  const displayLabels = labels.slice(-sliceCount);
-  const displayValues = rawValues.slice(-sliceCount);
-
-  // Update latest value pill at top right of chart
-  const latestValPill = document.getElementById('dashboardLatestValPill');
-  if (latestValPill && displayValues.length > 0) {
-    const latestNum = displayValues[displayValues.length - 1];
-    const latestDateStr = displayLabels[displayLabels.length - 1];
-    const formattedLatest = activeSelectedKpi === 'xirr' ? `${latestNum.toFixed(2)}%` : formatINR(latestNum, 0);
-    latestValPill.innerHTML = `
-      <div class="text-[11px] text-slate-500 dark:text-slate-400">${esc(latestDateStr)}</div>
-      <div class="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums">${formattedLatest}</div>
-    `;
-  }
-
-  const isDark = document.documentElement.classList.contains('dark');
-  const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
-  const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
-  const tickColor = isDark ? '#94A3B8' : '#64748B';
-  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 360) : 360;
-
-  const pointBorder = isDark ? '#131722' : '#FFFFFF';
-  const gradientBg = ctx.createLinearGradient(0, 0, 0, chartHeight);
-  gradientBg.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
-  gradientBg.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.03)');
-  gradientBg.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
-
-  const datasets = [{
-    label: seriesLabel,
-    data: displayValues,
-    borderColor: seriesColor,
-    backgroundColor: gradientBg,
-    fill: true,
-    borderWidth: 2.4,
-    cubicInterpolationMode: 'monotone',
-    pointRadius: displayLabels.length > 30 ? 0 : 3.5,
-    pointHoverRadius: 5.5,
-    pointBackgroundColor: seriesColor,
-    pointBorderColor: pointBorder,
-    pointBorderWidth: 1.5
-  }];
-
-  if (dashboardChartInstance) {
-    dashboardChartInstance.data.labels = displayLabels;
-    dashboardChartInstance.data.datasets = datasets;
-    dashboardChartInstance.options.scales.y.ticks.callback = function(val) {
-      if (activeSelectedKpi === 'xirr') return val.toFixed(1) + '%';
-      return formatINR(val, 0);
-    };
-    dashboardChartInstance.update('none');
-    return;
-  }
-
-  dashboardChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: { labels: displayLabels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: true,
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(context) {
-              const val = context.raw || 0;
-              const formatted = activeSelectedKpi === 'xirr' ? `${val.toFixed(2)}%` : formatINR(val, 0);
-              return ` ${context.dataset.label}: ${formatted}`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          border: { display: false },
-          grid: { display: false },
-          ticks: {
-            color: tickColor,
-            font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 10,
-            padding: 6
-          }
-        },
-        y: {
-          border: { display: false },
-          grid: {
-            color: function(scaleCtx) {
-              if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
-              return horizontalGridColor;
-            },
-            lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; }
-          },
-          ticks: {
-            color: function() {
-              return (tabMaskStates && tabMaskStates.chart) ? 'transparent' : tickColor;
-            },
-            font: { family: "'Inter', sans-serif", size: 11 },
-            padding: 8,
-            callback: function(val) {
-              if (activeSelectedKpi === 'xirr') return val.toFixed(1) + '%';
-              return formatINR(val, 0);
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
-function setDashboardChartRange(range) {
-  currentDashboardChartRange = range;
-  ['1M', '3M', '6M', '1Y', '3Y', '5Y', 'All'].forEach(r => {
-    const btn = document.getElementById(`dashRangeBtn-${r}`);
-    if (!btn) return;
-    if (r === range) {
-      btn.className = 'px-3 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-blue-600 text-white shadow-2xs';
-    } else {
-      btn.className = 'px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200';
-    }
-  });
-  renderDashboardChart(getCachedEngineData());
 }
 
 function renderActiveTabOnly(data) {
@@ -1430,6 +1077,7 @@ function getFilteredProfitablePurificationLots(engineData) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
+  // Filter strictly to profitable closed lots (gain > 0)
   return (source.purificationLots || []).filter(lot => {
     if (Number(lot.gain || 0) <= 0) return false;
     if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
@@ -1512,6 +1160,7 @@ function renderPurificationView(data) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
+  // Profitable closed lots only (gain > 0)
   const profitableLots = getFilteredProfitablePurificationLots(engineData);
 
   const filteredDonations = (donations || []).filter(d => {
@@ -1530,6 +1179,7 @@ function renderPurificationView(data) {
   const totalDonated = filteredDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
   const remainingDue = totalPurifDue - totalDonated;
 
+  // 1. Update 3 Purification KPI Cards
   const dueEl = document.getElementById('purifTotalDueVal');
   const profitSubEl = document.getElementById('purifTotalProfitSub');
   if (dueEl) {
@@ -1568,6 +1218,7 @@ function renderPurificationView(data) {
     }
   }
 
+  // 2. Render Table A: Profit-Only Paginated Purification Breakdown (Newest first)
   const lotsBadge = document.getElementById('purifLotsCountBadge');
   if (lotsBadge) lotsBadge.innerText = `${profitableLots.length} Profitable Lots`;
 
@@ -1626,6 +1277,7 @@ function renderPurificationView(data) {
     }
   }
 
+  // 3. Render Table B: Recorded Donations Log (Newest first)
   const donTbody = document.getElementById('donationsLogTableBody');
   if (donTbody) {
     donTbody.innerHTML = '';
@@ -1653,6 +1305,7 @@ function renderPurificationView(data) {
   }
 }
 
+// Event delegation for Deleting a Donation record (PIN-gated)
 document.addEventListener('click', (e) => {
   const delBtn = e.target.closest('[data-donation-delete-id]');
   if (!delBtn) return;
@@ -1725,6 +1378,234 @@ function handleDonationSubmit(e) {
   refreshIcons();
 }
 
+/* ---------------- DYNAMIC HEADER LEGEND & VIEW SWITCHER ---------------- */
+function getRocRateLabel() {
+  const pct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100)
+    .toFixed(2)
+    .replace(/\.00$/, '');
+  return `${pct}%`;
+}
+
+function renderChartLegend() {
+  const container = document.getElementById('chartLegendContainer');
+  if (!container) return;
+  const rateLbl = getRocRateLabel();
+
+  if (currentChartView === 'roc') {
+    container.innerHTML = `
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Actual Track
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>Capital Base
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2.5 h-0.5 border-t-2 border-dotted border-amber-500 mr-1.5"></span>Pure ${rateLbl} Hurdle
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2.5 h-0.5 border-t-2 border-dashed border-purple-600 mr-1.5"></span>Extreme Target
+      </span>
+    `;
+  } else {
+    container.innerHTML = `
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 ring-2 ring-blue-500/20"></span>Net Worth
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-rose-600 mr-1.5 ring-2 ring-rose-500/20"></span>My Capital
+      </span>
+      <span class="inline-flex items-center text-slate-600 dark:text-slate-300 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-600 mr-1.5 ring-2 ring-emerald-500/20"></span>Profit
+      </span>
+    `;
+  }
+}
+
+function toggleChartViewDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('chartViewDropdownMenu');
+  const chevron = document.getElementById('chartViewChevron');
+  if (!menu) return;
+
+  const isHidden = menu.classList.contains('hidden');
+  closeAllTopDropdowns();
+  menu.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
+}
+
+function closeChartViewDropdown() {
+  const menu = document.getElementById('chartViewDropdownMenu');
+  const chevron = document.getElementById('chartViewChevron');
+  if (menu) menu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
+}
+
+function switchChartView(view) {
+  currentChartView = view;
+  const label = document.getElementById('currentChartViewLabel');
+  if (label) {
+    label.innerText = view === 'roc' ? 'Monthly RoC Curve' : 'Performance Trajectory';
+  }
+  closeChartViewDropdown();
+  renderChartLegend();
+  const data = getCachedEngineData();
+  renderChart(data);
+  renderTtmTable(data);
+}
+
+/* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
+function toggleTtmTableAccordion() {
+  const container = document.getElementById('ttmTableContainer');
+  const chevron = document.getElementById('ttmAccordionChevron');
+  const isHidden = container.classList.contains('hidden');
+  container.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
+}
+
+function renderTtmTable(computed) {
+  const thead = document.getElementById('ttmTableHead');
+  const tbody = document.getElementById('ttmTableBody');
+  const titleEl = document.getElementById('ttmAccordionTitle');
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  const maskClass = getMaskClass('chart');
+  const fourCurvePoints = computeRocFourCurves(computed);
+
+  if (currentChartView === 'roc') {
+    const rateLbl = getRocRateLabel();
+    if (titleEl) titleEl.innerText = 'Monthly RoC & 4-Curve Milestone Ledger';
+
+    thead.innerHTML = `
+      <tr>
+        <th class="py-2.5 px-3 font-bold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-bold">Initial Capital</th>
+        <th class="py-2.5 px-3 text-right font-bold">Close Value</th>
+        <th class="py-2.5 px-3 text-right font-bold">Monthly P&amp;L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Monthly RoC</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure ${rateLbl} Target</th>
+        <th class="py-2.5 px-3 text-right font-bold">Pure ${rateLbl} Gap</th>
+        <th class="py-2.5 px-3 text-right font-bold">Extreme Target</th>
+        <th class="py-2.5 px-3 text-right font-bold">Extreme Deficit</th>
+        <th class="py-2.5 px-3 text-right font-bold">Recovery %</th>
+      </tr>
+    `;
+
+    if (!fourCurvePoints || fourCurvePoints.length < 2) {
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute Monthly RoC metrics.</td></tr>`;
+      return;
+    }
+
+    const rows = fourCurvePoints.slice(-13).slice(1).reverse();
+
+    rows.forEach(r => {
+      const isPosProfit = r.deltaProfit >= 0;
+      const isPosGap = r.pureGap >= 0;
+      const isPosRatchet = r.ratchetDeficit >= 0;
+
+      let recoveryPct = 0;
+      if (r.ratchetDeficit < 0 && r.actualVal > 0) {
+        recoveryPct = (Math.abs(r.ratchetDeficit) / r.actualVal) * 100;
+      }
+
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 font-bold';
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(r.date)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300 font-bold ${maskClass}">${formatINR(r.startCapital, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white ${maskClass}">${formatINR(r.actualVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPosProfit ? '+' : ''}${formatINR(r.deltaProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPosProfit ? '+' : ''}${r.rocPct.toFixed(2)}%
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-amber-600 dark:text-amber-400 ${maskClass}">${formatINR(r.pureTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosGap ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPosGap ? '+' : ''}${formatINR(r.pureGap, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-purple-600 dark:text-purple-400 ${maskClass}">${formatINR(r.ratchetTarget, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPosRatchet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPosRatchet ? '+' : ''}${formatINR(r.ratchetDeficit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-purple-600 dark:text-purple-400">
+          ${recoveryPct > 0 ? recoveryPct.toFixed(2) + '%' : '—'}
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } else {
+    if (titleEl) titleEl.innerText = 'Trailing 12-Months (TTM) Performance Ledger';
+
+    thead.innerHTML = `
+      <tr>
+        <th class="py-2.5 px-3 font-bold">Checkpoint</th>
+        <th class="py-2.5 px-3 text-right font-bold">Portfolio Value</th>
+        <th class="py-2.5 px-3 text-right font-bold">Net Capital</th>
+        <th class="py-2.5 px-3 text-right font-bold">Cumulative P&amp;L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Cumulative RoC</th>
+        <th class="py-2.5 px-3 text-right font-bold">Period P&amp;L</th>
+        <th class="py-2.5 px-3 text-right font-bold">Return %</th>
+      </tr>
+    `;
+
+    if (!fourCurvePoints || fourCurvePoints.length < 2) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-slate-400 font-bold">Need at least 2 checkpoints to compute trailing monthly deltas.</td></tr>`;
+      return;
+    }
+
+    const ttmRecords = fourCurvePoints.slice(-13);
+    const rows = [];
+
+    for (let i = 1; i < ttmRecords.length; i++) {
+      const curr = ttmRecords[i];
+      const prev = ttmRecords[i - 1];
+
+      const deltaProfit = curr.profit - prev.profit;
+      const monthlyReturnPct = prev.portfolioValue > 0 ? (deltaProfit / prev.portfolioValue) * 100 : 0;
+      const cumReturnOnCapPct = curr.netCapital > 0 ? (curr.profit / curr.netCapital) * 100 : 0;
+
+      rows.push({
+        date: curr.date,
+        portVal: curr.portfolioValue,
+        netCap: curr.netCapital,
+        deltaProfit,
+        monthlyReturnPct,
+        cumProfit: curr.profit,
+        cumReturnOnCapPct
+      });
+    }
+
+    rows.reverse().forEach(r => {
+      const isPos = r.deltaProfit >= 0;
+      const isCumPos = r.cumProfit >= 0;
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 font-bold';
+      tr.innerHTML = `
+        <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(r.date)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-700 dark:text-slate-300 ${maskClass}">${formatINR(r.portVal, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(r.netCap, 0)}</td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isCumPos ? '+' : ''}${formatINR(r.cumProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isCumPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isCumPos ? '+' : ''}${r.cumReturnOnCapPct.toFixed(2)}%
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPos ? '+' : ''}${formatINR(r.deltaProfit, 0)}
+        </td>
+        <td class="py-2.5 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+          ${isPos ? '+' : ''}${r.monthlyReturnPct.toFixed(2)}%
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
 /* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
 function exportPortfolioToExcel() {
   if (typeof XLSX === 'undefined') return;
@@ -1774,6 +1655,7 @@ function exportPortfolioToExcel() {
     }
   }
 
+  // Tab 1: Summary Dashboard
   const summaryRows = [
     { "Metric": "Total Net Worth", "Value": Number(data.netWorth) },
     { "Metric": "Contributed Corpus (Net Invested)", "Value": Number(data.netInvested) },
@@ -1787,6 +1669,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsSummary, [38, 22]);
   XLSX.utils.book_append_sheet(wb, wsSummary, "Summary Dashboard");
 
+  // Tab 2: Holdings
   const holdingsRows = data.holdings.map(h => ({
     "Stock Ticker": h.stock,
     "Quantity": Number(h.qty),
@@ -1802,6 +1685,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsHoldings, [16, 12, 18, 14, 16, 16, 12, 16, 12]);
   XLSX.utils.book_append_sheet(wb, wsHoldings, "Active Holdings");
 
+  // Tab 3: Closed Trades
   const closedRows = data.closedTrades.map(c => ({
     "Stock Ticker": c.stock,
     "Total Sold Qty": Number(c.totalQty),
@@ -1814,6 +1698,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsClosed, [16, 16, 18, 18, 18, 16]);
   XLSX.utils.book_append_sheet(wb, wsClosed, "Closed Trades");
 
+  // Tab 4: Tradebook
   const tradebookRows = data.ledgerEntries.map(l => ({
     "Date": l.date,
     "Account": l.account,
@@ -1831,6 +1716,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 15, 25]);
   XLSX.utils.book_append_sheet(wb, wsTradebook, "Tradebook & Ledger");
 
+  // Tab 5: Tax Audit
   const taxRows = data.taxClosedLots.map(t => ({
     "Sell Date": t.sellDate,
     "Buy Date (FIFO)": t.buyDate,
@@ -1849,6 +1735,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTax, [14, 14, 12, 16, 10, 14, 12, 16, 16, 18, 12, 14]);
   XLSX.utils.book_append_sheet(wb, wsTax, "Tax Audit Trail");
 
+  // Tab 6: Bank Ledger
   const bankRows = data.bankEntries.map(b => ({
     "Date": b.date,
     "Account": b.account,
@@ -1862,6 +1749,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsBank, [14, 12, 14, 16, 16, 22, 25]);
   XLSX.utils.book_append_sheet(wb, wsBank, "Bank Ledger");
 
+  // Tab 7 & 8: Unified Checkpoint History & RoC Curves
   const fourCurvePoints = computeRocFourCurves(data);
   const trajectoryHistory = fourCurvePoints.map(p => ({
     "Checkpoint Date": p.date,
@@ -1873,6 +1761,24 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTrajectory, [18, 18, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsTrajectory, "Performance Trajectory");
 
+  const rateLbl = getRocRateLabel();
+  const rocRows = fourCurvePoints.map(p => ({
+    "Checkpoint": p.date,
+    "Start Capital": Number(p.startCapital),
+    "Actual Value": Number(p.actualVal),
+    "Net Capital Base": Number(p.netCapBase),
+    "Monthly P&L (Delta Profit)": Number(p.deltaProfit),
+    "Monthly RoC (%)": Number(p.rocPct.toFixed(2)),
+    [`Pure ${rateLbl} Target`]: Number(p.pureTarget),
+    [`Pure ${rateLbl} Gap`]: Number(p.pureGap),
+    "Extreme Target": p.ratchetTarget !== null ? Number(p.ratchetTarget) : 0,
+    "Extreme Deficit": Number(p.ratchetDeficit)
+  }));
+  const wsRoc = XLSX.utils.json_to_sheet(rocRows);
+  formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
+  XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
+
+  // Tab 9: Purification Ledger (Profitable Trades Only)
   const purifRows = (data.purificationLots || [])
     .filter(p => Number(p.gain || 0) > 0)
     .map(p => ({
@@ -1891,6 +1797,7 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsPurif, [14, 12, 16, 10, 16, 16, 18, 16, 18, 14]);
   XLSX.utils.book_append_sheet(wb, wsPurif, "Purification Ledger");
 
+  // Tab 10: Recorded Donations
   const donRows = (donations || []).map(d => ({
     "Date": d.date,
     "Account": d.account,
@@ -1904,11 +1811,300 @@ function exportPortfolioToExcel() {
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayLocalISO()}.xlsx`);
 }
 
+/* ---------------- CUSTOM HTML TOOLTIP & IN-PLACE CHART RENDERER ---------------- */
+function customHtmlTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  const tooltipEl = document.getElementById('chartCustomTooltip');
+  if (!tooltipEl) return;
+
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = '0';
+    return;
+  }
+
+  const isMasked = !!tabMaskStates.chart;
+  const maskClass = isMasked ? 'privacy-blurred' : '';
+
+  if (tooltip.body) {
+    const titleLines = tooltip.title || [];
+    let innerHtml = '<div class="space-y-1.5">';
+
+    titleLines.forEach(title => {
+      innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-[#222836] text-[11.5px]">${esc(title)}</div>`;
+    });
+
+    innerHtml += '<div class="space-y-1 pt-0.5">';
+    tooltip.dataPoints.forEach(dp => {
+      const dataset = chart.data.datasets[dp.datasetIndex];
+      const color = dataset.borderColor || '#2563eb';
+      const label = dataset.label || '';
+      const rawVal = dp.raw || 0;
+      const formattedVal = formatINR(rawVal, 0);
+
+      let variationHtml = '';
+      if ((label === 'Profit' || label === 'Actual Track' || label === 'My Capital') && dp.dataIndex > 0) {
+        const datasetData = dataset.data;
+        const currVal = datasetData[dp.dataIndex];
+        const prevVal = datasetData[dp.dataIndex - 1];
+        if (currVal !== undefined && prevVal !== undefined) {
+          const delta = currVal - prevVal;
+          const isPos = delta >= 0;
+          const formattedDelta = formatINR(Math.abs(delta), 0);
+          variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+        }
+      }
+
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-3 text-[11px]">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full mr-1.5" style="background-color: ${color}"></span>
+            <span>${esc(label)}:</span>
+          </span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+            ${formattedVal}${variationHtml}
+          </span>
+        </div>
+      `;
+    });
+    innerHtml += '</div></div>';
+    tooltipEl.innerHTML = innerHtml;
+  }
+
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+  const chartCanvasWidth = chart.width;
+  const chartCanvasHeight = chart.height;
+  const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
+  const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
+
+  const isTtmMode = currentChartRange === 'TTM' || totalPoints <= 13;
+  const edgeThreshold = isTtmMode ? 3 : 5;
+  const isNearRightEdge = dataIndex >= totalPoints - edgeThreshold;
+
+  tooltipEl.style.opacity = '1';
+
+  const tooltipWidth = tooltipEl.offsetWidth || 210;
+  const tooltipHeight = tooltipEl.offsetHeight || 120;
+  const caretX = tooltip.caretX;
+  const caretY = tooltip.caretY;
+
+  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
+  tooltipEl.style.left = (isNearRightEdge || willOverflowRight)
+    ? (positionX + caretX - tooltipWidth - 12) + 'px'
+    : (positionX + caretX + 12) + 'px';
+
+  const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
+  tooltipEl.style.top = willOverflowBottom
+    ? (positionY + caretY - tooltipHeight - 12) + 'px'
+    : (positionY + caretY - 12) + 'px';
+}
+
+const yAxisIndividualBlurPlugin = {
+  id: 'yAxisIndividualBlur',
+  afterDraw(chart) {
+    if (!tabMaskStates || !tabMaskStates.chart) return;
+    const { ctx, scales } = chart;
+    const yAxis = scales.y;
+    if (!yAxis) return;
+
+    ctx.save();
+    const isDark = document.documentElement.classList.contains('dark');
+
+    yAxis.ticks.forEach((tick, index) => {
+      const y = yAxis.getPixelForTick(index);
+      const xStart = yAxis.left + 2;
+      const xEnd = yAxis.right - 4;
+      const boxWidth = xEnd - xStart;
+      const boxHeight = 16;
+      const boxY = y - (boxHeight / 2);
+
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(xStart, boxY, boxWidth, boxHeight, 4);
+      } else {
+        ctx.rect(xStart, boxY, boxWidth, boxHeight);
+      }
+      ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.10)';
+      ctx.filter = 'blur(6px)';
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+};
+
+function setChartRange(range) {
+  currentChartRange = range;
+  const ttmBtn = document.getElementById('chartRangeBtn-TTM');
+  const allBtn = document.getElementById('chartRangeBtn-ALL');
+
+  const activeClasses = 'bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
+  const inactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium';
+
+  if (ttmBtn && allBtn) {
+    if (range === 'TTM') {
+      ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+      allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
+    } else {
+      allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
+      ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
+    }
+  }
+
+  renderChart(getCachedEngineData());
+}
+
+function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
+  const pointBorder = isDark ? '#131722' : '#FFFFFF';
+  const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+  blueGradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.20)' : 'rgba(37, 99, 235, 0.15)');
+  blueGradient.addColorStop(0.5, isDark ? 'rgba(37, 99, 235, 0.05)' : 'rgba(37, 99, 235, 0.03)');
+  blueGradient.addColorStop(1, 'rgba(37, 99, 235, 0.00)');
+
+  const baseLine = (label, data, color, opts = {}) => ({
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: opts.bg || 'transparent',
+    fill: !!opts.fill,
+    borderWidth: opts.width || 2.0,
+    borderDash: opts.dash || [],
+    cubicInterpolationMode: 'monotone',
+    pointRadius: opts.radius || 3.5,
+    pointHoverRadius: 5.5,
+    pointBackgroundColor: color,
+    pointBorderColor: pointBorder,
+    pointBorderWidth: 1.5,
+    order: opts.order || 1
+  });
+
+  if (currentChartView === 'roc') {
+    const rateLbl = getRocRateLabel();
+    return [
+      baseLine('Actual Track', displayPoints.map(p => p.actualVal), '#2563eb', { bg: blueGradient, fill: true, width: 2.4, order: 1 }),
+      baseLine('Capital Base', displayPoints.map(p => p.netCapBase), '#dc2626', { order: 2 }),
+      baseLine(`Pure ${rateLbl} Hurdle`, displayPoints.map(p => p.pureTarget), '#f59e0b', { dash: [3, 3], radius: 3.0, order: 3 }),
+      baseLine('Extreme Target', displayPoints.map(p => p.ratchetTarget), '#9333ea', { dash: [6, 4], order: 4 })
+    ];
+  }
+
+  const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
+  greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.14)' : 'rgba(22, 163, 74, 0.10)');
+  greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
+  greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
+
+  return [
+    baseLine('Net Worth', displayPoints.map(p => p.portfolioValue), '#2563eb', { bg: blueGradient, fill: true, width: 2.2, order: 1 }),
+    baseLine('My Capital', displayPoints.map(p => p.netCapital), '#dc2626', { order: 2 }),
+    baseLine('Profit', displayPoints.map(p => p.profit), '#16a34a', { bg: greenGradient, fill: true, dash: [4, 4], order: 3 })
+  ];
+}
+
+function renderChart(computed) {
+  const canvas = document.getElementById('multiCurveChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
+  const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
+  const tickColor = isDark ? '#94A3B8' : '#64748B';
+  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
+
+  const fourPoints = computeRocFourCurves(computed);
+  let displayPoints = fourPoints;
+  if (currentChartRange === 'TTM' && fourPoints.length > 12) {
+    displayPoints = fourPoints.slice(-12);
+  }
+
+  const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
+  const datasets = displayPoints.length > 0
+    ? buildChartDatasets(ctx, chartHeight, isDark, displayPoints)
+    : buildChartDatasets(ctx, chartHeight, isDark, [{ portfolioValue: 0, netCapital: 0, profit: 0, actualVal: 0, netCapBase: 0, pureTarget: 0, ratchetTarget: 0 }]);
+
+  // Update existing chart in place to prevent canvas flicker and memory churn
+  if (multiChartInstance) {
+    multiChartInstance.data.labels = labels;
+    multiChartInstance.data.datasets = datasets;
+    multiChartInstance.update('none');
+    return;
+  }
+
+  multiChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+      onHover: (event, chartElement) => {
+        if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+          const tooltipEl = document.getElementById('chartCustomTooltip');
+          if (tooltipEl) tooltipEl.style.opacity = '0';
+        }
+      },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: customHtmlTooltipHandler
+        }
+      },
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: {
+            color: tickColor,
+            font: { family: "'Inter', sans-serif", size: 10.5, weight: '500' },
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 12,
+            padding: 6,
+            callback: function(val) {
+              return this.getLabelForValue(val);
+            }
+          }
+        },
+        y: {
+          border: { display: false },
+          grid: {
+            color: function(scaleCtx) {
+              if (scaleCtx.tick && scaleCtx.tick.value === 0) return zeroLineColor;
+              return horizontalGridColor;
+            },
+            lineWidth: function(scaleCtx) { return (scaleCtx.tick && scaleCtx.tick.value === 0) ? 1.2 : 0.6; }
+          },
+          ticks: {
+            color: function() {
+              return (tabMaskStates && tabMaskStates.chart) ? 'transparent' : tickColor;
+            },
+            font: { family: "'Inter', sans-serif", size: 11 },
+            padding: 8,
+            callback: function(val) {
+              return formatINR(val, 0);
+            }
+          }
+        }
+      }
+    },
+    plugins: [yAxisIndividualBlurPlugin]
+  });
+}
+
 /* ---------------- DROPDOWN AUTO-COLLAPSE MANAGER ---------------- */
 function closeAllTopDropdowns(exceptId = null) {
-  if (exceptId !== 'txDropdownMenu') closeTxDropdown();
-  if (exceptId !== 'productsDropdownMenu') closeProductsDropdown();
-  if (exceptId !== 'settingsDropdownMenu') closeSettingsDropdown();
+  if (exceptId !== 'txDropdownMenu') {
+    closeTxDropdown();
+  }
+  if (exceptId !== 'productsDropdownMenu') {
+    closeProductsDropdown();
+  }
+  if (exceptId !== 'settingsDropdownMenu') {
+    closeSettingsDropdown();
+  }
+  if (exceptId !== 'chartViewDropdownMenu') {
+    closeChartViewDropdown();
+  }
 }
 
 /* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
@@ -1943,11 +2139,12 @@ function switchMainView(view) {
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
-    renderDashboardChart(getCachedEngineData());
   } else if (view === 'chart') {
     if (chartEl) chartEl.classList.remove('hidden');
     if (btnChart) btnChart.className = activeClasses;
     const data = getCachedEngineData();
+    renderChartLegend();
+    renderChart(data);
     renderTtmTable(data);
   } else if (view === 'portfolio') {
     if (portEl) portEl.classList.remove('hidden');
@@ -2033,6 +2230,7 @@ function closeTxDropdown() {
   closeCorpActionSubmenu();
 }
 
+// Keep backward compatibility for legacy switchTab calls if any
 function switchTab(t) {
   if (t === 'holdings') {
     switchMainView('portfolio');
@@ -2159,6 +2357,7 @@ function toggleFormFields() {
 
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
 
+  // Show mandatory Debt-to-Asset % input only for SELL transactions
   if (debtGroup && amtGroup) {
     if (type === 'SELL') {
       debtGroup.classList.remove('hidden');
@@ -2284,6 +2483,7 @@ function handleTransactionSubmit(e) {
     return;
   }
 
+  // Mandatory Debt-to-Asset (%) validation for SELL transactions
   let debtToAssetVal = 'NA';
   if (type === 'SELL') {
     const parsedDebt = Number(rawDebtStr);
@@ -2354,6 +2554,7 @@ function handleTransactionSubmit(e) {
     }
   }
 
+  // If editing an existing transaction, check FIFO integrity and gate behind Master PIN
   if (editingId) {
     const updatedTx = {
       id: editingId,
@@ -2397,6 +2598,7 @@ function handleTransactionSubmit(e) {
     return;
   }
 
+  // New transaction creation
   const newEntry = {
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     date,
@@ -2496,6 +2698,7 @@ function renderRecentTransactionsTable() {
   });
 }
 
+// Event delegation for Last 10 Transactions modal buttons
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-tx-action]');
   if (!btn) return;
@@ -2909,6 +3112,7 @@ function closeSettingsDropdown() {
   if (chevron) chevron.classList.remove('rotate-180');
 }
 
+// 1. PIN Settings Modal
 function openPinSettingsModal() {
   closeAllTopDropdowns();
   document.getElementById('settingsCurrentPin').value = '';
@@ -2974,6 +3178,7 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
+// 2. Custom In-App Backup Status Modal & Trigger
 function openBackupResultModal(isSuccess, title, message, details = null) {
   const modal = document.getElementById('backupResultModal');
   if (!modal) return;
@@ -3020,6 +3225,7 @@ function closeBackupResultModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+// 3. Cash Calibration Modal
 function openCashCalibrateModal() {
   closeAllTopDropdowns();
   renderCashCalibrateRows();
@@ -3117,6 +3323,7 @@ function saveCashCalibration() {
   recalculateAndRender();
 }
 
+// 4. Stock Master Modal
 function openStockMasterModal() {
   closeAllTopDropdowns();
   document.getElementById('smSymbolInput').value = '';
@@ -3179,6 +3386,11 @@ window.addEventListener('click', function(e) {
   const settingsDropdown = document.getElementById('settingsDropdownContainer');
   if (settingsDropdown && !settingsDropdown.contains(e.target)) {
     closeSettingsDropdown();
+  }
+
+  const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
+  if (chartViewDropdown && !chartViewDropdown.contains(e.target)) {
+    closeChartViewDropdown();
   }
 
   const productsDropdown = document.getElementById('productsDropdownContainer');
