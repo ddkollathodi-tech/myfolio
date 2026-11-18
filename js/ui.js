@@ -328,11 +328,11 @@ function recordBackupTimestamp(customStr) {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const hh = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
-    formatted = `${dd} - ${mm}, ${hh}:${min}`;
-  } else {
-    // Strip out any year patterns like "-26", "/26", "-2026", "/2026" if sent from the cloud
-    formatted = String(formatted).replace(/[-/]\d{2,4}/g, '');
+    formatted = `${dd} - ${mm}, ${hh}:${min}`; // <--- Year excluded, formatted cleanly
   }
+  localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
+  renderLastBackupTimestamp();
+}
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
 }
