@@ -62,7 +62,7 @@ function refreshIcons() {
   });
 }
 
-/* ---------------- ROTATING HEADER INFO TICKER (POINT 2) ---------------- */
+/* ---------------- ROTATING HEADER INFO TICKER (POINT 1) ---------------- */
 function initHeaderInfoTicker() {
   if (headerTickerInterval) clearInterval(headerTickerInterval);
   updateHeaderTickerDisplay();
@@ -77,39 +77,47 @@ function updateHeaderTickerDisplay() {
   if (!container) return;
 
   const syncStatusEl = document.getElementById('syncStatus');
-  const syncStatusText = syncStatusEl ? syncStatusEl.innerText.trim() : (cloudScriptUrl ? 'Synced' : 'Not synced');
+  const rawSyncText = syncStatusEl ? syncStatusEl.innerText.trim() : '';
+
+  let mappedSyncText = 'Sheet Synced';
+  let dotColor = 'bg-emerald-500 dark:bg-emerald-400';
+
+  if (rawSyncText === 'Syncing' || rawSyncText === 'Sheet Syncing') {
+    mappedSyncText = 'Sheet Syncing';
+    dotColor = 'bg-amber-500 animate-pulse';
+  } else if (rawSyncText === 'Not synced' || rawSyncText === 'Sync error' || rawSyncText === 'Sheet Not Synced' || !cloudScriptUrl) {
+    mappedSyncText = 'Sheet Not Synced';
+    dotColor = 'bg-rose-500';
+  } else {
+    mappedSyncText = 'Sheet Synced';
+    dotColor = 'bg-emerald-500 dark:bg-emerald-400';
+  }
+
   const priceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
   const backupTime = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME') || 'Not backed up yet';
-
-  let dotColor = 'bg-emerald-500 dark:bg-emerald-400';
-  if (syncStatusText === 'Syncing') {
-    dotColor = 'bg-amber-500 animate-pulse';
-  } else if (syncStatusText === 'Not synced' || syncStatusText === 'Sync error') {
-    dotColor = 'bg-rose-500';
-  }
 
   let html = '';
   if (headerTickerStep === 0) {
     html = `
       <span id="syncDot" class="inline-flex items-center shrink-0"><span class="w-2 h-2 rounded-full ${dotColor} inline-block"></span></span>
-      <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200 animate-ticker">${esc(syncStatusText)}</span>
+      <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200 animate-ticker">${esc(mappedSyncText)}</span>
     `;
   } else if (headerTickerStep === 1) {
     html = `
       <span id="syncDot" class="hidden"></span>
-      <span id="syncStatus" class="hidden">${esc(syncStatusText)}</span>
-      <span class="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 animate-ticker">
-        <i data-lucide="tag" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
-        <span>Price: <b class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">${esc(priceTime)}</b></span>
+      <span id="syncStatus" class="hidden">${esc(mappedSyncText)}</span>
+      <span class="flex items-center space-x-1.5 text-slate-600 dark:text-slate-300 animate-ticker">
+        <i data-lucide="tag" class="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0"></i>
+        <span>Last Prices : <b class="text-slate-800 dark:text-slate-100 font-semibold tabular-nums">${esc(priceTime)}</b></span>
       </span>
     `;
   } else {
     html = `
       <span id="syncDot" class="hidden"></span>
-      <span id="syncStatus" class="hidden">${esc(syncStatusText)}</span>
-      <span onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer animate-ticker" title="Click to trigger manual database backup">
-        <i data-lucide="database-backup" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
-        <span>Backup: <b class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">${esc(backupTime)}</b></span>
+      <span id="syncStatus" class="hidden">${esc(mappedSyncText)}</span>
+      <span class="flex items-center space-x-1.5 text-slate-600 dark:text-slate-300 animate-ticker">
+        <i data-lucide="database-backup" class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0"></i>
+        <span>Last Data Backup : <b class="text-slate-800 dark:text-slate-100 font-semibold tabular-nums">${esc(backupTime)}</b></span>
       </span>
     `;
   }
@@ -480,6 +488,7 @@ function recalculateAndRender() {
   renderChartLegend();
   renderChart(data);
   renderTtmTable(data);
+  updateHeaderTickerDisplay();
   refreshIcons();
 }
 
@@ -1984,7 +1993,7 @@ function renderChart(computed) {
   const horizontalGridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#E9EDF3';
   const zeroLineColor = isDark ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1';
   const tickColor = isDark ? '#94A3B8' : '#64748B';
-  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 330) : 330;
+  const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
   const fourPoints = computeRocFourCurves(computed);
   let displayPoints = fourPoints;
@@ -2068,7 +2077,7 @@ function renderChart(computed) {
   });
 }
 
-/* ---------------- DROPDOWN AUTO-COLLAPSE MANAGER (POINT 1) ---------------- */
+/* ---------------- DROPDOWN AUTO-COLLAPSE MANAGER ---------------- */
 function closeAllTopDropdowns(exceptId = null) {
   if (exceptId !== 'txDropdownMenu') {
     closeTxDropdown();
