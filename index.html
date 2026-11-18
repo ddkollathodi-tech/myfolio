@@ -137,7 +137,7 @@
 
         <!-- Left Cluster: Brand Logo + Primary Navigation Shifted Left -->
         <div class="flex items-center space-x-6 lg:space-x-8">
-          <!-- Point 4: Bolded 3 Ascending Slanted Bars + Scaled MyFolio.AI Lockup (Clicking returns to Home) -->
+          <!-- Bolded 3 Ascending Slanted Bars + Scaled MyFolio.AI Lockup (Clicking returns to Home) -->
           <div onclick="switchMainView('home')" class="flex items-center space-x-3 select-none cursor-pointer group">
             <svg class="w-11 h-9 shrink-0 transition-transform duration-200 group-hover:scale-[1.03]" viewBox="0 0 40 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <polygon points="1,32 6,17 13,15 8,32" class="fill-[#1E40AF] dark:fill-blue-500" />
@@ -162,13 +162,13 @@
               <span>Dashboard</span>
             </button>
 
-            <!-- 2. Chart (Point 3: Swapped Portfolio for Chart -> Opens Chart + TTM/RoC Tables Full Page) -->
+            <!-- 2. Chart (Opens Chart + TTM/RoC Tables Full Page) -->
             <button onclick="switchMainView('chart')" id="navLink-chart" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
               <span>Chart</span>
             </button>
 
-            <!-- 3. Transactions Dropdown (Full original menu + Point 1 Auto-Collapse) -->
+            <!-- 3. Transactions Dropdown -->
             <div class="relative" id="txDropdownContainer">
               <button
                 id="txDropdownBtn"
@@ -241,7 +241,7 @@
               </div>
             </div>
 
-            <!-- 4. Products Dropdown (Remaining specialized views) -->
+            <!-- 4. Products Dropdown -->
             <div class="relative" id="productsDropdownContainer">
               <button
                 onclick="toggleProductsDropdown(event)"
@@ -286,7 +286,7 @@
               </div>
             </div>
 
-            <!-- 5. Live Prices (Point 2: Aligned next to Products, matching theme & double-arrow refresh icon) -->
+            <!-- 5. Live Prices -->
             <button onclick="openLivePricesModal()" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
               <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               <span>Live Prices</span>
@@ -294,14 +294,14 @@
           </nav>
         </div>
 
-        <!-- Right Cluster: Rotating Info Ticker + Borderless Lock + Borderless Settings (with Chevron) + "D" Avatar -->
+        <!-- Right Cluster: Unboxed Start-Aligned Rotating Info Ticker + Lock + Settings + "D" Avatar -->
         <div class="flex items-center space-x-3 sm:space-x-4">
 
-          <!-- Point 2: Rotating Status Ticker (Sync / Last Price / Data Backup) -->
-          <div id="headerInfoTicker" class="hidden lg:flex items-center px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-[#1A1F2E]/80 border border-slate-200/70 dark:border-[#222836] text-[12px] font-medium text-slate-600 dark:text-slate-300 min-w-[235px] justify-end overflow-hidden h-8">
+          <!-- Point 1: Seamless Unboxed Start-Aligned Rotating Status Ticker (No container box, left-aligned) -->
+          <div id="headerInfoTicker" class="hidden lg:flex items-center px-2 py-1.5 text-[13.5px] font-medium text-slate-600 dark:text-slate-300 min-w-[235px] justify-start overflow-hidden h-9 select-none">
             <div id="tickerActiveItem" class="flex items-center space-x-2 truncate transition-all duration-300">
               <span id="syncDot" class="inline-flex items-center shrink-0"><span class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 inline-block"></span></span>
-              <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200">Synced</span>
+              <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200">Sheet Synced</span>
             </div>
             <!-- Hidden backing spans kept in DOM so api.js / ui.js timestamp updaters work seamlessly -->
             <span id="lastSyncedTime" class="hidden">Not refreshed yet</span>
@@ -314,12 +314,12 @@
             <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           </button>
 
-          <!-- Point 4: Borderless Lock Button -->
+          <!-- Borderless Lock Button -->
           <button onclick="lockApplicationNow()" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition" title="Instant PIN Lock Screen">
             <i data-lucide="lock" class="w-5 h-5"></i>
           </button>
 
-          <!-- Point 4: Borderless Settings Dropdown with Down Chevron Arrow -->
+          <!-- Borderless Settings Dropdown with Down Chevron Arrow -->
           <div class="relative" id="settingsDropdownContainer">
             <button
               onclick="toggleSettingsDropdown(event)"
@@ -407,38 +407,38 @@
       <!-- ========================================================== -->
       <!-- VIEW 0: HOME / LANDING PAGE VIEW (Default Landing - Full Bleed SaaS Hero) -->
       <!-- ========================================================== -->
-      <section id="mainViewHome" class="relative flex-1 w-full overflow-hidden bg-gradient-to-br from-white via-[#F5F8FF] to-[#E6EEFF] dark:from-[#0A0C10] dark:via-[#0E1320] dark:to-[#131C31] flex items-center">
-        <!-- Soft Diagonal Wave & Institutional Ascending Bars Backdrop matching Reference Image -->
+      <section id="mainViewHome" class="relative flex-1 w-full overflow-hidden bg-gradient-to-br from-white via-[#F9FBFF] to-[#EEF4FF] dark:from-[#0A0C10] dark:via-[#0E1320] dark:to-[#131C31] flex items-center">
+        <!-- Point 2: Softened Light Blue Wave & Subtle Ascending Bars Backdrop -->
         <svg class="absolute inset-0 w-full h-full pointer-events-none select-none" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMid slice" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="heroWaveGrad" x1="200" y1="760" x2="1440" y2="80" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#DBEAFE" stop-opacity="0.15" />
-              <stop offset="55%" stop-color="#BFDBFE" stop-opacity="0.45" />
-              <stop offset="100%" stop-color="#93C5FD" stop-opacity="0.65" />
+              <stop offset="0%" stop-color="#EFF6FF" stop-opacity="0.10" />
+              <stop offset="55%" stop-color="#DBEAFE" stop-opacity="0.30" />
+              <stop offset="100%" stop-color="#BFDBFE" stop-opacity="0.45" />
             </linearGradient>
             <linearGradient id="heroBarGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.28" />
-              <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.06" />
+              <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.18" />
+              <stop offset="100%" stop-color="#93C5FD" stop-opacity="0.03" />
             </linearGradient>
           </defs>
 
           <!-- Sweeping diagonal wave -->
-          <path d="M-100 760 C 420 710, 960 440, 1480 40 L 1480 760 Z" fill="url(#heroWaveGrad)" class="dark:opacity-20" />
+          <path d="M-100 760 C 420 710, 960 440, 1480 40 L 1480 760 Z" fill="url(#heroWaveGrad)" class="dark:opacity-15" />
 
-          <!-- Three slanted ascending bars on the right side -->
+          <!-- Three slanted ascending bars on the right side (lightened blue tone) -->
           <polygon points="935,595 985,435 1095,405 1045,595" fill="url(#heroBarGrad)" />
           <polygon points="1075,595 1145,355 1255,325 1185,595" fill="url(#heroBarGrad)" />
           <polygon points="1215,595 1305,275 1415,245 1325,595" fill="url(#heroBarGrad)" />
         </svg>
 
         <div class="relative z-10 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-12 lg:py-20">
-          <div class="max-w-2xl space-y-7">
-            <div class="space-y-4">
-              <!-- Point 4: Refined spacing after Record. and Track. -->
-              <h1 class="text-4xl sm:text-5xl lg:text-[62px] font-extrabold tracking-tight text-[#071330] dark:text-white leading-[1.08]">
+          <div class="max-w-3xl space-y-7">
+            <div>
+              <!-- Point 2: Increased Tagline Size (~15%) & Elevated Higher (+30% Gap Below) without shifting lower elements -->
+              <h1 class="-mt-4 mb-6 text-5xl sm:text-6xl lg:text-[72px] font-extrabold tracking-tight text-[#071330] dark:text-white leading-[1.06]">
                 Record. Track. <span class="text-[#1D4ED8] dark:text-blue-400 italic">Grow.</span>
               </h1>
-              <!-- Point 4: Exact 2-line subtitle break -->
+              <!-- Exact 2-line subtitle break -->
               <p class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
                 Personal stock portfolio tracker and<br>
                 performance engine.
@@ -446,7 +446,7 @@
             </div>
 
             <!-- The 4 Aesthetic Feature Pills Above CTA -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 max-w-2xl">
               <div class="bg-white/90 dark:bg-[#131722]/85 backdrop-blur-sm px-3.5 py-3 rounded-2xl border border-slate-200/80 dark:border-[#222836] shadow-2xs flex items-center space-x-2.5">
                 <div class="text-[#0F172A] dark:text-blue-400 shrink-0"><i data-lucide="layers" class="w-5 h-5"></i></div>
                 <div class="text-xs font-bold text-[#0F172A] dark:text-white leading-tight">Holdings<br>&amp; P&amp;L</div>
@@ -465,7 +465,7 @@
               </div>
             </div>
 
-            <!-- Point 3 & Point 4: Single Primary CTA ("Open My Portfolio" linked directly to Portfolio Holdings View, Learn More removed) -->
+            <!-- Single Primary CTA ("Open My Portfolio" linked directly to Portfolio Holdings View) -->
             <div class="pt-2">
               <button
                 onclick="switchMainView('portfolio')"
@@ -651,10 +651,10 @@
       </div>
 
       <!-- ========================================================== -->
-      <!-- VIEW 2: CHART VIEW (Point 3: Dedicated Full Page for Chart + Tables) -->
+      <!-- VIEW 2: CHART VIEW (Point 3: Symmetrical Top/Bottom Boundaries & Widened Vertical Chart) -->
       <!-- ========================================================== -->
-      <div id="mainViewChart" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
-        <div id="graphsSection" class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-2xs transition-colors duration-200 space-y-4">
+      <div id="mainViewChart" class="flex-1 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col hidden">
+        <div id="graphsSection" class="flex-1 flex flex-col justify-between bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-2xs transition-colors duration-200 space-y-4">
           <div class="flex flex-wrap items-center justify-between gap-3">
 
             <div class="flex items-center space-x-3.5">
@@ -714,13 +714,13 @@
             </div>
           </div>
 
-          <!-- Chart Container -->
-          <div class="h-[330px] w-full relative overflow-hidden">
+          <!-- Chart Container (Expanded vertically so bottom box boundary matches top margin) -->
+          <div class="flex-1 min-h-[430px] lg:min-h-[480px] w-full relative overflow-hidden">
             <canvas id="multiCurveChart"></canvas>
             <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-[#222836] bg-white/95 dark:bg-[#131722]/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
           </div>
 
-          <!-- Trailing 12 Months Accordion -->
+          <!-- Trailing 12 Months Accordion at Box Bottom -->
           <div class="pt-2 border-t border-slate-100 dark:border-[#222836]/80">
             <button
               type="button"
