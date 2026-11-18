@@ -156,10 +156,10 @@
 
           <!-- Center/Left Nav Links (Dashboard, Chart, Transactions, Products, Live Prices) -->
           <nav class="hidden md:flex items-center space-x-1 lg:space-x-2 text-[14px] font-semibold">
-            <!-- 1. Portfolio (existing Holdings view) -->
-            <button onclick="switchMainView('portfolio')" id="navLink-dashboard" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
-              <i data-lucide="briefcase-business" class="w-4 h-4"></i>
-              <span>Portfolio</span>
+            <!-- 1. Dashboard (KPI Cards Full Page) -->
+            <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>Dashboard</span>
             </button>
 
             <!-- 2. Chart (Opens Chart + TTM/RoC Tables Full Page) -->
@@ -465,13 +465,13 @@
               </div>
             </div>
 
-            <!-- Single Primary CTA opens the redesigned Dashboard -->
+            <!-- Single Primary CTA ("Open My Portfolio" linked directly to Portfolio Holdings View) -->
             <div class="pt-2">
               <button
-                onclick="switchMainView('dashboard')"
+                onclick="switchMainView('portfolio')"
                 class="inline-flex items-center space-x-3 px-7 py-4 rounded-2xl bg-[#071330] dark:bg-blue-600 hover:bg-[#0F2354] dark:hover:bg-blue-500 text-white font-bold text-[15px] shadow-lg shadow-blue-950/15 transition transform active:scale-95 cursor-pointer"
               >
-                <span>Open Dashboard</span>
+                <span>Open My Portfolio</span>
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
             </div>
@@ -480,99 +480,175 @@
       </section>
 
       <!-- ========================================================== -->
-      <!-- VIEW 1: DASHBOARD VIEW (KPI Selector + Compact Performance Trend) -->
+      <!-- VIEW 1: DASHBOARD VIEW (Dedicated Full Page - KPI Cards) -->
       <!-- ========================================================== -->
-      <section id="mainViewDashboard" class="dashboard-page w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-5 hidden">
+      <div id="mainViewDashboard" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
+        <!-- KPI METRIC CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
 
-        <!-- Dashboard heading -->
-        <div class="dashboard-heading flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Dashboard</h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Your portfolio at a glance</p>
-          </div>
-          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Portfolio overview</span>
-          </div>
-        </div>
-
-        <!-- Five selectable KPI metrics. Existing KPI IDs are retained for ui.js. -->
-        <div id="dashboardKpiPanel" class="dashboard-kpi-panel bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs overflow-hidden">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-[#222836]">
-
-            <!-- Total Net Worth: default selected KPI -->
-            <button type="button" id="dashboardKpi-netWorth" data-dashboard-kpi="netWorth" aria-pressed="true" onclick="selectDashboardKpi('netWorth')" class="dashboard-kpi-card is-active text-left p-4 sm:p-5 min-w-0 transition-colors">
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Total Net Worth</span>
-                <span class="flex items-center gap-1.5">
-                  <span class="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center"><i data-lucide="wallet" class="w-4 h-4"></i></span>
-                  <span onclick="event.stopPropagation(); toggleSingleKpiMask('netWorth')" role="button" tabindex="0" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-500 dark:text-slate-300 flex items-center justify-center" title="Toggle Net Worth Mask"><i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-3.5 h-3.5"></i></span>
-                </span>
+          <!-- 1. TOTAL NET WORTH -->
+          <div class="col-span-1 sm:col-span-2 lg:col-span-2 bg-gradient-to-br from-white via-white to-blue-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-blue-100 dark:border-[#222836] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Total Net Worth</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="toggleSingleKpiMask('netWorth')" class="h-8 w-8 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Worth Mask">
+                    <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-4 h-4"></i>
+                  </button>
+                  <div onclick="openGoalModal('netWorth')" class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Worth Target">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                  </div>
+                </div>
               </div>
-              <div id="kpiNetWorth" class="text-2xl font-extrabold text-blue-700 dark:text-blue-400 tabular-nums tracking-tight leading-none">₹0.00</div>
-              <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Holdings <b id="subPortfolioVal" class="font-semibold text-slate-700 dark:text-slate-300">₹0</b><span class="mx-1.5">·</span>Cash <b id="subCashVal" class="font-semibold text-slate-700 dark:text-slate-300">₹0</b></div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-semibold"><span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span><span id="kpiNetWorthRem" class="text-slate-500 dark:text-slate-400">₹0 left</span></div>
-              <div class="mt-1.5 h-1.5 rounded-full bg-blue-100 dark:bg-blue-950/70 overflow-hidden"><div id="kpiNetWorthBar" class="h-full rounded-full bg-blue-600 transition-all duration-500" style="width:0%"></div></div>
-              <div onclick="event.stopPropagation(); openGoalModal('netWorth')" class="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline" role="button" tabindex="0"><i data-lucide="target" class="w-3 h-3"></i>Set target</div>
-            </button>
 
-            <!-- Net Invested -->
-            <button type="button" id="dashboardKpi-netInvested" data-dashboard-kpi="netInvested" aria-pressed="false" onclick="selectDashboardKpi('netInvested')" class="dashboard-kpi-card text-left p-4 sm:p-5 min-w-0 transition-colors">
-              <div class="flex items-center justify-between gap-2 mb-3"><span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Net Invested</span><span class="flex items-center gap-1.5"><span class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center"><i data-lucide="layers" class="w-4 h-4"></i></span><span onclick="event.stopPropagation(); toggleSingleKpiMask('netInvested')" role="button" tabindex="0" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-500 flex items-center justify-center" title="Toggle Net Invested Mask"><i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i></span></span></div>
-              <div id="kpiNetInvested" class="text-xl font-bold text-slate-900 dark:text-white tabular-nums">₹0.00</div><div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Contributed corpus</div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-semibold"><span id="kpiNetInvestedPct" class="text-slate-600 dark:text-slate-300">0.00%</span><span id="kpiNetInvestedRem" class="text-slate-500">₹0 left</span></div><div class="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div id="kpiNetInvestedBar" class="h-full rounded-full bg-slate-500" style="width:0%"></div></div>
-              <div onclick="event.stopPropagation(); openGoalModal('netInvested')" class="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:underline" role="button" tabindex="0"><i data-lucide="target" class="w-3 h-3"></i>Set target</div>
-            </button>
+              <div id="kpiNetWorth" class="text-[26px] lg:text-[28px] font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
 
-            <!-- Lifetime P&L -->
-            <button type="button" id="dashboardKpi-lifetimePnL" data-dashboard-kpi="lifetimePnL" aria-pressed="false" onclick="selectDashboardKpi('lifetimePnL')" class="dashboard-kpi-card text-left p-4 sm:p-5 min-w-0 transition-colors">
-              <div class="flex items-center justify-between gap-2 mb-3"><span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Lifetime P&amp;L</span><span class="flex items-center gap-1.5"><span class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><i data-lucide="trending-up" class="w-4 h-4"></i></span><span onclick="event.stopPropagation(); toggleSingleKpiMask('lifetimePnL')" role="button" tabindex="0" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-500 flex items-center justify-center" title="Toggle Lifetime P&L Mask"><i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i></span></span></div>
-              <div id="kpiLifetimePnL" class="text-xl font-bold text-slate-900 dark:text-white tabular-nums">₹0.00</div><div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-semibold"><span id="kpiLifetimeTargetPct" class="text-slate-600 dark:text-slate-300">0.00%</span><span id="kpiLifetimeTargetRem" class="text-slate-500">₹0 left</span></div><div class="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div id="kpiLifetimeBar" class="h-full rounded-full bg-emerald-500" style="width:0%"></div></div>
-              <div onclick="event.stopPropagation(); openGoalModal('lifetimePnL')" class="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:underline" role="button" tabindex="0"><i data-lucide="target" class="w-3 h-3"></i>Set target</div>
-            </button>
-
-            <!-- Current FY P&L -->
-            <button type="button" id="dashboardKpi-currentFy" data-dashboard-kpi="currentFy" aria-pressed="false" onclick="selectDashboardKpi('currentFy')" class="dashboard-kpi-card text-left p-4 sm:p-5 min-w-0 transition-colors">
-              <div class="flex items-center justify-between gap-2 mb-3"><span id="kpiCurrentFyCardTitle" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Current FY</span><span class="flex items-center gap-1.5"><span class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center"><i data-lucide="calendar-days" class="w-4 h-4"></i></span><span onclick="event.stopPropagation(); toggleSingleKpiMask('currentFy')" role="button" tabindex="0" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-500 flex items-center justify-center" title="Toggle Current FY Mask"><i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i></span></span></div>
-              <div class="space-y-1 mt-1"><div class="flex items-baseline justify-between gap-1"><span class="text-[10px] text-slate-500">Realized</span><span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-slate-900 dark:text-white">₹0.00</span></div><div class="flex items-baseline justify-between gap-1"><span class="text-[10px] text-slate-500">Unrealized</span><span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-300">₹0.00</span></div></div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-semibold"><span id="kpiCurrentFyPct" class="text-slate-600 dark:text-slate-300">0.00%</span><span id="kpiCurrentFyRem" class="text-slate-500">₹0 left</span></div><div class="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div id="kpiCurrentFyBar" class="h-full rounded-full bg-amber-500" style="width:0%"></div></div>
-              <div onclick="event.stopPropagation(); openGoalModal('currentFyPnL')" class="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:underline" role="button" tabindex="0"><i data-lucide="target" class="w-3 h-3"></i>Set target</div>
-            </button>
-
-            <!-- Annualized XIRR -->
-            <button type="button" id="dashboardKpi-xirr" data-dashboard-kpi="xirr" aria-pressed="false" onclick="selectDashboardKpi('xirr')" class="dashboard-kpi-card text-left p-4 sm:p-5 min-w-0 transition-colors">
-              <div class="flex items-center justify-between gap-2 mb-3"><span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Annualized XIRR</span><span class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-600 dark:text-slate-300 flex items-center justify-center"><i data-lucide="percent" class="w-4 h-4"></i></span></div>
-              <div id="kpiXIRR" class="text-xl font-bold text-slate-900 dark:text-white tabular-nums">0.00%</div><div id="kpiXirrInception" class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Since —</div><div class="mt-3 flex items-center justify-between text-[11px] font-semibold"><span id="kpiXirrPct" class="text-slate-600 dark:text-slate-300">0.00%</span><span id="kpiXirrRem" class="text-slate-500">0.00% left</span></div><div class="mt-1.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div id="kpiXirrBar" class="h-full rounded-full bg-slate-500" style="width:0%"></div></div>
-              <div onclick="event.stopPropagation(); openGoalModal('xirr')" class="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:underline" role="button" tabindex="0"><i data-lucide="target" class="w-3 h-3"></i>Set hurdle</div>
-            </button>
-          </div>
-        </div>
-
-        <!-- Single large dashboard trend chart; isolated from the dedicated Chart page. -->
-        <section id="dashboardTrendPanel" class="dashboard-chart-panel bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs p-4 sm:p-5">
-          <div class="dashboard-chart-header flex flex-wrap items-start justify-between gap-3">
-            <div><h2 class="text-base font-bold text-slate-900 dark:text-white">Performance Trend</h2><p id="dashboardChartDescription" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Portfolio value over time</p></div>
-            <div class="text-right"><div id="dashboardChartMetric" class="text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">—</div><div id="dashboardChartMetricLabel" class="text-[10px] text-slate-500 dark:text-slate-400">Total Net Worth</div></div>
-          </div>
-          <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
-            <div id="dashboardChartFilters" class="inline-flex flex-wrap items-center gap-1 rounded-xl bg-slate-100 dark:bg-[#0A0C10] p-1" role="group" aria-label="Chart time range">
-              <button type="button" data-dashboard-range="1M" onclick="selectDashboardRange('1M')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">1M</button>
-              <button type="button" data-dashboard-range="3M" onclick="selectDashboardRange('3M')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">3M</button>
-              <button type="button" data-dashboard-range="6M" onclick="selectDashboardRange('6M')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">6M</button>
-              <button type="button" data-dashboard-range="1Y" onclick="selectDashboardRange('1Y')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">1Y</button>
-              <button type="button" data-dashboard-range="3Y" onclick="selectDashboardRange('3Y')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">3Y</button>
-              <button type="button" data-dashboard-range="5Y" onclick="selectDashboardRange('5Y')" class="dashboard-chart-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">5Y</button>
-              <button type="button" data-dashboard-range="ALL" onclick="selectDashboardRange('ALL')" class="dashboard-chart-filter is-selected px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#222836] text-slate-900 dark:text-white shadow-sm">All</button>
+              <div class="mt-2 text-[11.5px] flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                <span>Holdings: <b id="subPortfolioVal" class="text-slate-700 dark:text-slate-300 font-semibold transition-all duration-200">₹0</b></span>
+                <span>•</span>
+                <span>Cash: <b id="subCashVal" class="text-slate-700 dark:text-slate-300 font-semibold transition-all duration-200">₹0</b></span>
+              </div>
             </div>
-            <span id="dashboardChartAxisLabel" class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Value (₹)</span>
-          </div>
-          <div class="relative mt-4 h-[300px] sm:h-[360px] lg:h-[410px] w-full">
-            <canvas id="dashboardTrendChart" aria-label="Selected portfolio metric trend chart" role="img"></canvas>
-            <div id="dashboardChartEmpty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-400 pointer-events-none">Performance history will appear here when chart data is connected.</div>
-          </div>
-        </section>
 
-      </section>
+            <div class="mt-3.5 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+                <span id="kpiNetWorthPct" class="text-blue-600 dark:text-blue-400">0.00%</span>
+                <span id="kpiNetWorthRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
+              </div>
+              <div class="w-full bg-blue-100/70 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiNetWorthBar" class="bg-gradient-to-r from-blue-600 to-blue-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. NET INVESTED -->
+          <div class="col-span-1 bg-gradient-to-br from-white via-white to-rose-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-rose-100 dark:border-[#222836] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Net Invested</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
+                    <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <div onclick="openGoalModal('netInvested')" class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Net Invested Target">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div id="kpiNetInvested" class="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
+              <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Contributed Corpus</div>
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+                <span id="kpiNetInvestedPct" class="text-rose-600 dark:text-rose-400">0.00%</span>
+                <span id="kpiNetInvestedRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
+              </div>
+              <div class="w-full bg-rose-100/70 dark:bg-rose-950/60 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiNetInvestedBar" class="bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. LIFETIME P&L -->
+          <div class="col-span-1 bg-gradient-to-br from-white via-white to-emerald-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-emerald-100 dark:border-[#222836] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Lifetime P&amp;L</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
+                    <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <div onclick="openGoalModal('lifetimePnL')" class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Lifetime Profit Target">
+                    <i data-lucide="award" class="w-3.5 h-3.5"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div id="kpiLifetimePnL" class="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-none mt-1 transition-all duration-200">₹0.00</div>
+              <div id="kpiLifetimePnLPct" class="mt-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">+0.00%</div>
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+                <span id="kpiLifetimeTargetPct" class="text-emerald-600 dark:text-emerald-400">0.00%</span>
+                <span id="kpiLifetimeTargetRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
+              </div>
+              <div class="w-full bg-emerald-100/70 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiLifetimeBar" class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. CURRENT FY -->
+          <div class="col-span-1 bg-gradient-to-br from-white via-white to-amber-50/40 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-amber-100 dark:border-[#222836] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight" id="kpiCurrentFyCardTitle">Current FY</span>
+                <div class="flex items-center space-x-1.5">
+                  <button onclick="toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
+                    <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <div onclick="openGoalModal('currentFyPnL')" class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set Current FY Realized Target">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-1 mt-1">
+                <div class="flex items-baseline justify-between">
+                  <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Realized:</span>
+                  <span id="kpiCurrentFyPnL" class="text-sm font-bold tabular-nums text-amber-600 dark:text-amber-400 transition-all duration-200">₹0.00</span>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Unrealized:</span>
+                  <span id="kpiCurrentFyUnrealized" class="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-300 transition-all duration-200">₹0.00</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+                <span id="kpiCurrentFyPct" class="text-amber-600 dark:text-amber-400">0.00%</span>
+                <span id="kpiCurrentFyRem" class="text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
+              </div>
+              <div class="w-full bg-amber-100/70 dark:bg-amber-950/60 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiCurrentFyBar" class="bg-gradient-to-r from-amber-500 to-amber-300 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. ANNUALIZED XIRR -->
+          <div class="col-span-1 bg-gradient-to-br from-white via-white to-slate-100/60 dark:from-[#131722] dark:via-[#131722] dark:to-[#1A1F2E] p-4 rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">Annualized XIRR</span>
+                  <span id="kpiXirrInception" class="text-[10px] text-slate-400 dark:text-slate-500 font-medium block mt-0.5">Since —</span>
+                </div>
+                <div onclick="openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform" title="Click to set XIRR Hurdle Target">
+                  <i data-lucide="percent" class="w-3.5 h-3.5"></i>
+                </div>
+              </div>
+
+              <div id="kpiXIRR" class="text-xl font-bold tabular-nums text-slate-800 dark:text-slate-100 tracking-tight leading-none mt-1">0.00%</div>
+              <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">Cash Flow IRR</div>
+            </div>
+
+            <div class="mt-3 pt-2 border-t border-slate-100 dark:border-[#222836]/80">
+              <div class="flex items-center justify-between text-[11px] mb-1.5 font-semibold">
+                <span id="kpiXirrPct" class="text-slate-700 dark:text-slate-300">0.00%</span>
+                <span id="kpiXirrRem" class="text-slate-500 dark:text-slate-400">0.00% left</span>
+              </div>
+              <div class="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiXirrBar" class="bg-gradient-to-r from-slate-600 to-slate-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
       <!-- ========================================================== -->
       <!-- VIEW 2: CHART VIEW (Point 3: Symmetrical Top/Bottom Boundaries & Widened Vertical Chart) -->
@@ -1840,41 +1916,5 @@
   <script src="js/engine.js"></script>
   <script src="js/tax.js"></script>
   <script src="js/ui.js"></script>
-  <script>
-    // Dashboard-only visual selection state. Chart data/rendering is intentionally
-    // kept separate from the existing full-page Chart view and is wired in ui.js.
-    function selectDashboardKpi(key) {
-      document.querySelectorAll('[data-dashboard-kpi]').forEach((card) => {
-        const active = card.dataset.dashboardKpi === key;
-        card.classList.toggle('is-active', active);
-        card.setAttribute('aria-pressed', active ? 'true' : 'false');
-      });
-      const labels = {
-        netWorth: ['Total Net Worth', 'Portfolio value over time', 'Value (₹)'],
-        netInvested: ['Net Invested', 'Contributed capital over time', 'Value (₹)'],
-        lifetimePnL: ['Lifetime P&L', 'Lifetime portfolio profit and loss', 'Value (₹)'],
-        currentFy: ['Current FY P&L', 'Current financial-year profit and loss', 'Value (₹)'],
-        xirr: ['Annualized XIRR', 'Annualized cash-flow return over time', 'Return (%)']
-      };
-      const item = labels[key] || labels.netWorth;
-      const metricLabel = document.getElementById('dashboardChartMetricLabel');
-      const description = document.getElementById('dashboardChartDescription');
-      const axis = document.getElementById('dashboardChartAxisLabel');
-      if (metricLabel) metricLabel.textContent = item[0];
-      if (description) description.textContent = item[1];
-      if (axis) axis.textContent = item[2];
-    }
-    function selectDashboardRange(range) {
-      document.querySelectorAll('[data-dashboard-range]').forEach((button) => {
-        const active = button.dataset.dashboardRange === range;
-        button.classList.toggle('is-selected', active);
-        button.classList.toggle('bg-white', active);
-        button.classList.toggle('dark:bg-[#222836]', active);
-        button.classList.toggle('text-slate-900', active);
-        button.classList.toggle('dark:text-white', active);
-        button.classList.toggle('shadow-sm', active);
-      });
-    }
-  </script>
 </body>
 </html>
