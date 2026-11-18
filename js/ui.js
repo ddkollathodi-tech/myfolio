@@ -332,7 +332,7 @@ function recordBackupTimestamp(customStr) {
       const mm = matches[1];
       const hh = matches[matches.length - 2];
       const min = matches[matches.length - 1];
-      formatted = `${dd} - ${mm}, ${hh}:${min}`;
+      formatted = `${dd}-${mm}, ${hh}:${min}`;
     }
   }
   
@@ -342,7 +342,7 @@ function recordBackupTimestamp(customStr) {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const hh = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
-    formatted = `${dd} - ${mm}, ${hh}:${min}`;
+    formatted = `${dd}-${mm}, ${hh}:${min}`;
   }
 
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
