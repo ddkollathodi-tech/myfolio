@@ -326,10 +326,9 @@ function recordBackupTimestamp(customStr) {
     const d = new Date();
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yy = String(d.getFullYear()).slice(-2);
     const hh = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
-    formatted = `${dd}-${mm}-${yy}, ${hh}:${min}`;
+    formatted = `${dd} - ${mm}, ${hh}:${min}`; // <--- Year excluded, formatted cleanly
   }
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
