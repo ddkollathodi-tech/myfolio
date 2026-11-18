@@ -322,17 +322,29 @@ function renderLastPriceTimestamp() {
 
 function recordBackupTimestamp(customStr) {
   let formatted = customStr;
-  if (!formatted) {
+  
+  if (formatted) {
+    // If a string was passed, let's extract digits to rebuild it cleanly as dd - mm, time
+    const matches = String(formatted).match(/\d+/g);
+    if (matches && matches.length >= 4) {
+      // matches[0] = day, matches[1] = month, [matches[2] = year if present], matches[last-1] = hours, matches[last] = mins
+      const dd = matches[0];
+      const mm = matches[1];
+      const hh = matches[matches.length - 2];
+      const min = matches[matches.length - 1];
+      formatted = `${dd} - ${mm}, ${hh}:${min}`;
+    }
+  }
+  
+  if (!formatted || formatted.includes('undefined')) {
     const d = new Date();
     const dd = String(d.getDate()).padStart(2, '0');
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const hh = String(d.getHours()).padStart(2, '0');
     const min = String(d.getMinutes()).padStart(2, '0');
     formatted = `${dd} - ${mm}, ${hh}:${min}`;
-  } else {
-    // Strip out any 2 or 4-digit year components sent from external sources/cloud sync
-    formatted = String(formatted).replace(/([-/]\d{2,4})/g, '').trim();
   }
+
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
 }
