@@ -392,17 +392,8 @@ function recalculateAndRender() {
   bumpTxVersion();
   const data = getCachedEngineData();
 
-  // Card 1: Total Net Worth
-  document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
-  document.getElementById('subPortfolioVal').innerText = formatCompactIndian(data.totalPortfolioVal);
-  document.getElementById('subCashVal').innerText = formatCompactIndian(data.cashBalance);
-
-  const nwTarget = milestoneGoals.netWorth || 10000000;
-  const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
-  const nwRem = Math.max(0, nwTarget - data.netWorth);
-  document.getElementById('kpiNetWorthPct').innerText = `${nwPct.toFixed(2)}%`;
-  document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
-  document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
+  // Render Dashboard Ribbon Component (Point 2)
+  renderDashboardRibbon(data);
 
   // Card 2: Net Invested
   document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
@@ -504,6 +495,99 @@ function recalculateAndRender() {
   renderTtmTable(data);
   updateHeaderTickerDisplay();
   refreshIcons();
+}
+
+/* ---------------- INTERACTIVE CONTINUOUS RIBBON DASHBOARD (POINT 2) ---------------- */
+let currentDashboardMetric = 'netWorth';
+
+function setDashboardMetric(metricKey) {
+  currentDashboardMetric = metricKey;
+  renderDashboardRibbon(getCachedEngineData());
+  renderDashboardTrendChart(getCachedEngineData());
+  refreshIcons();
+}
+
+function renderDashboardRibbon(data) {
+  const container = document.getElementById('dashboardRibbonContainer');
+  if (!container) return;
+
+  const maskClass = getMaskClass('dashboardRibbon' || 'holdings');
+
+  // Compute values for each metric
+  const nwVal = formatINR(data.netWorth);
+  const nwTarget = milestoneGoals.netWorth || 10000000;
+  const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
+
+  const invVal = formatINR(data.netInvested);
+  const invTarget = milestoneGoals.netInvested || 5000000;
+  const invPct = invTarget > 0 ? Math.min(100, (data.netInvested / invTarget) * 100) : 0;
+
+  const lifeVal = formatINR(data.lifetimePnL);
+  const lifePct = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
+
+  const curFy = getFinancialYear(todayLocalISO());
+  const curFyData = data.fyRealized[curFy] || { gain: 0 };
+  const fyVal = formatINR(curFyData.gain);
+
+  const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
+  const xirrVal = xirrValid ? `${data.xirrValue.toFixed(2)}%` : '—';
+
+  const metrics = [
+    { key: 'netWorth', title: 'Total Net Worth', val: nwVal, sub: `Holdings: ${formatCompactIndian(data.totalPortfolioVal)} | Cash: ${formatCompactIndian(data.cashBalance)}`, pct: `${nwPct.toFixed(2)}%` },
+    { key: 'netInvested', title: 'Net Invested', val: invVal, sub: 'Contributed Corpus', pct: `${invPct.toFixed(2)}%` },
+    { key: 'lifetimePnL', title: 'Lifetime P&L', val: lifeVal, sub: lifePct, pct: lifePct },
+    { key: 'currentFyPnL', title: 'FY P&L', val: fyVal, sub: `Realized: ${formatCompactIndian(curFyData.gain)}`, pct: '0.00%' },
+    { key: 'xirr', title: 'Annualized XIRR', val: xirrVal, sub: 'Since Jun 2022', pct: xirrVal }
+  ];
+
+  container.innerHTML = metrics.map((m) => {
+    const isActive = currentDashboardMetric === m.key;
+    const activeClass = isActive ? 'active-segment' : '';
+    return `
+      <div onclick="setDashboardMetric('${m.key}')" class="metric-ribbon-segment ${activeClass} flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-tight">${m.title}</span>
+            <div class="flex items-center space-x-1.5">
+              <div class="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <i data-lucide="${m.key === 'netWorth' ? 'wallet' : m.key === 'netInvested' ? 'layers' : m.key === 'lifetimePnL' ? 'award' : m.key === 'currentFyPnL' ? 'calendar' : 'percent'}" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+          </div>
+          <div class="text-xl lg:text-2xl font-extrabold text-blue-600 dark:text-blue-400 tabular-nums tracking-tight leading-none mt-1 ${maskClass}">${m.val}</div>
+          <div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">${m.sub}</div>
+        </div>
+        <div class="mt-3 pt-2 border-t border-slate-200/60 dark:border-[#222836]/80">
+          <div class="flex items-center justify-between text-[11px] font-semibold">
+            <span class="text-blue-600 dark:text-blue-400">${m.pct}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderDashboardTrendChart(data) {
+  const titleEl = document.getElementById('dashboardTrendTitle');
+  const subEl = document.getElementById('dashboardTrendSubtitle');
+  if (!titleEl || !subEl) return;
+
+  if (currentDashboardMetric === 'netWorth') {
+    titleEl.innerText = 'Total Net Worth – Trend';
+    subEl.innerText = 'Portfolio value over time';
+  } else if (currentDashboardMetric === 'netInvested') {
+    titleEl.innerText = 'Net Invested – Trend';
+    subEl.innerText = 'Contributed capital corpus over time';
+  } else if (currentDashboardMetric === 'lifetimePnL') {
+    titleEl.innerText = 'Lifetime P&L – Trend';
+    subEl.innerText = 'Cumulative profit growth over time';
+  } else if (currentDashboardMetric === 'currentFyPnL') {
+    titleEl.innerText = 'FY Realized P&L – Trend';
+    subEl.innerText = 'Realized gains trajectory';
+  } else if (currentDashboardMetric === 'xirr') {
+    titleEl.innerText = 'Annualized XIRR – Trend';
+    subEl.innerText = 'Cash flow return rate over time';
+  }
 }
 
 function renderActiveTabOnly(data) {
@@ -1976,25 +2060,27 @@ function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
     order: opts.order || 1
   });
 
-  if (currentChartView === 'roc') {
-    const rateLbl = getRocRateLabel();
-    return [
-      baseLine('Actual Track', displayPoints.map(p => p.actualVal), '#2563eb', { bg: blueGradient, fill: true, width: 2.4, order: 1 }),
-      baseLine('Capital Base', displayPoints.map(p => p.netCapBase), '#dc2626', { order: 2 }),
-      baseLine(`Pure ${rateLbl} Hurdle`, displayPoints.map(p => p.pureTarget), '#f59e0b', { dash: [3, 3], radius: 3.0, order: 3 }),
-      baseLine('Extreme Target', displayPoints.map(p => p.ratchetTarget), '#9333ea', { dash: [6, 4], order: 4 })
-    ];
+  // Dynamically map dataset based on selected dashboard metric (Point 2)
+  let metricPoints = displayPoints.map(p => p.portfolioValue);
+  let lineColor = '#2563eb';
+  let gradientFill = blueGradient;
+
+  if (currentDashboardMetric === 'netInvested') {
+    metricPoints = displayPoints.map(p => p.netCapital);
+    lineColor = '#dc2626';
+  } else if (currentDashboardMetric === 'lifetimePnL') {
+    metricPoints = displayPoints.map(p => p.profit);
+    lineColor = '#16a34a';
+  } else if (currentDashboardMetric === 'currentFyPnL') {
+    metricPoints = displayPoints.map(p => p.profit);
+    lineColor = '#d97706';
+  } else if (currentDashboardMetric === 'xirr') {
+    metricPoints = displayPoints.map(p => p.portfolioValue);
+    lineColor = '#4f46e5';
   }
 
-  const greenGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
-  greenGradient.addColorStop(0, isDark ? 'rgba(22, 163, 74, 0.14)' : 'rgba(22, 163, 74, 0.10)');
-  greenGradient.addColorStop(0.5, isDark ? 'rgba(22, 163, 74, 0.04)' : 'rgba(22, 163, 74, 0.03)');
-  greenGradient.addColorStop(1, 'rgba(22, 163, 74, 0.00)');
-
   return [
-    baseLine('Net Worth', displayPoints.map(p => p.portfolioValue), '#2563eb', { bg: blueGradient, fill: true, width: 2.2, order: 1 }),
-    baseLine('My Capital', displayPoints.map(p => p.netCapital), '#dc2626', { order: 2 }),
-    baseLine('Profit', displayPoints.map(p => p.profit), '#16a34a', { bg: greenGradient, fill: true, dash: [4, 4], order: 3 })
+    baseLine(currentDashboardMetric.toUpperCase(), metricPoints, lineColor, { bg: gradientFill, fill: true, width: 2.2, order: 1 })
   ];
 }
 
@@ -2107,7 +2193,7 @@ function closeAllTopDropdowns(exceptId = null) {
   }
 }
 
-/* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
+/* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN (POINT 3 SWAP) ---------------- */
 function switchMainView(view) {
   const homeEl = document.getElementById('mainViewHome');
   const dashEl = document.getElementById('mainViewDashboard');
@@ -2139,6 +2225,9 @@ function switchMainView(view) {
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
+    const data = getCachedEngineData();
+    renderDashboardRibbon(data);
+    renderDashboardTrendChart(data);
   } else if (view === 'chart') {
     if (chartEl) chartEl.classList.remove('hidden');
     if (btnChart) btnChart.className = activeClasses;
