@@ -333,9 +333,6 @@ function recordBackupTimestamp(customStr) {
   localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
   renderLastBackupTimestamp();
 }
-  localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
-  renderLastBackupTimestamp();
-}
 
 function renderLastBackupTimestamp() {
   const val = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
