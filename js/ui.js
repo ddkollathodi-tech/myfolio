@@ -7,6 +7,8 @@ let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
 let activeTabKey = 'holdings';
 let pendingPinActionCallback = null;
+let headerTickerInterval = null;
+let headerTickerStep = 0;
 
 // Memoization & Dirty-Tab Tracking
 let txVersion = 0;
@@ -60,6 +62,62 @@ function refreshIcons() {
   });
 }
 
+/* ---------------- ROTATING HEADER INFO TICKER (POINT 2) ---------------- */
+function initHeaderInfoTicker() {
+  if (headerTickerInterval) clearInterval(headerTickerInterval);
+  updateHeaderTickerDisplay();
+  headerTickerInterval = setInterval(() => {
+    headerTickerStep = (headerTickerStep + 1) % 3;
+    updateHeaderTickerDisplay();
+  }, 4000);
+}
+
+function updateHeaderTickerDisplay() {
+  const container = document.getElementById('tickerActiveItem');
+  if (!container) return;
+
+  const syncStatusEl = document.getElementById('syncStatus');
+  const syncStatusText = syncStatusEl ? syncStatusEl.innerText.trim() : (cloudScriptUrl ? 'Synced' : 'Not synced');
+  const priceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
+  const backupTime = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME') || 'Not backed up yet';
+
+  let dotColor = 'bg-emerald-500 dark:bg-emerald-400';
+  if (syncStatusText === 'Syncing') {
+    dotColor = 'bg-amber-500 animate-pulse';
+  } else if (syncStatusText === 'Not synced' || syncStatusText === 'Sync error') {
+    dotColor = 'bg-rose-500';
+  }
+
+  let html = '';
+  if (headerTickerStep === 0) {
+    html = `
+      <span id="syncDot" class="inline-flex items-center shrink-0"><span class="w-2 h-2 rounded-full ${dotColor} inline-block"></span></span>
+      <span id="syncStatus" class="font-semibold text-slate-700 dark:text-slate-200 animate-ticker">${esc(syncStatusText)}</span>
+    `;
+  } else if (headerTickerStep === 1) {
+    html = `
+      <span id="syncDot" class="hidden"></span>
+      <span id="syncStatus" class="hidden">${esc(syncStatusText)}</span>
+      <span class="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 animate-ticker">
+        <i data-lucide="tag" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
+        <span>Price: <b class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">${esc(priceTime)}</b></span>
+      </span>
+    `;
+  } else {
+    html = `
+      <span id="syncDot" class="hidden"></span>
+      <span id="syncStatus" class="hidden">${esc(syncStatusText)}</span>
+      <span onclick="triggerManualDatabaseBackup()" class="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer animate-ticker" title="Click to trigger manual database backup">
+        <i data-lucide="database-backup" class="w-3.5 h-3.5 text-emerald-500 shrink-0"></i>
+        <span>Backup: <b class="text-slate-800 dark:text-slate-200 font-semibold tabular-nums">${esc(backupTime)}</b></span>
+      </span>
+    `;
+  }
+
+  container.innerHTML = html;
+  refreshIcons();
+}
+
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
@@ -68,6 +126,7 @@ function init() {
   updateSyncUI();
   renderLastPriceTimestamp();
   renderLastBackupTimestamp();
+  initHeaderInfoTicker();
   initAutoLockEngine();
   initKeyboardPinListener();
   resetKpiMasksToDefault();
@@ -250,6 +309,7 @@ function renderLastPriceTimestamp() {
   const val = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
   const el = document.getElementById('lastSyncedTime');
   if (el) el.innerText = val || 'Not refreshed yet';
+  if (headerTickerStep === 1) updateHeaderTickerDisplay();
 }
 
 function recordBackupTimestamp(customStr) {
@@ -271,6 +331,7 @@ function renderLastBackupTimestamp() {
   const val = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
   const el = document.getElementById('lastBackupTime');
   if (el) el.innerText = val || 'Not backed up yet';
+  if (headerTickerStep === 2) updateHeaderTickerDisplay();
 }
 
 /* ---------------- AUTOCOMPLETE SUGGESTIONS ---------------- */
@@ -993,7 +1054,7 @@ function getFilteredProfitablePurificationLots(engineData) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
-  // Point 4: Filter strictly to profitable closed lots (gain > 0)
+  // Filter strictly to profitable closed lots (gain > 0)
   return (source.purificationLots || []).filter(lot => {
     if (Number(lot.gain || 0) <= 0) return false;
     if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
@@ -1344,6 +1405,7 @@ function toggleChartViewDropdown(e) {
   if (!menu) return;
 
   const isHidden = menu.classList.contains('hidden');
+  closeAllTopDropdowns();
   menu.classList.toggle('hidden', !isHidden);
   if (chevron) chevron.classList.toggle('rotate-180', isHidden);
 }
@@ -2006,42 +2068,66 @@ function renderChart(computed) {
   });
 }
 
+/* ---------------- DROPDOWN AUTO-COLLAPSE MANAGER (POINT 1) ---------------- */
+function closeAllTopDropdowns(exceptId = null) {
+  if (exceptId !== 'txDropdownMenu') {
+    closeTxDropdown();
+  }
+  if (exceptId !== 'productsDropdownMenu') {
+    closeProductsDropdown();
+  }
+  if (exceptId !== 'settingsDropdownMenu') {
+    closeSettingsDropdown();
+  }
+  if (exceptId !== 'chartViewDropdownMenu') {
+    closeChartViewDropdown();
+  }
+}
+
 /* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
 function switchMainView(view) {
   const homeEl = document.getElementById('mainViewHome');
   const dashEl = document.getElementById('mainViewDashboard');
+  const chartEl = document.getElementById('mainViewChart');
   const portEl = document.getElementById('mainViewPortfolio');
   const prodEl = document.getElementById('mainViewProducts');
 
   const btnDash = document.getElementById('navLink-dashboard');
-  const btnPort = document.getElementById('navLink-portfolio');
+  const btnChart = document.getElementById('navLink-chart');
   const btnProd = document.getElementById('navLink-products');
 
-  const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
-  const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
+  const activeClasses = 'px-3.5 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
+  const inactiveClasses = 'px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
 
   if (homeEl) homeEl.classList.add('hidden');
   if (dashEl) dashEl.classList.add('hidden');
+  if (chartEl) chartEl.classList.add('hidden');
   if (portEl) portEl.classList.add('hidden');
   if (prodEl) prodEl.classList.add('hidden');
 
   if (btnDash) btnDash.className = inactiveClasses;
-  if (btnPort) btnPort.className = inactiveClasses;
+  if (btnChart) btnChart.className = inactiveClasses;
   if (btnProd) btnProd.className = inactiveClasses;
 
-  closeProductsDropdown();
-  closeTxDropdown();
+  closeAllTopDropdowns();
 
   if (view === 'home') {
     if (homeEl) homeEl.classList.remove('hidden');
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
+  } else if (view === 'chart') {
+    if (chartEl) chartEl.classList.remove('hidden');
+    if (btnChart) btnChart.className = activeClasses;
+    const data = getCachedEngineData();
+    renderChartLegend();
+    renderChart(data);
+    renderTtmTable(data);
   } else if (view === 'portfolio') {
     if (portEl) portEl.classList.remove('hidden');
-    if (btnPort) btnPort.className = activeClasses;
     switchSubTab('holdings');
   }
+  refreshIcons();
 }
 
 function switchSubTab(subTabKey) {
@@ -2050,26 +2136,27 @@ function switchSubTab(subTabKey) {
   const prodEl = document.getElementById('mainViewProducts');
   const portEl = document.getElementById('mainViewPortfolio');
   const dashEl = document.getElementById('mainViewDashboard');
+  const chartEl = document.getElementById('mainViewChart');
 
-  const btnPort = document.getElementById('navLink-portfolio');
+  const btnChart = document.getElementById('navLink-chart');
   const btnProd = document.getElementById('navLink-products');
   const btnDash = document.getElementById('navLink-dashboard');
 
-  const activeClasses = 'px-3.5 py-1.5 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
-  const inactiveClasses = 'px-3.5 py-1.5 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
+  const activeClasses = 'px-3.5 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
+  const inactiveClasses = 'px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
 
   if (homeEl) homeEl.classList.add('hidden');
   if (dashEl) dashEl.classList.add('hidden');
+  if (chartEl) chartEl.classList.add('hidden');
   if (portEl) portEl.classList.add('hidden');
   if (prodEl) prodEl.classList.add('hidden');
 
   if (btnDash) btnDash.className = inactiveClasses;
-  if (btnPort) btnPort.className = inactiveClasses;
+  if (btnChart) btnChart.className = inactiveClasses;
   if (btnProd) btnProd.className = inactiveClasses;
 
   if (subTabKey === 'holdings') {
     if (portEl) portEl.classList.remove('hidden');
-    if (btnPort) btnPort.className = activeClasses;
   } else {
     if (prodEl) prodEl.classList.remove('hidden');
     if (btnProd) btnProd.className = activeClasses;
@@ -2083,8 +2170,7 @@ function switchSubTab(subTabKey) {
     if (activeContent) activeContent.classList.remove('hidden');
   }
 
-  closeProductsDropdown();
-  closeTxDropdown();
+  closeAllTopDropdowns();
 
   if (subTabKey === 'taxPnl') {
     setTaxAccountFilter(currentTaxAccountFilter || 'Me');
@@ -2101,6 +2187,7 @@ function toggleProductsDropdown(e) {
   const chevron = document.getElementById('productsDropdownChevron');
   if (!menu) return;
   const isHidden = menu.classList.contains('hidden');
+  closeAllTopDropdowns('productsDropdownMenu');
   menu.classList.toggle('hidden', !isHidden);
   if (chevron) chevron.classList.toggle('rotate-180', isHidden);
 }
@@ -2136,6 +2223,8 @@ function toggleTxDropdown(e) {
   const chevron = document.getElementById('txDropdownChevron');
   const isHidden = menu.classList.contains('hidden');
 
+  closeAllTopDropdowns('txDropdownMenu');
+
   if (isHidden) {
     menu.classList.remove('hidden');
     menu.classList.add('max-h-[65vh]', 'overflow-y-auto', 'custom-scroll');
@@ -2166,11 +2255,7 @@ function closeCorpActionSubmenu() {
 }
 
 function selectDropdownPreset(type) {
-  const menu = document.getElementById('txDropdownMenu');
-  const chevron = document.getElementById('txDropdownChevron');
-  if (menu) menu.classList.add('hidden');
-  if (chevron) chevron.classList.remove('rotate-180');
-  closeCorpActionSubmenu();
+  closeAllTopDropdowns();
   openPresetModal(type);
 }
 
@@ -2544,7 +2629,7 @@ function manualOverridePrice(stock, cur) {
 
 /* ---------------- LAST 10 TRANSACTIONS & PIN-GATED EDIT / DELETE ---------------- */
 function openRecentTransactionsModal() {
-  closeSettingsDropdown();
+  closeAllTopDropdowns();
   renderRecentTransactionsTable();
   document.getElementById('recentTxModal').classList.remove('hidden');
   refreshIcons();
@@ -2707,6 +2792,7 @@ function updateSortHeaderIcons(prefix, currentSort, columns) {
 
 /* ---------------- MANUAL LTP ENTRY MODAL ---------------- */
 function openLivePricesModal() {
+  closeAllTopDropdowns();
   const modal = document.getElementById('livePricesModal');
   const container = document.getElementById('livePricesContainer');
   container.innerHTML = '';
@@ -2988,18 +3074,24 @@ function commitMonthEndSnapshot() {
 function toggleSettingsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('settingsDropdownMenu');
+  const chevron = document.getElementById('settingsDropdownChevron');
   if (!menu) return;
-  menu.classList.toggle('hidden');
+  const isHidden = menu.classList.contains('hidden');
+  closeAllTopDropdowns('settingsDropdownMenu');
+  menu.classList.toggle('hidden', !isHidden);
+  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
 }
 
 function closeSettingsDropdown() {
   const menu = document.getElementById('settingsDropdownMenu');
+  const chevron = document.getElementById('settingsDropdownChevron');
   if (menu) menu.classList.add('hidden');
+  if (chevron) chevron.classList.remove('rotate-180');
 }
 
 // 1. PIN Settings Modal
 function openPinSettingsModal() {
-  closeSettingsDropdown();
+  closeAllTopDropdowns();
   document.getElementById('settingsCurrentPin').value = '';
   document.getElementById('settingsNewPin').value = '';
   document.getElementById('settingsConfirmPin').value = '';
@@ -3112,7 +3204,7 @@ function closeBackupResultModal() {
 
 // 3. Cash Calibration Modal
 function openCashCalibrateModal() {
-  closeSettingsDropdown();
+  closeAllTopDropdowns();
   renderCashCalibrateRows();
   document.getElementById('cashCalibrateModal').classList.remove('hidden');
 }
@@ -3210,7 +3302,7 @@ function saveCashCalibration() {
 
 // 4. Stock Master Modal
 function openStockMasterModal() {
-  closeSettingsDropdown();
+  closeAllTopDropdowns();
   document.getElementById('smSymbolInput').value = '';
   document.getElementById('smNameInput').value = '';
   const msg = document.getElementById('smStatusMsg');
@@ -3264,34 +3356,23 @@ function handleAddStockMasterSubmit(e) {
 /* ---------------- GLOBAL OUTSIDE CLICK LISTENER ---------------- */
 window.addEventListener('click', function(e) {
   const txDropdown = document.getElementById('txDropdownContainer');
-  const txMenu = document.getElementById('txDropdownMenu');
-  const txChevron = document.getElementById('txDropdownChevron');
-  if (txDropdown && !txDropdown.contains(e.target) && txMenu && !txMenu.classList.contains('hidden')) {
-    txMenu.classList.add('hidden');
-    if (txChevron) txChevron.classList.remove('rotate-180');
-    closeCorpActionSubmenu();
+  if (txDropdown && !txDropdown.contains(e.target)) {
+    closeTxDropdown();
   }
 
   const settingsDropdown = document.getElementById('settingsDropdownContainer');
-  const settingsMenu = document.getElementById('settingsDropdownMenu');
-  if (settingsDropdown && !settingsDropdown.contains(e.target) && settingsMenu && !settingsMenu.classList.contains('hidden')) {
-    settingsMenu.classList.add('hidden');
+  if (settingsDropdown && !settingsDropdown.contains(e.target)) {
+    closeSettingsDropdown();
   }
 
   const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
-  const chartMenu = document.getElementById('chartViewDropdownMenu');
-  const chartChevron = document.getElementById('chartViewChevron');
-  if (chartViewDropdown && !chartViewDropdown.contains(e.target) && chartMenu && !chartMenu.classList.contains('hidden')) {
-    chartMenu.classList.add('hidden');
-    if (chartChevron) chartChevron.classList.remove('rotate-180');
+  if (chartViewDropdown && !chartViewDropdown.contains(e.target)) {
+    closeChartViewDropdown();
   }
 
   const productsDropdown = document.getElementById('productsDropdownContainer');
-  const productsMenu = document.getElementById('productsDropdownMenu');
-  const productsChevron = document.getElementById('productsDropdownChevron');
-  if (productsDropdown && !productsDropdown.contains(e.target) && productsMenu && !productsMenu.classList.contains('hidden')) {
-    productsMenu.classList.add('hidden');
-    if (productsChevron) productsChevron.classList.remove('rotate-180');
+  if (productsDropdown && !productsDropdown.contains(e.target)) {
+    closeProductsDropdown();
   }
 });
 
