@@ -450,6 +450,9 @@ th.sortable:hover {
 /* ============================================================================
    Horizontal 4-Node Circuit Strip (Closed Trades Book & Financial Year P&L)
    ============================================================================ */
+/* ============================================================================
+   Matched 4-Node Horizontal Circuit Strip (Closed Trades & Financial Year P&L)
+   ============================================================================ */
 .prod-circuit-row {
   display: flex;
   flex-direction: column;
@@ -467,6 +470,10 @@ th.sortable:hover {
 
 .prod-node-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 84px;
   border-radius: 1rem;
   background: linear-gradient(180deg, #FFFFFF 0%, #F5F9FF 100%);
   border: 1.5px solid #93C5FD;
@@ -482,8 +489,9 @@ th.sortable:hover {
 .prod-trace-link {
   display: none;
   align-items: center;
-  flex: 1 1 24px;
-  min-width: 20px;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
 }
 
 @media (min-width: 1024px) {
