@@ -183,11 +183,9 @@ async function fetchFromGoogleSheet() {
     try { activeSyncAbortController.abort(); } catch (e) {}
   }
 
-  const controller = new AbortController();
-  activeSyncAbortController = controller;
-  const timeoutId = setTimeout(() => {
-    try { controller.abort(); } catch (e) {}
-  }, 15000); // 15-second hard timeout fail-safe
+const controller = new AbortController();
+// Increase timeout from 10000 / 12000 ms to 28000 ms (28 seconds) to accommodate Apps Script cold starts
+const timeoutId = setTimeout(() => controller.abort('Google Sheets sync timed out'), 28000);
 
   updateSyncUI('Syncing');
 
