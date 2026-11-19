@@ -436,11 +436,14 @@ function recalculateAndRender() {
   }
   invBarEl.style.width = `${displayPct}%`;
 
-  // Card 3: Lifetime P&L
+// Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
   lifeEl.className = `dash-slot-value text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums leading-tight transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
+  const lifePctEl = document.getElementById('kpiLifetimePnLPct');
+  lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
+  lifePctEl.className = `dash-slot-sub mt-1.5 text-[11px] font-bold leading-snug truncate ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
   // Card 4: Current FY P&L (Purple matching Extreme Target when unselected)
   const curFyEl = document.getElementById('kpiCurrentFyPnL');
   curFyEl.innerText = formatINR(curFyData.gain);
