@@ -2117,6 +2117,7 @@ function switchMainView(view) {
   const prodEl = document.getElementById('mainViewProducts');
 
   const btnDash = document.getElementById('navLink-dashboard');
+  const btnPort = document.getElementById('navLink-portfolio');
   const btnChart = document.getElementById('navLink-chart');
   const btnProd = document.getElementById('navLink-products');
 
@@ -2130,6 +2131,7 @@ function switchMainView(view) {
   if (prodEl) prodEl.classList.add('hidden');
 
   if (btnDash) btnDash.className = inactiveClasses;
+  if (btnPort) btnPort.className = inactiveClasses;
   if (btnChart) btnChart.className = inactiveClasses;
   if (btnProd) btnProd.className = inactiveClasses;
 
@@ -2140,7 +2142,9 @@ function switchMainView(view) {
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
-    renderDashboardTrendChart(getCachedEngineData());
+    if (typeof renderDashboardTrendChart === 'function') {
+      renderDashboardTrendChart(getCachedEngineData());
+    }
   } else if (view === 'chart') {
     if (chartEl) chartEl.classList.remove('hidden');
     if (btnChart) btnChart.className = activeClasses;
@@ -2150,6 +2154,7 @@ function switchMainView(view) {
     renderTtmTable(data);
   } else if (view === 'portfolio') {
     if (portEl) portEl.classList.remove('hidden');
+    if (btnPort) btnPort.className = activeClasses;
     switchSubTab('holdings');
   }
   refreshIcons();
@@ -2166,6 +2171,7 @@ function switchSubTab(subTabKey) {
   const btnChart = document.getElementById('navLink-chart');
   const btnProd = document.getElementById('navLink-products');
   const btnDash = document.getElementById('navLink-dashboard');
+  const btnPort = document.getElementById('navLink-portfolio');
 
   const activeClasses = 'px-3.5 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
   const inactiveClasses = 'px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
@@ -2177,11 +2183,13 @@ function switchSubTab(subTabKey) {
   if (prodEl) prodEl.classList.add('hidden');
 
   if (btnDash) btnDash.className = inactiveClasses;
+  if (btnPort) btnPort.className = inactiveClasses;
   if (btnChart) btnChart.className = inactiveClasses;
   if (btnProd) btnProd.className = inactiveClasses;
 
   if (subTabKey === 'holdings') {
     if (portEl) portEl.classList.remove('hidden');
+    if (btnPort) btnPort.className = activeClasses;
   } else {
     if (prodEl) prodEl.classList.remove('hidden');
     if (btnProd) btnProd.className = activeClasses;
