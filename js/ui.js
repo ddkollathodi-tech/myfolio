@@ -2936,6 +2936,57 @@ function saveGoalMilestone() {
   recalculateAndRender();
 }
 
+/* ---------------- ALL PORTFOLIO TARGETS MODAL (PIN-GATED) ---------------- */
+function openAllTargetsModal() {
+  const modal = document.getElementById('allTargetsModal');
+  if (!modal) return;
+
+  document.getElementById('targetInput-netWorth').value = milestoneGoals.netWorth || 0;
+  document.getElementById('targetInput-netInvested').value = milestoneGoals.netInvested || 0;
+  document.getElementById('targetInput-lifetimePnL').value = milestoneGoals.lifetimePnL || 0;
+  document.getElementById('targetInput-currentFyPnL').value = milestoneGoals.currentFyPnL || 0;
+  document.getElementById('targetInput-xirr').value = milestoneGoals.xirr || 0;
+
+  modal.classList.remove('hidden');
+  refreshIcons();
+}
+
+function closeAllTargetsModal() {
+  const modal = document.getElementById('allTargetsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveAllTargetsWithPin() {
+  const keys = ['netWorth', 'netInvested', 'lifetimePnL', 'currentFyPnL', 'xirr'];
+  const nextGoals = {};
+
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const inp = document.getElementById(`targetInput-${k}`);
+    const val = Number(inp ? inp.value : 0);
+    if (isNaN(val) || val <= 0) return;
+    nextGoals[k] = val;
+  }
+
+  requestPinAuthorization(
+    'Authorize Target Changes',
+    'Enter your 4-digit Master PIN to update portfolio targets',
+    () => {
+      Object.assign(milestoneGoals, nextGoals);
+      localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
+
+      if (cloudScriptUrl) {
+        sendToSheet({
+          action: 'saveGoals',
+          goals: nextGoals
+        });
+      }
+
+      closeAllTargetsModal();
+      recalculateAndRender();
+    }
+  );
+}
 /* ---------------- AUTOMATIC MONTH-END REVIEW MODAL ---------------- */
 function getPrecedingMonthEndDate() {
   const today = new Date();
