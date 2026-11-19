@@ -2328,7 +2328,289 @@ function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
     baseLine('Profit', displayPoints.map(p => p.profit), '#16a34a', { bg: greenGradient, fill: true, dash: [4, 4], order: 3 })
   ];
 }
+let selectedChartPeriod = '1Y'; // '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
+let selectedChartAccount = 'ALL'; // 'ALL' | account name
+let chartExpandedMode = false;
 
+function setChartAccountFilter(acct) {
+  selectedChartAccount = acct || 'ALL';
+  const data = getCachedEngineData();
+  renderChart(data);
+  renderCurveInsights(data);
+  renderTtmTable(data);
+  refreshIcons();
+}
+
+function setChartMetricMode(mode) {
+  currentChartView = mode === 'roc' ? 'roc' : 'trajectory';
+
+  const perfBtn = document.getElementById('chartMetricBtn-trajectory');
+  const rocBtn = document.getElementById('chartMetricBtn-roc');
+  const activeCls = 'chart-metric-pill-active w-32 justify-center px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer';
+  const inactiveCls = 'w-32 justify-center px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#222836] bg-white dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#232A3B] text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer';
+
+  if (perfBtn) perfBtn.className = currentChartView === 'trajectory' ? activeCls : inactiveCls;
+  if (rocBtn) rocBtn.className = currentChartView === 'roc' ? activeCls : inactiveCls;
+
+  const titleEl = document.getElementById('currentChartViewLabel');
+  const subEl = document.getElementById('chartCardSubtitle');
+  const iconEl = document.getElementById('chartCardTitleIcon');
+  const badgeEl = document.getElementById('curveInsightsModeBadge');
+
+  if (currentChartView === 'roc') {
+    if (titleEl) titleEl.innerText = 'Target Curve';
+    if (subEl) subEl.innerText = 'Actual monthly RoC vs. hurdle & extreme target';
+    if (iconEl) iconEl.setAttribute('data-lucide', 'target');
+    if (badgeEl) badgeEl.innerText = 'Target Curve';
+  } else {
+    if (titleEl) titleEl.innerText = 'Performance Curve';
+    if (subEl) subEl.innerText = 'Net worth, invested capital & profit trajectory';
+    if (iconEl) iconEl.setAttribute('data-lucide', 'trending-up');
+    if (badgeEl) badgeEl.innerText = 'Performance';
+  }
+
+  renderChartLegend();
+  const data = getCachedEngineData();
+  renderChart(data);
+  renderCurveInsights(data);
+  renderTtmTable(data);
+  refreshIcons();
+}
+
+function setChartPeriod(period) {
+  selectedChartPeriod = period || '1Y';
+  currentChartRange = selectedChartPeriod === 'ALL' ? 'ALL' : 'TTM';
+
+  document.querySelectorAll('#chartPeriodPills .chart-period-btn').forEach(btn => {
+    const isActive = btn.dataset.chartPeriod === selectedChartPeriod;
+    btn.className = isActive
+      ? 'chart-period-btn chart-period-pill-active px-3 py-1 rounded-lg transition'
+      : 'chart-period-btn px-3 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+  });
+
+  const data = getCachedEngineData();
+  renderChart(data);
+  renderCurveInsights(data);
+}
+
+function toggleChartExpandFocus() {
+  chartExpandedMode = !chartExpandedMode;
+  const wrap = document.getElementById('multiChartCanvasWrap');
+  if (!wrap) return;
+  wrap.className = chartExpandedMode
+    ? 'h-[450px] lg:h-[510px] w-full relative overflow-hidden transition-all duration-200'
+    : 'h-[340px] lg:h-[370px] w-full relative overflow-hidden transition-all duration-200';
+  if (multiChartInstance) {
+    setTimeout(() => multiChartInstance.resize(), 60);
+  }
+}
+
+function getFilteredChartPoints(computed) {
+  const allPts = computeRocFourCurves(computed);
+  if (!Array.isArray(allPts) || allPts.length === 0) return [];
+
+  if (selectedChartPeriod === 'ALL') return allPts;
+
+  const monthsMap = { '6M': 6, '1Y': 12, '3Y': 36, '5Y': 60 };
+  const monthsBack = monthsMap[selectedChartPeriod] || 12;
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - monthsBack);
+
+  const ranged = allPts.filter(pt => {
+    if (pt.date === 'Current') return true;
+    const d = new Date(pt.date);
+    return !isNaN(d.getTime()) && d >= cutoff;
+  });
+
+  if (ranged.length > 0) return ranged;
+  return selectedChartPeriod === '1Y' ? allPts.slice(-12) : allPts.slice(-6);
+}
+
+function renderCurveInsights(computed) {
+  const container = document.getElementById('curveInsightsList');
+  if (!container) return;
+
+  const maskClass = getMaskClass('chart');
+  const pts = getFilteredChartPoints(computed || getCachedEngineData());
+
+  if (!pts || pts.length === 0) {
+    container.innerHTML = `<div class="py-8 text-center text-xs text-slate-400 font-medium">No checkpoint data available for this period.</div>`;
+    return;
+  }
+
+  if (currentChartView === 'roc') {
+    const rocPts = pts.slice(1);
+    const targetMonthlyPct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100);
+
+    let bestItem = null;
+    let worstItem = null;
+    let sumRoc = 0;
+    let achievedCount = 0;
+
+    rocPts.forEach(p => {
+      const r = Number(p.rocPct || 0);
+      sumRoc += r;
+      if (r >= targetMonthlyPct) achievedCount++;
+      if (!bestItem || r > bestItem.val) bestItem = { val: r, label: p.date };
+      if (!worstItem || r < worstItem.val) worstItem = { val: r, label: p.date };
+    });
+
+    const totalMonths = rocPts.length;
+    const avgRoc = totalMonths > 0 ? (sumRoc / totalMonths) : 0;
+    const achPct = totalMonths > 0 ? ((achievedCount / totalMonths) * 100).toFixed(1) : '0.0';
+    const deviationPp = avgRoc - targetMonthlyPct;
+
+    const rows = [
+      {
+        icon: 'award',
+        iconWrap: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
+        title: 'Best ROC Month',
+        sub: bestItem ? bestItem.label : '—',
+        valHtml: `<span class="text-emerald-600 dark:text-emerald-400 font-extrabold tabular-nums">${bestItem ? `${bestItem.val >= 0 ? '+' : ''}${bestItem.val.toFixed(2)}%` : '—'}</span>`
+      },
+      {
+        icon: 'trending-down',
+        iconWrap: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
+        title: 'Worst ROC Month',
+        sub: worstItem ? worstItem.label : '—',
+        valHtml: `<span class="text-rose-600 dark:text-rose-400 font-extrabold tabular-nums">${worstItem ? `${worstItem.val >= 0 ? '+' : ''}${worstItem.val.toFixed(2)}%` : '—'}</span>`
+      },
+      {
+        icon: 'check-circle-2',
+        iconWrap: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400',
+        title: 'Target Achievement',
+        sub: `Hurdle: ${targetMonthlyPct.toFixed(2)}% / mo`,
+        valHtml: `<span class="text-slate-900 dark:text-white font-extrabold tabular-nums">${achievedCount} / ${totalMonths} (${achPct}%)</span>`
+      },
+      {
+        icon: 'percent',
+        iconWrap: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
+        title: 'Average Monthly ROC',
+        sub: `Across ${totalMonths} period steps`,
+        valHtml: `<span class="text-slate-900 dark:text-white font-extrabold tabular-nums">${avgRoc >= 0 ? '+' : ''}${avgRoc.toFixed(2)}%</span>`
+      },
+      {
+        icon: 'sliders-horizontal',
+        iconWrap: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400',
+        title: 'Target Deviation',
+        sub: 'Spread vs. monthly hurdle',
+        valHtml: `<span class="${deviationPp >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-extrabold tabular-nums">${deviationPp >= 0 ? '+' : ''}${deviationPp.toFixed(2)} pp</span>`
+      }
+    ];
+
+    container.innerHTML = rows.map(r => `
+      <div class="py-2.5 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2.5 min-w-0">
+          <span class="h-8 w-8 rounded-xl ${r.iconWrap} flex items-center justify-center shrink-0">
+            <i data-lucide="${r.icon}" class="w-4 h-4"></i>
+          </span>
+          <div class="min-w-0">
+            <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${esc(r.title)}</div>
+            <div class="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">${esc(r.sub)}</div>
+          </div>
+        </div>
+        <div class="text-right text-xs shrink-0">${r.valHtml}</div>
+      </div>
+    `).join('');
+
+    refreshIcons();
+    return;
+  }
+
+  // Performance Curve Insights
+  let highestVal = -Infinity;
+  let lowestVal = Infinity;
+  let peakSoFar = -Infinity;
+  let maxDrawdownPct = 0;
+  let bestGainAmt = -Infinity;
+  let bestGainPeriod = '—';
+  let bestGainPct = 0;
+
+  pts.forEach((p, idx) => {
+    const val = Number(p.portfolioValue || 0);
+    if (val > highestVal) highestVal = val;
+    if (val < lowestVal) lowestVal = val;
+    if (val > peakSoFar) peakSoFar = val;
+
+    if (peakSoFar > 0) {
+      const dd = ((val - peakSoFar) / peakSoFar) * 100;
+      if (dd < maxDrawdownPct) maxDrawdownPct = dd;
+    }
+
+    if (idx > 0) {
+      const prev = pts[idx - 1];
+      const prevVal = Number(prev.portfolioValue || 0);
+      const diff = val - prevVal;
+      if (diff > bestGainAmt) {
+        bestGainAmt = diff;
+        bestGainPeriod = `${prev.date} → ${p.date}`;
+        bestGainPct = prevVal > 0 ? (diff / prevVal) * 100 : 0;
+      }
+    }
+  });
+
+  const firstVal = Number(pts[0].portfolioValue || 0);
+  const lastVal = Number(pts[pts.length - 1].portfolioValue || 0);
+  const periodRetPct = firstVal > 0 ? ((lastVal - firstVal) / firstVal) * 100 : 0;
+
+  const perfRows = [
+    {
+      icon: 'trophy',
+      iconWrap: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400',
+      title: 'Highest Net Worth',
+      sub: 'Maximum portfolio value in selected period',
+      valHtml: `<span class="text-slate-900 dark:text-white font-extrabold tabular-nums ${maskClass}">${formatINR(highestVal === -Infinity ? 0 : highestVal, 0)}</span>`
+    },
+    {
+      icon: 'trending-down',
+      iconWrap: 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
+      title: 'Lowest Net Worth',
+      sub: 'Minimum portfolio value in selected period',
+      valHtml: `<span class="text-slate-900 dark:text-white font-extrabold tabular-nums ${maskClass}">${formatINR(lowestVal === Infinity ? 0 : lowestVal, 0)}</span>`
+    },
+    {
+      icon: 'trending-up',
+      iconWrap: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
+      title: 'Best Growth Period',
+      sub: bestGainAmt > -Infinity ? `${bestGainPeriod}` : 'Largest increase between two points',
+      valHtml: bestGainAmt > -Infinity
+        ? `<div><span class="text-emerald-600 dark:text-emerald-400 font-extrabold tabular-nums ${maskClass}">+${formatINR(bestGainAmt, 0)}</span><div class="text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">(+${bestGainPct.toFixed(1)}%)</div></div>`
+        : `<span class="text-slate-400 font-bold">—</span>`
+    },
+    {
+      icon: 'activity',
+      iconWrap: 'bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400',
+      title: 'Maximum Drawdown',
+      sub: 'Peak-to-trough decline in period',
+      valHtml: `<span class="text-rose-600 dark:text-rose-400 font-extrabold tabular-nums">${maxDrawdownPct.toFixed(2)}%</span>`
+    },
+    {
+      icon: 'calendar',
+      iconWrap: 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400',
+      title: 'Period Return',
+      sub: 'Net worth change over selected period',
+      valHtml: `<span class="${periodRetPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} font-extrabold tabular-nums">${periodRetPct >= 0 ? '+' : ''}${periodRetPct.toFixed(2)}%</span>`
+    }
+  ];
+
+  container.innerHTML = perfRows.map(r => `
+    <div class="py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2.5 min-w-0">
+        <span class="h-8 w-8 rounded-xl ${r.iconWrap} flex items-center justify-center shrink-0">
+          <i data-lucide="${r.icon}" class="w-4 h-4"></i>
+        </span>
+        <div class="min-w-0">
+          <div class="text-xs font-bold text-slate-900 dark:text-white truncate">${esc(r.title)}</div>
+          <div class="text-[10.5px] text-slate-500 dark:text-slate-400 truncate">${esc(r.sub)}</div>
+        </div>
+      </div>
+      <div class="text-right text-xs shrink-0">${r.valHtml}</div>
+    </div>
+  `).join('');
+
+  refreshIcons();
+}
 function renderChart(computed) {
   const canvas = document.getElementById('multiCurveChart');
   if (!canvas) return;
