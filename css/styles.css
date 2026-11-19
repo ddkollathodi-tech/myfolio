@@ -186,39 +186,40 @@ th.sortable:hover {
   background: rgba(30, 41, 59, 0.45);
 }
 
-/* Active Selected Slot: Deep Navy-Blue + Subtle 4-Corner Curve + Slanted Boundary */
+/* Active Selected Slot: Deep Navy-Blue + Subtle Top-2 Corner Curve + Uniform Slant */
 .dash-metric-slot.is-active {
   background: linear-gradient(135deg, #071940 0%, #0C255C 52%, #13357A 100%);
   color: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 10px 10px 0 0;
   z-index: 3;
 }
 
+/* Uniform slant direction: top shifted right, bottom shifted left */
 /* First card (Total Net Worth): slanted right edge only */
 .dash-metric-slot.is-active.slant-right {
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 
 /* Last card (Annualized XIRR): slanted left edge only */
 .dash-metric-slot.is-active.slant-left {
-  clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%);
 }
 
-/* Intermediate cards (Net Invested, Lifetime P&L, FY P&L): slanted left & right edges */
+/* Intermediate cards (Net Invested, Lifetime P&L, FY P&L): parallel slanted left & right edges */
 .dash-metric-slot.is-active.slant-both {
-  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 100%, 0 100%);
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 
-/* Slim attached dim/light band along slanted edges */
+/* Boundary highlighter/shadow band flush along slanted vertical edges */
 .dash-metric-slot.is-active.slant-right::after {
   content: '';
   position: absolute;
   top: 0;
   right: 0;
-  width: 10px;
+  width: 8px;
   height: 100%;
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.14) 0%, rgba(226, 232, 240, 0.36) 100%);
-  transform: skewX(-11deg);
+  background: linear-gradient(270deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
+  clip-path: polygon(100% 0, 100% 0, calc(100% - 12px) 100%, calc(100% - 20px) 100%);
   pointer-events: none;
 }
 
@@ -227,32 +228,35 @@ th.sortable:hover {
   position: absolute;
   top: 0;
   left: 0;
-  width: 10px;
+  width: 20px;
   height: 100%;
-  background: linear-gradient(90deg, rgba(226, 232, 240, 0.36) 0%, rgba(148, 163, 184, 0.14) 100%);
-  transform: skewX(-11deg);
-  pointer-events: none;
-}
-
-.dash-metric-slot.is-active.slant-both::before,
-.dash-metric-slot.is-active.slant-both::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  width: 10px;
-  height: 100%;
-  transform: skewX(-11deg);
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
+  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
   pointer-events: none;
 }
 
 .dash-metric-slot.is-active.slant-both::before {
+  content: '';
+  position: absolute;
+  top: 0;
   left: 0;
-  background: linear-gradient(90deg, rgba(226, 232, 240, 0.36) 0%, rgba(148, 163, 184, 0.14) 100%);
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
+  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
+  pointer-events: none;
 }
 
 .dash-metric-slot.is-active.slant-both::after {
+  content: '';
+  position: absolute;
+  top: 0;
   right: 0;
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.14) 0%, rgba(226, 232, 240, 0.36) 100%);
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(270deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
+  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
+  pointer-events: none;
 }
 
 .dash-metric-slot.is-active .dash-slot-label,
