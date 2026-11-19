@@ -185,7 +185,13 @@ function buildDynamicAccountControls() {
       return `<button onclick="setPurificationAccountFilter('${esc(acct)}')" id="purifAcctBtn-${esc(acct)}" class="${cls}">${label}</button>`;
     }).join('');
   }
-
+const chartAcctSelect = document.getElementById('chartAccountSelect');
+  if (chartAcctSelect) {
+    const prevAcct = chartAcctSelect.value || 'ALL';
+    chartAcctSelect.innerHTML = `<option value="ALL">Combined</option>` +
+      CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
+    chartAcctSelect.value = (prevAcct === 'ALL' || CALIB_ACCOUNTS.includes(prevAcct)) ? prevAcct : 'ALL';
+  }
   const acctOptionsHtml = `<option value="">Select Account</option>` +
     CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
 
