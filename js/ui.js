@@ -2629,10 +2629,6 @@ function renderChart(computed) {
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
 const displayPoints = getFilteredChartPoints(computed);
- const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
-  if (currentChartRange === 'TTM' && fourPoints.length > 12) {
-    displayPoints = fourPoints.slice(-12);
-  }
 
   const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
   const datasets = displayPoints.length > 0
