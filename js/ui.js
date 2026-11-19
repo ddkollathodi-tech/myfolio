@@ -1352,7 +1352,7 @@ const engineData = getCachedEngineData();
     return;
   }
 
-  fys.forEach(fy => {
+fys.forEach(fy => {
     const item = fyRealized[fy] || {};
     const costVal = Number(item.costBasis ?? item.cost ?? 0);
     const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
@@ -1361,7 +1361,6 @@ const engineData = getCachedEngineData();
     const isPos = gainVal >= 0;
     const retPct = costVal > 0 ? (gainVal / costVal) * 100 : 0;
     const isCurrent = fy === activeFy;
-    const tradeCnt = fyTradeCountMap[fy] || 0;
 
     const tr = document.createElement('tr');
     tr.className = isCurrent
