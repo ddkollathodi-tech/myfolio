@@ -330,3 +330,40 @@ th.sortable:hover {
   background: #2563EB;
   color: #FFFFFF;
 }
+/* ============================================================================
+   Performance Chart View (72/28 Split, Controls & Curve Insights)
+   ============================================================================ */
+.chart-studio-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .chart-studio-split {
+    grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
+  }
+}
+
+.chart-period-pill-active {
+  background: #0B1F4C;
+  color: #FFFFFF;
+}
+
+.dark .chart-period-pill-active {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.chart-metric-pill-active {
+  background: #0B1F4C;
+  color: #FFFFFF;
+  border-color: #0B1F4C;
+}
+
+.dark .chart-metric-pill-active {
+  background: #2563EB;
+  color: #FFFFFF;
+  border-color: #2563EB;
+}
