@@ -1164,7 +1164,7 @@ function renderClosedTrades(closedTrades) {
   if (lossPctEl) lossPctEl.innerText = `${lossPct.toFixed(2)}%`;
   if (totPnlEl) {
     totPnlEl.innerText = `${overallPnl >= 0 ? '+' : ''}${formatINR(overallPnl)}`;
-    totPnlEl.className = `font-extrabold tabular-nums ${maskClass} ${overallPnl >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+    totPnlEl.className = `text-base font-extrabold tabular-nums ${maskClass} ${overallPnl >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
   }
   if (totRetEl) {
     totRetEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
