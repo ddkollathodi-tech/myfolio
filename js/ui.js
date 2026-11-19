@@ -460,7 +460,6 @@ function recalculateAndRender() {
   const curFy = getFinancialYear(todayLocalISO());
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
-
   const curFyEl = document.getElementById('kpiCurrentFyPnL');
   curFyEl.innerText = formatINR(curFyData.gain);
   curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
