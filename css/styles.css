@@ -163,8 +163,8 @@ th.sortable:hover {
    Dashboard Unified Bento Strip & Active Metric Highlight (Isolated)
    ============================================================================ */
 .dash-unified-strip {
-  background: linear-gradient(180deg, #F8FAFC 0%, #EFF4FB 100%);
-  border: 1px solid #DCE5F2;
+  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5FA 100%);
+  border: 1px solid #E2E8F0;
 }
 
 .dark .dash-unified-strip {
@@ -179,37 +179,74 @@ th.sortable:hover {
 }
 
 .dash-metric-slot:hover:not(.is-active) {
-  background: rgba(219, 234, 254, 0.35);
+  background: rgba(226, 232, 240, 0.35);
 }
 
 .dark .dash-metric-slot:hover:not(.is-active) {
   background: rgba(30, 41, 59, 0.45);
 }
 
-/* Active Selected Slot: Deep Institutional Blue Gradient + Slanted Top-Right Accent */
+/* Active Selected Slot: Deep Navy-Blue Tone Matching ppp.png + Increased Height */
 .dash-metric-slot.is-active {
-  background: linear-gradient(135deg, #0B1F4C 0%, #13388A 55%, #1D4ED8 100%);
+  background: linear-gradient(135deg, #071940 0%, #0C255C 52%, #13357A 100%);
   color: #FFFFFF;
-  box-shadow: 0 10px 25px -6px rgba(15, 43, 107, 0.35);
-  z-index: 2;
+  box-shadow: 0 12px 28px -8px rgba(7, 25, 64, 0.38);
+  z-index: 3;
 }
 
-.dash-metric-slot.is-active::after {
+/* Soft shadow/dimmed band along slanted edge(s) of the active card */
+.dash-metric-slot.is-active.slant-right::after {
   content: '';
   position: absolute;
   top: 0;
-  right: 0;
-  width: 68px;
+  right: -14px;
+  width: 30px;
   height: 100%;
-  background: linear-gradient(115deg, transparent 18%, rgba(59, 130, 246, 0.38) 18%, rgba(37, 99, 235, 0.52) 100%);
-  clip-path: polygon(22% 0%, 100% 0%, 100% 100%, 0% 100%);
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.16) 0%, rgba(148, 163, 184, 0.22) 55%, rgba(15, 23, 42, 0.08) 100%);
+  transform: skewX(-11deg);
   pointer-events: none;
+  z-index: 4;
+}
+
+.dash-metric-slot.is-active.slant-left::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -14px;
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.08) 0%, rgba(148, 163, 184, 0.22) 45%, rgba(15, 23, 42, 0.16) 100%);
+  transform: skewX(-11deg);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.dash-metric-slot.is-active.slant-both::before,
+.dash-metric-slot.is-active.slant-both::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 28px;
+  height: 100%;
+  transform: skewX(-11deg);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.dash-metric-slot.is-active.slant-both::before {
+  left: -14px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.08) 0%, rgba(148, 163, 184, 0.22) 45%, rgba(15, 23, 42, 0.16) 100%);
+}
+
+.dash-metric-slot.is-active.slant-both::after {
+  right: -14px;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.16) 0%, rgba(148, 163, 184, 0.22) 55%, rgba(15, 23, 42, 0.08) 100%);
 }
 
 .dash-metric-slot.is-active .dash-slot-label,
 .dash-metric-slot.is-active .dash-slot-sub,
 .dash-metric-slot.is-active .dash-slot-meta {
-  color: rgba(226, 232, 240, 0.88) !important;
+  color: rgba(226, 232, 240, 0.9) !important;
 }
 
 .dash-metric-slot.is-active .dash-slot-value {
@@ -217,7 +254,7 @@ th.sortable:hover {
 }
 
 .dash-metric-slot.is-active .dash-slot-progress-track {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
 }
 
 .dash-metric-slot.is-active .dash-slot-progress-fill {
