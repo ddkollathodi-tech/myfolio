@@ -711,69 +711,186 @@
          </div>
        </div>
 
+<!-- ========================================================== -->
+      <!-- VIEW 2: CHART VIEW (Performance Insights + 72/28 Split) -->
       <!-- ========================================================== -->
-      <!-- VIEW 2: CHART VIEW (Point 3: Symmetrical Top/Bottom Boundaries & Widened Vertical Chart) -->
-      <!-- ========================================================== -->
-      <div id="mainViewChart" class="flex-1 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col hidden">
-        <div id="graphsSection" class="flex-1 flex flex-col justify-between bg-white dark:bg-[#131722] rounded-2xl border border-slate-200 dark:border-[#222836] p-5 shadow-2xs transition-colors duration-200 space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
+      <div id="mainViewChart" class="flex-1 w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 flex flex-col space-y-5 hidden">
 
-            <div class="flex items-center space-x-3.5">
-              <div class="relative" id="chartViewSwitcherContainer">
+        <!-- Page Title Header -->
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Performance Chart</h1>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Track portfolio performance over time.</p>
+          </div>
+
+          <button
+            id="chartMaskToggleBtn"
+            onclick="toggleTabMask('chart')"
+            class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
+            title="Toggle Chart Numbers Stealth Mask"
+          >
+            <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Top Filter & Action Control Bar -->
+        <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] px-4 py-3 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+
+          <div class="flex flex-wrap items-center gap-4 lg:gap-5">
+            <!-- Account Selector -->
+            <div class="space-y-1">
+              <label for="chartAccountSelect" class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Account</label>
+              <div class="relative">
+                <select
+                  id="chartAccountSelect"
+                  onchange="setChartAccountFilter(this.value)"
+                  class="bg-white dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-blue-600 pr-7"
+                ></select>
+              </div>
+            </div>
+
+            <div class="hidden sm:block h-9 w-px bg-slate-200 dark:bg-[#222836]"></div>
+
+            <!-- Equal-Sized Metric Pills: Performance & Target Curve -->
+            <div class="space-y-1">
+              <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Metric</span>
+              <div class="inline-flex items-center gap-2">
                 <button
-                  onclick="toggleChartViewDropdown(event)"
-                  class="flex items-center space-x-2 text-base font-bold text-slate-900 dark:text-white tracking-tight hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+                  type="button"
+                  id="chartMetricBtn-trajectory"
+                  onclick="setChartMetricMode('trajectory')"
+                  class="chart-metric-pill-active w-32 justify-center px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer"
                 >
-                  <span id="currentChartViewLabel">Performance Trajectory</span>
-                  <i data-lucide="chevron-down" id="chartViewChevron" class="w-4 h-4 text-slate-400 transition-transform duration-150"></i>
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5 shrink-0"></i>
+                  <span>Performance</span>
                 </button>
-
-                <div
-                  id="chartViewDropdownMenu"
-                  class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-[#131722] rounded-xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-50 text-[12.5px]"
+                <button
+                  type="button"
+                  id="chartMetricBtn-roc"
+                  onclick="setChartMetricMode('roc')"
+                  class="w-32 justify-center px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#222836] bg-white dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#232A3B] text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer"
                 >
-                  <button onclick="switchChartView('trajectory')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] transition">
-                    <div class="font-bold text-slate-800 dark:text-slate-100">Performance Trajectory</div>
-                    <div class="text-[10.5px] text-slate-400">Net Worth, Capital Contributed &amp; Profit</div>
-                  </button>
-                  <button onclick="switchChartView('roc')" class="w-full text-left px-3.5 py-2 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] transition border-t border-slate-100 dark:border-[#222836]">
-                    <div class="font-bold text-slate-800 dark:text-slate-100">Monthly RoC Curve</div>
-                    <div class="text-[10.5px] text-slate-400">Actual, Capital Base, Pure Hurdle &amp; Extreme Target</div>
-                  </button>
+                  <i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i>
+                  <span>Target Curve</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="hidden md:block h-9 w-px bg-slate-200 dark:bg-[#222836]"></div>
+
+            <!-- Period Selector Pills -->
+            <div class="space-y-1">
+              <span class="block text-[11px] font-bold text-slate-500 dark:text-slate-400">Period</span>
+              <div id="chartPeriodPills" class="inline-flex items-center bg-slate-100/90 dark:bg-[#1A1F2E] p-0.5 rounded-xl border border-slate-200/80 dark:border-[#222836] text-xs font-bold">
+                <button type="button" data-chart-period="6M" onclick="setChartPeriod('6M')" class="chart-period-btn px-3 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">6M</button>
+                <button type="button" data-chart-period="1Y" onclick="setChartPeriod('1Y')" class="chart-period-btn chart-period-pill-active px-3 py-1 rounded-lg transition">1Y</button>
+                <button type="button" data-chart-period="3Y" onclick="setChartPeriod('3Y')" class="chart-period-btn px-3 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">3Y</button>
+                <button type="button" data-chart-period="5Y" onclick="setChartPeriod('5Y')" class="chart-period-btn px-3 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">5Y</button>
+                <button type="button" data-chart-period="ALL" onclick="setChartPeriod('ALL')" class="chart-period-btn px-3 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">All</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Export Button -->
+          <button
+            type="button"
+            onclick="exportPortfolioToExcel()"
+            class="px-3.5 py-2 rounded-xl bg-white dark:bg-[#1A1F2E] hover:bg-slate-50 dark:hover:bg-[#232A3B] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center space-x-2 shadow-2xs transition cursor-pointer"
+          >
+            <i data-lucide="download" class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"></i>
+            <span>Export</span>
+          </button>
+        </div>
+
+        <!-- 72 / 28 Split: Curve Card (72%) + Curve Insights Card (28%) -->
+        <div id="graphsSection" class="chart-studio-split">
+
+          <!-- Left 72%: Performance / Target Curve Card -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-5 shadow-2xs flex flex-col justify-between space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-3">
+                <span class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/70 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="trending-up" id="chartCardTitleIcon" class="w-4 h-4"></i>
+                </span>
+                <div>
+                  <h2 id="currentChartViewLabel" class="text-base font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">Performance Curve</h2>
+                  <p id="chartCardSubtitle" class="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Net worth, invested capital &amp; profit trajectory</p>
                 </div>
               </div>
 
-              <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs">
-                <button
-                  id="chartRangeBtn-TTM"
-                  onclick="setChartRange('TTM')"
-                  class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-150 bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs"
-                >
-                  TTM
-                </button>
-                <button
-                  id="chartRangeBtn-ALL"
-                  onclick="setChartRange('ALL')"
-                  class="px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-                >
-                  All Journey
-                </button>
+              <div class="flex items-center flex-wrap gap-3 text-xs">
+                <div class="flex items-center flex-wrap gap-3" id="chartLegendContainer"></div>
+
+                <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#222836]">
+                  <button
+                    type="button"
+                    onclick="setChartMetricMode(currentChartView === 'roc' ? 'trajectory' : 'roc')"
+                    class="p-1.5 rounded-md bg-[#0B1F4C] dark:bg-blue-600 text-white shadow-2xs transition"
+                    title="Switch Curve Mode"
+                  >
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="toggleChartExpandFocus()"
+                    class="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+                    title="Toggle Expanded Chart Height"
+                  >
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div class="flex items-center space-x-3.5 text-xs">
-              <div class="flex items-center space-x-3.5" id="chartLegendContainer"></div>
-
-              <button
-                id="chartMaskToggleBtn"
-                onclick="toggleTabMask('chart')"
-                class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-200/90 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition"
-                title="Toggle Chart Numbers Stealth Mask"
-              >
-                <i data-lucide="eye-off" id="maskToggleIcon-chart" class="w-3.5 h-3.5"></i>
-              </button>
+            <!-- Canvas Container -->
+            <div id="multiChartCanvasWrap" class="h-[340px] lg:h-[370px] w-full relative overflow-hidden transition-all duration-200">
+              <canvas id="multiCurveChart"></canvas>
+              <div id="chartCustomTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-[#222836] bg-white/95 dark:bg-[#131722]/95 shadow-xl backdrop-blur-md p-3 text-xs transition-opacity duration-150 opacity-0 min-w-[200px]"></div>
             </div>
           </div>
+
+          <!-- Right 28%: Curve Insights Panel -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-5 shadow-2xs flex flex-col justify-between space-y-4">
+            <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-[#222836]">
+              <div class="flex items-center space-x-2">
+                <span class="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                </span>
+                <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Curve Insights</h3>
+              </div>
+              <span id="curveInsightsModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/50">Performance</span>
+            </div>
+
+            <div id="curveInsightsList" class="flex-1 flex flex-col justify-between divide-y divide-slate-100 dark:divide-[#222836]/80"></div>
+          </div>
+
+        </div>
+
+        <!-- Bottom Accordion: Trailing 12 - Months (TTM) Performance Ledger -->
+        <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs">
+          <button
+            type="button"
+            onclick="toggleTtmTableAccordion()"
+            class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/60 text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white transition"
+          >
+            <span class="flex items-center space-x-2.5">
+              <span class="h-7 w-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <i data-lucide="table" class="w-4 h-4"></i>
+              </span>
+              <span id="ttmAccordionTitle">Trailing 12 - Months (TTM) Performance Ledger</span>
+            </span>
+            <i data-lucide="chevron-down" id="ttmAccordionChevron" class="w-4 h-4 text-slate-500 transition-transform duration-200"></i>
+          </button>
+
+          <div id="ttmTableContainer" class="hidden mt-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222836]">
+            <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+              <thead id="ttmTableHead" class="bg-slate-100 dark:bg-[#0A0C10]/70 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur"></thead>
+              <tbody id="ttmTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
 
           <!-- Chart Container (Expanded vertically so bottom box boundary matches top margin) -->
           <div class="flex-1 min-h-[344px] lg:min-h-[384px] w-full relative overflow-hidden">
