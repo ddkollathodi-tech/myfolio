@@ -387,6 +387,62 @@ function updateStockAutocompleteOptions() {
   });
 }
 
+let portAllocationMode = 'sector'; // 'sector' | 'stock'
+let portAllocationChartInstance = null;
+
+function getStockMeta(symbol) {
+  const sym = String(symbol || '').toUpperCase().trim();
+  const found = (typeof stockMasterList !== 'undefined' && Array.isArray(stockMasterList))
+    ? stockMasterList.find(item => String(item.symbol || '').toUpperCase().trim() === sym)
+    : null;
+
+  return {
+    name: (found && found.name) ? String(found.name).trim() : sym,
+    sector: (found && found.sector && String(found.sector).trim()) ? String(found.sector).trim() : 'Others'
+  };
+}
+
+function getSectorBadgeClasses(sector) {
+  const key = String(sector || 'Others').toLowerCase();
+  if (key.includes('capital')) return 'port-sector-badge bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60';
+  if (key.includes('power') || key.includes('utilit')) return 'port-sector-badge bg-cyan-50 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border border-cyan-200/80 dark:border-cyan-800/60';
+  if (key.includes('engineer')) return 'port-sector-badge bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60';
+  if (key.includes('financ') || key.includes('bank')) return 'port-sector-badge bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60';
+  if (key.includes('chem')) return 'port-sector-badge bg-pink-50 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 border border-pink-200/80 dark:border-pink-800/60';
+  if (key.includes('it') || key.includes('tech')) return 'port-sector-badge bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60';
+  return 'port-sector-badge bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-[#222836]';
+}
+
+function handlePortfolioSortSelect(val) {
+  const [key, dir] = String(val || 'weightPct-desc').split('-');
+  holdingsSort = { key: key || 'weightPct', dir: dir || 'desc' };
+  renderHoldings(getCachedEngineData());
+  refreshIcons();
+}
+
+function setPortfolioAllocationMode(mode) {
+  portAllocationMode = mode === 'stock' ? 'stock' : 'sector';
+  const secBtn = document.getElementById('portAllocTab-sector');
+  const stkBtn = document.getElementById('portAllocTab-stock');
+  const activeCls = 'port-alloc-pill-active px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition';
+  const inactiveCls = 'px-3 py-1.5 rounded-lg flex items-center space-x-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+
+  if (secBtn) secBtn.className = portAllocationMode === 'sector' ? activeCls : inactiveCls;
+  if (stkBtn) stkBtn.className = portAllocationMode === 'stock' ? activeCls : inactiveCls;
+
+  renderHoldings(getCachedEngineData());
+  refreshIcons();
+}
+
+function togglePortBreakdownCollapse() {
+  const wrap = document.getElementById('portBreakdownBodyWrap');
+  const chev = document.getElementById('portBreakdownChevron');
+  if (!wrap) return;
+  const hidden = wrap.classList.contains('hidden');
+  wrap.classList.toggle('hidden', !hidden);
+  if (chev) chev.classList.toggle('rotate-180', hidden);
+}
+
 /* ---------------- MASTER RECALCULATE & RENDER ---------------- */
 function recalculateAndRender() {
   bumpTxVersion();
@@ -563,9 +619,9 @@ function setHoldingsAccountFilter(acct) {
     const btn = document.getElementById(`holdingsAcctBtn-${key}`);
     if (!btn) return;
     if (key === acct) {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
+      btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-[#0B1F4C] dark:bg-blue-600 text-white shadow-2xs flex items-center space-x-1.5';
     } else {
-      btn.className = 'px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium';
+      btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-white dark:bg-[#131722] text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-[#222836] hover:bg-slate-50 dark:hover:bg-[#1A1F2E] flex items-center space-x-1.5';
     }
   });
   renderHoldings(getCachedEngineData());
@@ -574,14 +630,20 @@ function setHoldingsAccountFilter(acct) {
 
 function renderHoldings(data) {
   const tbody = document.getElementById('holdingsTableBody');
+  const tfoot = document.getElementById('holdingsTableFooter');
   if (!tbody) return;
   tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
 
   const maskClass = getMaskClass('holdings');
+  const isCombined = currentHoldingsAccountFilter === 'ALL';
 
   let filteredHoldings = [];
-  if (currentHoldingsAccountFilter === 'ALL') {
-    filteredHoldings = [...data.holdings];
+  if (isCombined) {
+    filteredHoldings = data.holdings.map(h => {
+      const meta = getStockMeta(h.stock);
+      return { ...h, companyName: meta.name, sector: meta.sector };
+    });
   } else {
     const relevantLots = data.openLots.filter(l => l.account === currentHoldingsAccountFilter);
     const aggMap = {};
@@ -603,10 +665,13 @@ function renderHoldings(data) {
         const invVal = item.totalCost;
         const pnlVal = curVal - invVal;
         const pnlPct = invVal > 0 ? (pnlVal / invVal) * 100 : 0;
+        const meta = getStockMeta(stock);
         totalFilteredPortVal += curVal;
 
         filteredHoldings.push({
           stock,
+          companyName: meta.name,
+          sector: meta.sector,
           qty: item.totalQty,
           wap,
           ltp,
@@ -623,43 +688,56 @@ function renderHoldings(data) {
     });
   }
 
-  document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
+  const totalEqVal = filteredHoldings.reduce((s, h) => s + Number(h.currentVal || 0), 0);
+  const totalInvVal = filteredHoldings.reduce((s, h) => s + Number(h.investedVal || 0), 0);
+  const totalUnrelPnl = totalEqVal - totalInvVal;
+  const totalUnrelPct = totalInvVal > 0 ? (totalUnrelPnl / totalInvVal) * 100 : 0;
+  const cashAmt = isCombined
+    ? Number(data.cashBalance || 0)
+    : Number((data.accountCashMap && data.accountCashMap[currentHoldingsAccountFilter]) || 0);
 
-  // Liquid Cash Available Badge
+  const mktEl = document.getElementById('portKpiMarketVal');
+  const invEl = document.getElementById('portKpiInvestedVal');
+  const pnlEl = document.getElementById('portKpiUnrealizedVal');
+  const pnlPctEl = document.getElementById('portKpiUnrealizedPct');
   const cashBadgeVal = document.getElementById('holdingsCashBadgeVal');
   const cashBadgeLabel = document.getElementById('holdingsCashBadgeLabel');
-  const cashBadgeContainer = document.getElementById('holdingsCashBadge');
 
-  let cashAmt = 0;
-  if (currentHoldingsAccountFilter === 'ALL') {
-    cashAmt = data.cashBalance;
-    cashBadgeLabel.innerText = 'Cash Available (Combined):';
-    cashBadgeContainer.removeAttribute('title');
-  } else {
-    const acct = currentHoldingsAccountFilter;
-    cashAmt = data.accountCashMap[acct] || 0;
-    cashBadgeLabel.innerText = `Cash Available (${acct}):`;
-    const rec = cashCalibration.records && cashCalibration.records[acct];
-    if (rec && rec.date) {
-      cashBadgeContainer.title = `Calibrated baseline • last calibrated on ${rec.date}`;
-    } else {
-      cashBadgeContainer.title = 'Not calibrated yet. Use Settings → Cash Calibration.';
-    }
+  if (mktEl) {
+    mktEl.innerText = formatINR(totalEqVal, 0);
+    mktEl.className = `text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight ${maskClass}`;
+  }
+  if (invEl) {
+    invEl.innerText = formatINR(totalInvVal, 0);
+    invEl.className = `text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight ${maskClass}`;
+  }
+  if (pnlEl) {
+    const isPos = totalUnrelPnl >= 0;
+    pnlEl.innerText = `${isPos ? '+' : ''}${formatINR(totalUnrelPnl, 0)}`;
+    pnlEl.className = `text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
+  }
+  if (pnlPctEl) {
+    const isPos = totalUnrelPct >= 0;
+    pnlPctEl.innerText = `${isPos ? '+' : ''}${totalUnrelPct.toFixed(2)}%`;
+    pnlPctEl.className = `px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums ${isPos ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'}`;
+  }
+  if (cashBadgeLabel) {
+    cashBadgeLabel.innerText = isCombined ? 'Available Cash' : `Available Cash (${currentHoldingsAccountFilter})`;
+  }
+  if (cashBadgeVal) {
+    cashBadgeVal.innerText = formatINR(cashAmt, 0);
+    cashBadgeVal.className = `text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight ${cashAmt >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
   }
 
-  cashBadgeVal.innerText = formatINR(cashAmt);
-  cashBadgeVal.className = `tabular-nums font-mono font-extrabold text-sm ${cashAmt >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}`;
+  document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-  // Win / Loss bar
   const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
   const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
-  const profitSum = profitPositions.reduce((acc, h) => acc + h.pnlVal, 0);
-  const lossSum = lossPositions.reduce((acc, h) => acc + h.pnlVal, 0);
   const totalCount = filteredHoldings.length;
   const winRate = totalCount > 0 ? Math.round((profitPositions.length / totalCount) * 100) : 0;
 
-  document.getElementById('holdingsProfitSummary').innerHTML = `${profitPositions.length} Green <span class="${maskClass}">(+${formatCompactIndian(profitSum)})</span>`;
-  document.getElementById('holdingsLossSummary').innerHTML = `${lossPositions.length} Red <span class="${maskClass}">(${formatCompactIndian(lossSum)})</span>`;
+  document.getElementById('holdingsProfitSummary').innerText = `${profitPositions.length} Green`;
+  document.getElementById('holdingsLossSummary').innerText = `${lossPositions.length} Red`;
   document.getElementById('holdingsWinRateBadge').innerText = `Win Rate: ${winRate}%`;
   document.getElementById('holdingsWinBar').style.width = `${winRate}%`;
   document.getElementById('holdingsLossBar').style.width = `${100 - winRate}%`;
@@ -667,49 +745,278 @@ function renderHoldings(data) {
   updateSortHeaderIcons('holdings', holdingsSort, ['stock', 'investedVal', 'currentVal', 'pnlVal']);
 
   if (filteredHoldings.length === 0) {
-    const label = currentHoldingsAccountFilter === 'ALL' ? 'Combined Portfolio' : esc(currentHoldingsAccountFilter);
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No active holdings for ${label}.</td></tr>`;
+    const label = isCombined ? 'Combined Portfolio' : esc(currentHoldingsAccountFilter);
+    tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No active holdings for ${label}.</td></tr>`;
+  } else {
+    const sorted = [...filteredHoldings].sort((a, b) => {
+      const valA = a[holdingsSort.key];
+      const valB = b[holdingsSort.key];
+      if (typeof valA === 'string') {
+        return holdingsSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      return holdingsSort.dir === 'asc' ? valA - valB : valB - valA;
+    });
+
+    sorted.forEach((h, idx) => {
+      const isPos = h.pnlVal >= 0;
+      const safeStock = esc(h.stock);
+      const safeCompany = esc(h.companyName || h.stock);
+      const safeSector = esc(h.sector || 'Others');
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
+      tr.innerHTML = `
+        <td class="py-3 px-3 w-10 text-slate-400 font-semibold tabular-nums">${idx + 1}</td>
+        <td class="py-3 px-3">
+          <div class="font-bold text-slate-900 dark:text-white leading-tight">${safeStock}</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px]">${safeCompany}</div>
+        </td>
+        <td class="py-3 px-3"><span class="${getSectorBadgeClasses(safeSector)}">${safeSector}</span></td>
+        <td class="py-3 px-3 text-right tabular-nums font-semibold ${maskClass}">${h.qty}</td>
+        <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
+        <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" data-action="override-ltp" data-stock="${safeStock}" data-ltp="${h.ltp}" title="Click to override LTP">${formatINR(h.ltp)}</td>
+        <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-400 ${maskClass}">${formatINR(h.investedVal, 0)}</td>
+        <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal, 0)}</td>
+        <td class="py-3 px-3 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+          ${isPos ? '+' : ''}${formatINR(h.pnlVal, 0)}
+          <span class="text-[10.5px] font-semibold">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
+        </td>
+        <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-300">
+          <div class="flex items-center justify-end space-x-2">
+            <span>${h.weightPct.toFixed(1)}%</span>
+            <span class="w-10 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden inline-block">
+              <span class="bg-blue-600 h-1.5 rounded-full block" style="width: ${Math.min(100, h.weightPct)}%"></span>
+            </span>
+          </div>
+        </td>
+        <td class="py-3 px-3 text-center">
+          <button data-action="quick-sell" data-stock="${safeStock}" data-qty="${h.qty}" data-ltp="${h.ltp}" class="px-3 py-1 text-[11px] font-bold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/70 transition">Sell</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    if (tfoot) {
+      const isPosTotal = totalUnrelPnl >= 0;
+      tfoot.innerHTML = `
+        <tr>
+          <td colspan="6" class="py-3 px-3 text-slate-900 dark:text-white">Total (${filteredHoldings.length} ${filteredHoldings.length === 1 ? 'Holding' : 'Holdings'})</td>
+          <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(totalInvVal, 0)}</td>
+          <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(totalEqVal, 0)}</td>
+          <td class="py-3 px-3 text-right tabular-nums ${isPosTotal ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPosTotal ? '+' : ''}${formatINR(totalUnrelPnl, 0)} (${isPosTotal ? '+' : ''}${totalUnrelPct.toFixed(2)}%)</td>
+          <td class="py-3 px-3 text-right tabular-nums">100.0%</td>
+          <td class="py-3 px-3"></td>
+        </tr>
+      `;
+    }
+  }
+
+  renderPortfolioCashCard(data, cashAmt, maskClass);
+  renderPortfolioAllocation(filteredHoldings, totalEqVal, maskClass);
+  filterHoldingsTable();
+}
+
+function renderPortfolioCashCard(data, activeCashAmt, maskClass) {
+  const titleEl = document.getElementById('portCashCardTitle');
+  const bodyEl = document.getElementById('portCashCardBody');
+  if (!bodyEl) return;
+
+  const isCombined = currentHoldingsAccountFilter === 'ALL';
+  if (isCombined) {
+    if (titleEl) titleEl.innerText = 'Cash Distribution (Combined)';
+    const rowsHtml = CALIB_ACCOUNTS.map(acct => {
+      const val = Number((data.accountCashMap && data.accountCashMap[acct]) || 0);
+      return `
+        <div class="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 dark:bg-[#0A0C10]/50 border border-slate-100 dark:border-[#222836]">
+          <span class="font-semibold text-slate-700 dark:text-slate-200">${esc(acct)}</span>
+          <span class="font-extrabold tabular-nums text-slate-900 dark:text-white ${maskClass}">${formatINR(val, 0)}</span>
+        </div>
+      `;
+    }).join('');
+
+    bodyEl.innerHTML = `
+      <div class="space-y-2">${rowsHtml}</div>
+      <div class="flex items-center justify-between py-2.5 px-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 font-extrabold text-slate-900 dark:text-white">
+        <span>Total Cash</span>
+        <span class="tabular-nums text-sm ${maskClass}">${formatINR(activeCashAmt, 0)}</span>
+      </div>
+    `;
+  } else {
+    const acct = currentHoldingsAccountFilter;
+    if (titleEl) titleEl.innerText = `Account Cash (${esc(acct)})`;
+
+    const now = new Date();
+    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const fyStartIso = `${fyStartYear}-04-01`;
+
+    let depositsYtd = 0;
+    let withdrawalsYtd = 0;
+    (transactions || []).forEach(tx => {
+      if ((tx.account || '') !== acct) return;
+      if (String(tx.date || '') >= fyStartIso) {
+        if (tx.type === 'DEPOSIT') depositsYtd += Number(tx.amount || 0);
+        if (tx.type === 'WITHDRAWAL') withdrawalsYtd += Number(tx.amount || 0);
+      }
+    });
+
+    const baselineCash = getCalibOffset(acct);
+
+    bodyEl.innerHTML = `
+      <div class="space-y-2.5 py-1">
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-[#222836]">
+          <span class="text-slate-500 dark:text-slate-400 font-medium">Opening / Baseline Cash</span>
+          <span class="font-bold tabular-nums text-slate-800 dark:text-slate-200 ${maskClass}">${formatINR(baselineCash, 0)}</span>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-[#222836]">
+          <span class="text-slate-500 dark:text-slate-400 font-medium">Deposits (YTD)</span>
+          <span class="font-bold tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">+${formatINR(depositsYtd, 0)}</span>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-[#222836]">
+          <span class="text-slate-500 dark:text-slate-400 font-medium">Withdrawals (YTD)</span>
+          <span class="font-bold tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">-${formatINR(withdrawalsYtd, 0)}</span>
+        </div>
+        <div class="flex items-center justify-between py-2.5 px-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 font-extrabold text-slate-900 dark:text-white mt-2">
+          <span>Available Cash</span>
+          <span class="tabular-nums text-sm ${maskClass}">${formatINR(activeCashAmt, 0)}</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderPortfolioAllocation(holdingsList, totalEqVal, maskClass) {
+  const canvas = document.getElementById('portfolioAllocationChart');
+  const legendEl = document.getElementById('portAllocationLegend');
+  const tbody = document.getElementById('portBreakdownTableBody');
+  const tfoot = document.getElementById('portBreakdownTableFoot');
+  const titleEl = document.getElementById('portBreakdownTitle');
+  const colLabelEl = document.getElementById('portBreakdownColLabel');
+  const centerValEl = document.getElementById('portDonutCenterVal');
+  if (!canvas) return;
+
+  if (centerValEl) {
+    centerValEl.innerText = formatINR(totalEqVal, 0);
+    centerValEl.className = `text-sm font-extrabold text-slate-900 dark:text-white tabular-nums ${maskClass}`;
+  }
+
+  const isSector = portAllocationMode === 'sector';
+  if (titleEl) titleEl.innerText = isSector ? 'Sector Breakdown' : 'Stock Breakdown';
+  if (colLabelEl) colLabelEl.innerText = isSector ? 'Sector' : 'Stock';
+
+  const groupMap = {};
+  (holdingsList || []).forEach(h => {
+    const k = isSector ? (h.sector || 'Others') : h.stock;
+    groupMap[k] = (groupMap[k] || 0) + Number(h.currentVal || 0);
+  });
+
+  const entries = Object.keys(groupMap)
+    .map(name => ({
+      name,
+      value: groupMap[name],
+      weight: totalEqVal > 0 ? (groupMap[name] / totalEqVal) * 100 : 0
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  const palette = ['#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B'];
+
+  if (legendEl) {
+    legendEl.innerHTML = entries.slice(0, 6).map((item, idx) => {
+      const c = palette[idx % palette.length];
+      return `
+        <div class="flex items-center justify-between gap-2">
+          <span class="flex items-center space-x-2 truncate text-slate-700 dark:text-slate-200 font-semibold">
+            <span class="w-2.5 h-2.5 rounded-xs shrink-0" style="background-color:${c}"></span>
+            <span class="truncate">${esc(item.name)}</span>
+          </span>
+          <span class="font-bold tabular-nums text-slate-900 dark:text-white shrink-0">${item.weight.toFixed(1)}%</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if (tbody) {
+    tbody.innerHTML = entries.map(item => `
+      <tr>
+        <td class="py-1.5 pr-2 font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[130px]">${esc(item.name)}</td>
+        <td class="py-1.5 px-2 text-right tabular-nums ${maskClass}">${formatINR(item.value, 0)}</td>
+        <td class="py-1.5 pl-2 text-right tabular-nums font-semibold">${item.weight.toFixed(1)}%</td>
+      </tr>
+    `).join('');
+  }
+
+  if (tfoot) {
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-2 pr-2">Total</td>
+        <td class="py-2 px-2 text-right tabular-nums ${maskClass}">${formatINR(totalEqVal, 0)}</td>
+        <td class="py-2 pl-2 text-right tabular-nums">100.0%</td>
+      </tr>
+    `;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const labels = entries.map(e => e.name);
+  const values = entries.map(e => e.value);
+  const colors = entries.map((_, idx) => palette[idx % palette.length]);
+  const isDark = document.documentElement.classList.contains('dark');
+
+  if (portAllocationChartInstance) {
+    portAllocationChartInstance.data.labels = labels;
+    portAllocationChartInstance.data.datasets[0].data = values;
+    portAllocationChartInstance.data.datasets[0].backgroundColor = colors;
+    portAllocationChartInstance.data.datasets[0].borderColor = isDark ? '#131722' : '#FFFFFF';
+    portAllocationChartInstance.update('none');
     return;
   }
 
-  const sorted = [...filteredHoldings].sort((a, b) => {
-    const valA = a[holdingsSort.key];
-    const valB = b[holdingsSort.key];
-    if (typeof valA === 'string') {
-      return holdingsSort.dir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+  portAllocationChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderColor: isDark ? '#131722' : '#FFFFFF',
+        borderWidth: 2,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: function(context) {
+            const { chart, tooltip } = context;
+            const el = document.getElementById('portAllocTooltip');
+            if (!el) return;
+            if (tooltip.opacity === 0) {
+              el.style.opacity = '0';
+              return;
+            }
+            const dp = tooltip.dataPoints && tooltip.dataPoints[0];
+            if (dp) {
+              const item = entries[dp.dataIndex];
+              const dot = colors[dp.dataIndex] || '#2563EB';
+              el.innerHTML = `
+                <div class="flex items-center space-x-1.5 font-bold text-slate-900 dark:text-white">
+                  <span class="w-2 h-2 rounded-full inline-block" style="background:${dot}"></span>
+                  <span>${esc(item.name)}:</span>
+                  <span class="font-mono ${maskClass}">${formatINR(item.value, 0)}</span>
+                  <span class="text-slate-500">(${item.weight.toFixed(1)}%)</span>
+                </div>
+              `;
+            }
+            el.style.opacity = '1';
+            el.style.left = Math.min(chart.width - 140, Math.max(8, tooltip.caretX + 10)) + 'px';
+            el.style.top = Math.max(8, tooltip.caretY - 16) + 'px';
+          }
+        }
+      }
     }
-    return holdingsSort.dir === 'asc' ? valA - valB : valB - valA;
   });
-
-  sorted.forEach(h => {
-    const isPos = h.pnlVal >= 0;
-    const safeStock = esc(h.stock);
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
-    tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${safeStock}</td>
-      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${h.qty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" data-action="override-ltp" data-stock="${safeStock}" data-ltp="${h.ltp}" title="Click to override LTP">${formatINR(h.ltp)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(h.investedVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(h.currentVal)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-300">
-        <span>${h.weightPct.toFixed(1)}%</span>
-        <div class="w-full bg-slate-200 dark:bg-slate-700 h-1 rounded-full mt-1">
-          <div class="bg-blue-600 h-1 rounded-full" style="width: ${Math.min(100, h.weightPct)}%"></div>
-        </div>
-      </td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
-        ${isPos ? '+' : ''}${formatINR(h.pnlVal)}
-        <span class="text-[11px] block opacity-85">(${isPos ? '+' : ''}${h.pnlPct.toFixed(2)}%)</span>
-      </td>
-      <td class="py-3 px-4 text-center">
-        <button data-action="quick-sell" data-stock="${safeStock}" data-qty="${h.qty}" data-ltp="${h.ltp}" class="px-2.5 py-1 text-[11px] font-semibold rounded bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-600/30 border border-rose-200 dark:border-rose-500/30 transition shadow-2xs">Sell</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-  filterHoldingsTable();
 }
 
 // Event delegation for Holdings table (XSS-safe)
