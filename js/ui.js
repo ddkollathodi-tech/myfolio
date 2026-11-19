@@ -3467,15 +3467,20 @@ function selectDashboardMetric(metricKey) {
     if (slot) {
       const isSelected = key === metricKey;
       slot.classList.toggle('is-active', isSelected);
-      slot.classList.remove('slant-left', 'slant-right', 'slant-both');
+      slot.classList.remove('slant-left', 'slant-right', 'slant-both', 'hide-left-divider', 'hide-right-divider');
 
       if (isSelected) {
         if (idx === 0) {
-          slot.classList.add('slant-right');
+          slot.classList.add('slant-right', 'hide-right-divider');
         } else if (idx === metricOrder.length - 1) {
-          slot.classList.add('slant-left');
+          slot.classList.add('slant-left', 'hide-left-divider');
         } else {
-          slot.classList.add('slant-both');
+          slot.classList.add('slant-both', 'hide-left-divider', 'hide-right-divider');
+        }
+      } else if (activeIdx !== -1) {
+        // Hide the vertical divider on the adjacent unselected slot touching the active card
+        if (idx === activeIdx + 1) {
+          slot.classList.add('hide-left-divider');
         }
       }
     }
