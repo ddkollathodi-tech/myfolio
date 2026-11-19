@@ -502,6 +502,7 @@ function recalculateAndRender() {
   renderChartLegend();
   renderChart(data);
   renderTtmTable(data);
+  renderDashboardTrendChart(data);
   updateHeaderTickerDisplay();
   refreshIcons();
 }
@@ -2139,6 +2140,7 @@ function switchMainView(view) {
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
+    renderDashboardTrendChart(getCachedEngineData());
   } else if (view === 'chart') {
     if (chartEl) chartEl.classList.remove('hidden');
     if (btnChart) btnChart.className = activeClasses;
@@ -3400,3 +3402,211 @@ window.addEventListener('click', function(e) {
 });
 
 window.addEventListener('DOMContentLoaded', init);
+/* ============================================================================
+   DASHBOARD SESSION METRIC SELECTOR & TREND CHART (ISOLATED)
+   ============================================================================ */
+let dashboardChartInstance = null;
+let selectedDashboardMetric = 'netWorth'; // 'netWorth' | 'netInvested' | 'lifetimePnL' | 'currentFy' | 'xirr'
+let dashboardChartRange = 'ALL'; // '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
+
+const DASHBOARD_METRIC_META = {
+  netWorth: {
+    title: 'Total Net Worth – Trend',
+    subtitle: 'Portfolio value over time',
+    icon: 'trending-up',
+    color: '#1D4ED8',
+    isPercent: false
+  },
+  netInvested: {
+    title: 'Net Invested – Trend',
+    subtitle: 'Contributed capital corpus over time',
+    icon: 'layers',
+    color: '#2563EB',
+    isPercent: false
+  },
+  lifetimePnL: {
+    title: 'Lifetime P&L – Trend',
+    subtitle: 'Cumulative profit and loss progression',
+    icon: 'award',
+    color: '#059669',
+    isPercent: false
+  },
+  currentFy: {
+    title: 'FY P&L – Trend',
+    subtitle: 'Financial year realized & unrealized performance',
+    icon: 'calendar',
+    color: '#D97706',
+    isPercent: false
+  },
+  xirr: {
+    title: 'Annualized XIRR – Trend',
+    subtitle: 'Cash-flow annualized return trajectory',
+    icon: 'percent',
+    color: '#4F46E5',
+    isPercent: true
+  }
+};
+
+function selectDashboardMetric(metricKey) {
+  if (!DASHBOARD_METRIC_META[metricKey]) return;
+  selectedDashboardMetric = metricKey;
+
+  ['netWorth', 'netInvested', 'lifetimePnL', 'currentFy', 'xirr'].forEach(key => {
+    const slot = document.getElementById(`dashSlot-${key}`);
+    if (slot) {
+      slot.classList.toggle('is-active', key === metricKey);
+    }
+  });
+
+  const meta = DASHBOARD_METRIC_META[metricKey];
+  const titleEl = document.getElementById('dashboardTrendTitle');
+  const subEl = document.getElementById('dashboardTrendSubtitle');
+  const iconEl = document.getElementById('dashboardTrendIcon');
+
+  if (titleEl) titleEl.innerText = meta.title;
+  if (subEl) subEl.innerText = meta.subtitle;
+  if (iconEl) iconEl.setAttribute('data-lucide', meta.icon);
+
+  refreshIcons();
+  renderDashboardTrendChart(getCachedEngineData());
+}
+
+function setDashboardChartRange(range) {
+  dashboardChartRange = range;
+  document.querySelectorAll('#dashboardRangePills .dash-range-btn').forEach(btn => {
+    const active = btn.dataset.dashRange === range;
+    btn.className = active
+      ? 'dash-range-btn px-2.5 py-1 rounded-lg bg-[#0B1F4C] dark:bg-blue-600 text-white shadow-2xs transition'
+      : 'dash-range-btn px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+  });
+  renderDashboardTrendChart(getCachedEngineData());
+}
+
+function filterPointsByDashboardRange(points, range) {
+  if (!Array.isArray(points) || points.length === 0 || range === 'ALL') return points;
+
+  const monthsMap = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, '3Y': 36, '5Y': 60 };
+  const monthsBack = monthsMap[range];
+  if (!monthsBack) return points;
+
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - monthsBack);
+
+  const filtered = points.filter(pt => {
+    if (pt.date === 'Current') return true;
+    const d = new Date(pt.date);
+    return !isNaN(d.getTime()) && d >= cutoff;
+  });
+
+  return filtered.length > 0 ? filtered : points.slice(-2);
+}
+
+function buildDashboardMetricSeries(computed) {
+  const basePoints = computeRocFourCurves(computed);
+  const ranged = filterPointsByDashboardRange(basePoints, dashboardChartRange);
+
+  return ranged.map((pt, idx) => {
+    let val = 0;
+    if (selectedDashboardMetric === 'netWorth') {
+      val = pt.portfolioValue;
+    } else if (selectedDashboardMetric === 'netInvested') {
+      val = pt.netCapital;
+    } else if (selectedDashboardMetric === 'lifetimePnL') {
+      val = pt.profit;
+    } else if (selectedDashboardMetric === 'currentFy') {
+      val = idx === ranged.length - 1 ? Number(computed.totalUnrealizedPnL || 0) + Number((computed.fyRealized[getFinancialYear(todayLocalISO())] || {}).gain || 0) : pt.profit;
+    } else if (selectedDashboardMetric === 'xirr') {
+      const yearsElapsed = Math.max(0.25, (idx + 1) / 12);
+      const ratio = pt.netCapital > 0 ? (pt.portfolioValue / pt.netCapital) : 1;
+      val = idx === ranged.length - 1 && computed.xirrValue !== null && !isNaN(computed.xirrValue)
+        ? Number(computed.xirrValue.toFixed(2))
+        : Number(((Math.pow(Math.max(0.1, ratio), 1 / yearsElapsed) - 1) * 100).toFixed(2));
+    }
+
+    return { label: pt.date, value: val };
+  });
+}
+
+function renderDashboardTrendChart(computed) {
+  const canvas = document.getElementById('dashboardMetricChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+  const isDark = document.documentElement.classList.contains('dark');
+  const series = buildDashboardMetricSeries(computed || getCachedEngineData());
+
+  const labels = series.map(s => s.label);
+  const values = series.map(s => s.value);
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement ? canvas.parentElement.clientHeight : 340);
+  gradient.addColorStop(0, isDark ? 'rgba(37, 99, 235, 0.28)' : 'rgba(37, 99, 235, 0.22)');
+  gradient.addColorStop(1, 'rgba(37, 99, 235, 0.01)');
+
+  const dataset = {
+    label: meta.title,
+    data: values,
+    borderColor: meta.color,
+    backgroundColor: gradient,
+    fill: true,
+    borderWidth: 2.25,
+    tension: 0.2,
+    pointRadius: values.length <= 14 ? 3.5 : 1.5,
+    pointHoverRadius: 5.5,
+    pointBackgroundColor: meta.color,
+    pointBorderColor: isDark ? '#131722' : '#FFFFFF',
+    pointBorderWidth: 1.5
+  };
+
+  if (dashboardChartInstance) {
+    dashboardChartInstance.data.labels = labels;
+    dashboardChartInstance.data.datasets = [dataset];
+    dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
+    dashboardChartInstance.update('none');
+    return;
+  }
+
+  dashboardChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [dataset] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: (c) => {
+              const raw = c.parsed.y;
+              return meta.isPercent ? ` ${meta.title}: ${Number(raw).toFixed(2)}%` : ` ${meta.title}: ${formatINR(raw, 0)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: {
+            color: isDark ? '#94A3B8' : '#64748B',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 12,
+            font: { family: "'Inter', sans-serif", size: 11 }
+          }
+        },
+        y: {
+          border: { display: false },
+          grid: { color: isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0' },
+          ticks: {
+            color: isDark ? '#94A3B8' : '#64748B',
+            font: { family: "'Inter', sans-serif", size: 11 },
+            callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
+          }
+        }
+      }
+    }
+  });
+}
