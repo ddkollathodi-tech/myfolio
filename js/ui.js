@@ -2157,10 +2157,12 @@ function switchMainView(view) {
 
   if (view === 'home') {
     if (homeEl) homeEl.classList.remove('hidden');
-  } else if (view === 'dashboard') {
+} else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
-    if (typeof renderDashboardTrendChart === 'function') {
+    if (typeof selectDashboardMetric === 'function') {
+      selectDashboardMetric(selectedDashboardMetric || 'netWorth');
+    } else if (typeof renderDashboardTrendChart === 'function') {
       renderDashboardTrendChart(getCachedEngineData());
     }
   } else if (view === 'chart') {
