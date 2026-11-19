@@ -1146,18 +1146,14 @@
       <!-- VIEW 4: PRODUCTS SUB-VIEWS CONTAINER (Dedicated Full Page) -->
       <!-- ========================================================== -->
       <div id="mainViewProducts" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
-     <!-- TAB 2: CLOSED TRADES BOOK -->
+  
+<!-- TAB 2: CLOSED TRADES BOOK -->
         <div id="tabContent-closedTrades" class="space-y-4 hidden">
           <!-- Header -->
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center space-x-3.5">
-              <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                <i data-lucide="layers" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Closed Trades Book</h1>
-                <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium">Realized transactions summary for fully closed positions.</p>
-              </div>
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Closed Trades Book</h1>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Realized transactions summary for fully closed positions.</p>
             </div>
 
             <button
@@ -1169,51 +1165,68 @@
             </button>
           </div>
 
-          <!-- Circuit-Node Summary Strip -->
-          <div class="prod-circuit-strip">
-            <div class="prod-circuit-chip px-4 py-3 text-center min-w-[132px]">
+          <!-- 4-Node Horizontal Circuit Strip (Matches FY P&L Style) -->
+          <div class="prod-circuit-row">
+            <div class="prod-node-card px-5 py-3 text-center min-w-[155px] shrink-0">
               <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400">Total</div>
               <div id="closedKpiTotalTrades" class="text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums leading-tight">0</div>
               <div class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Closed Trades</div>
             </div>
 
-            <div class="prod-circuit-connector" aria-hidden="true">
-              <span class="prod-circuit-line"></span>
-              <span class="prod-circuit-dot"></span>
+            <div class="prod-trace-link" aria-hidden="true">
+              <span class="prod-trace-wire"></span>
+              <span class="prod-trace-port"></span>
             </div>
 
-            <div class="flex flex-col gap-2 flex-1 min-w-[260px]">
-              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold">
-                <span class="flex items-center space-x-2 text-emerald-700 dark:text-emerald-400">
-                  <i data-lucide="trending-up" class="w-4 h-4 shrink-0"></i>
-                  <span><b id="closedKpiWinCount" class="font-extrabold">0</b> Profitable Trades</span>
-                </span>
-                <span class="text-slate-300 dark:text-slate-600">|</span>
-                <span id="closedKpiWinPct" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">0.00%</span>
+            <div class="prod-node-card px-4 py-3 flex items-center space-x-3 min-w-[175px] shrink-0">
+              <span class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <div class="flex items-baseline space-x-1.5">
+                  <span id="closedKpiWinCount" class="text-base font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums">0</span>
+                  <span id="closedKpiWinPct" class="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums">0.00%</span>
+                </div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Profitable Trades</div>
               </div>
+            </div>
 
-              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold ml-0 lg:ml-4">
-                <span class="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
-                  <i data-lucide="trending-down" class="w-4 h-4 shrink-0"></i>
-                  <span><b id="closedKpiLossCount" class="font-extrabold">0</b> Loss-making Trades</span>
-                </span>
-                <span class="text-slate-300 dark:text-slate-600">|</span>
-                <span id="closedKpiLossPct" class="text-rose-600 dark:text-rose-400 font-extrabold tabular-nums">0.00%</span>
+            <div class="prod-trace-link" aria-hidden="true">
+              <span class="prod-trace-wire"></span>
+              <span class="prod-trace-port"></span>
+            </div>
+
+            <div class="prod-node-card px-4 py-3 flex items-center space-x-3 min-w-[185px] shrink-0">
+              <span class="h-8 w-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-down" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <div class="flex items-baseline space-x-1.5">
+                  <span id="closedKpiLossCount" class="text-base font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">0</span>
+                  <span id="closedKpiLossPct" class="text-xs font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">0.00%</span>
+                </div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Loss-making Trades</div>
               </div>
+            </div>
 
-              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold ml-0 lg:ml-8">
-                <span class="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
-                  <span class="font-extrabold text-sm">₹</span>
-                  <span>Total Realized P&amp;L</span>
-                </span>
-                <span class="text-slate-300 dark:text-slate-600">|</span>
-                <span id="closedKpiTotalPnl" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">+₹0.00</span>
-                <span class="text-slate-300 dark:text-slate-600">|</span>
-                <span id="closedKpiTotalRetPct" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">+0.00%</span>
+            <div class="prod-trace-link" aria-hidden="true">
+              <span class="prod-trace-wire"></span>
+              <span class="prod-trace-port"></span>
+            </div>
+
+            <div class="prod-node-card px-4 py-3 flex items-center space-x-3 min-w-[205px] shrink-0">
+              <span class="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center shrink-0 font-extrabold text-sm">
+                ₹
+              </span>
+              <div>
+                <div class="flex items-baseline space-x-1.5">
+                  <span id="closedKpiTotalPnl" class="text-base font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums">+₹0.00</span>
+                  <span id="closedKpiTotalRetPct" class="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums">+0.00%</span>
+                </div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Total Realized P&amp;L</div>
               </div>
             </div>
           </div>
-
           <!-- Search & Export Bar -->
           <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
             <div class="relative flex-1 min-w-[220px] max-w-sm">
