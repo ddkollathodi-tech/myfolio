@@ -2629,7 +2629,6 @@ function renderChart(computed) {
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
   const displayPoints = getFilteredChartPoints(computed);
-  let displayPoints = fourPoints;
   if (currentChartRange === 'TTM' && fourPoints.length > 12) {
     displayPoints = fourPoints.slice(-12);
   }
