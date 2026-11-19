@@ -210,55 +210,6 @@ th.sortable:hover {
   clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 
-/* Boundary highlighter/shadow band flush along slanted vertical edges */
-.dash-metric-slot.is-active.slant-right::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 100%;
-  background: linear-gradient(270deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
-  clip-path: polygon(100% 0, 100% 0, calc(100% - 12px) 100%, calc(100% - 20px) 100%);
-  pointer-events: none;
-}
-
-.dash-metric-slot.is-active.slant-left::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 20px;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
-  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
-  pointer-events: none;
-}
-
-.dash-metric-slot.is-active.slant-both::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 20px;
-  height: 100%;
-  background: linear-gradient(90deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
-  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
-  pointer-events: none;
-}
-
-.dash-metric-slot.is-active.slant-both::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 20px;
-  height: 100%;
-  background: linear-gradient(270deg, rgba(226, 232, 240, 0.34) 0%, rgba(148, 163, 184, 0.10) 100%);
-  clip-path: polygon(12px 0, 20px 0, 8px 100%, 0 100%);
-  pointer-events: none;
-}
-
 .dash-metric-slot.is-active .dash-slot-label,
 .dash-metric-slot.is-active .dash-slot-sub,
 .dash-metric-slot.is-active .dash-slot-meta {
