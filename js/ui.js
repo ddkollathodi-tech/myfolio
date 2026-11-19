@@ -401,10 +401,14 @@ function recalculateAndRender() {
   const nwPct = nwTarget > 0 ? Math.min(100, Math.max(0, (data.netWorth / nwTarget) * 100)) : 0;
   const nwRem = Math.max(0, nwTarget - data.netWorth);
   document.getElementById('kpiNetWorthPct').innerText = `${nwPct.toFixed(2)}%`;
+  document.getElementById('kpiNetWorthPct').className = 'dash-slot-meta text-blue-700 dark:text-blue-400 ml-1';
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
-  document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
+  document.getElementById('kpiNetWorthRem').className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200';
+  const nwBarEl = document.getElementById('kpiNetWorthBar');
+  nwBarEl.className = 'dash-slot-progress-fill bg-blue-700 h-1.5 rounded-full transition-all duration-500';
+  nwBarEl.style.width = `${nwPct}%`;
 
-// Card 2: Net Invested (Red when unselected; turns white via .dash-metric-slot.is-active .dash-slot-value when selected)
+  // Card 2: Net Invested (Red when unselected; turns white via .dash-metric-slot.is-active .dash-slot-value when selected)
   const invValEl = document.getElementById('kpiNetInvested');
   invValEl.innerText = formatINR(data.netInvested);
   invValEl.className = 'dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 text-rose-600 dark:text-rose-400';
@@ -436,7 +440,7 @@ function recalculateAndRender() {
   }
   invBarEl.style.width = `${displayPct}%`;
 
-// Card 3: Lifetime P&L
+  // Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
   lifeEl.className = `dash-slot-value text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums leading-tight transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
@@ -444,22 +448,19 @@ function recalculateAndRender() {
   const lifePctEl = document.getElementById('kpiLifetimePnLPct');
   lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
   lifePctEl.className = `dash-slot-sub mt-1.5 text-[11px] font-bold leading-snug truncate ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-  // Card 4: Current FY P&L (Purple matching Extreme Target when unselected)
-  const curFyEl = document.getElementById('kpiCurrentFyPnL');
-  curFyEl.innerText = formatINR(curFyData.gain);
-  curFyEl.className = 'dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 text-purple-600 dark:text-purple-400';
-  const lifePctEl = document.getElementById('kpiLifetimePnLPct');
-  lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
-  lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const pnlTarget = milestoneGoals.lifetimePnL || 2500000;
   const lifeTargetPct = pnlTarget > 0 ? Math.min(100, Math.max(0, (data.lifetimePnL / pnlTarget) * 100)) : 0;
   const lifeRem = Math.max(0, pnlTarget - data.lifetimePnL);
   document.getElementById('kpiLifetimeTargetPct').innerText = `${lifeTargetPct.toFixed(2)}%`;
+  document.getElementById('kpiLifetimeTargetPct').className = 'dash-slot-meta text-emerald-700 dark:text-emerald-400 ml-1';
   document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
-  document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
+  document.getElementById('kpiLifetimeTargetRem').className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200';
+  const lifeBarEl = document.getElementById('kpiLifetimeBar');
+  lifeBarEl.className = 'dash-slot-progress-fill bg-emerald-600 h-1.5 rounded-full transition-all duration-500';
+  lifeBarEl.style.width = `${lifeTargetPct}%`;
 
-// Card 4: Current FY Realized & Unrealized
+  // Card 4: Current FY Realized & Unrealized (Purple matching Extreme Target when unselected)
   const curFy = getFinancialYear(todayLocalISO());
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
@@ -486,7 +487,7 @@ function recalculateAndRender() {
   fyRemEl.className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200';
   fyBarEl.className = 'dash-slot-progress-fill bg-purple-600 h-1.5 rounded-full transition-all duration-500';
   fyBarEl.style.width = `${fyPct}%`;
-  
+
   // Card 5: Annualized XIRR & Inception Date
   const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
   document.getElementById('kpiXIRR').innerText = xirrValid ? `${data.xirrValue.toFixed(2)}%` : '—';
@@ -494,8 +495,12 @@ function recalculateAndRender() {
   const xirrProgress = (xirrValid && xirrTarget > 0) ? Math.min(100, Math.max(0, (data.xirrValue / xirrTarget) * 100)) : 0;
   const xirrRem = xirrValid ? Math.max(0, xirrTarget - data.xirrValue) : xirrTarget;
   document.getElementById('kpiXirrPct').innerText = xirrValid ? `${xirrProgress.toFixed(2)}%` : '—';
+  document.getElementById('kpiXirrPct').className = 'dash-slot-meta text-slate-800 dark:text-slate-300 ml-1';
   document.getElementById('kpiXirrRem').innerText = !xirrValid ? '< 90d period' : (xirrRem > 0 ? `${xirrRem.toFixed(2)}% left` : 'Achieved');
-  document.getElementById('kpiXirrBar').style.width = `${xirrProgress}%`;
+  document.getElementById('kpiXirrRem').className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate';
+  const xirrBarEl = document.getElementById('kpiXirrBar');
+  xirrBarEl.className = 'dash-slot-progress-fill bg-[#13357A] h-1.5 rounded-full transition-all duration-500';
+  xirrBarEl.style.width = `${xirrProgress}%`;
 
   const inceptionEl = document.getElementById('kpiXirrInception');
   if (inceptionEl) {
