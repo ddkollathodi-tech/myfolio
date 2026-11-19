@@ -1057,23 +1057,137 @@ function filterHoldingsTable() {
   });
 }
 
-/* ---------------- CLOSED TRADES TABLE ---------------- */
+const PROD_SUBVIEW_PAGE_SIZE = 10;
+
+let closedSearchQuery = '';
+let ledgerFilters = { account: 'ALL', type: 'ALL', fy: 'ALL', dateRange: 'ALL', sortKey: null, sortDir: 'desc' };
+let bankLedgerFilters = { search: '', account: 'ALL', type: 'ALL', fy: 'ALL', dateRange: 'ALL', sortKey: null, sortDir: 'desc' };
+
+function populateProdSubViewFilters(data) {
+  const fySet = new Set();
+  (data && Array.isArray(data.ledgerEntries) ? data.ledgerEntries : []).forEach(e => {
+    if (e.date) fySet.add(getFinancialYear(e.date));
+  });
+  (data && Array.isArray(data.bankEntries) ? data.bankEntries : []).forEach(e => {
+    if (e.date) fySet.add(getFinancialYear(e.date));
+  });
+  const sortedFys = Array.from(fySet).sort().reverse();
+  const fyOptionsHtml = `<option value="ALL">All FY</option>` + sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+
+  const acctSet = new Set([...(typeof CALIB_ACCOUNTS !== 'undefined' ? CALIB_ACCOUNTS : [])]);
+  (typeof transactions !== 'undefined' && Array.isArray(transactions) ? transactions : []).forEach(tx => {
+    if (tx.account) acctSet.add(String(tx.account).trim());
+  });
+  const acctOptionsHtml = `<option value="ALL">All Accounts</option>` + Array.from(acctSet).map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+
+  ['ledgerAccountFilter', 'bankAccountFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const prev = el.value || 'ALL';
+      el.innerHTML = acctOptionsHtml;
+      el.value = prev;
+    }
+  });
+
+  ['ledgerFyFilter', 'bankFyFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const prev = el.value || 'ALL';
+      el.innerHTML = fyOptionsHtml;
+      el.value = prev;
+    }
+  });
+}
+
+function isWithinDateRange(dateStr, rangeKey) {
+  if (!rangeKey || rangeKey === 'ALL') return true;
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+  const daysMap = { '30D': 30, '90D': 90, '1Y': 365 };
+  const days = daysMap[rangeKey] || 365;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return d >= cutoff;
+}
+
+function handleClosedSearch() {
+  const inp = document.getElementById('closedSearchInput');
+  closedSearchQuery = (inp ? inp.value : '').trim().toLowerCase();
+  if (typeof closedTradesCurrentPage !== 'undefined') closedTradesCurrentPage = 1;
+  renderClosedTrades(getCachedEngineData().closedTrades);
+  refreshIcons();
+}
+
+/* ---------------- CLOSED TRADES BOOK ---------------- */
 function renderClosedTrades(closedTrades) {
   const tbody = document.getElementById('closedTradesTableBody');
+  const tfoot = document.getElementById('closedTradesTableFooter');
   if (!tbody) return;
   tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
 
+  const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
   const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
-  if (closedTrades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No closed trades recorded yet.</td></tr>`;
-    document.getElementById('closedPaginationContainer').classList.add('hidden');
+  const hasClosedLots = allClosedLots.length > 0;
+  const totalTradesCount = hasClosedLots ? allClosedLots.length : (closedTrades || []).length;
+  const winTradesCount = hasClosedLots
+    ? allClosedLots.filter(l => Number(l.pnl || 0) > 0).length
+    : (closedTrades || []).filter(c => Number(c.netPnL || 0) > 0).length;
+  const lossTradesCount = hasClosedLots
+    ? allClosedLots.filter(l => Number(l.pnl || 0) < 0).length
+    : (closedTrades || []).filter(c => Number(c.netPnL || 0) < 0).length;
+
+  const winPct = totalTradesCount > 0 ? (winTradesCount / totalTradesCount) * 100 : 0;
+  const lossPct = totalTradesCount > 0 ? (lossTradesCount / totalTradesCount) * 100 : 0;
+
+  const overallCost = (closedTrades || []).reduce((s, r) => s + Number(r.totalCostBasis || 0), 0);
+  const overallProceeds = (closedTrades || []).reduce((s, r) => s + Number(r.totalProceeds || 0), 0);
+  const overallPnl = overallProceeds - overallCost;
+  const overallRetPct = overallCost > 0 ? (overallPnl / overallCost) * 100 : 0;
+
+  const totTradesEl = document.getElementById('closedKpiTotalTrades');
+  const winCntEl = document.getElementById('closedKpiWinCount');
+  const winPctEl = document.getElementById('closedKpiWinPct');
+  const lossCntEl = document.getElementById('closedKpiLossCount');
+  const lossPctEl = document.getElementById('closedKpiLossPct');
+  const totPnlEl = document.getElementById('closedKpiTotalPnl');
+  const totRetEl = document.getElementById('closedKpiTotalRetPct');
+
+  if (totTradesEl) totTradesEl.innerText = String(totalTradesCount);
+  if (winCntEl) winCntEl.innerText = String(winTradesCount);
+  if (winPctEl) winPctEl.innerText = `${winPct.toFixed(2)}%`;
+  if (lossCntEl) lossCntEl.innerText = String(lossTradesCount);
+  if (lossPctEl) lossPctEl.innerText = `${lossPct.toFixed(2)}%`;
+  if (totPnlEl) {
+    totPnlEl.innerText = `${overallPnl >= 0 ? '+' : ''}${formatINR(overallPnl)}`;
+    totPnlEl.className = `font-extrabold tabular-nums ${maskClass} ${overallPnl >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+  if (totRetEl) {
+    totRetEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
+    totRetEl.className = `font-extrabold tabular-nums ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+
+  const baseList = (closedTrades || []).filter(item => {
+    if (!closedSearchQuery) return true;
+    const meta = typeof getStockMeta === 'function' ? getStockMeta(item.stock) : { name: '' };
+    return String(item.stock || '').toLowerCase().includes(closedSearchQuery) ||
+      String(meta.name || '').toLowerCase().includes(closedSearchQuery);
+  });
+
+  if (baseList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No closed trades recorded yet.</td></tr>`;
+    const pagEl = document.getElementById('closedPaginationContainer');
+    if (pagEl) pagEl.classList.add('hidden');
     return;
   }
-  document.getElementById('closedPaginationContainer').classList.remove('hidden');
+  const pagEl = document.getElementById('closedPaginationContainer');
+  if (pagEl) pagEl.classList.remove('hidden');
 
-  const sorted = [...closedTrades].sort((a, b) => {
+  const sorted = [...baseList].sort((a, b) => {
     const valA = a[closedSort.key];
     const valB = b[closedSort.key];
     if (typeof valA === 'string') {
@@ -1083,14 +1197,15 @@ function renderClosedTrades(closedTrades) {
   });
 
   const totalItems = sorted.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE) || 1;
   if (closedTradesCurrentPage > totalPages) closedTradesCurrentPage = totalPages;
 
-  const startIndex = (closedTradesCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+  const startIndex = (closedTradesCurrentPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PROD_SUBVIEW_PAGE_SIZE, totalItems);
   const pageSlice = sorted.slice(startIndex, endIndex);
 
-  document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
+  const infoEl = document.getElementById('closedPageInfo');
+  if (infoEl) infoEl.innerText = `Showing ${startIndex + 1} – ${endIndex} of ${totalItems} stocks`;
 
   const jumpInput = document.getElementById('closedJumpInput');
   const totalLabel = document.getElementById('closedTotalPagesLabel');
@@ -1100,28 +1215,45 @@ function renderClosedTrades(closedTrades) {
   }
   if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
 
-  document.getElementById('closedPrevBtn').disabled = closedTradesCurrentPage <= 1;
-  document.getElementById('closedNextBtn').disabled = closedTradesCurrentPage >= totalPages;
+  const prevBtn = document.getElementById('closedPrevBtn');
+  const nextBtn = document.getElementById('closedNextBtn');
+  if (prevBtn) prevBtn.disabled = closedTradesCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = closedTradesCurrentPage >= totalPages;
 
   pageSlice.forEach(c => {
-    const avgBuy = c.totalQty > 0 ? (c.totalCostBasis / c.totalQty) : 0;
-    const avgSell = c.totalQty > 0 ? (c.totalProceeds / c.totalQty) : 0;
-    const isPos = c.netPnL >= 0;
+    const qty = Number(c.totalQty || 0);
+    const avgBuy = qty > 0 ? (Number(c.totalCostBasis || 0) / qty) : 0;
+    const avgSell = qty > 0 ? (Number(c.totalProceeds || 0) / qty) : 0;
+    const isPos = Number(c.netPnL || 0) >= 0;
 
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${esc(c.stock)}</td>
-      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${c.totalQty}</td>
+      <td class="py-3 px-4 font-extrabold text-slate-900 dark:text-white">${esc(c.stock)}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${qty}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${formatINR(avgBuy)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(avgSell)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${c.retPct.toFixed(2)}%</td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${Number(c.retPct || 0).toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (tfoot) {
+    const isTotPos = overallPnl >= 0;
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-3 px-4">Total (${baseList.length} ${baseList.length === 1 ? 'Stock' : 'Stocks'})</td>
+        <td colspan="3"></td>
+        <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallCost)}</td>
+        <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallProceeds)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(overallPnl)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
+      </tr>
+    `;
+  }
 }
 
 function handleClosedSort(key) {
@@ -1144,7 +1276,7 @@ function prevClosedPage() {
 }
 
 function nextClosedPage() {
-  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PAGE_SIZE);
+  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PROD_SUBVIEW_PAGE_SIZE);
   if (closedTradesCurrentPage < totalPages) {
     closedTradesCurrentPage++;
     renderClosedTrades(getCachedEngineData().closedTrades);
@@ -1152,7 +1284,7 @@ function nextClosedPage() {
 }
 
 function jumpToClosedPage(val) {
-  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(getCachedEngineData().closedTrades.length / PROD_SUBVIEW_PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
@@ -1160,61 +1292,131 @@ function jumpToClosedPage(val) {
   renderClosedTrades(getCachedEngineData().closedTrades);
 }
 
-/* ---------------- FINANCIAL YEAR SUMMARY ---------------- */
+/* ---------------- FINANCIAL YEAR P&L (FIFO) ---------------- */
 function renderFY(fyRealized) {
-  const cards = document.getElementById('fyCardsContainer');
   const tbody = document.getElementById('fySummaryTableBody');
-  if (!cards || !tbody) return;
-  cards.innerHTML = '';
+  const tfoot = document.getElementById('fySummaryTableFooter');
+  if (!tbody) return;
   tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
 
+  const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
   const maskClass = getMaskClass('fyBreakdown');
+  const activeFy = getFinancialYear(todayLocalISO());
 
-  Object.keys(fyRealized).sort().reverse().forEach(fy => {
-    const item = fyRealized[fy];
-    const isPos = item.gain >= 0;
-    const retPct = item.costBasis > 0 ? (item.gain / item.costBasis) * 100 : 0;
+  const fyTradeCountMap = {};
+  allClosedLots.forEach(lot => {
+    const fy = lot.sellDate ? getFinancialYear(lot.sellDate) : activeFy;
+    fyTradeCountMap[fy] = (fyTradeCountMap[fy] || 0) + 1;
+  });
 
-    const card = document.createElement('div');
-    card.className = 'bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl p-4 shadow-2xs transition-colors';
-    card.innerHTML = `
-      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1">
-        <span class="font-bold text-slate-900 dark:text-white">${esc(fy)}</span>
-        <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300">FIFO</span>
-      </div>
-      <div class="flex items-baseline justify-between mt-1.5">
-        <span class="text-lg font-bold tabular-nums ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
-          ${isPos ? '+' : ''}${formatINR(item.gain)}
-        </span>
-        <span class="text-base font-bold tabular-nums text-right ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-          ${isPos ? '+' : ''}${retPct.toFixed(2)}%
-        </span>
-      </div>
-      <div class="mt-2.5 text-[11px] space-y-1 text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-[#222836] pt-2">
-        <div class="flex justify-between"><span>Sales:</span> <span class="text-slate-800 dark:text-slate-200 font-medium ${maskClass}">${formatINR(item.sellProceeds)}</span></div>
-        <div class="flex justify-between"><span>Cost:</span> <span class="text-slate-800 dark:text-slate-200 font-medium ${maskClass}">${formatINR(item.costBasis)}</span></div>
-      </div>
-    `;
-    cards.appendChild(card);
+  const fys = Object.keys(fyRealized || {}).sort().reverse();
+  let sumCost = 0;
+  let sumProceeds = 0;
+  let sumGain = 0;
+  let sumClosedTrades = 0;
+
+  fys.forEach(fy => {
+    const item = fyRealized[fy] || {};
+    const costVal = Number(item.costBasis ?? item.cost ?? 0);
+    const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
+    const gainVal = Number(item.gain ?? 0);
+    sumCost += costVal;
+    sumProceeds += procVal;
+    sumGain += gainVal;
+    sumClosedTrades += (fyTradeCountMap[fy] || 0);
+  });
+
+  const overallRetPct = sumCost > 0 ? (sumGain / sumCost) * 100 : 0;
+
+  const totPnlEl = document.getElementById('fyKpiTotalPnl');
+  const yrsEl = document.getElementById('fyKpiYearsCount');
+  const tradesEl = document.getElementById('fyKpiClosedTradesCount');
+  const retEl = document.getElementById('fyKpiOverallReturn');
+
+  if (totPnlEl) {
+    totPnlEl.innerText = formatINR(sumGain);
+    totPnlEl.className = `text-xl sm:text-2xl font-extrabold tabular-nums leading-tight ${maskClass} ${sumGain >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+  if (yrsEl) yrsEl.innerText = String(fys.length);
+  if (tradesEl) tradesEl.innerText = String(sumClosedTrades);
+  if (retEl) {
+    retEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
+    retEl.className = `text-base font-extrabold tabular-nums leading-tight ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+
+  if (fys.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No realized gains recorded across any Financial Year yet.</td></tr>`;
+    return;
+  }
+
+  fys.forEach(fy => {
+    const item = fyRealized[fy] || {};
+    const costVal = Number(item.costBasis ?? item.cost ?? 0);
+    const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
+    const gainVal = Number(item.gain ?? 0);
+    const isPos = gainVal >= 0;
+    const retPct = costVal > 0 ? (gainVal / costVal) * 100 : 0;
+    const isCurrent = fy === activeFy;
+    const tradeCnt = fyTradeCountMap[fy] || 0;
 
     const tr = document.createElement('tr');
-    tr.className = 'border-b border-slate-100 dark:border-[#222836]/80';
+    tr.className = isCurrent
+      ? 'bg-blue-50/45 dark:bg-blue-950/20 hover:bg-blue-50/80 dark:hover:bg-blue-950/35 transition-colors'
+      : 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${esc(fy)}</td>
-      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(item.sellProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(item.costBasis)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(item.gain)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${retPct.toFixed(2)}%</td>
+      <td class="py-3 px-4 font-extrabold text-slate-900 dark:text-white">
+        <div class="flex items-center space-x-2">
+          <span>${esc(fy)}</span>
+          ${isCurrent ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">Current FY</span>' : ''}
+        </div>
+      </td>
+      <td class="py-3 px-4 text-center tabular-nums font-semibold ${maskClass}">${tradeCnt}</td>
+      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(costVal)}</td>
+      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(procVal)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        ${isPos ? '+' : ''}${formatINR(gainVal)}
+      </td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        ${isPos ? '+' : ''}${retPct.toFixed(2)}%
+      </td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (tfoot) {
+    const isTotPos = sumGain >= 0;
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-3 px-4">Total</td>
+        <td class="py-3 px-4 text-center tabular-nums ${maskClass}">${sumClosedTrades}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(sumCost)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(sumProceeds)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(sumGain)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
+      </tr>
+    `;
+  }
 }
 
-/* ---------------- TRADEBOOK LEDGER TABLE ---------------- */
+/* ---------------- TRADEBOOK & CASH LEDGER ---------------- */
 function getFilteredLedgerEntries(ledgerEntries) {
-  const reversed = [...ledgerEntries].reverse();
-  if (!ledgerSearchTerm) return reversed;
-  return reversed.filter(tx =>
+  let list = Array.isArray(ledgerEntries) ? [...ledgerEntries].reverse() : [];
+  if (ledgerFilters.account !== 'ALL') {
+    list = list.filter(tx => (tx.account || '') === ledgerFilters.account);
+  }
+  if (ledgerFilters.type !== 'ALL') {
+    list = list.filter(tx => String(tx.type || '').toUpperCase() === ledgerFilters.type);
+  }
+  if (ledgerFilters.fy !== 'ALL') {
+    list = list.filter(tx => tx.date && getFinancialYear(tx.date) === ledgerFilters.fy);
+  }
+  if (ledgerFilters.dateRange !== 'ALL') {
+    list = list.filter(tx => isWithinDateRange(tx.date, ledgerFilters.dateRange));
+  }
+  if (!ledgerSearchTerm) return list;
+  return list.filter(tx =>
     (tx.stock && tx.stock.toLowerCase().includes(ledgerSearchTerm)) ||
     (tx.type && tx.type.toLowerCase().includes(ledgerSearchTerm)) ||
     (tx.account && tx.account.toLowerCase().includes(ledgerSearchTerm)) ||
@@ -1228,32 +1430,69 @@ function handleLedgerSearch() {
   renderLedger(getCachedEngineData().ledgerEntries);
 }
 
+function applyLedgerFilters() {
+  const acctEl = document.getElementById('ledgerAccountFilter');
+  const typeEl = document.getElementById('ledgerTypeFilter');
+  const fyEl = document.getElementById('ledgerFyFilter');
+  const dateEl = document.getElementById('ledgerDateFilter');
+  ledgerFilters.account = acctEl ? acctEl.value : 'ALL';
+  ledgerFilters.type = typeEl ? typeEl.value : 'ALL';
+  ledgerFilters.fy = fyEl ? fyEl.value : 'ALL';
+  ledgerFilters.dateRange = dateEl ? dateEl.value : 'ALL';
+  ledgerCurrentPage = 1;
+  renderLedger(getCachedEngineData().ledgerEntries);
+  refreshIcons();
+}
+
+function toggleLedgerSort(key) {
+  if (ledgerFilters.sortKey === key) {
+    ledgerFilters.sortDir = ledgerFilters.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    ledgerFilters.sortKey = key;
+    ledgerFilters.sortDir = key === 'date' ? 'desc' : 'asc';
+  }
+  renderLedger(getCachedEngineData().ledgerEntries);
+}
+
 function renderLedger(ledgerEntries) {
   const tbody = document.getElementById('txTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const maskClass = getMaskClass('ledger');
-  const list = getFilteredLedgerEntries(ledgerEntries);
+  const engineData = getCachedEngineData();
+  populateProdSubViewFilters(engineData);
 
-  document.getElementById('ledgerCountBadge').innerText = `${list.length} Entries`;
+  const maskClass = getMaskClass('ledger');
+  let list = getFilteredLedgerEntries(ledgerEntries);
+
+  if (ledgerFilters.sortKey) {
+    const k = ledgerFilters.sortKey;
+    const dir = ledgerFilters.sortDir === 'asc' ? 1 : -1;
+    list = [...list].sort((a, b) => String(a[k] || '').localeCompare(String(b[k] || '')) * dir);
+  }
+
+  const badgeEl = document.getElementById('ledgerCountBadge');
+  if (badgeEl) badgeEl.innerText = `${list.length} Entries`;
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400 font-medium">No matching transactions found.</td></tr>`;
-    document.getElementById('ledgerPaginationContainer').classList.add('hidden');
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium">No matching transactions found.</td></tr>`;
+    const pagEl = document.getElementById('ledgerPaginationContainer');
+    if (pagEl) pagEl.classList.add('hidden');
     return;
   }
-  document.getElementById('ledgerPaginationContainer').classList.remove('hidden');
+  const pagEl = document.getElementById('ledgerPaginationContainer');
+  if (pagEl) pagEl.classList.remove('hidden');
 
   const totalItems = list.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE) || 1;
   if (ledgerCurrentPage > totalPages) ledgerCurrentPage = totalPages;
 
-  const startIndex = (ledgerCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+  const startIndex = (ledgerCurrentPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PROD_SUBVIEW_PAGE_SIZE, totalItems);
   const pageSlice = list.slice(startIndex, endIndex);
 
-  document.getElementById('ledgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
+  const infoEl = document.getElementById('ledgerPageInfo');
+  if (infoEl) infoEl.innerText = `Showing ${startIndex + 1} – ${endIndex} of ${totalItems} entries`;
 
   const jumpInput = document.getElementById('ledgerJumpInput');
   const totalLabel = document.getElementById('ledgerTotalPagesLabel');
@@ -1263,34 +1502,43 @@ function renderLedger(ledgerEntries) {
   }
   if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
 
-  document.getElementById('ledgerPrevBtn').disabled = ledgerCurrentPage <= 1;
-  document.getElementById('ledgerNextBtn').disabled = ledgerCurrentPage >= totalPages;
+  const prevBtn = document.getElementById('ledgerPrevBtn');
+  const nextBtn = document.getElementById('ledgerNextBtn');
+  if (prevBtn) prevBtn.disabled = ledgerCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = ledgerCurrentPage >= totalPages;
 
-  const badgeColors = {
-    'BUY': 'bg-blue-50 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700/40',
-    'SELL': 'bg-rose-50 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700/40',
-    'DEPOSIT': 'bg-emerald-50 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/40',
-    'WITHDRAWAL': 'bg-amber-50 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700/40',
-    'FEES': 'bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#222836]',
-    'BONUS': 'bg-purple-50 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700/40',
-    'SPLIT': 'bg-indigo-50 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700/40',
-    'DEMERGER': 'bg-cyan-50 dark:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700/40'
+  const typeColorMap = {
+    'BUY': 'text-blue-700 dark:text-blue-400 font-bold',
+    'SELL': 'text-indigo-700 dark:text-indigo-400 font-bold',
+    'DEPOSIT': 'text-emerald-700 dark:text-emerald-400 font-bold',
+    'WITHDRAWAL': 'text-rose-600 dark:text-rose-400 font-bold',
+    'FEES': 'text-rose-600 dark:text-rose-400 font-bold',
+    'BONUS': 'text-purple-700 dark:text-purple-400 font-bold',
+    'SPLIT': 'text-indigo-700 dark:text-indigo-400 font-bold',
+    'DEMERGER': 'text-cyan-700 dark:text-cyan-400 font-bold'
   };
 
   pageSlice.forEach(tx => {
+    const t = String(tx.type || '').toUpperCase();
+    const isOutflow = t === 'WITHDRAWAL' || t === 'FEES' || Number(tx.cashOut || 0) > 0;
+    const isInflow = t === 'DEPOSIT' || Number(tx.cashIn || 0) > 0;
+    const rowTintClass = isOutflow
+      ? 'ledger-row-outflow'
+      : (isInflow ? 'ledger-row-inflow' : 'ledger-row-trade');
+
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
+    tr.className = `${rowTintClass} hover:brightness-[0.98] dark:hover:brightness-110 border-b border-slate-100 dark:border-[#222836]/80 transition-colors`;
     tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-slate-400">${esc(tx.date)}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(tx.account || 'Unassigned')}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${badgeColors[tx.type] || badgeColors['FEES']}">${esc(tx.type)}</span></td>
-      <td class="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">${esc(tx.stock) || '—'}</td>
+      <td class="py-2.5 px-4 tabular-nums font-medium text-slate-800 dark:text-slate-200">${esc(tx.date)}</td>
+      <td class="py-2.5 px-2 font-medium text-slate-700 dark:text-slate-300">${esc(tx.account || 'Unassigned')}</td>
+      <td class="py-2.5 px-3 ${typeColorMap[t] || 'text-slate-700 dark:text-slate-300 font-semibold'}">${esc(t)}</td>
+      <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(tx.stock) || '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums">${tx.qty || '—'}</td>
       <td class="py-2.5 px-3 text-right tabular-nums">${tx.price ? formatINR(tx.price) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400 ${maskClass}">${tx.cashOut > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${tx.cashIn > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-slate-400 truncate max-w-xs">${esc(tx.remarks)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 ${maskClass}">${Number(tx.cashOut || 0) > 0 ? '-' + formatINR(tx.cashOut) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400 ${maskClass}">${Number(tx.cashIn || 0) > 0 ? '+' + formatINR(tx.cashIn) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-extrabold text-slate-900 dark:text-white ${maskClass}">${formatINR(tx.runningCash)}</td>
+      <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300 truncate max-w-xs">${esc(tx.remarks) || '—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1305,7 +1553,7 @@ function prevLedgerPage() {
 
 function nextLedgerPage() {
   const list = getFilteredLedgerEntries(getCachedEngineData().ledgerEntries);
-  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(list.length / PROD_SUBVIEW_PAGE_SIZE) || 1;
   if (ledgerCurrentPage < totalPages) {
     ledgerCurrentPage++;
     renderLedger(getCachedEngineData().ledgerEntries);
@@ -1314,7 +1562,7 @@ function nextLedgerPage() {
 
 function jumpToLedgerPage(val) {
   const list = getFilteredLedgerEntries(getCachedEngineData().ledgerEntries);
-  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(list.length / PROD_SUBVIEW_PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
@@ -1323,30 +1571,92 @@ function jumpToLedgerPage(val) {
 }
 
 /* ---------------- BANK LEDGER TABLE ---------------- */
+function getFilteredBankEntries(bankEntries) {
+  let list = Array.isArray(bankEntries) ? [...bankEntries].reverse() : [];
+  if (bankLedgerFilters.account !== 'ALL') {
+    list = list.filter(b => (b.account || '') === bankLedgerFilters.account);
+  }
+  if (bankLedgerFilters.type !== 'ALL') {
+    list = list.filter(b => String(b.type || '').toUpperCase() === bankLedgerFilters.type);
+  }
+  if (bankLedgerFilters.fy !== 'ALL') {
+    list = list.filter(b => b.date && getFinancialYear(b.date) === bankLedgerFilters.fy);
+  }
+  if (bankLedgerFilters.dateRange !== 'ALL') {
+    list = list.filter(b => isWithinDateRange(b.date, bankLedgerFilters.dateRange));
+  }
+  if (bankLedgerFilters.search) {
+    list = list.filter(b =>
+      String(b.remarks || '').toLowerCase().includes(bankLedgerFilters.search) ||
+      String(b.account || '').toLowerCase().includes(bankLedgerFilters.search) ||
+      String(b.type || '').toLowerCase().includes(bankLedgerFilters.search)
+    );
+  }
+  if (bankLedgerFilters.sortKey) {
+    const k = bankLedgerFilters.sortKey;
+    const dir = bankLedgerFilters.sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => String(a[k] || '').localeCompare(String(b[k] || '')) * dir);
+  }
+  return list;
+}
+
+function applyBankLedgerFilters() {
+  const searchEl = document.getElementById('bankLedgerSearchInput');
+  const acctEl = document.getElementById('bankAccountFilter');
+  const typeEl = document.getElementById('bankTypeFilter');
+  const fyEl = document.getElementById('bankFyFilter');
+  const dateEl = document.getElementById('bankDateFilter');
+
+  bankLedgerFilters.search = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  bankLedgerFilters.account = acctEl ? acctEl.value : 'ALL';
+  bankLedgerFilters.type = typeEl ? typeEl.value : 'ALL';
+  bankLedgerFilters.fy = fyEl ? fyEl.value : 'ALL';
+  bankLedgerFilters.dateRange = dateEl ? dateEl.value : 'ALL';
+  bankLedgerCurrentPage = 1;
+  renderBankLedger(getCachedEngineData().bankEntries);
+  refreshIcons();
+}
+
+function toggleBankLedgerSort(key) {
+  if (bankLedgerFilters.sortKey === key) {
+    bankLedgerFilters.sortDir = bankLedgerFilters.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    bankLedgerFilters.sortKey = key;
+    bankLedgerFilters.sortDir = key === 'date' ? 'desc' : 'asc';
+  }
+  renderBankLedger(getCachedEngineData().bankEntries);
+}
+
 function renderBankLedger(bankEntries) {
   const tbody = document.getElementById('bankLedgerTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
+  const engineData = getCachedEngineData();
+  populateProdSubViewFilters(engineData);
+
   const maskClass = getMaskClass('bankLedger');
-  const list = [...bankEntries].reverse();
+  const list = getFilteredBankEntries(bankEntries);
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">No bank ledger transactions recorded yet.</td></tr>`;
-    document.getElementById('bankLedgerPaginationContainer').classList.add('hidden');
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-medium">No bank ledger transactions recorded yet.</td></tr>`;
+    const pagEl = document.getElementById('bankLedgerPaginationContainer');
+    if (pagEl) pagEl.classList.add('hidden');
     return;
   }
-  document.getElementById('bankLedgerPaginationContainer').classList.remove('hidden');
+  const pagEl = document.getElementById('bankLedgerPaginationContainer');
+  if (pagEl) pagEl.classList.remove('hidden');
 
   const totalItems = list.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
+  const totalPages = Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE) || 1;
   if (bankLedgerCurrentPage > totalPages) bankLedgerCurrentPage = totalPages;
 
-  const startIndex = (bankLedgerCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+  const startIndex = (bankLedgerCurrentPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const endIndex = Math.min(startIndex + PROD_SUBVIEW_PAGE_SIZE, totalItems);
   const pageSlice = list.slice(startIndex, endIndex);
 
-  document.getElementById('bankLedgerPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
+  const infoEl = document.getElementById('bankLedgerPageInfo');
+  if (infoEl) infoEl.innerText = `Showing ${startIndex + 1} – ${endIndex} of ${totalItems} entries`;
 
   const jumpInput = document.getElementById('bankLedgerJumpInput');
   const totalLabel = document.getElementById('bankLedgerTotalPagesLabel');
@@ -1356,20 +1666,22 @@ function renderBankLedger(bankEntries) {
   }
   if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
 
-  document.getElementById('bankLedgerPrevBtn').disabled = bankLedgerCurrentPage <= 1;
-  document.getElementById('bankLedgerNextBtn').disabled = bankLedgerCurrentPage >= totalPages;
+  const prevBtn = document.getElementById('bankLedgerPrevBtn');
+  const nextBtn = document.getElementById('bankLedgerNextBtn');
+  if (prevBtn) prevBtn.disabled = bankLedgerCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = bankLedgerCurrentPage >= totalPages;
 
   pageSlice.forEach(b => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-2.5 px-4 tabular-nums text-slate-500 dark:text-slate-400">${esc(b.date)}</td>
-      <td class="py-2.5 px-2"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(b.account || 'Unassigned')}</span></td>
-      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${b.type === 'DEPOSIT' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800'}">${esc(b.type)}</span></td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400 ${maskClass}">${b.deposit > 0 ? formatINR(b.deposit) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 ${maskClass}">${b.withdrawal > 0 ? formatINR(b.withdrawal) : '—'}</td>
-      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white ${maskClass}">${formatINR(b.corpus)}</td>
-      <td class="py-2.5 px-4 text-slate-500 dark:text-slate-400">${esc(b.remarks)}</td>
+      <td class="py-2.5 px-4 tabular-nums font-medium text-slate-800 dark:text-slate-200">${esc(b.date)}</td>
+      <td class="py-2.5 px-2 font-medium text-slate-700 dark:text-slate-300">${esc(b.account || 'Unassigned')}</td>
+      <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">${esc(b.type)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400 ${maskClass}">${Number(b.deposit || 0) > 0 ? formatINR(b.deposit) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 ${maskClass}">${Number(b.withdrawal || 0) > 0 ? formatINR(b.withdrawal) : '—'}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-extrabold text-slate-900 dark:text-white ${maskClass}">${formatINR(b.corpus)}</td>
+      <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300">${esc(b.remarks) || '—'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1383,7 +1695,8 @@ function prevBankLedgerPage() {
 }
 
 function nextBankLedgerPage() {
-  const totalPages = Math.ceil(getCachedEngineData().bankEntries.length / PAGE_SIZE);
+  const list = getFilteredBankEntries(getCachedEngineData().bankEntries);
+  const totalPages = Math.ceil(list.length / PROD_SUBVIEW_PAGE_SIZE);
   if (bankLedgerCurrentPage < totalPages) {
     bankLedgerCurrentPage++;
     renderBankLedger(getCachedEngineData().bankEntries);
@@ -1391,14 +1704,14 @@ function nextBankLedgerPage() {
 }
 
 function jumpToBankLedgerPage(val) {
-  const totalPages = Math.ceil(getCachedEngineData().bankEntries.length / PAGE_SIZE) || 1;
+  const list = getFilteredBankEntries(getCachedEngineData().bankEntries);
+  const totalPages = Math.ceil(list.length / PROD_SUBVIEW_PAGE_SIZE) || 1;
   let target = parseInt(val, 10);
   if (isNaN(target) || target < 1) target = 1;
   if (target > totalPages) target = totalPages;
   bankLedgerCurrentPage = target;
   renderBankLedger(getCachedEngineData().bankEntries);
 }
-
 /* ---------------- TAB 7: PURIFICATION & DONATIONS VIEW ---------------- */
 function togglePurificationTableAccordion() {
   const container = document.getElementById('purifTableContainer');
