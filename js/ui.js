@@ -404,8 +404,11 @@ function recalculateAndRender() {
   document.getElementById('kpiNetWorthRem').innerText = nwRem > 0 ? `${formatCompactIndian(nwRem)} left` : 'Achieved';
   document.getElementById('kpiNetWorthBar').style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested
-  document.getElementById('kpiNetInvested').innerText = formatINR(data.netInvested);
+// Card 2: Net Invested (Red when unselected; turns white via .dash-metric-slot.is-active .dash-slot-value when selected)
+  const invValEl = document.getElementById('kpiNetInvested');
+  invValEl.innerText = formatINR(data.netInvested);
+  invValEl.className = 'dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 text-rose-600 dark:text-rose-400';
+
   const invTarget = milestoneGoals.netInvested || 5000000;
   const isExcessInvested = data.netInvested > invTarget;
   const invPct = invTarget > 0 ? (data.netInvested / invTarget) * 100 : 0;
@@ -420,24 +423,28 @@ function recalculateAndRender() {
     const excessPct = invPct - 100;
     invPctEl.innerText = `${excessPct.toFixed(2)}% excess invested`;
     invRemEl.innerText = `${formatCompactIndian(excessAmt)} excess`;
-    invRemEl.className = 'text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
-    invPctEl.className = 'text-rose-600 dark:text-rose-400 font-bold';
-    invBarEl.className = 'bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500';
+    invRemEl.className = 'dash-slot-meta text-rose-600 dark:text-rose-400 font-bold transition-all duration-200';
+    invPctEl.className = 'dash-slot-meta text-rose-600 dark:text-rose-400 font-bold';
+    invBarEl.className = 'dash-slot-progress-fill bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full transition-all duration-500';
   } else {
     invPctEl.innerText = `${invPct.toFixed(2)}%`;
     const invRem = invTarget - data.netInvested;
     invRemEl.innerText = invRem > 0 ? `${formatCompactIndian(invRem)} left` : 'Achieved';
-    invRemEl.className = 'text-slate-500 dark:text-slate-400 transition-all duration-200';
-    invPctEl.className = 'text-emerald-600 dark:text-emerald-400 font-bold';
-    invBarEl.className = 'bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full transition-all duration-500';
+    invRemEl.className = 'dash-slot-meta text-slate-600 dark:text-slate-400 transition-all duration-200';
+    invPctEl.className = 'dash-slot-meta text-rose-600 dark:text-rose-400 font-bold';
+    invBarEl.className = 'dash-slot-progress-fill bg-gradient-to-r from-rose-600 to-rose-500 h-1.5 rounded-full transition-all duration-500';
   }
   invBarEl.style.width = `${displayPct}%`;
 
   // Card 3: Lifetime P&L
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
-  lifeEl.className = `text-xl font-bold tracking-tight tabular-nums leading-none mt-1 transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-
+  lifeEl.className = `dash-slot-value text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums leading-tight transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+...
+  // Card 4: Current FY P&L (Purple matching Extreme Target when unselected)
+  const curFyEl = document.getElementById('kpiCurrentFyPnL');
+  curFyEl.innerText = formatINR(curFyData.gain);
+  curFyEl.className = 'dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 text-purple-600 dark:text-purple-400';
   const lifePctEl = document.getElementById('kpiLifetimePnLPct');
   lifePctEl.innerText = `${data.lifetimePnL >= 0 ? '+' : ''}${data.lifetimePnLPct.toFixed(2)}%`;
   lifePctEl.className = `mt-2 text-[11px] font-semibold ${data.lifetimePnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
@@ -3471,40 +3478,215 @@ let dashboardChartRange = 'ALL'; // '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y' | 'A
 const DASHBOARD_METRIC_META = {
   netWorth: {
     title: 'Total Net Worth – Trend',
+    shortLabel: 'Total Net Worth',
     subtitle: 'Portfolio value over time',
     icon: 'trending-up',
     color: '#1D4ED8',
+    rgba: '29, 78, 216',
     isPercent: false
   },
   netInvested: {
     title: 'Net Invested – Trend',
+    shortLabel: 'Net Invested',
     subtitle: 'Contributed capital corpus over time',
     icon: 'layers',
-    color: '#2563EB',
+    color: '#E11D48',
+    rgba: '225, 29, 72',
     isPercent: false
   },
   lifetimePnL: {
     title: 'Lifetime P&L – Trend',
+    shortLabel: 'Lifetime P&L',
     subtitle: 'Cumulative profit and loss progression',
     icon: 'award',
     color: '#059669',
+    rgba: '5, 150, 105',
     isPercent: false
   },
   currentFy: {
     title: 'FY P&L – Trend',
+    shortLabel: 'FY P&L',
     subtitle: 'Financial year realized & unrealized performance',
     icon: 'calendar',
-    color: '#D97706',
+    color: '#9333EA',
+    rgba: '147, 51, 234',
     isPercent: false
   },
   xirr: {
     title: 'Annualized XIRR – Trend',
+    shortLabel: 'Annualized XIRR',
     subtitle: 'Cash-flow annualized return trajectory',
     icon: 'percent',
-    color: '#4F46E5',
+    color: '#13357A',
+    rgba: '19, 53, 122',
     isPercent: true
   }
 };
+
+function dashboardCustomTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  const tooltipEl = document.getElementById('dashboardChartTooltip');
+  if (!tooltipEl) return;
+
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = '0';
+    return;
+  }
+
+  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+
+  if (tooltip.body) {
+    const titleLines = tooltip.title || [];
+    let innerHtml = '<div class="space-y-1.5">';
+
+    titleLines.forEach(title => {
+      innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-[#222836] text-[11.5px]">${esc(title)}</div>`;
+    });
+
+    innerHtml += '<div class="space-y-1 pt-0.5">';
+    tooltip.dataPoints.forEach(dp => {
+      const dataset = chart.data.datasets[dp.datasetIndex];
+      const dotColor = dataset.borderColor || meta.color;
+      const rawVal = dp.raw !== undefined ? Number(dp.raw) : 0;
+      const formattedVal = meta.isPercent ? `${rawVal.toFixed(2)}%` : formatINR(rawVal, 0);
+
+      let variationHtml = '';
+      if (dp.dataIndex > 0) {
+        const prevVal = Number(dataset.data[dp.dataIndex - 1] || 0);
+        const delta = rawVal - prevVal;
+        const isPos = delta >= 0;
+        const formattedDelta = meta.isPercent
+          ? `${Math.abs(delta).toFixed(2)}%`
+          : formatINR(Math.abs(delta), 0);
+        variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+      }
+
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-3 text-[11px]">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${dotColor}"></span>
+            <span>${esc(meta.shortLabel)}:</span>
+          </span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+            ${formattedVal}${variationHtml}
+          </span>
+        </div>
+      `;
+    });
+    innerHtml += '</div></div>';
+    tooltipEl.innerHTML = innerHtml;
+  }
+
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+  const chartCanvasWidth = chart.width;
+  const chartCanvasHeight = chart.height;
+  const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
+  const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
+  const isNearRightEdge = dataIndex >= totalPoints - 3;
+
+  tooltipEl.style.opacity = '1';
+
+  const tooltipWidth = tooltipEl.offsetWidth || 210;
+  const tooltipHeight = tooltipEl.offsetHeight || 90;
+  const caretX = tooltip.caretX;
+  const caretY = tooltip.caretY;
+
+  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
+  tooltipEl.style.left = (isNearRightEdge || willOverflowRight)
+    ? (positionX + caretX - tooltipWidth - 12) + 'px'
+    : (positionX + caretX + 12) + 'px';
+
+  const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
+  tooltipEl.style.top = willOverflowBottom
+    ? (positionY + caretY - tooltipHeight - 12) + 'px'
+    : (positionY + caretY - 12) + 'px';
+}
+
+function renderDashboardTrendChart(computed) {
+  const canvas = document.getElementById('dashboardMetricChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+  const isDark = document.documentElement.classList.contains('dark');
+  const series = buildDashboardMetricSeries(computed || getCachedEngineData());
+
+  const labels = series.map(s => s.label);
+  const values = series.map(s => s.value);
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement ? canvas.parentElement.clientHeight : 340);
+  gradient.addColorStop(0, isDark ? `rgba(${meta.rgba}, 0.24)` : `rgba(${meta.rgba}, 0.18)`);
+  gradient.addColorStop(1, `rgba(${meta.rgba}, 0.01)`);
+
+  const dataset = {
+    label: meta.shortLabel,
+    data: values,
+    borderColor: meta.color,
+    backgroundColor: gradient,
+    fill: true,
+    borderWidth: 2.25,
+    tension: 0.2,
+    pointRadius: values.length <= 14 ? 3.5 : 1.5,
+    pointHoverRadius: 5.5,
+    pointBackgroundColor: meta.color,
+    pointBorderColor: isDark ? '#131722' : '#FFFFFF',
+    pointBorderWidth: 1.5
+  };
+
+  if (dashboardChartInstance) {
+    dashboardChartInstance.data.labels = labels;
+    dashboardChartInstance.data.datasets = [dataset];
+    dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
+    dashboardChartInstance.update('none');
+    return;
+  }
+
+  dashboardChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [dataset] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+      onHover: (event, chartElement) => {
+        if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+          const tooltipEl = document.getElementById('dashboardChartTooltip');
+          if (tooltipEl) tooltipEl.style.opacity = '0';
+        }
+      },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: dashboardCustomTooltipHandler
+        }
+      },
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: {
+            color: isDark ? '#94A3B8' : '#64748B',
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 12,
+            font: { family: "'Inter', sans-serif", size: 11 }
+          }
+        },
+        y: {
+          border: { display: false },
+          grid: { color: isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0' },
+          ticks: {
+            color: isDark ? '#94A3B8' : '#64748B',
+            font: { family: "'Inter', sans-serif", size: 11 },
+            callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
+          }
+        }
+      }
+    }
+  });
+}
 
 function selectDashboardMetric(metricKey) {
   if (!DASHBOARD_METRIC_META[metricKey]) return;
