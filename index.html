@@ -501,7 +501,7 @@
 <!-- SINGLE UNIFIED 5-METRIC STRIP WITH VERTICAL SEPARATORS -->
         <div class="dash-unified-strip rounded-3xl shadow-sm overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/90 dark:divide-[#222836]">
 
-          <!-- 1. TOTAL NET WORTH (Default Selected on Dashboard -> Slanted Right Edge Only) -->
+<!-- 1. TOTAL NET WORTH (Default Selected on Dashboard -> Slanted Right Edge Only) -->
           <div
             id="dashSlot-netWorth"
             onclick="selectDashboardMetric('netWorth')"
@@ -509,25 +509,20 @@
           >
             <div class="relative z-10">
               <div class="flex items-center justify-between gap-2 mb-3">
-                <div class="flex items-center space-x-2">
-                  <span class="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center">
+                <div class="flex items-center space-x-2 min-w-0">
+                  <span class="h-7 w-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
                     <i data-lucide="wallet" class="w-4 h-4 text-white"></i>
                   </span>
-                  <span class="dash-slot-label text-xs sm:text-[13px] font-bold tracking-tight text-slate-800 dark:text-slate-200">Total Net Worth</span>
+                  <span class="dash-slot-label text-xs sm:text-[13px] font-bold tracking-tight text-slate-800 dark:text-slate-200 truncate">Total Net Worth</span>
                 </div>
-                <div class="flex items-center space-x-1.5" onclick="event.stopPropagation()">
-                  <button onclick="toggleSingleKpiMask('netWorth')" class="h-7 w-7 rounded-lg bg-black/15 hover:bg-black/25 text-white flex items-center justify-center transition" title="Toggle Net Worth Mask">
-                    <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-3.5 h-3.5"></i>
-                  </button>
-                  <button onclick="openGoalModal('netWorth')" class="h-7 w-7 rounded-lg bg-black/15 hover:bg-black/25 text-white flex items-center justify-center transition" title="Set Net Worth Target">
-                    <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
+                <button onclick="event.stopPropagation(); toggleSingleKpiMask('netWorth')" class="dash-mask-btn shrink-0" title="Toggle Net Worth Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-netWorth" class="w-3 h-3"></i>
+                </button>
               </div>
 
               <div id="kpiNetWorth" class="dash-slot-value text-2xl sm:text-[30px] font-extrabold text-blue-700 dark:text-blue-400 tabular-nums tracking-tight leading-none transition-all duration-200">₹0.00</div>
 
-              <div class="dash-slot-sub mt-2.5 text-[11.5px] flex items-center flex-wrap gap-1.5 text-slate-500 dark:text-slate-400 font-medium">
+              <div class="dash-slot-sub mt-2.5 text-[11.5px] flex items-center flex-wrap gap-1.5 text-slate-600 dark:text-slate-400 font-medium">
                 <span>Holdings: <b id="subPortfolioVal" class="font-bold transition-all duration-200">₹0</b></span>
                 <span>|</span>
                 <span>Cash: <b id="subCashVal" class="font-bold transition-all duration-200">₹0</b></span>
@@ -536,11 +531,11 @@
 
             <div class="relative z-10 mt-4 pt-2.5">
               <div class="flex items-center justify-between text-[11px] mb-1.5 font-bold">
-                <span id="kpiNetWorthRem" class="dash-slot-meta text-slate-500 dark:text-slate-400 transition-all duration-200">₹0 left</span>
-                <span id="kpiNetWorthPct" class="dash-slot-meta text-blue-600 dark:text-blue-400">0.00%</span>
+                <span id="kpiNetWorthRem" class="dash-slot-meta text-slate-600 dark:text-slate-400 transition-all duration-200">₹0 left</span>
+                <span id="kpiNetWorthPct" class="dash-slot-meta text-blue-700 dark:text-blue-400">0.00%</span>
               </div>
-              <div class="dash-slot-progress-track w-full bg-blue-100 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
-                <div id="kpiNetWorthBar" class="dash-slot-progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="dash-slot-progress-track w-full bg-blue-950/15 dark:bg-blue-950/60 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiNetWorthBar" class="dash-slot-progress-fill bg-blue-700 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
@@ -552,27 +547,29 @@
             class="dash-metric-slot hide-left-divider lg:col-span-2 p-4 sm:p-5 flex flex-col justify-between min-h-[204px]"
           >
             <div class="relative z-10">
-              <div class="flex items-center justify-between gap-1 mb-2.5">
-                <span class="h-7 w-7 rounded-lg bg-slate-200/80 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 flex items-center justify-center">
-                  <i data-lucide="layers" class="w-4 h-4"></i>
-                </span>
-                <button onclick="event.stopPropagation(); toggleSingleKpiMask('netInvested')" class="h-7 w-7 rounded-lg bg-slate-200/70 dark:bg-[#1A1F2E] hover:bg-slate-300/70 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Net Invested Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3.5 h-3.5"></i>
+              <div class="flex items-center justify-between gap-1.5 mb-3">
+                <div class="flex items-center space-x-1.5 min-w-0">
+                  <span class="h-7 w-7 rounded-lg bg-[#13357A]/10 dark:bg-[#1A1F2E] text-[#13357A] dark:text-slate-300 flex items-center justify-center shrink-0">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                  </span>
+                  <span class="dash-slot-label text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Net Invested</span>
+                </div>
+                <button onclick="event.stopPropagation(); toggleSingleKpiMask('netInvested')" class="dash-mask-btn shrink-0" title="Toggle Net Invested Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-netInvested" class="w-3 h-3"></i>
                 </button>
               </div>
 
-              <div onclick="event.stopPropagation(); openGoalModal('netInvested')" class="dash-slot-label text-xs font-bold text-slate-700 dark:text-slate-200 hover:underline">Net Invested</div>
               <div id="kpiNetInvested" class="dash-slot-value text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight leading-snug mt-1 transition-all duration-200">₹0.00</div>
-              <div class="dash-slot-sub text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Contributed Corpus</div>
+              <div class="dash-slot-sub text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Contributed Corpus</div>
             </div>
 
             <div class="relative z-10 mt-3 pt-2">
               <div class="flex items-center justify-between text-[10.5px] mb-1 font-bold">
-                <span id="kpiNetInvestedRem" class="dash-slot-meta text-slate-500 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
-                <span id="kpiNetInvestedPct" class="dash-slot-meta text-slate-700 dark:text-slate-300 ml-1">0.00%</span>
+                <span id="kpiNetInvestedRem" class="dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
+                <span id="kpiNetInvestedPct" class="dash-slot-meta text-slate-800 dark:text-slate-300 ml-1">0.00%</span>
               </div>
-              <div class="dash-slot-progress-track w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div id="kpiNetInvestedBar" class="dash-slot-progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="dash-slot-progress-track w-full bg-[#13357A]/15 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiNetInvestedBar" class="dash-slot-progress-fill bg-[#13357A] h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
@@ -581,30 +578,32 @@
           <div
             id="dashSlot-lifetimePnL"
             onclick="selectDashboardMetric('lifetimePnL')"
-            class="dash-metric-slot lg:col-span-2 p-4 flex flex-col justify-between min-h-[178px]"
+            class="dash-metric-slot lg:col-span-2 p-4 sm:p-5 flex flex-col justify-between min-h-[204px]"
           >
             <div class="relative z-10">
-              <div class="flex items-center justify-between gap-1 mb-2.5">
-                <span class="h-7 w-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                  <i data-lucide="trending-up" class="w-4 h-4"></i>
-                </span>
-                <button onclick="event.stopPropagation(); toggleSingleKpiMask('lifetimePnL')" class="h-7 w-7 rounded-lg bg-slate-200/70 dark:bg-[#1A1F2E] hover:bg-slate-300/70 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Lifetime P&L Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3.5 h-3.5"></i>
+              <div class="flex items-center justify-between gap-1.5 mb-3">
+                <div class="flex items-center space-x-1.5 min-w-0">
+                  <span class="h-7 w-7 rounded-lg bg-[#13357A]/10 dark:bg-emerald-500/10 text-[#13357A] dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="trending-up" class="w-4 h-4"></i>
+                  </span>
+                  <span class="dash-slot-label text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Lifetime P&amp;L</span>
+                </div>
+                <button onclick="event.stopPropagation(); toggleSingleKpiMask('lifetimePnL')" class="dash-mask-btn shrink-0" title="Toggle Lifetime P&L Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-lifetimePnL" class="w-3 h-3"></i>
                 </button>
               </div>
 
-              <div onclick="event.stopPropagation(); openGoalModal('lifetimePnL')" class="dash-slot-label text-xs font-bold text-slate-700 dark:text-slate-200 hover:underline">Lifetime P&amp;L</div>
-              <div id="kpiLifetimePnL" class="dash-slot-value text-lg sm:text-xl font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight leading-snug mt-1 transition-all duration-200">₹0.00</div>
-              <div id="kpiLifetimePnLPct" class="dash-slot-sub text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">(+0.00%)</div>
+              <div id="kpiLifetimePnL" class="dash-slot-value text-lg sm:text-xl font-extrabold tabular-nums text-emerald-700 dark:text-emerald-400 tracking-tight leading-snug mt-1 transition-all duration-200">₹0.00</div>
+              <div id="kpiLifetimePnLPct" class="dash-slot-sub text-[11px] font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">(+0.00%)</div>
             </div>
 
             <div class="relative z-10 mt-3 pt-2">
               <div class="flex items-center justify-between text-[10.5px] mb-1 font-bold">
-                <span id="kpiLifetimeTargetRem" class="dash-slot-meta text-slate-500 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
-                <span id="kpiLifetimeTargetPct" class="dash-slot-meta text-slate-700 dark:text-slate-300 ml-1">0.00%</span>
+                <span id="kpiLifetimeTargetRem" class="dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
+                <span id="kpiLifetimeTargetPct" class="dash-slot-meta text-slate-800 dark:text-slate-300 ml-1">0.00%</span>
               </div>
-              <div class="dash-slot-progress-track w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div id="kpiLifetimeBar" class="dash-slot-progress-fill bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="dash-slot-progress-track w-full bg-[#13357A]/15 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiLifetimeBar" class="dash-slot-progress-fill bg-emerald-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
@@ -613,23 +612,23 @@
           <div
             id="dashSlot-currentFy"
             onclick="selectDashboardMetric('currentFy')"
-            class="dash-metric-slot lg:col-span-2 p-4 flex flex-col justify-between min-h-[178px]"
+            class="dash-metric-slot lg:col-span-2 p-4 sm:p-5 flex flex-col justify-between min-h-[204px]"
           >
             <div class="relative z-10">
-              <div class="flex items-center justify-between gap-1 mb-2.5">
-                <span class="h-7 w-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                  <i data-lucide="calendar" class="w-4 h-4"></i>
-                </span>
-                <button onclick="event.stopPropagation(); toggleSingleKpiMask('currentFy')" class="h-7 w-7 rounded-lg bg-slate-200/70 dark:bg-[#1A1F2E] hover:bg-slate-300/70 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Toggle Current FY Mask">
-                  <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3.5 h-3.5"></i>
+              <div class="flex items-center justify-between gap-1.5 mb-3">
+                <div class="flex items-center space-x-1.5 min-w-0">
+                  <span class="h-7 w-7 rounded-lg bg-[#13357A]/10 dark:bg-amber-500/10 text-[#13357A] dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                  </span>
+                  <span id="kpiCurrentFyCardTitle" class="dash-slot-label text-xs font-bold text-slate-800 dark:text-slate-200 truncate">FY P&amp;L</span>
+                </div>
+                <button onclick="event.stopPropagation(); toggleSingleKpiMask('currentFy')" class="dash-mask-btn shrink-0" title="Toggle Current FY Mask">
+                  <i data-lucide="eye-off" id="maskToggleIcon-currentFy" class="w-3 h-3"></i>
                 </button>
               </div>
 
-              <div onclick="event.stopPropagation(); openGoalModal('currentFyPnL')" class="dash-slot-label text-xs font-bold text-slate-700 dark:text-slate-200 hover:underline">
-                <span id="kpiCurrentFyCardTitle">FY P&amp;L</span>
-              </div>
               <div id="kpiCurrentFyPnL" class="dash-slot-value text-lg sm:text-xl font-extrabold tabular-nums text-slate-900 dark:text-white tracking-tight leading-snug mt-1 transition-all duration-200">₹0.00</div>
-              <div class="dash-slot-sub text-[10.5px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 space-y-0.5">
+              <div class="dash-slot-sub text-[10.5px] text-slate-600 dark:text-slate-400 leading-tight mt-0.5 space-y-0.5">
                 <div>Realized: <b class="font-semibold">₹0</b></div>
                 <div>Unrealized: <b id="kpiCurrentFyUnrealized" class="font-semibold transition-all duration-200">₹0.00</b></div>
               </div>
@@ -637,48 +636,48 @@
 
             <div class="relative z-10 mt-2.5 pt-1.5">
               <div class="flex items-center justify-between text-[10.5px] mb-1 font-bold">
-                <span id="kpiCurrentFyRem" class="dash-slot-meta text-slate-500 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
-                <span id="kpiCurrentFyPct" class="dash-slot-meta text-slate-700 dark:text-slate-300 ml-1">0.00%</span>
+                <span id="kpiCurrentFyRem" class="dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200">₹0 left</span>
+                <span id="kpiCurrentFyPct" class="dash-slot-meta text-slate-800 dark:text-slate-300 ml-1">0.00%</span>
               </div>
-              <div class="dash-slot-progress-track w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div id="kpiCurrentFyBar" class="dash-slot-progress-fill bg-amber-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="dash-slot-progress-track w-full bg-[#13357A]/15 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiCurrentFyBar" class="dash-slot-progress-fill bg-amber-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
 
-          <!-- 5. ANNUALIZED XIRR -->
+          <!-- 5. ANNUALIZED XIRR (Target Button Here Opens All-Targets Modal) -->
           <div
             id="dashSlot-xirr"
             onclick="selectDashboardMetric('xirr')"
-            class="dash-metric-slot lg:col-span-2 p-4 flex flex-col justify-between min-h-[178px]"
+            class="dash-metric-slot lg:col-span-2 p-4 sm:p-5 flex flex-col justify-between min-h-[204px]"
           >
             <div class="relative z-10">
-              <div class="flex items-center justify-between gap-1 mb-2.5">
-                <span class="h-7 w-7 rounded-lg bg-slate-200/80 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 flex items-center justify-center">
-                  <i data-lucide="percent" class="w-4 h-4"></i>
-                </span>
-                <button onclick="event.stopPropagation(); openGoalModal('xirr')" class="h-7 w-7 rounded-lg bg-slate-200/70 dark:bg-[#1A1F2E] hover:bg-slate-300/70 dark:hover:bg-[#232A3B] text-slate-600 dark:text-slate-300 flex items-center justify-center transition" title="Set XIRR Target">
-                  <i data-lucide="target" class="w-3.5 h-3.5"></i>
+              <div class="flex items-center justify-between gap-1.5 mb-3">
+                <div class="flex items-center space-x-1.5 min-w-0">
+                  <span class="h-7 w-7 rounded-lg bg-[#13357A]/10 dark:bg-[#1A1F2E] text-[#13357A] dark:text-slate-300 flex items-center justify-center shrink-0">
+                    <i data-lucide="percent" class="w-4 h-4"></i>
+                  </span>
+                  <span class="dash-slot-label text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Annualized XIRR</span>
+                </div>
+                <button onclick="event.stopPropagation(); openAllTargetsModal()" class="dash-mask-btn shrink-0" title="Set All Portfolio Targets">
+                  <i data-lucide="target" class="w-3 h-3"></i>
                 </button>
               </div>
 
-              <div class="dash-slot-label text-xs font-bold text-slate-700 dark:text-slate-200">Annualized XIRR</div>
               <div id="kpiXIRR" class="dash-slot-value text-lg sm:text-xl font-extrabold tabular-nums text-slate-900 dark:text-white tracking-tight leading-snug mt-1">0.00%</div>
-              <div id="kpiXirrInception" class="dash-slot-sub text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Since —</div>
+              <div id="kpiXirrInception" class="dash-slot-sub text-[11px] text-slate-600 dark:text-slate-400 font-medium mt-0.5">Since —</div>
             </div>
 
             <div class="relative z-10 mt-3 pt-2">
               <div class="flex items-center justify-between text-[10.5px] mb-1 font-bold">
-                <span id="kpiXirrRem" class="dash-slot-meta text-slate-500 dark:text-slate-400 truncate">0.00% left</span>
-                <span id="kpiXirrPct" class="dash-slot-meta text-slate-700 dark:text-slate-300 ml-1">0.00%</span>
+                <span id="kpiXirrRem" class="dash-slot-meta text-slate-600 dark:text-slate-400 truncate">0.00% left</span>
+                <span id="kpiXirrPct" class="dash-slot-meta text-slate-800 dark:text-slate-300 ml-1">0.00%</span>
               </div>
-              <div class="dash-slot-progress-track w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                <div id="kpiXirrBar" class="dash-slot-progress-fill bg-blue-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+              <div class="dash-slot-progress-track w-full bg-[#13357A]/15 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div id="kpiXirrBar" class="dash-slot-progress-fill bg-[#13357A] h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
               </div>
             </div>
           </div>
-
-        </div>
 
         <!-- CORRESPONDING TREND GRAPH CARD BELOW -->
         <div class="bg-white dark:bg-[#131722] rounded-3xl border border-slate-200/90 dark:border-[#222836] p-5 sm:p-6 shadow-sm space-y-4">
