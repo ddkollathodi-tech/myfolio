@@ -1146,22 +1146,101 @@
       <!-- VIEW 4: PRODUCTS SUB-VIEWS CONTAINER (Dedicated Full Page) -->
       <!-- ========================================================== -->
       <div id="mainViewProducts" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-6 hidden">
-        <!-- TAB 2: CLOSED TRADES -->
+     <!-- TAB 2: CLOSED TRADES BOOK -->
         <div id="tabContent-closedTrades" class="space-y-4 hidden">
-          <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
-            <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Closed Trades Portfolio</div>
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+              <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="layers" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Closed Trades Book</h1>
+                <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium">Realized transactions summary for fully closed positions.</p>
+              </div>
+            </div>
+
             <button
               onclick="toggleTabMask('closedTrades')"
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition"
+              class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
               title="Toggle Closed Trades Privacy Mask"
             >
-              <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-3.5 h-3.5"></i>
+              <i data-lucide="eye-off" id="maskToggleIcon-closedTrades" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs max-h-[550px] custom-scroll">
+          <!-- Circuit-Node Summary Strip -->
+          <div class="prod-circuit-strip">
+            <div class="prod-circuit-chip px-4 py-3 text-center min-w-[132px]">
+              <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400">Total</div>
+              <div id="closedKpiTotalTrades" class="text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums leading-tight">0</div>
+              <div class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Closed Trades</div>
+            </div>
+
+            <div class="prod-circuit-connector" aria-hidden="true">
+              <span class="prod-circuit-line"></span>
+              <span class="prod-circuit-dot"></span>
+            </div>
+
+            <div class="flex flex-col gap-2 flex-1 min-w-[260px]">
+              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold">
+                <span class="flex items-center space-x-2 text-emerald-700 dark:text-emerald-400">
+                  <i data-lucide="trending-up" class="w-4 h-4 shrink-0"></i>
+                  <span><b id="closedKpiWinCount" class="font-extrabold">0</b> Profitable Trades</span>
+                </span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span id="closedKpiWinPct" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">0.00%</span>
+              </div>
+
+              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold ml-0 lg:ml-4">
+                <span class="flex items-center space-x-2 text-rose-600 dark:text-rose-400">
+                  <i data-lucide="trending-down" class="w-4 h-4 shrink-0"></i>
+                  <span><b id="closedKpiLossCount" class="font-extrabold">0</b> Loss-making Trades</span>
+                </span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span id="closedKpiLossPct" class="text-rose-600 dark:text-rose-400 font-extrabold tabular-nums">0.00%</span>
+              </div>
+
+              <div class="prod-circuit-chip px-4 py-2 flex items-center justify-between gap-3 text-xs font-bold ml-0 lg:ml-8">
+                <span class="flex items-center space-x-2 text-blue-700 dark:text-blue-400">
+                  <span class="font-extrabold text-sm">₹</span>
+                  <span>Total Realized P&amp;L</span>
+                </span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span id="closedKpiTotalPnl" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">+₹0.00</span>
+                <span class="text-slate-300 dark:text-slate-600">|</span>
+                <span id="closedKpiTotalRetPct" class="text-emerald-700 dark:text-emerald-400 font-extrabold tabular-nums">+0.00%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search & Export Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="relative flex-1 min-w-[220px] max-w-sm">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input
+                id="closedSearchInput"
+                onkeyup="handleClosedSearch()"
+                type="text"
+                placeholder="Search by stock (e.g. RELIANCE, TCS...)"
+                class="w-full bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium shadow-2xs"
+              >
+            </div>
+
+            <button
+              type="button"
+              onclick="exportPortfolioToExcel()"
+              class="px-4 py-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-50 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2 shadow-2xs transition cursor-pointer"
+            >
+              <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400"></i>
+              <span>Export</span>
+            </button>
+          </div>
+
+          <!-- Table Card -->
+          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs max-h-[540px] custom-scroll">
             <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+              <thead class="bg-blue-50/70 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
                   <th onclick="handleClosedSort('stock')" class="py-3 px-4 sortable transition-colors">
                     <div class="flex items-center space-x-1.5">
@@ -1184,13 +1263,13 @@
                       <span id="sortIcon-closed-totalProceeds"></span>
                     </div>
                   </th>
-                  <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white sortable transition-colors">
+                  <th onclick="handleClosedSort('netPnL')" class="py-3 px-4 text-right font-extrabold text-slate-900 dark:text-white sortable transition-colors">
                     <div class="flex items-center justify-end space-x-1.5">
                       <span>Net Realized P&amp;L</span>
                       <span id="sortIcon-closed-netPnL"></span>
                     </div>
                   </th>
-                  <th onclick="handleClosedSort('retPct')" class="py-3 px-3 text-right sortable transition-colors">
+                  <th onclick="handleClosedSort('retPct')" class="py-3 px-4 text-right sortable transition-colors">
                     <div class="flex items-center justify-end space-x-1.5">
                       <span>Return %</span>
                       <span id="sortIcon-closed-retPct"></span>
@@ -1199,14 +1278,18 @@
                 </tr>
               </thead>
               <tbody id="closedTradesTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80 font-normal"></tbody>
+              <tfoot id="closedTradesTableFooter" class="border-t-2 border-blue-200/80 dark:border-[#222836] bg-blue-50/60 dark:bg-[#1A1F2E]/60 font-extrabold text-slate-900 dark:text-white"></tfoot>
             </table>
           </div>
 
-          <div id="closedPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-            <span id="closedPageInfo">Showing 1–12 entries</span>
+          <!-- Pagination -->
+          <div id="closedPaginationContainer" class="flex flex-wrap items-center justify-between gap-3 text-xs px-1 py-1 text-slate-600 dark:text-slate-400">
+            <span id="closedPageInfo" class="font-medium">Showing 0 entries</span>
             <div class="flex items-center space-x-2">
-              <button id="closedPrevBtn" onclick="prevClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
-              <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
+              <button id="closedPrevBtn" onclick="prevClosedPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <div class="flex items-center space-x-1.5 font-semibold text-slate-700 dark:text-slate-300">
                 <span>Page</span>
                 <input
                   type="number"
@@ -1214,86 +1297,240 @@
                   min="1"
                   value="1"
                   onchange="jumpToClosedPage(this.value)"
-                  class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  class="w-12 text-center rounded-xl bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] py-1 text-xs font-extrabold tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
                 <span id="closedTotalPagesLabel">of 1</span>
               </div>
-              <button id="closedNextBtn" onclick="nextClosedPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
+              <button id="closedNextBtn" onclick="nextClosedPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- TAB 3: FINANCIAL YEAR SUMMARY -->
+        <!-- TAB 3: FINANCIAL YEAR P&L (FIFO) -->
         <div id="tabContent-fyBreakdown" class="space-y-4 hidden">
-          <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
-            <div class="text-xs font-bold text-slate-700 dark:text-slate-300">FIFO Realized History by Financial Year</div>
-            <button
-              onclick="toggleTabMask('fyBreakdown')"
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition"
-              title="Toggle FY P&L Privacy Mask"
-            >
-              <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-3.5 h-3.5"></i>
-            </button>
+          <!-- Header + Method Pill + Mask Toggle -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+              <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Financial Year P&amp;L (FIFO)</h1>
+                <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium">Realized profit and loss, grouped by financial year (FIFO method).</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span class="px-3 py-1.5 rounded-xl bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center space-x-1.5 shadow-2xs" title="First-In, First-Out lot matching">
+                <span>Method : <b class="font-extrabold">FIFO</b></span>
+                <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+              </span>
+              <button
+                onclick="toggleTabMask('fyBreakdown')"
+                class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
+                title="Toggle FY P&L Privacy Mask"
+              >
+                <i data-lucide="eye-off" id="maskToggleIcon-fyBreakdown" class="w-4 h-4"></i>
+              </button>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="fyCardsContainer"></div>
-          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs max-h-[550px] custom-scroll">
-            <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
-                <tr>
-                  <th class="py-3 px-4">Financial Year (Apr-Mar)</th>
-                  <th class="py-3 px-4 text-right">Realized Sell Value</th>
-                  <th class="py-3 px-4 text-right">FIFO Cost Basis</th>
-                  <th class="py-3 px-4 text-right">Realized Gain / Loss (₹)</th>
-                  <th class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">Realized Return (%)</th>
-                </tr>
-              </thead>
-              <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
-            </table>
+          <!-- Circuit-Node Summary Strip -->
+          <div class="prod-circuit-strip">
+            <div class="prod-circuit-chip px-5 py-3 text-center min-w-[165px]">
+              <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400">Total</div>
+              <div id="fyKpiTotalPnl" class="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums leading-tight">₹0.00</div>
+              <div class="text-[11px] font-semibold text-slate-600 dark:text-slate-300">Realized P&amp;L</div>
+            </div>
+
+            <div class="prod-circuit-connector" aria-hidden="true">
+              <span class="prod-circuit-line"></span>
+              <span class="prod-circuit-dot"></span>
+            </div>
+
+            <div class="prod-circuit-chip px-4 py-3 flex items-center space-x-3 min-w-[145px]">
+              <span class="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <div id="fyKpiYearsCount" class="text-base font-extrabold text-slate-900 dark:text-white tabular-nums leading-tight">0</div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Financial Years</div>
+              </div>
+            </div>
+
+            <div class="prod-circuit-connector" aria-hidden="true">
+              <span class="prod-circuit-line"></span>
+              <span class="prod-circuit-dot"></span>
+            </div>
+
+            <div class="prod-circuit-chip px-4 py-3 flex items-center space-x-3 min-w-[145px]">
+              <span class="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <div id="fyKpiClosedTradesCount" class="text-base font-extrabold text-slate-900 dark:text-white tabular-nums leading-tight">0</div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Closed Trades</div>
+              </div>
+            </div>
+
+            <div class="prod-circuit-connector" aria-hidden="true">
+              <span class="prod-circuit-line"></span>
+              <span class="prod-circuit-dot"></span>
+            </div>
+
+            <div class="prod-circuit-chip px-4 py-3 flex items-center space-x-3 min-w-[155px]">
+              <span class="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <div id="fyKpiOverallReturn" class="text-base font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums leading-tight">+0.00%</div>
+                <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">Overall Return</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Card with Top-Right Export Button -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-3">
+            <div class="flex justify-end">
+              <button
+                type="button"
+                onclick="exportPortfolioToExcel()"
+                class="px-4 py-1.5 rounded-xl bg-white dark:bg-[#1A1F2E] hover:bg-slate-50 dark:hover:bg-[#232A3B] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2 shadow-2xs transition cursor-pointer"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400"></i>
+                <span>Export</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200/90 dark:border-[#222836] max-h-[540px] custom-scroll">
+              <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
+                <thead class="bg-blue-50/70 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+                  <tr>
+                    <th class="py-3 px-4">Financial Year</th>
+                    <th class="py-3 px-4 text-center">Closed Trades</th>
+                    <th class="py-3 px-4 text-right">Total Cost Basis</th>
+                    <th class="py-3 px-4 text-right">Total Realized Proceeds</th>
+                    <th class="py-3 px-4 text-right font-extrabold text-slate-900 dark:text-white">Realized P&amp;L</th>
+                    <th class="py-3 px-4 text-right font-extrabold text-slate-900 dark:text-white">Return %</th>
+                  </tr>
+                </thead>
+                <tbody id="fySummaryTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+                <tfoot id="fySummaryTableFooter" class="border-t-2 border-blue-200/80 dark:border-[#222836] bg-blue-50/60 dark:bg-[#1A1F2E]/60 font-extrabold text-slate-900 dark:text-white"></tfoot>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- TAB 4: TRADEBOOK & LEDGER -->
+        <!-- TAB 4: TRADEBOOK & CASH LEDGER -->
         <div id="tabContent-transactions" class="space-y-4 hidden">
-          <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836] gap-3">
-            <div class="flex items-center space-x-2.5">
-              <input id="ledgerSearchInput" onkeyup="handleLedgerSearch()" type="text" placeholder="Search by ticker or type (e.g. RELIANCE, BUY)..." class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 w-64 font-medium">
-              <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="ledgerCountBadge">0 Entries</span>
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+              <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Tradebook &amp; Cash Ledger</h1>
+                <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium">Unified record of all trades and cash movements (buys, sells, deposits, withdrawals, fees, and settlements).</p>
+              </div>
             </div>
+
             <button
               onclick="toggleTabMask('ledger')"
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0"
+              class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
               title="Toggle Ledger Privacy Mask"
             >
-              <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-3.5 h-3.5"></i>
+              <i data-lucide="eye-off" id="maskToggleIcon-ledger" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs max-h-[550px] custom-scroll">
-            <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+          <!-- Filter & Export Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
+              <div class="relative flex-1 min-w-[220px] max-w-md">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                <input
+                  id="ledgerSearchInput"
+                  onkeyup="handleLedgerSearch()"
+                  type="text"
+                  placeholder="Search by ticker, type or remarks (e.g. DANISH, BUY, deposit...)"
+                  class="w-full bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium shadow-2xs"
+                >
+              </div>
+
+              <select id="ledgerAccountFilter" onchange="applyLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Accounts</option>
+              </select>
+
+              <select id="ledgerTypeFilter" onchange="applyLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Types</option>
+                <option value="BUY">BUY</option>
+                <option value="SELL">SELL</option>
+                <option value="DEPOSIT">DEPOSIT</option>
+                <option value="WITHDRAWAL">WITHDRAWAL</option>
+                <option value="FEES">FEES</option>
+                <option value="BONUS">BONUS</option>
+                <option value="SPLIT">SPLIT</option>
+                <option value="DEMERGER">DEMERGER</option>
+              </select>
+
+              <select id="ledgerFyFilter" onchange="applyLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All FY</option>
+              </select>
+
+              <select id="ledgerDateFilter" onchange="applyLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Dates</option>
+                <option value="30D">Last 30 Days</option>
+                <option value="90D">Last 90 Days</option>
+                <option value="1Y">Last 1 Year</option>
+              </select>
+            </div>
+
+            <div class="flex items-center space-x-2.5">
+              <span class="hidden xl:inline text-xs text-slate-500 dark:text-slate-400 font-semibold" id="ledgerCountBadge">0 Entries</span>
+              <div class="hidden sm:block h-6 w-px bg-slate-200 dark:bg-[#222836]"></div>
+              <button
+                type="button"
+                onclick="exportPortfolioToExcel()"
+                class="px-4 py-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-50 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2 shadow-2xs transition cursor-pointer"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400"></i>
+                <span>Export</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs max-h-[540px] custom-scroll">
+            <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+              <thead class="bg-blue-50/70 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
-                  <th class="py-3 px-4">Date</th>
-                  <th class="py-3 px-2">Account</th>
-                  <th class="py-3 px-3">Type</th>
-                  <th class="py-3 px-3">Stock</th>
+                  <th onclick="toggleLedgerSort('date')" class="py-3 px-4 sortable">Date</th>
+                  <th onclick="toggleLedgerSort('account')" class="py-3 px-2 sortable">Account</th>
+                  <th onclick="toggleLedgerSort('type')" class="py-3 px-3 sortable">Type</th>
+                  <th onclick="toggleLedgerSort('stock')" class="py-3 px-3 sortable">Stock</th>
                   <th class="py-3 px-3 text-right">Qty</th>
-                  <th class="py-3 px-3 text-right">Price</th>
-                  <th class="py-3 px-3 text-right text-rose-500 dark:text-rose-400">Cash Out (₹)</th>
-                  <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Cash In (₹)</th>
-                  <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Running Cash (₹)</th>
-                  <th class="py-3 px-4">Remarks</th>
+                  <th class="py-3 px-3 text-right">Price (₹)</th>
+                  <th class="py-3 px-3 text-right text-rose-600 dark:text-rose-400">Cash Out (₹)</th>
+                  <th class="py-3 px-3 text-right text-emerald-600 dark:text-emerald-400">Cash In (₹)</th>
+                  <th class="py-3 px-3 text-right font-extrabold text-slate-900 dark:text-white">Running Cash (₹)</th>
+                  <th onclick="toggleLedgerSort('remarks')" class="py-3 px-4 sortable">Remarks</th>
                 </tr>
               </thead>
               <tbody id="txTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
             </table>
           </div>
 
-          <div id="ledgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-            <span id="ledgerPageInfo">Showing 1–12 entries</span>
+          <!-- Pagination -->
+          <div id="ledgerPaginationContainer" class="flex flex-wrap items-center justify-between gap-3 text-xs px-1 py-1 text-slate-600 dark:text-slate-400">
+            <span id="ledgerPageInfo" class="font-medium">Showing 0 entries</span>
             <div class="flex items-center space-x-2">
-              <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
-              <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
+              <button id="ledgerPrevBtn" onclick="prevLedgerPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <div class="flex items-center space-x-1.5 font-semibold text-slate-700 dark:text-slate-300">
                 <span>Page</span>
                 <input
                   type="number"
@@ -1301,50 +1538,115 @@
                   min="1"
                   value="1"
                   onchange="jumpToLedgerPage(this.value)"
-                  class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  class="w-12 text-center rounded-xl bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] py-1 text-xs font-extrabold tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
                 <span id="ledgerTotalPagesLabel">of 1</span>
               </div>
-              <button id="ledgerNextBtn" onclick="nextLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
+              <button id="ledgerNextBtn" onclick="nextLedgerPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
             </div>
           </div>
         </div>
 
         <!-- TAB 5: BANK LEDGER -->
         <div id="tabContent-bankLedger" class="space-y-4 hidden">
-          <div class="flex items-center justify-between bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
-            <div class="text-xs font-bold text-slate-700 dark:text-slate-300">Bank Capital Deposits &amp; Withdrawals</div>
+          <!-- Header -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5">
+              <div class="h-11 w-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <i data-lucide="landmark" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Bank Ledger</h1>
+                <p class="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 font-medium">Bank capital deposits &amp; withdrawals.</p>
+              </div>
+            </div>
+
             <button
               onclick="toggleTabMask('bankLedger')"
-              class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0"
+              class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
               title="Toggle Bank Ledger Privacy Mask"
             >
-              <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-3.5 h-3.5"></i>
+              <i data-lucide="eye-off" id="maskToggleIcon-bankLedger" class="w-4 h-4"></i>
             </button>
           </div>
 
-          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs max-h-[550px] custom-scroll">
-            <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+          <!-- Filter & Export Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
+              <div class="relative flex-1 min-w-[220px] max-w-md">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                <input
+                  id="bankLedgerSearchInput"
+                  onkeyup="applyBankLedgerFilters()"
+                  type="text"
+                  placeholder="Search in remarks (e.g. capital, settlement, deposit...)"
+                  class="w-full bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 font-medium shadow-2xs"
+                >
+              </div>
+
+              <select id="bankAccountFilter" onchange="applyBankLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Accounts</option>
+              </select>
+
+              <select id="bankTypeFilter" onchange="applyBankLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Types</option>
+                <option value="DEPOSIT">DEPOSIT</option>
+                <option value="WITHDRAWAL">WITHDRAWAL</option>
+              </select>
+
+              <select id="bankFyFilter" onchange="applyBankLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All FY</option>
+              </select>
+
+              <select id="bankDateFilter" onchange="applyBankLedgerFilters()" class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 shadow-2xs">
+                <option value="ALL">All Dates</option>
+                <option value="30D">Last 30 Days</option>
+                <option value="90D">Last 90 Days</option>
+                <option value="1Y">Last 1 Year</option>
+              </select>
+            </div>
+
+            <div class="flex items-center space-x-2.5">
+              <div class="hidden sm:block h-6 w-px bg-slate-200 dark:bg-[#222836]"></div>
+              <button
+                type="button"
+                onclick="exportPortfolioToExcel()"
+                class="px-4 py-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-50 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-2 shadow-2xs transition cursor-pointer"
+              >
+                <i data-lucide="download" class="w-3.5 h-3.5 text-slate-600 dark:text-slate-400"></i>
+                <span>Export</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs max-h-[540px] custom-scroll">
+            <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+              <thead class="bg-blue-50/70 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-bold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                 <tr>
-                  <th class="py-3 px-4">Date</th>
-                  <th class="py-3 px-2">Account</th>
-                  <th class="py-3 px-3">Type</th>
-                  <th class="py-3 px-3 text-right text-emerald-500 dark:text-emerald-400">Deposit In (₹)</th>
-                  <th class="py-3 px-3 text-right text-amber-500 dark:text-amber-400">Withdrawal Out (₹)</th>
-                  <th class="py-3 px-3 text-right font-semibold text-slate-900 dark:text-white">Net Contributed Corpus (₹)</th>
-                  <th class="py-3 px-4">Remarks</th>
+                  <th onclick="toggleBankLedgerSort('date')" class="py-3 px-4 sortable">Date</th>
+                  <th onclick="toggleBankLedgerSort('account')" class="py-3 px-2 sortable">Account</th>
+                  <th onclick="toggleBankLedgerSort('type')" class="py-3 px-3 sortable">Type</th>
+                  <th class="py-3 px-3 text-right text-emerald-700 dark:text-emerald-400">Deposit In (₹)</th>
+                  <th class="py-3 px-3 text-right text-rose-600 dark:text-rose-400">Withdrawal Out (₹)</th>
+                  <th class="py-3 px-3 text-right font-extrabold text-slate-900 dark:text-white">Net Contributed Corpus (₹)</th>
+                  <th onclick="toggleBankLedgerSort('remarks')" class="py-3 px-4 sortable">Remarks</th>
                 </tr>
               </thead>
               <tbody id="bankLedgerTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
             </table>
           </div>
 
-          <div id="bankLedgerPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-            <span id="bankLedgerPageInfo">Showing 1–12 entries</span>
+          <!-- Pagination -->
+          <div id="bankLedgerPaginationContainer" class="flex flex-wrap items-center justify-between gap-3 text-xs px-1 py-1 text-slate-600 dark:text-slate-400">
+            <span id="bankLedgerPageInfo" class="font-medium">Showing 0 entries</span>
             <div class="flex items-center space-x-2">
-              <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
-              <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
+              <button id="bankLedgerPrevBtn" onclick="prevBankLedgerPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <div class="flex items-center space-x-1.5 font-semibold text-slate-700 dark:text-slate-300">
                 <span>Page</span>
                 <input
                   type="number"
@@ -1352,11 +1654,13 @@
                   min="1"
                   value="1"
                   onchange="jumpToBankLedgerPage(this.value)"
-                  class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+                  class="w-12 text-center rounded-xl bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] py-1 text-xs font-extrabold tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
                 <span id="bankLedgerTotalPagesLabel">of 1</span>
               </div>
-              <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
+              <button id="bankLedgerNextBtn" onclick="nextBankLedgerPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
             </div>
           </div>
         </div>
