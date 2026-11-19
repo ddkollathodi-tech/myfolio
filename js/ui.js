@@ -2628,7 +2628,7 @@ function renderChart(computed) {
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
-  const fourPoints = computeRocFourCurves(computed);
+  const displayPoints = getFilteredChartPoints(computed);
   let displayPoints = fourPoints;
   if (currentChartRange === 'TTM' && fourPoints.length > 12) {
     displayPoints = fourPoints.slice(-12);
