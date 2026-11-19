@@ -162,6 +162,12 @@
               <span>Dashboard</span>
             </button>
 
+            <!-- 2. Portfolio (Active Holdings Full Page) -->
+            <button onclick="switchMainView('portfolio')" id="navLink-portfolio" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
+              <i data-lucide="briefcase" class="w-4 h-4"></i>
+              <span>Portfolio</span>
+            </button>
+
             <!-- 2. Chart (Opens Chart + TTM/RoC Tables Full Page) -->
             <button onclick="switchMainView('chart')" id="navLink-chart" class="px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2">
               <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
@@ -465,13 +471,13 @@
               </div>
             </div>
 
-            <!-- Single Primary CTA ("Open My Portfolio" linked directly to Portfolio Holdings View) -->
+<!-- Single Primary CTA ("Open Dashboard" linked directly to Dashboard View) -->
             <div class="pt-2">
               <button
-                onclick="switchMainView('portfolio')"
+                onclick="switchMainView('dashboard')"
                 class="inline-flex items-center space-x-3 px-7 py-4 rounded-2xl bg-[#071330] dark:bg-blue-600 hover:bg-[#0F2354] dark:hover:bg-blue-500 text-white font-bold text-[15px] shadow-lg shadow-blue-950/15 transition transform active:scale-95 cursor-pointer"
               >
-                <span>Open My Portfolio</span>
+                <span>Open Dashboard</span>
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
             </div>
