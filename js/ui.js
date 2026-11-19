@@ -440,7 +440,7 @@ function recalculateAndRender() {
   const lifeEl = document.getElementById('kpiLifetimePnL');
   lifeEl.innerText = formatINR(data.lifetimePnL);
   lifeEl.className = `dash-slot-value text-xl sm:text-2xl font-extrabold tracking-tight tabular-nums leading-tight transition-all duration-200 ${data.lifetimePnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
-...
+
   // Card 4: Current FY P&L (Purple matching Extreme Target when unselected)
   const curFyEl = document.getElementById('kpiCurrentFyPnL');
   curFyEl.innerText = formatINR(curFyData.gain);
