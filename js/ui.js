@@ -3459,10 +3459,25 @@ function selectDashboardMetric(metricKey) {
   if (!DASHBOARD_METRIC_META[metricKey]) return;
   selectedDashboardMetric = metricKey;
 
-  ['netWorth', 'netInvested', 'lifetimePnL', 'currentFy', 'xirr'].forEach(key => {
+  const metricOrder = ['netWorth', 'netInvested', 'lifetimePnL', 'currentFy', 'xirr'];
+  const activeIdx = metricOrder.indexOf(metricKey);
+
+  metricOrder.forEach((key, idx) => {
     const slot = document.getElementById(`dashSlot-${key}`);
     if (slot) {
-      slot.classList.toggle('is-active', key === metricKey);
+      const isSelected = key === metricKey;
+      slot.classList.toggle('is-active', isSelected);
+      slot.classList.remove('slant-left', 'slant-right', 'slant-both');
+
+      if (isSelected) {
+        if (idx === 0) {
+          slot.classList.add('slant-right');
+        } else if (idx === metricOrder.length - 1) {
+          slot.classList.add('slant-left');
+        } else {
+          slot.classList.add('slant-both');
+        }
+      }
     }
   });
 
