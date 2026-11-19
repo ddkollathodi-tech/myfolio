@@ -1357,6 +1357,7 @@ const engineData = getCachedEngineData();
     const costVal = Number(item.costBasis ?? item.cost ?? 0);
     const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
     const gainVal = Number(item.gain ?? 0);
+    const tradeCnt = Number(item.closedTradeCount ?? fyTradeCountMap[fy] ?? 0);
     const isPos = gainVal >= 0;
     const retPct = costVal > 0 ? (gainVal / costVal) * 100 : 0;
     const isCurrent = fy === activeFy;
