@@ -1127,18 +1127,18 @@ function renderClosedTrades(closedTrades) {
   tbody.innerHTML = '';
   if (tfoot) tfoot.innerHTML = '';
 
-  const engineData = getCachedEngineData();
-  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
+ const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
   const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
   const hasClosedLots = allClosedLots.length > 0;
   const totalTradesCount = hasClosedLots ? allClosedLots.length : (closedTrades || []).length;
   const winTradesCount = hasClosedLots
-    ? allClosedLots.filter(l => Number(l.pnl || 0) > 0).length
+    ? allClosedLots.filter(l => Number(l.gain ?? l.pnl ?? 0) > 0).length
     : (closedTrades || []).filter(c => Number(c.netPnL || 0) > 0).length;
   const lossTradesCount = hasClosedLots
-    ? allClosedLots.filter(l => Number(l.pnl || 0) < 0).length
+    ? allClosedLots.filter(l => Number(l.gain ?? l.pnl ?? 0) < 0).length
     : (closedTrades || []).filter(c => Number(c.netPnL || 0) < 0).length;
 
   const winPct = totalTradesCount > 0 ? (winTradesCount / totalTradesCount) * 100 : 0;
@@ -1300,14 +1300,14 @@ function renderFY(fyRealized) {
   tbody.innerHTML = '';
   if (tfoot) tfoot.innerHTML = '';
 
-  const engineData = getCachedEngineData();
-  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
+const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
   const maskClass = getMaskClass('fyBreakdown');
   const activeFy = getFinancialYear(todayLocalISO());
 
   const fyTradeCountMap = {};
   allClosedLots.forEach(lot => {
-    const fy = lot.sellDate ? getFinancialYear(lot.sellDate) : activeFy;
+    const fy = lot.fy || (lot.sellDate ? getFinancialYear(lot.sellDate) : activeFy);
     fyTradeCountMap[fy] = (fyTradeCountMap[fy] || 0) + 1;
   });
 
@@ -1322,10 +1322,11 @@ function renderFY(fyRealized) {
     const costVal = Number(item.costBasis ?? item.cost ?? 0);
     const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
     const gainVal = Number(item.gain ?? 0);
+    const tradeCnt = Number(item.closedTradeCount ?? fyTradeCountMap[fy] ?? 0);
     sumCost += costVal;
     sumProceeds += procVal;
     sumGain += gainVal;
-    sumClosedTrades += (fyTradeCountMap[fy] || 0);
+    sumClosedTrades += tradeCnt;
   });
 
   const overallRetPct = sumCost > 0 ? (sumGain / sumCost) * 100 : 0;
