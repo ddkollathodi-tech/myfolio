@@ -2628,7 +2628,8 @@ function renderChart(computed) {
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
-  const displayPoints = getFilteredChartPoints(computed);
+const displayPoints = getFilteredChartPoints(computed);
+ const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
   if (currentChartRange === 'TTM' && fourPoints.length > 12) {
     displayPoints = fourPoints.slice(-12);
   }
