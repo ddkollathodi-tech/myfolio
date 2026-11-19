@@ -483,6 +483,7 @@ function recalculateAndRender() {
   fyRemEl.className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200';
   fyBarEl.className = 'dash-slot-progress-fill bg-purple-600 h-1.5 rounded-full transition-all duration-500';
   fyBarEl.style.width = `${fyPct}%`;
+  
   // Card 5: Annualized XIRR & Inception Date
   const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
   document.getElementById('kpiXIRR').innerText = xirrValid ? `${data.xirrValue.toFixed(2)}%` : '—';
