@@ -192,6 +192,30 @@ th.sortable:hover {
   background: rgba(19, 53, 122, 0.24);
 }
 
+/* Unified title icon badge: soft navy tint when unselected, crisp white/translucent when selected */
+.dash-slot-icon-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(19, 53, 122, 0.10);
+  color: #13357A;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.dark .dash-slot-icon-badge {
+  background: rgba(148, 163, 184, 0.14);
+  color: #E2E8F0;
+}
+
+.dash-metric-slot.is-active .dash-slot-icon-badge {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
 /* Unified mask toggle button matching the Total Net Worth card */
 .dash-mask-btn {
   width: 28px;
