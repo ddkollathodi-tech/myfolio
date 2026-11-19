@@ -1058,22 +1058,130 @@ function filterHoldingsTable() {
 }
 
 /* ---------------- CLOSED TRADES TABLE ---------------- */
-function renderClosedTrades(closedTrades) {
+const PROD_SUBVIEW_PAGE_SIZE = 10;
+
+let closedSearchQuery = '';
+let ledgerFilters = { account: 'ALL', type: 'ALL', fy: 'ALL', dateRange: 'ALL', sortKey: null, sortDir: 'desc' };
+let bankLedgerFilters = { account: 'ALL', type: 'ALL', fy: 'ALL', dateRange: 'ALL', sortKey: null, sortDir: 'desc' };
+
+function populateProdSubViewFilters(data) {
+  const fySet = new Set();
+  (data && Array.isArray(data.ledgerEntries) ? data.ledgerEntries : []).forEach(e => {
+    if (e.date) fySet.add(getFinancialYear(e.date));
+  });
+  (data && Array.isArray(data.bankEntries) ? data.bankEntries : []).forEach(e => {
+    if (e.date) fySet.add(getFinancialYear(e.date));
+  });
+  const sortedFys = Array.from(fySet).sort().reverse();
+  const fyOptionsHtml = `<option value="ALL">All FY</option>` + sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+
+  const acctSet = new Set([...(CALIB_ACCOUNTS || [])]);
+  (transactions || []).forEach(tx => {
+    if (tx.account) acctSet.add(String(tx.account).trim());
+  });
+  const acctOptionsHtml = `<option value="ALL">All Accounts</option>` + Array.from(acctSet).map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+
+  ['ledgerAccountFilter', 'bankAccountFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const prev = el.value || 'ALL';
+      el.innerHTML = acctOptionsHtml;
+      el.value = prev;
+    }
+  });
+
+  ['ledgerFyFilter', 'bankFyFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const prev = el.value || 'ALL';
+      el.innerHTML = fyOptionsHtml;
+      el.value = prev;
+    }
+  });
+}
+
+function isWithinDateRange(dateStr, rangeKey) {
+  if (!rangeKey || rangeKey === 'ALL') return true;
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return true;
+  const daysMap = { '30D': 30, '90D': 90, '1Y': 365 };
+  const days = daysMap[rangeKey] || 365;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  return d >= cutoff;
+}
+
+function handleClosedSearch() {
+  const inp = document.getElementById('closedSearchInput');
+  closedSearchQuery = (inp ? inp.value : '').trim().toLowerCase();
+  closedPage = 1;
+  renderClosedTrades(getCachedEngineData().closedTrades);
+  refreshIcons();
+}
+
+/* ---------------- CLOSED TRADES BOOK ---------------- */
+function renderClosedTrades(closedList) {
   const tbody = document.getElementById('closedTradesTableBody');
+  const tfoot = document.getElementById('closedTradesTableFooter');
   if (!tbody) return;
   tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
 
+  const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
   const maskClass = getMaskClass('closedTrades');
+
+  // Exact counts derived from closed lots & closed positions
+  const totalClosedLots = allClosedLots.length;
+  const winLots = allClosedLots.filter(l => Number(l.pnl || 0) > 0).length;
+  const lossLots = allClosedLots.filter(l => Number(l.pnl || 0) < 0).length;
+  const winPct = totalClosedLots > 0 ? (winLots / totalClosedLots) * 100 : 0;
+  const lossPct = totalClosedLots > 0 ? (lossLots / totalClosedLots) * 100 : 0;
+
+  const overallCost = (closedList || []).reduce((s, r) => s + Number(r.totalCostBasis || 0), 0);
+  const overallProceeds = (closedList || []).reduce((s, r) => s + Number(r.totalProceeds || 0), 0);
+  const overallPnl = overallProceeds - overallCost;
+  const overallRetPct = overallCost > 0 ? (overallPnl / overallCost) * 100 : 0;
+
+  const totTradesEl = document.getElementById('closedKpiTotalTrades');
+  const winCntEl = document.getElementById('closedKpiWinCount');
+  const winPctEl = document.getElementById('closedKpiWinPct');
+  const lossCntEl = document.getElementById('closedKpiLossCount');
+  const lossPctEl = document.getElementById('closedKpiLossPct');
+  const totPnlEl = document.getElementById('closedKpiTotalPnl');
+  const totRetEl = document.getElementById('closedKpiTotalRetPct');
+
+  if (totTradesEl) totTradesEl.innerText = String(totalClosedLots);
+  if (winCntEl) winCntEl.innerText = String(winLots);
+  if (winPctEl) winPctEl.innerText = `${winPct.toFixed(2)}%`;
+  if (lossCntEl) lossCntEl.innerText = String(lossLots);
+  if (lossPctEl) lossPctEl.innerText = `${lossPct.toFixed(2)}%`;
+  if (totPnlEl) {
+    totPnlEl.innerText = `${overallPnl >= 0 ? '+' : ''}${formatINR(overallPnl)}`;
+    totPnlEl.className = `font-extrabold tabular-nums ${maskClass} ${overallPnl >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+  if (totRetEl) {
+    totRetEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
+    totRetEl.className = `font-extrabold tabular-nums ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+
+  const baseList = (closedList || []).filter(item => {
+    if (!closedSearchQuery) return true;
+    const meta = typeof getStockMeta === 'function' ? getStockMeta(item.stock) : { name: '' };
+    return String(item.stock || '').toLowerCase().includes(closedSearchQuery) ||
+      String(meta.name || '').toLowerCase().includes(closedSearchQuery);
+  });
+
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
-  if (closedTrades.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No closed trades recorded yet.</td></tr>`;
-    document.getElementById('closedPaginationContainer').classList.add('hidden');
+  if (!baseList || baseList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No matching closed positions found.</td></tr>`;
+    renderPaginationControls('closed', 0, 1, 1);
     return;
   }
-  document.getElementById('closedPaginationContainer').classList.remove('hidden');
 
-  const sorted = [...closedTrades].sort((a, b) => {
+  const sorted = [...baseList].sort((a, b) => {
     const valA = a[closedSort.key];
     const valB = b[closedSort.key];
     if (typeof valA === 'string') {
@@ -1083,47 +1191,368 @@ function renderClosedTrades(closedTrades) {
   });
 
   const totalItems = sorted.length;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE) || 1;
-  if (closedTradesCurrentPage > totalPages) closedTradesCurrentPage = totalPages;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE));
+  if (closedPage > totalPages) closedPage = totalPages;
+  if (closedPage < 1) closedPage = 1;
 
-  const startIndex = (closedTradesCurrentPage - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
-  const pageSlice = sorted.slice(startIndex, endIndex);
+  const startIdx = (closedPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const pageItems = sorted.slice(startIdx, startIdx + PROD_SUBVIEW_PAGE_SIZE);
 
-  document.getElementById('closedPageInfo').innerText = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} entries`;
-
-  const jumpInput = document.getElementById('closedJumpInput');
-  const totalLabel = document.getElementById('closedTotalPagesLabel');
-  if (jumpInput) {
-    jumpInput.value = closedTradesCurrentPage;
-    jumpInput.max = totalPages;
-  }
-  if (totalLabel) totalLabel.innerText = `of ${totalPages}`;
-
-  document.getElementById('closedPrevBtn').disabled = closedTradesCurrentPage <= 1;
-  document.getElementById('closedNextBtn').disabled = closedTradesCurrentPage >= totalPages;
-
-  pageSlice.forEach(c => {
-    const avgBuy = c.totalQty > 0 ? (c.totalCostBasis / c.totalQty) : 0;
-    const avgSell = c.totalQty > 0 ? (c.totalProceeds / c.totalQty) : 0;
-    const isPos = c.netPnL >= 0;
-
+  pageItems.forEach(item => {
+    const isPos = item.netPnL >= 0;
     const tr = document.createElement('tr');
-    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">${esc(c.stock)}</td>
-      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${c.totalQty}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${formatINR(avgBuy)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(avgSell)}</td>
-      <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
-      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-bold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-3 text-right tabular-nums font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${c.retPct.toFixed(2)}%</td>
+      <td class="py-3 px-4 font-extrabold text-slate-900 dark:text-white">${esc(item.stock)}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${item.totalQtySold}</td>
+      <td class="py-3 px-3 text-right tabular-nums">${formatINR(item.avgBuyPrice)}</td>
+      <td class="py-3 px-3 text-right tabular-nums">${formatINR(item.avgSellPrice)}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(item.totalCostBasis)}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(item.totalProceeds)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        ${isPos ? '+' : ''}${formatINR(item.netPnL)}
+      </td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        ${isPos ? '+' : ''}${item.retPct.toFixed(2)}%
+      </td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (tfoot) {
+    const isTotPos = overallPnl >= 0;
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-3 px-4">Total (${baseList.length} ${baseList.length === 1 ? 'Stock' : 'Stocks'})</td>
+        <td colspan="3"></td>
+        <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallCost)}</td>
+        <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallProceeds)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(overallPnl)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
+      </tr>
+    `;
+  }
+
+  renderPaginationControls('closed', totalItems, closedPage, totalPages, 'stocks');
 }
 
+/* ---------------- FINANCIAL YEAR P&L (FIFO) ---------------- */
+function renderFY(fyMap) {
+  const tbody = document.getElementById('fySummaryTableBody');
+  const tfoot = document.getElementById('fySummaryTableFooter');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (tfoot) tfoot.innerHTML = '';
+
+  const engineData = getCachedEngineData();
+  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : [];
+  const maskClass = getMaskClass('fyBreakdown');
+  const activeFy = getFinancialYear(todayLocalISO());
+
+  const fyTradeCountMap = {};
+  allClosedLots.forEach(lot => {
+    const fy = lot.sellDate ? getFinancialYear(lot.sellDate) : activeFy;
+    fyTradeCountMap[fy] = (fyTradeCountMap[fy] || 0) + 1;
+  });
+
+  const fys = Object.keys(fyMap || {}).sort().reverse();
+  let sumCost = 0;
+  let sumProceeds = 0;
+  let sumGain = 0;
+  let sumClosedTrades = 0;
+
+  fys.forEach(fy => {
+    const d = fyMap[fy];
+    sumCost += Number(d.cost || 0);
+    sumProceeds += Number(d.proceeds || 0);
+    sumGain += Number(d.gain || 0);
+    const tradeCnt = fyTradeCountMap[fy] || 0;
+    sumClosedTrades += tradeCnt;
+  });
+
+  const overallRetPct = sumCost > 0 ? (sumGain / sumCost) * 100 : 0;
+
+  const totPnlEl = document.getElementById('fyKpiTotalPnl');
+  const yrsEl = document.getElementById('fyKpiYearsCount');
+  const tradesEl = document.getElementById('fyKpiClosedTradesCount');
+  const retEl = document.getElementById('fyKpiOverallReturn');
+
+  if (totPnlEl) {
+    totPnlEl.innerText = formatINR(sumGain);
+    totPnlEl.className = `text-xl sm:text-2xl font-extrabold tabular-nums leading-tight ${maskClass} ${sumGain >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+  if (yrsEl) yrsEl.innerText = String(fys.length);
+  if (tradesEl) tradesEl.innerText = String(sumClosedTrades);
+  if (retEl) {
+    retEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
+    retEl.className = `text-base font-extrabold tabular-nums leading-tight ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  }
+
+  if (fys.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No realized gains recorded across any Financial Year yet.</td></tr>`;
+    return;
+  }
+
+  fys.forEach(fy => {
+    const d = fyMap[fy];
+    const ret = d.cost > 0 ? (d.gain / d.cost) * 100 : 0;
+    const isPos = d.gain >= 0;
+    const isCurrent = fy === activeFy;
+    const tradeCnt = fyTradeCountMap[fy] || 0;
+
+    const tr = document.createElement('tr');
+    tr.className = isCurrent
+      ? 'bg-blue-50/45 dark:bg-blue-950/20 hover:bg-blue-50/80 dark:hover:bg-blue-950/35 transition-colors'
+      : 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
+    tr.innerHTML = `
+      <td class="py-3 px-4 font-extrabold text-slate-900 dark:text-white">
+        <div class="flex items-center space-x-2">
+          <span>${esc(fy)}</span>
+          ${isCurrent ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">Current FY</span>' : ''}
+        </div>
+      </td>
+      <td class="py-3 px-4 text-center tabular-nums font-semibold ${maskClass}">${tradeCnt}</td>
+      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(d.cost)}</td>
+      <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(d.proceeds)}</td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">
+        ${isPos ? '+' : ''}${formatINR(d.gain)}
+      </td>
+      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
+        ${isPos ? '+' : ''}${ret.toFixed(2)}%
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (tfoot) {
+    const isTotPos = sumGain >= 0;
+    tfoot.innerHTML = `
+      <tr>
+        <td class="py-3 px-4">Total</td>
+        <td class="py-3 px-4 text-center tabular-nums ${maskClass}">${sumClosedTrades}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(sumCost)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${maskClass}">${formatINR(sumProceeds)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(sumGain)}</td>
+        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
+      </tr>
+    `;
+  }
+}
+
+/* ---------------- TRADEBOOK & CASH LEDGER ---------------- */
+function applyLedgerFilters() {
+  const acctEl = document.getElementById('ledgerAccountFilter');
+  const typeEl = document.getElementById('ledgerTypeFilter');
+  const fyEl = document.getElementById('ledgerFyFilter');
+  const dateEl = document.getElementById('ledgerDateFilter');
+  ledgerFilters.account = acctEl ? acctEl.value : 'ALL';
+  ledgerFilters.type = typeEl ? typeEl.value : 'ALL';
+  ledgerFilters.fy = fyEl ? fyEl.value : 'ALL';
+  ledgerFilters.dateRange = dateEl ? dateEl.value : 'ALL';
+  ledgerPage = 1;
+  renderLedger(getCachedEngineData().ledgerEntries);
+  refreshIcons();
+}
+
+function toggleLedgerSort(key) {
+  if (ledgerFilters.sortKey === key) {
+    ledgerFilters.sortDir = ledgerFilters.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    ledgerFilters.sortKey = key;
+    ledgerFilters.sortDir = key === 'date' ? 'desc' : 'asc';
+  }
+  renderLedger(getCachedEngineData().ledgerEntries);
+}
+
+function renderLedger(entries) {
+  const tbody = document.getElementById('txTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const engineData = getCachedEngineData();
+  populateProdSubViewFilters(engineData);
+
+  const maskClass = getMaskClass('ledger');
+  let list = Array.isArray(entries) ? [...entries] : [];
+
+  if (ledgerFilters.account !== 'ALL') {
+    list = list.filter(e => (e.account || '') === ledgerFilters.account);
+  }
+  if (ledgerFilters.type !== 'ALL') {
+    list = list.filter(e => String(e.type || '').toUpperCase() === ledgerFilters.type);
+  }
+  if (ledgerFilters.fy !== 'ALL') {
+    list = list.filter(e => e.date && getFinancialYear(e.date) === ledgerFilters.fy);
+  }
+  if (ledgerFilters.dateRange !== 'ALL') {
+    list = list.filter(e => isWithinDateRange(e.date, ledgerFilters.dateRange));
+  }
+  if (ledgerSearchQuery) {
+    list = list.filter(e =>
+      String(e.stock || '').toLowerCase().includes(ledgerSearchQuery) ||
+      String(e.type || '').toLowerCase().includes(ledgerSearchQuery) ||
+      String(e.remarks || '').toLowerCase().includes(ledgerSearchQuery) ||
+      String(e.account || '').toLowerCase().includes(ledgerSearchQuery)
+    );
+  }
+
+  if (ledgerFilters.sortKey) {
+    const k = ledgerFilters.sortKey;
+    const dir = ledgerFilters.sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => String(a[k] || '').localeCompare(String(b[k] || '')) * dir);
+  }
+
+  const badge = document.getElementById('ledgerCountBadge');
+  if (badge) badge.innerText = `${list.length} ${list.length === 1 ? 'Entry' : 'Entries'}`;
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No ledger entries match the active filters.</td></tr>`;
+    renderPaginationControls('ledger', 0, 1, 1);
+    return;
+  }
+
+  const totalItems = list.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE));
+  if (ledgerPage > totalPages) ledgerPage = totalPages;
+  if (ledgerPage < 1) ledgerPage = 1;
+
+  const startIdx = (ledgerPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const pageItems = list.slice(startIdx, startIdx + PROD_SUBVIEW_PAGE_SIZE);
+
+  pageItems.forEach(entry => {
+    const t = String(entry.type || '').toUpperCase();
+    const isOutflow = t === 'WITHDRAWAL' || t === 'FEES' || Number(entry.cashOut || 0) > 0;
+    const isInflow = t === 'DEPOSIT' || Number(entry.cashIn || 0) > 0;
+    const rowTintClass = isOutflow
+      ? 'ledger-row-outflow'
+      : (isInflow ? 'ledger-row-inflow' : 'ledger-row-trade');
+
+    const typeColor = t === 'BUY'
+      ? 'text-blue-700 dark:text-blue-400 font-bold'
+      : t === 'SELL'
+        ? 'text-indigo-700 dark:text-indigo-400 font-bold'
+        : t === 'DEPOSIT'
+          ? 'text-emerald-700 dark:text-emerald-400 font-bold'
+          : (t === 'WITHDRAWAL' || t === 'FEES')
+            ? 'text-rose-600 dark:text-rose-400 font-bold'
+            : 'text-slate-700 dark:text-slate-300 font-semibold';
+
+    const tr = document.createElement('tr');
+    tr.className = `${rowTintClass} hover:brightness-[0.98] dark:hover:brightness-110 transition`;
+    tr.innerHTML = `
+      <td class="py-3 px-4 whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">${esc(entry.date || '—')}</td>
+      <td class="py-3 px-2 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">${esc(entry.account || 'Unassigned')}</td>
+      <td class="py-3 px-3 whitespace-nowrap ${typeColor}">${esc(t)}</td>
+      <td class="py-3 px-3 font-bold text-slate-900 dark:text-white">${entry.stock ? esc(entry.stock) : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${entry.qty ? entry.qty : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums">${entry.price ? formatINR(entry.price) : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 ${maskClass}">${Number(entry.cashOut || 0) > 0 ? `-${formatINR(entry.cashOut)}` : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400 ${maskClass}">${Number(entry.cashIn || 0) > 0 ? `+${formatINR(entry.cashIn)}` : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-extrabold text-slate-900 dark:text-white ${maskClass}">${formatINR(entry.runningCash)}</td>
+      <td class="py-3 px-4 text-slate-600 dark:text-slate-300">${entry.remarks ? esc(entry.remarks) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  renderPaginationControls('ledger', totalItems, ledgerPage, totalPages);
+}
+
+/* ---------------- BANK LEDGER ---------------- */
+function applyBankLedgerFilters() {
+  const searchEl = document.getElementById('bankLedgerSearchInput');
+  const acctEl = document.getElementById('bankAccountFilter');
+  const typeEl = document.getElementById('bankTypeFilter');
+  const fyEl = document.getElementById('bankFyFilter');
+  const dateEl = document.getElementById('bankDateFilter');
+
+  bankLedgerFilters.search = (searchEl ? searchEl.value : '').trim().toLowerCase();
+  bankLedgerFilters.account = acctEl ? acctEl.value : 'ALL';
+  bankLedgerFilters.type = typeEl ? typeEl.value : 'ALL';
+  bankLedgerFilters.fy = fyEl ? fyEl.value : 'ALL';
+  bankLedgerFilters.dateRange = dateEl ? dateEl.value : 'ALL';
+  bankLedgerPage = 1;
+  renderBankLedger(getCachedEngineData().bankEntries);
+  refreshIcons();
+}
+
+function toggleBankLedgerSort(key) {
+  if (bankLedgerFilters.sortKey === key) {
+    bankLedgerFilters.sortDir = bankLedgerFilters.sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    bankLedgerFilters.sortKey = key;
+    bankLedgerFilters.sortDir = key === 'date' ? 'desc' : 'asc';
+  }
+  renderBankLedger(getCachedEngineData().bankEntries);
+}
+
+function renderBankLedger(bankEntries) {
+  const tbody = document.getElementById('bankLedgerTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const engineData = getCachedEngineData();
+  populateProdSubViewFilters(engineData);
+
+  const maskClass = getMaskClass('bankLedger');
+  let list = Array.isArray(bankEntries) ? [...bankEntries] : [];
+
+  if (bankLedgerFilters.account !== 'ALL') {
+    list = list.filter(e => (e.account || '') === bankLedgerFilters.account);
+  }
+  if (bankLedgerFilters.type !== 'ALL') {
+    list = list.filter(e => String(e.type || '').toUpperCase() === bankLedgerFilters.type);
+  }
+  if (bankLedgerFilters.fy !== 'ALL') {
+    list = list.filter(e => e.date && getFinancialYear(e.date) === bankLedgerFilters.fy);
+  }
+  if (bankLedgerFilters.dateRange !== 'ALL') {
+    list = list.filter(e => isWithinDateRange(e.date, bankLedgerFilters.dateRange));
+  }
+  if (bankLedgerFilters.search) {
+    list = list.filter(e =>
+      String(e.remarks || '').toLowerCase().includes(bankLedgerFilters.search) ||
+      String(e.account || '').toLowerCase().includes(bankLedgerFilters.search) ||
+      String(e.type || '').toLowerCase().includes(bankLedgerFilters.search)
+    );
+  }
+
+  if (bankLedgerFilters.sortKey) {
+    const k = bankLedgerFilters.sortKey;
+    const dir = bankLedgerFilters.sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => String(a[k] || '').localeCompare(String(b[k] || '')) * dir);
+  }
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No bank capital deposits or withdrawals match the filters.</td></tr>`;
+    renderPaginationControls('bankLedger', 0, 1, 1);
+    return;
+  }
+
+  const totalItems = list.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / PROD_SUBVIEW_PAGE_SIZE));
+  if (bankLedgerPage > totalPages) bankLedgerPage = totalPages;
+  if (bankLedgerPage < 1) bankLedgerPage = 1;
+
+  const startIdx = (bankLedgerPage - 1) * PROD_SUBVIEW_PAGE_SIZE;
+  const pageItems = list.slice(startIdx, startIdx + PROD_SUBVIEW_PAGE_SIZE);
+
+  pageItems.forEach(entry => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
+    tr.innerHTML = `
+      <td class="py-3 px-4 whitespace-nowrap font-medium text-slate-800 dark:text-slate-200">${esc(entry.date || '—')}</td>
+      <td class="py-3 px-2 whitespace-nowrap font-medium text-slate-700 dark:text-slate-300">${esc(entry.account || 'Unassigned')}</td>
+      <td class="py-3 px-3 whitespace-nowrap font-bold text-slate-800 dark:text-slate-200">${esc(entry.type || '—')}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400 ${maskClass}">${Number(entry.depositIn || 0) > 0 ? formatINR(entry.depositIn) : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 ${maskClass}">${Number(entry.withdrawalOut || 0) > 0 ? formatINR(entry.withdrawalOut) : '—'}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-extrabold text-slate-900 dark:text-white ${maskClass}">${formatINR(entry.netCorpus)}</td>
+      <td class="py-3 px-4 text-slate-600 dark:text-slate-300">${entry.remarks ? esc(entry.remarks) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  renderPaginationControls('bankLedger', totalItems, bankLedgerPage, totalPages);
+}
 function handleClosedSort(key) {
   if (closedSort.key === key) {
     closedSort.dir = closedSort.dir === 'desc' ? 'asc' : 'desc';
