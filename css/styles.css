@@ -276,3 +276,13 @@ th.sortable:hover {
 .dash-metric-slot.is-active .dash-slot-progress-fill {
   background: linear-gradient(90deg, #60A5FA 0%, #93C5FD 100%) !important;
 }
+
+/* Suppress straight vertical divider lines touching the selected card (except extreme outer edges) */
+@media (min-width: 640px) {
+  .dash-unified-strip > .dash-metric-slot.hide-left-divider {
+    border-left-color: transparent !important;
+  }
+  .dash-unified-strip > .dash-metric-slot.hide-right-divider {
+    border-right-color: transparent !important;
+  }
+}
