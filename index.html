@@ -1665,36 +1665,38 @@
 
         <!-- TAB 6: TAX PLANNING COCKPIT -->
         <div id="tabContent-taxPnl" class="space-y-5 hidden">
-          <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#131722] p-4 rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs">
+          <!-- Page Title Header -->
+          <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                <span>Capital Gains Tax &amp; Advance Tax Schedule</span>
-                <span class="text-[10px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full font-semibold">Post-July 2024 Regime</span>
-              </h3>
-              <p class="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">Section 111A (STCG @ 20.80%) • Section 112A (LTCG @ 13.00% above ₹1.25 Lakh limit)</p>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Tax P&amp;L Cockpit</h1>
+                <span class="text-[10.5px] bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2.5 py-0.5 rounded-full font-bold">Post-July 2024 Regime</span>
+              </div>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Section 111A (STCG @ 20.80%) • Section 112A (LTCG @ 13.00% above ₹1.25 Lakh limit)</p>
             </div>
 
-            <div class="flex items-center flex-wrap gap-2">
-              <div class="flex items-center space-x-1.5 text-xs">
-                <span class="text-slate-500 dark:text-slate-400 font-medium">FY:</span>
-                <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-rose-500"></select>
-              </div>
+            <button
+              onclick="toggleTabMask('taxPnl')"
+              class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
+              title="Toggle Tax Cockpit Stealth Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-4 h-4"></i>
+            </button>
+          </div>
 
-              <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs text-xs font-semibold">
-                <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-md transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs">Me</button>
-                <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
-                <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
-                <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
-                <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-md transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Combined</button>
-              </div>
+          <!-- Tax Filters Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#131722] px-4 py-3 rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs">
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="text-slate-500 dark:text-slate-400 font-bold">FY:</span>
+              <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-50 dark:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-rose-500"></select>
+            </div>
 
-              <button
-                onclick="toggleTabMask('taxPnl')"
-                class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-200/90 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition ml-2"
-                title="Toggle Tax Cockpit Stealth Mask"
-              >
-                <i data-lucide="eye-off" id="maskToggleIcon-taxPnl" class="w-3.5 h-3.5"></i>
-              </button>
+            <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-1 rounded-xl border border-slate-200/90 dark:border-[#222836] text-xs font-bold">
+              <button onclick="setTaxAccountFilter('Me')" id="taxAcctBtn-Me" class="px-2.5 py-1 rounded-lg transition-all bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs">Me</button>
+              <button onclick="setTaxAccountFilter('Wife')" id="taxAcctBtn-Wife" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Wife</button>
+              <button onclick="setTaxAccountFilter('Mom')" id="taxAcctBtn-Mom" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Mom</button>
+              <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
+              <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Combined</button>
             </div>
           </div>
 
