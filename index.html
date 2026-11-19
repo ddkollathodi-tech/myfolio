@@ -805,95 +805,256 @@
         </div>
       </div>
 
+<!-- ========================================================== -->
+      <!-- VIEW 3: PORTFOLIO VIEW (Combined Default Landing + Account Switcher) -->
       <!-- ========================================================== -->
-      <!-- VIEW 3: PORTFOLIO VIEW (Active Holdings Tab Full Page) -->
-      <!-- ========================================================== -->
-      <div id="mainViewPortfolio" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-4 hidden">
-        <div id="tabContent-holdings" class="space-y-4">
-          <div id="holdingsRatioBarContainer" class="bg-white dark:bg-[#131722] p-3 rounded-xl border border-slate-200 dark:border-[#222836] space-y-2">
-            <div class="flex items-center justify-between text-xs font-semibold">
-              <span class="text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                <span id="holdingsProfitSummary">0 Profit</span>
-              </span>
-              <span class="text-slate-500 font-bold" id="holdingsWinRateBadge">Win Rate: 0%</span>
-              <span class="text-rose-600 dark:text-rose-400 flex items-center space-x-1.5">
-                <span id="holdingsLossSummary">0 Loss</span>
-                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-              </span>
+      <div id="mainViewPortfolio" class="w-full max-w-[1520px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-6 lg:py-8 space-y-5 hidden">
+        <div id="tabContent-holdings" class="space-y-5">
+
+          <!-- Page Header & Stealth Mask Toggle -->
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Portfolio</h1>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Manage your investments, holdings, allocation and account balances.</p>
             </div>
-            <div class="w-full bg-slate-100 dark:bg-slate-800 h-[5px] rounded-full overflow-hidden flex">
-              <div id="holdingsWinBar" class="bg-emerald-500 h-[5px] transition-all duration-300" style="width: 50%"></div>
-              <div id="holdingsLossBar" class="bg-rose-500 h-[5px] transition-all duration-300" style="width: 50%"></div>
+
+            <button
+              onclick="toggleTabMask('holdings')"
+              class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
+              title="Toggle Portfolio Privacy Mask"
+            >
+              <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Account Filter Pills Directly Below Title -->
+          <div id="holdingsAccountFilterGroup" class="flex flex-wrap items-center gap-2"></div>
+
+          <!-- 4 KPI Summary Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <!-- 1. Equity Market Value (With Subtle Mini Sparkline Wave) -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50/90 via-white to-blue-100/50 dark:from-blue-950/40 dark:via-[#131722] dark:to-[#131722] border border-blue-200/80 dark:border-blue-900/50 p-4 sm:p-5 shadow-2xs">
+              <svg class="absolute right-0 bottom-0 w-32 h-14 pointer-events-none opacity-60 dark:opacity-35" viewBox="0 0 140 60" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M0 46 C 28 42, 42 20, 68 28 C 92 35, 108 12, 140 16 L 140 60 L 0 60 Z" fill="url(#portMiniWaveFill)" />
+                <path d="M0 46 C 28 42, 42 20, 68 28 C 92 35, 108 12, 140 16" stroke="#2563EB" stroke-width="2" stroke-linecap="round" />
+                <defs>
+                  <linearGradient id="portMiniWaveFill" x1="70" y1="12" x2="70" y2="60" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="#3B82F6" stop-opacity="0.02" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="relative z-10 space-y-2">
+                <div class="flex items-center space-x-2">
+                  <span class="h-7 w-7 rounded-lg bg-blue-600/10 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="layers" class="w-4 h-4"></i>
+                  </span>
+                  <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Equity Market Value</span>
+                </div>
+                <div id="portKpiMarketVal" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">₹0.00</div>
+              </div>
+            </div>
+
+            <!-- 2. Total Invested -->
+            <div class="rounded-2xl bg-gradient-to-br from-indigo-50/75 via-white to-slate-100/60 dark:from-[#131722] dark:via-[#131722] dark:to-[#161C2C] border border-slate-200/90 dark:border-[#222836] p-4 sm:p-5 shadow-2xs space-y-2">
+              <div class="flex items-center space-x-2">
+                <span class="h-7 w-7 rounded-lg bg-indigo-600/10 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="coins" class="w-4 h-4"></i>
+                </span>
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Total Invested</span>
+              </div>
+              <div id="portKpiInvestedVal" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">₹0.00</div>
+            </div>
+
+            <!-- 3. Unrealized P&L -->
+            <div class="rounded-2xl bg-gradient-to-br from-emerald-50/75 via-white to-teal-50/50 dark:from-emerald-950/30 dark:via-[#131722] dark:to-[#131722] border border-emerald-200/80 dark:border-emerald-900/40 p-4 sm:p-5 shadow-2xs space-y-2">
+              <div class="flex items-center space-x-2">
+                <span class="h-7 w-7 rounded-lg bg-emerald-600/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </span>
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Unrealized P&amp;L</span>
+              </div>
+              <div class="flex items-center flex-wrap gap-2">
+                <span id="portKpiUnrealizedVal" class="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums tracking-tight">+₹0.00</span>
+                <span id="portKpiUnrealizedPct" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 tabular-nums">+0.00%</span>
+              </div>
+            </div>
+
+            <!-- 4. Available Cash -->
+            <div id="holdingsCashBadge" class="rounded-2xl bg-gradient-to-br from-purple-50/75 via-white to-fuchsia-50/40 dark:from-purple-950/30 dark:via-[#131722] dark:to-[#131722] border border-purple-200/80 dark:border-purple-900/40 p-4 sm:p-5 shadow-2xs space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-2">
+                  <span class="h-7 w-7 rounded-lg bg-purple-600/10 dark:bg-purple-500/15 text-purple-700 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                  </span>
+                  <span id="holdingsCashBadgeLabel" class="text-xs font-bold text-slate-700 dark:text-slate-200">Available Cash</span>
+                </div>
+              </div>
+              <div id="holdingsCashBadgeVal" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">₹0.00</div>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center justify-between gap-3 bg-white/70 dark:bg-[#131722]/50 p-3 rounded-xl border border-slate-200 dark:border-[#222836]">
-            <div class="flex items-center flex-wrap gap-2.5">
-              <div id="holdingsAccountFilterGroup" class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/90 dark:border-[#222836] shadow-2xs text-xs font-semibold"></div>
-
-              <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Filter stocks..." class="bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-44 font-medium">
-              <span class="text-xs text-slate-500 dark:text-slate-400 font-medium" id="holdingsCount">0 Open Positions</span>
-            </div>
-
-            <div class="flex items-center space-x-2">
-              <div id="holdingsCashBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-xs font-bold text-slate-700 dark:text-slate-200 shadow-2xs">
-                <i data-lucide="banknote" class="w-4 h-4 text-slate-500 dark:text-slate-400"></i>
-                <span id="holdingsCashBadgeLabel">Cash Available (Combined):</span>
-                <span id="holdingsCashBadgeVal" class="tabular-nums font-extrabold text-sm">₹0.00</span>
+          <!-- Holdings Table Card (Directly Below KPIs; 5 Rows Visible, Rest Scrollable) -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 sm:p-5 shadow-2xs space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-2.5">
+                <span class="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="layers" class="w-4 h-4"></i>
+                </span>
+                <h2 class="text-base font-extrabold text-slate-900 dark:text-white tracking-tight">Holdings</h2>
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold" id="holdingsCount">0 Open Positions</span>
               </div>
 
-              <button
-                onclick="toggleTabMask('holdings')"
-                class="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] border border-slate-300 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shrink-0"
-                title="Toggle Holdings Privacy Mask"
-              >
-                <i data-lucide="eye-off" id="maskToggleIcon-holdings" class="w-3.5 h-3.5"></i>
-              </button>
+              <div class="flex flex-wrap items-center gap-2.5">
+                <div class="relative">
+                  <input id="holdingsSearch" onkeyup="filterHoldingsTable()" type="text" placeholder="Search stocks..." class="bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 w-44 sm:w-52 font-medium">
+                </div>
+
+                <select id="portHoldingsSortSelect" onchange="handlePortfolioSortSelect(this.value)" class="bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-blue-500">
+                  <option value="weightPct-desc">Sort: Weight (High-Low)</option>
+                  <option value="currentVal-desc">Sort: Current Value (High-Low)</option>
+                  <option value="investedVal-desc">Sort: Invested Value (High-Low)</option>
+                  <option value="pnlVal-desc">Sort: Unrealized P&amp;L (High-Low)</option>
+                  <option value="stock-asc">Sort: Stock (A-Z)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-slate-200/90 dark:border-[#222836]">
+              <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+                <thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10">
+                  <tr>
+                    <th class="py-2.5 px-3 w-10">#</th>
+                    <th onclick="handleHoldingsSort('stock')" class="py-2.5 px-3 sortable cursor-pointer">
+                      <div class="flex items-center space-x-1"><span>Stock</span><span id="sortIcon-holdings-stock"></span></div>
+                    </th>
+                    <th class="py-2.5 px-3">Sector</th>
+                    <th class="py-2.5 px-3 text-right">Qty</th>
+                    <th class="py-2.5 px-3 text-right">Avg Cost (WAP)</th>
+                    <th class="py-2.5 px-3 text-right">LTP</th>
+                    <th onclick="handleHoldingsSort('investedVal')" class="py-2.5 px-3 text-right sortable cursor-pointer">
+                      <div class="flex items-center justify-end space-x-1"><span>Invested Value</span><span id="sortIcon-holdings-investedVal"></span></div>
+                    </th>
+                    <th onclick="handleHoldingsSort('currentVal')" class="py-2.5 px-3 text-right sortable cursor-pointer">
+                      <div class="flex items-center justify-end space-x-1"><span>Current Value</span><span id="sortIcon-holdings-currentVal"></span></div>
+                    </th>
+                    <th onclick="handleHoldingsSort('pnlVal')" class="py-2.5 px-3 text-right sortable cursor-pointer">
+                      <div class="flex items-center justify-end space-x-1"><span>Unrealized P&amp;L</span><span id="sortIcon-holdings-pnlVal"></span></div>
+                    </th>
+                    <th class="py-2.5 px-3 text-right">Weight</th>
+                    <th class="py-2.5 px-3 text-center">Action</th>
+                  </tr>
+                </thead>
+              </table>
+
+              <div class="port-holdings-scroll custom-scroll">
+                <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+                  <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+                </table>
+              </div>
+
+              <table class="w-full text-left text-[12.5px] text-slate-800 dark:text-slate-200 border-t border-slate-200 dark:border-[#222836] bg-blue-50/40 dark:bg-[#1A1F2E]/60 font-bold">
+                <tfoot id="holdingsTableFooter"></tfoot>
+              </table>
             </div>
           </div>
 
-          <div class="overflow-x-auto bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] shadow-2xs max-h-[550px] custom-scroll">
-            <table class="w-full text-left text-[13px] text-slate-700 dark:text-slate-300">
-              <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11.5px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
-                <tr>
-                  <th onclick="handleHoldingsSort('stock')" class="py-3 px-4 sortable transition-colors">
-                    <div class="flex items-center space-x-1.5">
-                      <span>Stock</span>
-                      <span id="sortIcon-holdings-stock"></span>
-                    </div>
-                  </th>
-                  <th class="py-3 px-3 text-right">Holding Qty</th>
-                  <th class="py-3 px-3 text-right">Avg Cost (WAP)</th>
-                  <th class="py-3 px-3 text-right">Live LTP (₹)</th>
-                  <th onclick="handleHoldingsSort('investedVal')" class="py-3 px-3 text-right sortable transition-colors">
-                    <div class="flex items-center justify-end space-x-1.5">
-                      <span>Invested Value</span>
-                      <span id="sortIcon-holdings-investedVal"></span>
-                    </div>
-                  </th>
-                  <th onclick="handleHoldingsSort('currentVal')" class="py-3 px-3 text-right sortable transition-colors">
-                    <div class="flex items-center justify-end space-x-1.5">
-                      <span>Current Value</span>
-                      <span id="sortIcon-holdings-currentVal"></span>
-                    </div>
-                  </th>
-                  <th class="py-3 px-3 text-right">Weight (%)</th>
-                  <th onclick="handleHoldingsSort('pnlVal')" class="py-3 px-3 text-right sortable transition-colors">
-                    <div class="flex items-center justify-end space-x-1.5">
-                      <span>Unrealized P&amp;L</span>
-                      <span id="sortIcon-holdings-pnlVal"></span>
-                    </div>
-                  </th>
-                  <th class="py-3 px-4 text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="holdingsTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80 font-normal"></tbody>
-            </table>
+          <!-- Portfolio Health Bar (Between Holdings Table & Cash/Allocation Section) -->
+          <div id="holdingsRatioBarContainer" class="bg-white dark:bg-[#131722] px-4 py-3.5 rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <div class="flex items-center space-x-2">
+                <span class="h-6 w-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+                </span>
+                <span class="text-slate-900 dark:text-white">Portfolio Health</span>
+                <span id="holdingsProfitSummary" class="text-emerald-600 dark:text-emerald-400 ml-2">0 Green</span>
+              </div>
+              <span class="text-slate-600 dark:text-slate-300 font-bold" id="holdingsWinRateBadge">Win Rate: 0%</span>
+              <span id="holdingsLossSummary" class="text-rose-600 dark:text-rose-400">0 Red</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex">
+              <div id="holdingsWinBar" class="bg-emerald-500 h-2 transition-all duration-300" style="width: 50%"></div>
+              <div id="holdingsLossBar" class="bg-rose-500 h-2 transition-all duration-300" style="width: 50%"></div>
+            </div>
           </div>
+
+          <!-- Bottom Split: Cash Distribution / Account Cash (Left) + Sector & Stock Allocation (Right) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+            <!-- Left Card (4 Cols): Dynamic Cash Panel -->
+            <div id="portCashCard" class="lg:col-span-4 bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-5 shadow-2xs space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                  <span class="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center">
+                    <i data-lucide="wallet" class="w-4 h-4"></i>
+                  </span>
+                  <h3 id="portCashCardTitle" class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Cash Distribution (Combined)</h3>
+                </div>
+              </div>
+              <div id="portCashCardBody" class="space-y-2.5 text-xs"></div>
+            </div>
+
+            <!-- Right Card (8 Cols): Sector / Stock Allocation Donut + Breakdown Table -->
+            <div class="lg:col-span-8 bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-5 shadow-2xs space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-1 rounded-xl border border-slate-200/80 dark:border-[#222836] text-xs font-bold">
+                  <button type="button" id="portAllocTab-sector" onclick="setPortfolioAllocationMode('sector')" class="port-alloc-pill-active px-3 py-1.5 rounded-lg flex items-center space-x-1.5 transition">
+                    <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+                    <span>Sector Allocation</span>
+                  </button>
+                  <button type="button" id="portAllocTab-stock" onclick="setPortfolioAllocationMode('stock')" class="px-3 py-1.5 rounded-lg flex items-center space-x-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    <span>Stock Allocation</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 items-center">
+                <!-- Donut Chart + Legend -->
+                <div class="xl:col-span-7 flex flex-col sm:flex-row items-center gap-5 bg-slate-50/70 dark:bg-[#0A0C10]/40 rounded-2xl border border-slate-200/70 dark:border-[#222836] p-4">
+                  <div class="relative w-44 h-44 shrink-0">
+                    <canvas id="portfolioAllocationChart"></canvas>
+                    <div id="portAllocTooltip" class="pointer-events-none absolute z-30 rounded-xl border border-slate-200 dark:border-[#222836] bg-white/95 dark:bg-[#131722]/95 shadow-xl backdrop-blur-md px-2.5 py-2 text-[11px] transition-opacity duration-150 opacity-0 whitespace-nowrap"></div>
+                    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center px-2">
+                      <span id="portDonutCenterVal" class="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums">₹0</span>
+                      <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Equity</span>
+                    </div>
+                  </div>
+
+                  <div id="portAllocationLegend" class="flex-1 w-full space-y-2 text-xs"></div>
+                </div>
+
+                <!-- Right Breakdown Table -->
+                <div class="xl:col-span-5 bg-slate-50/70 dark:bg-[#0A0C10]/40 rounded-2xl border border-slate-200/70 dark:border-[#222836] p-4 space-y-2.5">
+                  <button type="button" onclick="togglePortBreakdownCollapse()" class="w-full flex items-center justify-between text-left">
+                    <span class="flex items-center space-x-2 text-xs font-extrabold text-slate-900 dark:text-white">
+                      <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+                      <span id="portBreakdownTitle">Sector Breakdown</span>
+                    </span>
+                    <i data-lucide="chevron-up" id="portBreakdownChevron" class="w-4 h-4 text-slate-400 transition-transform duration-200"></i>
+                  </button>
+
+                  <div id="portBreakdownBodyWrap" class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                      <thead>
+                        <tr class="border-b border-slate-200 dark:border-[#222836] text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                          <th id="portBreakdownColLabel" class="py-1.5 pr-2">Sector</th>
+                          <th class="py-1.5 px-2 text-right">Value (₹)</th>
+                          <th class="py-1.5 pl-2 text-right">Weight</th>
+                        </tr>
+                      </thead>
+                      <tbody id="portBreakdownTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+                      <tfoot id="portBreakdownTableFoot" class="border-t-2 border-slate-200 dark:border-[#222836] font-extrabold text-slate-900 dark:text-white bg-blue-50/50 dark:bg-[#1A1F2E]/50"></tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
-
       <!-- ========================================================== -->
       <!-- VIEW 4: PRODUCTS SUB-VIEWS CONTAINER (Dedicated Full Page) -->
       <!-- ========================================================== -->
