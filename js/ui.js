@@ -456,24 +456,33 @@ function recalculateAndRender() {
   document.getElementById('kpiLifetimeTargetRem').innerText = lifeRem > 0 ? `${formatCompactIndian(lifeRem)} left` : 'Achieved';
   document.getElementById('kpiLifetimeBar').style.width = `${lifeTargetPct}%`;
 
-  // Card 4: Current FY Realized & Unrealized
+// Card 4: Current FY Realized & Unrealized
   const curFy = getFinancialYear(todayLocalISO());
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
+
   const curFyEl = document.getElementById('kpiCurrentFyPnL');
   curFyEl.innerText = formatINR(curFyData.gain);
-  curFyEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${curFyData.gain >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`;
+  curFyEl.className = `dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 ${curFyData.gain >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const curFyUnrealEl = document.getElementById('kpiCurrentFyUnrealized');
   curFyUnrealEl.innerText = formatINR(data.totalUnrealizedPnL);
-  curFyUnrealEl.className = `text-sm font-bold tabular-nums transition-all duration-200 ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+  curFyUnrealEl.className = `dash-slot-sub font-semibold tabular-nums transition-all duration-200 ${data.totalUnrealizedPnL >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
 
   const fyTarget = milestoneGoals.currentFyPnL || 1000000;
   const fyPct = fyTarget > 0 ? Math.min(100, Math.max(0, (curFyData.gain / fyTarget) * 100)) : 0;
   const fyRem = Math.max(0, fyTarget - curFyData.gain);
-  document.getElementById('kpiCurrentFyPct').innerText = `${fyPct.toFixed(2)}%`;
-  document.getElementById('kpiCurrentFyRem').innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
-  document.getElementById('kpiCurrentFyBar').style.width = `${fyPct}%`;
+
+  const fyPctEl = document.getElementById('kpiCurrentFyPct');
+  const fyRemEl = document.getElementById('kpiCurrentFyRem');
+  const fyBarEl = document.getElementById('kpiCurrentFyBar');
+
+  fyPctEl.innerText = `${fyPct.toFixed(2)}%`;
+  fyPctEl.className = 'dash-slot-meta text-purple-600 dark:text-purple-400 ml-1';
+  fyRemEl.innerText = fyRem > 0 ? `${formatCompactIndian(fyRem)} left` : 'Achieved';
+  fyRemEl.className = 'dash-slot-meta text-slate-600 dark:text-slate-400 truncate transition-all duration-200';
+  fyBarEl.className = 'dash-slot-progress-fill bg-purple-600 h-1.5 rounded-full transition-all duration-500';
+  fyBarEl.style.width = `${fyPct}%`;
 
   // Card 5: Annualized XIRR & Inception Date
   const xirrValid = data.xirrValue !== null && data.xirrValue !== undefined && !isNaN(data.xirrValue);
