@@ -148,13 +148,14 @@ function computeEngine(txListOverride) {
             closedTradesMap[stock].totalProceeds += proceeds;
             closedTradesMap[stock].netPnL += gain;
 
-            const fy = getFinancialYear(tx.date);
+const fy = getFinancialYear(tx.date);
             if (!fyRealized[fy]) {
-              fyRealized[fy] = { fy, sellProceeds: 0, costBasis: 0, gain: 0 };
+              fyRealized[fy] = { fy, sellProceeds: 0, costBasis: 0, gain: 0, closedTradeCount: 0 };
             }
             fyRealized[fy].sellProceeds += proceeds;
             fyRealized[fy].costBasis += costBasis;
             fyRealized[fy].gain += gain;
+            fyRealized[fy].closedTradeCount += 1;
 
             const buyD = new Date(lot.date);
             const sellD = new Date(tx.date);
@@ -344,6 +345,7 @@ function computeEngine(txListOverride) {
     holdings,
     openLots: activeLots,
     closedTrades,
+    closedLots: taxClosedLots,
     fyRealized,
     taxClosedLots,
     purificationLots,
