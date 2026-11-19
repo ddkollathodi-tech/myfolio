@@ -160,30 +160,71 @@ th.sortable:hover {
   }
 }
 /* ============================================================================
+/* ============================================================================
    Dashboard Unified Bento Strip & Active Metric Highlight (Isolated)
    ============================================================================ */
 .dash-unified-strip {
-  background: linear-gradient(180deg, #F8FAFC 0%, #F1F5FA 100%);
-  border: 1px solid #E2E8F0;
+  background: linear-gradient(180deg, #E9EFF8 0%, #DFE8F5 100%);
+  border: 1px solid #CBD8EC;
 }
 
 .dark .dash-unified-strip {
-  background: linear-gradient(180deg, #121722 0%, #0E131D 100%);
-  border-color: #222836;
+  background: linear-gradient(180deg, #111827 0%, #0C1322 100%);
+  border-color: #1E293B;
 }
 
 .dash-metric-slot {
   position: relative;
   cursor: pointer;
+  background: rgba(19, 53, 122, 0.045);
   transition: background 0.22s ease, color 0.2s ease, border-radius 0.2s ease;
 }
 
+.dark .dash-metric-slot {
+  background: rgba(19, 53, 122, 0.14);
+}
+
 .dash-metric-slot:hover:not(.is-active) {
-  background: rgba(226, 232, 240, 0.35);
+  background: rgba(19, 53, 122, 0.09);
 }
 
 .dark .dash-metric-slot:hover:not(.is-active) {
-  background: rgba(30, 41, 59, 0.45);
+  background: rgba(19, 53, 122, 0.24);
+}
+
+/* Unified mask toggle button matching the Total Net Worth card */
+.dash-mask-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(19, 53, 122, 0.09);
+  color: #1E3A8A;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.dash-mask-btn:hover {
+  background: rgba(19, 53, 122, 0.16);
+}
+
+.dark .dash-mask-btn {
+  background: rgba(148, 163, 184, 0.14);
+  color: #E2E8F0;
+}
+
+.dark .dash-mask-btn:hover {
+  background: rgba(148, 163, 184, 0.24);
+}
+
+.dash-metric-slot.is-active .dash-mask-btn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FFFFFF;
+}
+
+.dash-metric-slot.is-active .dash-mask-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
 }
 
 /* Active Selected Slot: Deep Navy-Blue + Uniform Slant (Outer Strip Keeps All 4 Corners Curved) */
