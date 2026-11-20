@@ -187,13 +187,13 @@ function renderCurrentHomeQuote(animate = true) {
     wrapEl.style.opacity = '0';
     homeQuoteFadeTimeout = setTimeout(() => {
       quoteEl.innerText = `“${item.quote}”`;
-      authorEl.innerText = `— ${item.author || 'Unknown'}`;
+      authorEl.innerText = `${item.author || 'Unknown'}`;
       wrapEl.style.opacity = '1';
       homeQuoteFadeTimeout = null;
     }, 180);
   } else {
     quoteEl.innerText = `“${item.quote}”`;
-    authorEl.innerText = `— ${item.author || 'Unknown'}`;
+    authorEl.innerText = `${item.author || 'Unknown'}`;
     if (wrapEl) wrapEl.style.opacity = '1';
   }
 }
