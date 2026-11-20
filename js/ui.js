@@ -167,7 +167,7 @@ function initHomeQuotesTicker(incomingQuotes) {
     homeQuoteInterval = setInterval(() => {
       homeQuoteIndex = (homeQuoteIndex + 1) % homeQuotesList.length;
       renderCurrentHomeQuote(true);
-    }, 7000);
+    }, 18000);
   }
 }
 
