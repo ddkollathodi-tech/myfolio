@@ -1,5 +1,5 @@
 // ============================================================================
-// MyFolioAI - Configuration, Shared State & Utility Formatters (js/config.js)
+// MyFolioAI - Configuration, Shared Constants & Utility Formatters (js/config.js)
 // ============================================================================
 
 // LocalStorage Keys
@@ -14,12 +14,20 @@ const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
 const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
 const LAST_PRICE_UPDATE_KEY = 'MYFOLIOAI_LAST_PRICE_UPDATE';
+const LAST_BACKUP_TIME_KEY = 'MYFOLIOAI_LAST_BACKUP_TIME';
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
 const DONATIONS_STORAGE_KEY = 'MYFOLIOAI_DONATIONS';
 
-// Core Account Definitions
+// Core Account & Layout Constants
 const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
 const PAGE_SIZE = 12;
+
+// Compounding & Indian Capital Gains Tax Constants (Post-July 2024 Regime)
+const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
+const TAX_BASIC_EXEMPTION_LIMIT = 400000; // ₹4,00,000 basic exemption shortfall cap
+const TAX_LTCG_EXEMPTION_LIMIT = 125000; // ₹1,25,000 Sec 112A exemption limit
+const TAX_STCG_RATE = 0.2080; // 20.80% Sec 111A
+const TAX_LTCG_RATE = 0.1300; // 13.00% Sec 112A
 
 // ---------------- SHARED RUNTIME STATE ----------------
 let transactions = [];
@@ -109,7 +117,6 @@ let currentPurificationAccountFilter = 'ALL';
 let currentPurificationFyFilter = 'ALL';
 let currentChartRange = 'TTM';
 let currentChartView = 'trajectory'; // 'trajectory' | 'roc'
-const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
 
 // Stealth Masking State (All blurred by default)
 let tabMaskStates = {
@@ -131,7 +138,7 @@ let apiToken = localStorage.getItem(API_TOKEN_STORAGE_KEY) || '';
 let closedTradesCurrentPage = 1;
 let ledgerCurrentPage = 1;
 let bankLedgerCurrentPage = 1;
-let purificationLotsCurrentPage = 1; // Point 4: Pagination pointer for Profit-Only Purification Lots table
+let purificationLotsCurrentPage = 1;
 let purificationLogCurrentPage = 1;
 let ledgerSearchTerm = '';
 let holdingsSort = { key: 'currentVal', dir: 'desc' };
@@ -145,6 +152,17 @@ function todayLocalISO() {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function parseLocalDate(dateVal) {
+  if (!dateVal) return new Date(NaN);
+  if (dateVal instanceof Date) return new Date(dateVal.getTime());
+  const str = String(dateVal).trim();
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str);
+  if (isoMatch) {
+    return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+  }
+  return new Date(str);
 }
 
 function getCalibOffset(acct) {
@@ -185,14 +203,14 @@ function formatCompactIndian(val) {
 }
 
 function getFinancialYear(dateStr) {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   const year = d.getFullYear();
   const month = d.getMonth() + 1;
   return month >= 4 ? `FY ${year}-${String(year + 1).slice(-2)}` : `FY ${year - 1}-${String(year).slice(-2)}`;
 }
 
 function getTaxQuarter(dateStr) {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   const m = d.getMonth() + 1;
   const day = d.getDate();
 
