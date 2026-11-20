@@ -148,7 +148,7 @@ function computeEngine(txListOverride) {
             closedTradesMap[stock].totalProceeds += proceeds;
             closedTradesMap[stock].netPnL += gain;
 
-const fy = getFinancialYear(tx.date);
+            const fy = getFinancialYear(tx.date);
             if (!fyRealized[fy]) {
               fyRealized[fy] = { fy, sellProceeds: 0, costBasis: 0, gain: 0, closedTradeCount: 0 };
             }
@@ -345,7 +345,6 @@ const fy = getFinancialYear(tx.date);
     holdings,
     openLots: activeLots,
     closedTrades,
-    closedLots: taxClosedLots,
     fyRealized,
     taxClosedLots,
     purificationLots,
@@ -402,7 +401,7 @@ function computeRocFourCurves(computed) {
 
   if (points.length === 0) return [];
 
-  const monthlyRate = typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02;
+  const monthlyRate = ROC_TARGET_MONTHLY_RATE;
   let prevPureTarget = points[0].netCapital;
   let prevRatchetTarget = points[0].netCapital;
 
