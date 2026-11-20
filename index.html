@@ -474,17 +474,17 @@
             </div>
 
             <!-- Rotating Quotes Block (Synced from Google Sheet 'Quotes' tab) -->
-            <div id="homeQuotesContainer" class="pt-3 max-w-2xl">
-              <div class="rounded-2xl bg-white/85 dark:bg-[#131722]/85 backdrop-blur-sm border border-slate-200/80 dark:border-[#222836] px-5 py-4 shadow-2xs transition-all duration-300">
-                <div id="homeQuoteRotatorItem" class="space-y-1.5 transition-all duration-300">
-                  <p id="homeQuoteText" class="text-sm sm:text-[15px] font-semibold italic text-slate-800 dark:text-slate-100 leading-relaxed">
-                    “Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.”
-                  </p>
-                  <div class="flex items-center justify-end">
-                    <span id="homeQuoteAuthor" class="text-xs font-extrabold tracking-wide text-[#1D4ED8] dark:text-blue-400">— Warren Buffett</span>
-                  </div>
+            <!-- Unboxed Quote Printed Directly Over Background (Fixed Height Prevents Vertical Shift) -->
+            <div id="homeQuotesContainer" class="pt-3 max-w-2xl min-h-[84px] sm:min-h-[78px] flex items-start">
+              <div id="homeQuoteRotatorItem" class="w-full space-y-1.5 transition-opacity duration-200">
+                <p id="homeQuoteText" class="text-sm sm:text-[15px] font-semibold italic text-slate-800 dark:text-slate-100 leading-relaxed">
+                  “Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.”
+                </p>
+                <div class="flex items-center justify-end">
+                  <span id="homeQuoteAuthor" class="text-xs font-semibold text-slate-600 dark:text-slate-400">— Warren Buffett</span>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
