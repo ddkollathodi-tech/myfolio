@@ -853,7 +853,7 @@ function renderHoldings(data) {
 
   if (filteredHoldings.length === 0) {
     const label = isCombined ? 'Combined Portfolio' : esc(currentHoldingsAccountFilter);
-    tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No active holdings for ${label}.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-slate-400 dark:text-slate-500 font-medium">No active holdings for ${label}.</td></tr>`;
   } else {
     const sorted = [...filteredHoldings].sort((a, b) => {
       const valA = a[holdingsSort.key];
@@ -872,12 +872,11 @@ function renderHoldings(data) {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
       tr.innerHTML = `
-        <td class="py-3 px-3 w-10 text-slate-400 font-semibold tabular-nums">${idx + 1}</td>
+        <td class="py-3 px-3 text-slate-400 font-semibold tabular-nums">${idx + 1}</td>
         <td class="py-3 px-3">
-          <div class="font-bold text-slate-900 dark:text-white leading-tight">${safeStock}</div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[180px]">${safeCompany}</div>
+          <div class="font-bold text-slate-900 dark:text-white leading-tight truncate">${safeStock}</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${safeCompany}</div>
         </td>
-        <td class="py-3 px-3"><span class="${getSectorBadgeClasses(safeSector)}">${safeSector}</span></td>
         <td class="py-3 px-3 text-right tabular-nums font-semibold ${maskClass}">${h.qty}</td>
         <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
         <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-white cursor-pointer hover:underline" data-action="override-ltp" data-stock="${safeStock}" data-ltp="${h.ltp}" title="Click to override LTP">${formatINR(h.ltp)}</td>
@@ -890,28 +889,24 @@ function renderHoldings(data) {
         <td class="py-3 px-3 text-right tabular-nums font-semibold text-slate-700 dark:text-slate-300">
           <div class="flex items-center justify-end space-x-2">
             <span>${h.weightPct.toFixed(1)}%</span>
-            <span class="w-10 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden inline-block">
+            <span class="w-9 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden inline-block shrink-0">
               <span class="bg-blue-600 h-1.5 rounded-full block" style="width: ${Math.min(100, h.weightPct)}%"></span>
             </span>
           </div>
-        </td>
-        <td class="py-3 px-3 text-center">
-          <button data-action="quick-sell" data-stock="${safeStock}" data-qty="${h.qty}" data-ltp="${h.ltp}" class="px-3 py-1 text-[11px] font-bold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/70 transition">Sell</button>
         </td>
       `;
       tbody.appendChild(tr);
     });
 
-    if (tfoot) {
+   if (tfoot) {
       const isPosTotal = totalUnrelPnl >= 0;
       tfoot.innerHTML = `
         <tr>
-          <td colspan="6" class="py-3 px-3 text-slate-900 dark:text-white">Total (${filteredHoldings.length} ${filteredHoldings.length === 1 ? 'Holding' : 'Holdings'})</td>
+          <td colspan="5" class="py-3 px-3 text-slate-900 dark:text-white">Total (${filteredHoldings.length} ${filteredHoldings.length === 1 ? 'Holding' : 'Holdings'})</td>
           <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(totalInvVal, 0)}</td>
           <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(totalEqVal, 0)}</td>
           <td class="py-3 px-3 text-right tabular-nums ${isPosTotal ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPosTotal ? '+' : ''}${formatINR(totalUnrelPnl, 0)} (${isPosTotal ? '+' : ''}${totalUnrelPct.toFixed(2)}%)</td>
           <td class="py-3 px-3 text-right tabular-nums">100.0%</td>
-          <td class="py-3 px-3"></td>
         </tr>
       `;
     }
@@ -1330,14 +1325,14 @@ function renderClosedTrades(closedTrades) {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
     tr.innerHTML = `
-      <td class="py-3 px-4 font-extrabold text-slate-900 dark:text-white">${esc(c.stock)}</td>
+      <td class="py-3 px-3 font-extrabold text-slate-900 dark:text-white truncate">${esc(c.stock)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${qty}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400">${formatINR(avgBuy)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(avgSell)}</td>
       <td class="py-3 px-3 text-right tabular-nums text-slate-500 dark:text-slate-400 ${maskClass}">${formatINR(c.totalCostBasis)}</td>
       <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(c.totalProceeds)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
-      <td class="py-3 px-4 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${Number(c.retPct || 0).toFixed(2)}%</td>
+      <td class="py-3 px-3 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isPos ? '+' : ''}${formatINR(c.netPnL)}</td>
+      <td class="py-3 px-3 text-right tabular-nums font-extrabold ${isPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isPos ? '+' : ''}${Number(c.retPct || 0).toFixed(2)}%</td>
     `;
     tbody.appendChild(tr);
   });
@@ -1346,12 +1341,12 @@ function renderClosedTrades(closedTrades) {
     const isTotPos = overallPnl >= 0;
     tfoot.innerHTML = `
       <tr>
-        <td class="py-3 px-4">Total (${baseList.length} ${baseList.length === 1 ? 'Stock' : 'Stocks'})</td>
-        <td colspan="3"></td>
+        <td class="py-3 px-3">Total (${baseList.length} ${baseList.length === 1 ? 'Stock' : 'Stocks'})</td>
+        <td colspan="3" class="py-3 px-3"></td>
         <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallCost)}</td>
         <td class="py-3 px-3 text-right tabular-nums ${maskClass}">${formatINR(overallProceeds)}</td>
-        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(overallPnl)}</td>
-        <td class="py-3 px-4 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
+        <td class="py-3 px-3 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} ${maskClass}">${isTotPos ? '+' : ''}${formatINR(overallPnl)}</td>
+        <td class="py-3 px-3 text-right tabular-nums ${isTotPos ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${isTotPos ? '+' : ''}${overallRetPct.toFixed(2)}%</td>
       </tr>
     `;
   }
