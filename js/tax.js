@@ -1,7 +1,11 @@
 // ============================================================================
-// MyFolioAI - Indian Capital Gains Tax & Planning Cockpit (tax.js)
+// MyFolioAI - Indian Capital Gains Tax & Planning Cockpit (js/tax.js)
 // Post-July 2024 Regime, Section 111A, Section 112A, Set-Offs & Advance Tax
 // ============================================================================
+
+function getTaxEngineSnapshot() {
+  return typeof getCachedEngineData === 'function' ? getCachedEngineData() : computeEngine();
+}
 
 function populateTaxFyOptions(fyRealized) {
   const select = document.getElementById('taxFyFilter');
@@ -9,8 +13,8 @@ function populateTaxFyOptions(fyRealized) {
   const currentSelected = select.value;
   select.innerHTML = '';
 
-  const currentFy = getFinancialYear(new Date().toISOString().split('T')[0]);
-  const availableFys = new Set([currentFy, ...Object.keys(fyRealized)]);
+  const currentFy = getFinancialYear(todayLocalISO());
+  const availableFys = new Set([currentFy, ...Object.keys(fyRealized || {})]);
 
   Array.from(availableFys).sort().reverse().forEach(fy => {
     const opt = document.createElement('option');
@@ -49,12 +53,10 @@ function toggleCurrentAccountExemption() {
   appSettings[key] = newVal;
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-  if (typeof sendToSheet === 'function') {
-    sendToSheet({
-      action: "saveSettings",
-      settings: { [key]: newVal }
-    });
-  }
+  sendToSheet({
+    action: 'saveSettings',
+    settings: { [key]: newVal }
+  });
 
   renderTaxView();
 }
@@ -73,12 +75,20 @@ function recordTaxChallan(fy, acct, qKey, currentPaid) {
 function renderTaxView() {
   const fySelect = document.getElementById('taxFyFilter');
   if (!fySelect) return;
-  const targetFy = fySelect.value || getFinancialYear(new Date().toISOString().split('T')[0]);
+  const targetFy = fySelect.value || getFinancialYear(todayLocalISO());
 
-  const data = computeEngine();
+  const data = getTaxEngineSnapshot();
   const allLotsForFy = data.taxClosedLots.filter(l => l.fy === targetFy);
 
   const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
+
+  const basicExemptionCap = typeof TAX_BASIC_EXEMPTION_LIMIT === 'number' ? TAX_BASIC_EXEMPTION_LIMIT : 400000;
+  const ltcgExemptionCap = typeof TAX_LTCG_EXEMPTION_LIMIT === 'number' ? TAX_LTCG_EXEMPTION_LIMIT : 125000;
+  const stcgRate = typeof TAX_STCG_RATE === 'number' ? TAX_STCG_RATE : 0.2080;
+  const ltcgRate = typeof TAX_LTCG_RATE === 'number' ? TAX_LTCG_RATE : 0.1300;
+  const stcgRateLabel = `${(stcgRate * 100).toFixed(2)}%`;
+  const ltcgRateLabel = `${(ltcgRate * 100).toFixed(2)}%`;
+  const basicExemptionCompact = formatCompactIndian(basicExemptionCap);
 
   let stcgGrossGain = 0;
   let stcgGrossLoss = 0;
@@ -133,9 +143,8 @@ function renderTaxView() {
     let aStcgShortfall = 0;
     let aLtcgShortfall = 0;
     if (isLowIncome) {
-      const cap = 400000; // Updated to ₹4,00,000 New Regime limit
-      aStcgShortfall = Math.min(aNetStcg, cap);
-      aLtcgShortfall = Math.min(aNetLtcg, cap - aStcgShortfall);
+      aStcgShortfall = Math.min(aNetStcg, basicExemptionCap);
+      aLtcgShortfall = Math.min(aNetLtcg, basicExemptionCap - aStcgShortfall);
     }
     stcgShortfallAbsorbed += aStcgShortfall;
     ltcgShortfallAbsorbed += aLtcgShortfall;
@@ -143,15 +152,15 @@ function renderTaxView() {
     const aFinStcg = Math.max(0, aNetStcg - aStcgShortfall);
     const aFinLtcg = Math.max(0, aNetLtcg - aLtcgShortfall);
 
-    const aExemption = Math.min(125000, aFinLtcg);
+    const aExemption = Math.min(ltcgExemptionCap, aFinLtcg);
     const aTaxableLtcg = Math.max(0, aFinLtcg - aExemption);
 
     exemptionClaimed += aExemption;
     taxableStcg += aFinStcg;
     taxableLtcg += aTaxableLtcg;
 
-    stcgTax += aFinStcg * 0.2080;
-    ltcgTax += aTaxableLtcg * 0.1300;
+    stcgTax += aFinStcg * stcgRate;
+    ltcgTax += aTaxableLtcg * ltcgRate;
   });
 
   const totalTaxLiability = Math.round(stcgTax + ltcgTax);
@@ -166,12 +175,12 @@ function renderTaxView() {
 
   if (isLowIncomeActive) {
     if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
-    if (toggleText) toggleText.innerText = 'Zero / Low Income (< ₹4L)';
+    if (toggleText) toggleText.innerText = `Zero / Low Income (< ${basicExemptionCompact})`;
     if (toggleBadge) {
       toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-      toggleBadge.innerText = 'Active (₹4L Absorbed)';
+      toggleBadge.innerText = `Active (${basicExemptionCompact} Absorbed)`;
     }
-    if (explainer) explainer.innerText = `Absorbs up to ₹4,00,000 capital gains against the Basic Exemption Limit. STCG absorbed first (saving 20.80%), remaining absorbs LTCG (saving 13%).`;
+    if (explainer) explainer.innerText = `Absorbs up to ${formatINR(basicExemptionCap, 0)} capital gains against the Basic Exemption Limit. STCG absorbed first (saving ${stcgRateLabel}), remaining absorbs LTCG (saving ${ltcgRateLabel}).`;
   } else {
     if (toggleBtn) toggleBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1.5 bg-slate-200 dark:bg-gray-800 hover:bg-slate-300 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300';
     if (toggleText) toggleText.innerText = 'Regular Salary / Income';
@@ -179,7 +188,7 @@ function renderTaxView() {
       toggleBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-gray-800 text-slate-500 border border-slate-200 dark:border-gray-700';
       toggleBadge.innerText = 'Standard Regime';
     }
-    if (explainer) explainer.innerText = `Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.`;
+    if (explainer) explainer.innerText = 'Standard earner status: Capital gains are subject to flat statutory tax rates from Rupee One.';
   }
 
   const matrixTbody = document.getElementById('taxComputationTableBody');
@@ -196,7 +205,7 @@ function renderTaxView() {
         <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(stcgShortfallAbsorbed)}</td>
         <td class="py-3 px-3 text-right tabular-nums text-slate-400">₹0.00</td>
         <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableStcg)}</td>
-        <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">20.80%</span></td>
+        <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">${stcgRateLabel}</span></td>
         <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(stcgTax)}</td>
       </tr>
       <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
@@ -210,7 +219,7 @@ function renderTaxView() {
         <td class="py-3 px-3 text-right tabular-nums text-purple-600 dark:text-purple-400 font-semibold">-${formatINR(ltcgShortfallAbsorbed)}</td>
         <td class="py-3 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-semibold">-${formatINR(exemptionClaimed)}</td>
         <td class="py-3 px-3 text-right tabular-nums font-bold text-slate-900 dark:text-white">${formatINR(taxableLtcg)}</td>
-        <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">13.00%</span></td>
+        <td class="py-3 px-3 text-center"><span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">${ltcgRateLabel}</span></td>
         <td class="py-3 px-4 text-right tabular-nums font-extrabold text-rose-600 dark:text-rose-400">${formatINR(ltcgTax)}</td>
       </tr>
       <tr class="bg-slate-50/70 dark:bg-gray-950/60 font-bold border-t border-slate-200 dark:border-gray-700">
@@ -227,7 +236,7 @@ function renderTaxView() {
     `;
   }
 
-  renderTaxHarvestingRadar(data, exemptionClaimed);
+  renderTaxHarvestingRadar(data, exemptionClaimed, ltcgExemptionCap);
 
   // Advance Tax Schedule Calculation
   const advTbody = document.getElementById('advanceTaxTableBody');
@@ -263,7 +272,7 @@ function renderTaxView() {
       if (totalTaxLiability === 0) {
         statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-500">Nil Liability</span>`;
       } else if (remainingToPay === 0) {
-        statusBadge = excessPaid > 0 
+        statusBadge = excessPaid > 0
           ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 border border-blue-200">+${formatCompactIndian(excessPaid)} Rolled Over</span>`
           : `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200">Paid in Full</span>`;
       } else {
@@ -290,9 +299,9 @@ function renderTaxView() {
       const netYearBalance = totalTaxLiability - totalPaidAllQuarters;
       if (netYearBalance <= 0 && totalTaxLiability > 0) {
         summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability 
+        summaryBadge.innerText = totalPaidAllQuarters > totalTaxLiability
           ? `Surplus Advance Tax: +${formatINR(totalPaidAllQuarters - totalTaxLiability)} (Refundable at ITR)`
-          : `Advance Tax 100% Cleared`;
+          : 'Advance Tax 100% Cleared';
       } else if (totalTaxLiability === 0) {
         summaryBadge.className = 'text-xs font-bold px-3 py-1 rounded-lg bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300';
         summaryBadge.innerText = 'No Tax Liability for this Financial Year';
@@ -306,7 +315,9 @@ function renderTaxView() {
   // Closed Lots Tax Audit Trail
   const auditTbody = document.getElementById('taxAuditTableBody');
   const countBadge = document.getElementById('taxAuditCount');
-  const fyLotsForAudit = currentTaxAccountFilter === 'ALL' ? data.taxClosedLots.filter(l => l.fy === targetFy) : data.taxClosedLots.filter(l => l.fy === targetFy && l.account === currentTaxAccountFilter);
+  const fyLotsForAudit = currentTaxAccountFilter === 'ALL'
+    ? data.taxClosedLots.filter(l => l.fy === targetFy)
+    : data.taxClosedLots.filter(l => l.fy === targetFy && l.account === currentTaxAccountFilter);
   if (countBadge) countBadge.innerText = `${fyLotsForAudit.length} Lots`;
 
   if (auditTbody) {
@@ -338,9 +349,9 @@ function renderTaxView() {
   }
 }
 
-function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
+function renderTaxHarvestingRadar(data, exemptionClaimedSoFar, ltcgExemptionCap = 125000) {
   const activeAccounts = currentTaxAccountFilter === 'ALL' ? CALIB_ACCOUNTS : [currentTaxAccountFilter];
-  const maxExemptionRoom = activeAccounts.length * 125000;
+  const maxExemptionRoom = activeAccounts.length * ltcgExemptionCap;
   const unusedRoom = Math.max(0, maxExemptionRoom - exemptionClaimedSoFar);
 
   const roomEl = document.getElementById('harvestLtcgRoomVal');
@@ -361,7 +372,7 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
     const currentVal = lot.qty * livePrice;
     const unrealized = currentVal - lotCost;
 
-    const buyD = new Date(lot.date);
+    const buyD = parseLocalDate(lot.date);
     const diffDays = Math.ceil(Math.abs(today - buyD) / (1000 * 60 * 60 * 24));
     const isLtcg = diffDays > 365;
 
@@ -391,7 +402,7 @@ function renderTaxHarvestingRadar(data, exemptionClaimedSoFar) {
 
   const profitList = document.getElementById('profitHarvestList');
   const profitBadge = document.getElementById('profitHarvestCountBadge');
-  const maskClass = typeof getMaskClass === 'function' ? getMaskClass('taxPnl') : '';
+  const maskClass = getMaskClass('taxPnl');
 
   if (profitList && profitBadge) {
     profitList.innerHTML = '';
