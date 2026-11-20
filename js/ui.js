@@ -3,7 +3,6 @@
 // ============================================================================
 
 let multiChartInstance = null;
-let currentEditingGoalKey = null;
 let currentPendingMonthEndDateStr = null;
 let activeTabKey = 'holdings';
 let pendingPinActionCallback = null;
@@ -26,7 +25,7 @@ let dirtyTabs = {
 
 let iconRefreshQueued = false;
 
-/* ---------------- CORE HELPERS: ESCAPING & MEMOIZATION ---------------- */
+/* ---------------- CORE HELPERS: ESCAPING, SORTING & MEMOIZATION ---------------- */
 function esc(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -35,6 +34,18 @@ function esc(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function sortTransactionsChronologically(txList) {
+  return (Array.isArray(txList) ? txList : [])
+    .map((tx, idx) => ({ tx, idx }))
+    .sort((a, b) => {
+      const da = parseLocalDate(a.tx.date).getTime();
+      const db = parseLocalDate(b.tx.date).getTime();
+      if (da !== db) return da - db;
+      return a.idx - b.idx;
+    })
+    .map(item => item.tx);
 }
 
 function bumpTxVersion() {
@@ -60,6 +71,15 @@ function refreshIcons() {
       lucide.createIcons();
     }
   });
+}
+
+function syncDashboardKpiMasks() {
+  if (typeof tabMaskStates !== 'undefined' && typeof tabMaskStates.dashboard === 'boolean' && typeof kpiMaskStates !== 'undefined') {
+    kpiMaskStates.netWorth = tabMaskStates.dashboard;
+    kpiMaskStates.netInvested = tabMaskStates.dashboard;
+    kpiMaskStates.lifetimePnL = tabMaskStates.dashboard;
+    kpiMaskStates.currentFy = tabMaskStates.dashboard;
+  }
 }
 
 /* ---------------- ROTATING HEADER INFO TICKER ---------------- */
@@ -88,13 +108,10 @@ function updateHeaderTickerDisplay() {
   } else if (rawSyncText === 'Not synced' || rawSyncText === 'Sync error' || rawSyncText === 'Sheet Not Synced' || !cloudScriptUrl) {
     mappedSyncText = 'Sheet Not Synced';
     dotColor = 'bg-rose-500';
-  } else {
-    mappedSyncText = 'Sheet Synced';
-    dotColor = 'bg-emerald-500 dark:bg-emerald-400';
   }
 
   const priceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
-  const backupTime = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME') || 'Not backed up yet';
+  const backupTime = localStorage.getItem(LAST_BACKUP_TIME_KEY) || 'Not backed up yet';
 
   let html = '';
   if (headerTickerStep === 0) {
@@ -167,7 +184,7 @@ function initHomeQuotesTicker(incomingQuotes) {
     homeQuoteInterval = setInterval(() => {
       homeQuoteIndex = (homeQuoteIndex + 1) % homeQuotesList.length;
       renderCurrentHomeQuote(true);
-    }, 18000);
+    }, 7000);
   }
 }
 
@@ -187,13 +204,13 @@ function renderCurrentHomeQuote(animate = true) {
     wrapEl.style.opacity = '0';
     homeQuoteFadeTimeout = setTimeout(() => {
       quoteEl.innerText = `“${item.quote}”`;
-      authorEl.innerText = `${item.author || 'Unknown'}`;
+      authorEl.innerText = `— ${item.author || 'Unknown'}`;
       wrapEl.style.opacity = '1';
       homeQuoteFadeTimeout = null;
     }, 180);
   } else {
     quoteEl.innerText = `“${item.quote}”`;
-    authorEl.innerText = `${item.author || 'Unknown'}`;
+    authorEl.innerText = `— ${item.author || 'Unknown'}`;
     if (wrapEl) wrapEl.style.opacity = '1';
   }
 }
@@ -300,13 +317,8 @@ function toggleTabMask(tabKey) {
 
   const data = getCachedEngineData();
   if (tabKey === 'dashboard') {
-    if (typeof kpiMaskStates !== 'undefined') {
-      kpiMaskStates.netWorth = tabMaskStates.dashboard;
-      kpiMaskStates.netInvested = tabMaskStates.dashboard;
-      kpiMaskStates.lifetimePnL = tabMaskStates.dashboard;
-      kpiMaskStates.currentFy = tabMaskStates.dashboard;
-    }
-    if (typeof applyAllKpiMasks === 'function') applyAllKpiMasks();
+    syncDashboardKpiMasks();
+    applyAllKpiMasks();
     renderDashboardTrendChart(data);
   } else if (tabKey === 'chart') {
     if (multiChartInstance) multiChartInstance.update('none');
@@ -435,12 +447,12 @@ function recordBackupTimestamp(customStr) {
     formatted = `${dd}-${mm}, ${hh}:${min}`;
   }
 
-  localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', formatted);
+  localStorage.setItem(LAST_BACKUP_TIME_KEY, formatted);
   renderLastBackupTimestamp();
 }
 
 function renderLastBackupTimestamp() {
-  const val = localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME');
+  const val = localStorage.getItem(LAST_BACKUP_TIME_KEY);
   const el = document.getElementById('lastBackupTime');
   if (el) el.innerText = val || 'Not backed up yet';
   if (headerTickerStep === 2) updateHeaderTickerDisplay();
@@ -534,16 +546,13 @@ function togglePortBreakdownCollapse() {
 }
 
 /* ---------------- MASTER RECALCULATE & RENDER ---------------- */
-function recalculateAndRender() {
-  bumpTxVersion();
+function recalculateAndRender(dataMutated = false) {
+  if (dataMutated) {
+    bumpTxVersion();
+  }
   const data = getCachedEngineData();
 
-  if (typeof tabMaskStates !== 'undefined' && typeof tabMaskStates.dashboard === 'boolean' && typeof kpiMaskStates !== 'undefined') {
-    kpiMaskStates.netWorth = tabMaskStates.dashboard;
-    kpiMaskStates.netInvested = tabMaskStates.dashboard;
-    kpiMaskStates.lifetimePnL = tabMaskStates.dashboard;
-    kpiMaskStates.currentFy = tabMaskStates.dashboard;
-  }
+  syncDashboardKpiMasks();
 
   // Card 1: Total Net Worth
   document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
@@ -659,7 +668,7 @@ function recalculateAndRender() {
   if (inceptionEl) {
     const capitalTxs = data.sortedTx.filter(t => t.type === 'DEPOSIT' || t.type === 'BUY');
     if (capitalTxs.length > 0 && capitalTxs[0].date) {
-      const d = new Date(capitalTxs[0].date);
+      const d = parseLocalDate(capitalTxs[0].date);
       if (!isNaN(d.getTime())) {
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         inceptionEl.innerText = `Since ${monthNames[d.getMonth()]} ${d.getFullYear()}`;
@@ -1166,8 +1175,8 @@ function populateProdSubViewFilters(data) {
   const sortedFys = Array.from(fySet).sort().reverse();
   const fyOptionsHtml = `<option value="ALL">All FY</option>` + sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
 
-  const acctSet = new Set([...(typeof CALIB_ACCOUNTS !== 'undefined' ? CALIB_ACCOUNTS : [])]);
-  (typeof transactions !== 'undefined' && Array.isArray(transactions) ? transactions : []).forEach(tx => {
+  const acctSet = new Set([...CALIB_ACCOUNTS]);
+  (Array.isArray(transactions) ? transactions : []).forEach(tx => {
     if (tx.account) acctSet.add(String(tx.account).trim());
   });
   const acctOptionsHtml = `<option value="ALL">All Accounts</option>` + Array.from(acctSet).map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
@@ -1194,7 +1203,7 @@ function populateProdSubViewFilters(data) {
 function isWithinDateRange(dateStr, rangeKey) {
   if (!rangeKey || rangeKey === 'ALL') return true;
   if (!dateStr) return false;
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   if (isNaN(d.getTime())) return true;
   const daysMap = { '30D': 30, '90D': 90, '1Y': 365 };
   const days = daysMap[rangeKey] || 365;
@@ -1206,7 +1215,7 @@ function isWithinDateRange(dateStr, rangeKey) {
 function handleClosedSearch() {
   const inp = document.getElementById('closedSearchInput');
   closedSearchQuery = (inp ? inp.value : '').trim().toLowerCase();
-  if (typeof closedTradesCurrentPage !== 'undefined') closedTradesCurrentPage = 1;
+  closedTradesCurrentPage = 1;
   renderClosedTrades(getCachedEngineData().closedTrades);
   refreshIcons();
 }
@@ -1220,7 +1229,7 @@ function renderClosedTrades(closedTrades) {
   if (tfoot) tfoot.innerHTML = '';
 
   const engineData = getCachedEngineData();
-  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
+  const allClosedLots = Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : [];
   const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
 
@@ -1265,7 +1274,7 @@ function renderClosedTrades(closedTrades) {
 
   const baseList = (closedTrades || []).filter(item => {
     if (!closedSearchQuery) return true;
-    const meta = typeof getStockMeta === 'function' ? getStockMeta(item.stock) : { name: '' };
+    const meta = getStockMeta(item.stock);
     return String(item.stock || '').toLowerCase().includes(closedSearchQuery) ||
       String(meta.name || '').toLowerCase().includes(closedSearchQuery);
   });
@@ -1393,7 +1402,7 @@ function renderFY(fyRealized) {
   if (tfoot) tfoot.innerHTML = '';
 
   const engineData = getCachedEngineData();
-  const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
+  const allClosedLots = Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : [];
   const maskClass = getMaskClass('fyBreakdown');
   const activeFy = getFinancialYear(todayLocalISO());
 
@@ -2020,7 +2029,7 @@ function renderPurificationView(data) {
   const donTbody = document.getElementById('donationsLogTableBody');
   if (donTbody) {
     donTbody.innerHTML = '';
-    const sortedDonations = [...filteredDonations].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const sortedDonations = [...filteredDonations].sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
 
     if (sortedDonations.length === 0) {
       donTbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No donations recorded yet. Click "+ Record Donation" to log a contribution.</td></tr>`;
@@ -2062,6 +2071,7 @@ document.addEventListener('click', (e) => {
       }
       localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
       sendToSheet({ action: 'deleteDonation', id: targetDon.id });
+      bumpTxVersion();
       renderPurificationView(getCachedEngineData());
       refreshIcons();
     }
@@ -2110,6 +2120,7 @@ function handleDonationSubmit(e) {
   donations.push(newDonation);
   localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
   sendToSheet({ action: 'addDonation', donation: newDonation });
+  bumpTxVersion();
 
   closeRecordDonationModal();
   populatePurificationFyOptions(getCachedEngineData().purificationLots);
@@ -2119,7 +2130,7 @@ function handleDonationSubmit(e) {
 
 /* ---------------- DYNAMIC HEADER LEGEND & VIEW SWITCHER ---------------- */
 function getRocRateLabel() {
-  const pct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100)
+  const pct = (ROC_TARGET_MONTHLY_RATE * 100)
     .toFixed(2)
     .replace(/\.00$/, '');
   return `${pct}%`;
@@ -2158,39 +2169,6 @@ function renderChartLegend() {
       </span>
     `;
   }
-}
-
-function toggleChartViewDropdown(e) {
-  if (e) e.stopPropagation();
-  const menu = document.getElementById('chartViewDropdownMenu');
-  const chevron = document.getElementById('chartViewChevron');
-  if (!menu) return;
-
-  const isHidden = menu.classList.contains('hidden');
-  closeAllTopDropdowns();
-  menu.classList.toggle('hidden', !isHidden);
-  if (chevron) chevron.classList.toggle('rotate-180', isHidden);
-}
-
-function closeChartViewDropdown() {
-  const menu = document.getElementById('chartViewDropdownMenu');
-  const chevron = document.getElementById('chartViewChevron');
-  if (menu) menu.classList.add('hidden');
-  if (chevron) chevron.classList.remove('rotate-180');
-}
-
-function switchChartView(view) {
-  currentChartView = view;
-  const label = document.getElementById('currentChartViewLabel');
-  if (label) {
-    label.innerText = view === 'roc' ? 'Monthly RoC Curve' : 'Performance Trajectory';
-  }
-  closeChartViewDropdown();
-  renderChartLegend();
-  const data = getCachedEngineData();
-  renderChart(data);
-  renderCurveInsights(data);
-  renderTtmTable(data);
 }
 
 /* ---------------- TTM BREAKDOWN ACCORDION ---------------- */
@@ -2662,27 +2640,6 @@ const yAxisIndividualBlurPlugin = {
   }
 };
 
-function setChartRange(range) {
-  currentChartRange = range;
-  const ttmBtn = document.getElementById('chartRangeBtn-TTM');
-  const allBtn = document.getElementById('chartRangeBtn-ALL');
-
-  const activeClasses = 'bg-white dark:bg-[#131722] text-slate-900 dark:text-white shadow-2xs font-semibold';
-  const inactiveClasses = 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium';
-
-  if (ttmBtn && allBtn) {
-    if (range === 'TTM') {
-      ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-      allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
-    } else {
-      allBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${activeClasses}`;
-      ttmBtn.className = `px-2.5 py-1 text-xs rounded-md transition-all duration-150 ${inactiveClasses}`;
-    }
-  }
-
-  renderChart(getCachedEngineData());
-}
-
 function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
   const pointBorder = isDark ? '#131722' : '#FFFFFF';
   const blueGradient = ctx.createLinearGradient(0, 0, 0, chartHeight);
@@ -2820,7 +2777,7 @@ function getFilteredChartPoints(computed) {
 
   const ranged = allPts.filter(pt => {
     if (pt.date === 'Current') return true;
-    const d = new Date(pt.date);
+    const d = parseLocalDate(pt.date);
     return !isNaN(d.getTime()) && d >= cutoff;
   });
 
@@ -2842,7 +2799,7 @@ function renderCurveInsights(computed) {
 
   if (currentChartView === 'roc') {
     const rocPts = pts.slice(1);
-    const targetMonthlyPct = ((typeof ROC_TARGET_MONTHLY_RATE === 'number' ? ROC_TARGET_MONTHLY_RATE : 0.02) * 100);
+    const targetMonthlyPct = ROC_TARGET_MONTHLY_RATE * 100;
 
     let bestItem = null;
     let worstItem = null;
@@ -3111,9 +3068,6 @@ function closeAllTopDropdowns(exceptId = null) {
   if (exceptId !== 'settingsDropdownMenu') {
     closeSettingsDropdown();
   }
-  if (exceptId !== 'chartViewDropdownMenu') {
-    closeChartViewDropdown();
-  }
 }
 
 /* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
@@ -3151,11 +3105,7 @@ function switchMainView(view) {
   } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
-    if (typeof selectDashboardMetric === 'function') {
-      selectDashboardMetric(selectedDashboardMetric || 'netWorth');
-    } else if (typeof renderDashboardTrendChart === 'function') {
-      renderDashboardTrendChart(getCachedEngineData());
-    }
+    selectDashboardMetric(selectedDashboardMetric || 'netWorth');
   } else if (view === 'chart') {
     if (chartEl) chartEl.classList.remove('hidden');
     if (btnChart) btnChart.className = activeClasses;
@@ -3250,14 +3200,6 @@ function closeTxDropdown() {
   if (menu) menu.classList.add('hidden');
   if (chevron) chevron.classList.remove('rotate-180');
   closeCorpActionSubmenu();
-}
-
-function switchTab(t) {
-  if (t === 'holdings') {
-    switchMainView('portfolio');
-  } else {
-    switchSubTab(t);
-  }
 }
 
 /* ---------------- RECORD / EDIT TRANSACTION & CORPORATE ACTIONS ---------------- */
@@ -3431,15 +3373,7 @@ function autoComputeAmount() {
 }
 
 function wouldCauseOversell(proposedTxList, targetStock, targetAccount) {
-  const sorted = proposedTxList
-    .map((tx, idx) => ({ tx, idx }))
-    .sort((a, b) => {
-      const da = new Date(a.tx.date).getTime();
-      const db = new Date(b.tx.date).getTime();
-      if (da !== db) return da - db;
-      return a.idx - b.idx;
-    })
-    .map(item => item.tx);
+  const sorted = sortTransactionsChronologically(proposedTxList);
 
   let runningQty = 0;
   for (let i = 0; i < sorted.length; i++) {
@@ -3607,7 +3541,7 @@ function handleTransactionSubmit(e) {
 
         updateStockAutocompleteOptions();
         closeTransactionModal();
-        recalculateAndRender();
+        recalculateAndRender(true);
         if (!document.getElementById('recentTxModal').classList.contains('hidden')) {
           renderRecentTransactionsTable();
         }
@@ -3635,7 +3569,7 @@ function handleTransactionSubmit(e) {
 
   updateStockAutocompleteOptions();
   closeTransactionModal();
-  recalculateAndRender();
+  recalculateAndRender(true);
 }
 
 function quickSellModal(stock, maxQty, currentPrice) {
@@ -3663,7 +3597,7 @@ function manualOverridePrice(stock, cur) {
   const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
   if (p !== null && p.trim() !== '' && !isNaN(Number(p)) && Number(p) > 0) {
     persistManualPrice(stock, Number(p));
-    recalculateAndRender();
+    recalculateAndRender(true);
   }
 }
 
@@ -3751,7 +3685,7 @@ function initiatePinGatedDelete(targetTx) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
       sendToSheet({ action: 'deleteTransaction', id: targetTx.id });
 
-      recalculateAndRender();
+      recalculateAndRender(true);
       renderRecentTransactionsTable();
     }
   );
@@ -3884,63 +3818,18 @@ function saveAllLivePrices() {
     }
   });
 
-  if (Object.keys(changedPrices).length > 0) {
+  const hasChanges = Object.keys(changedPrices).length > 0;
+  if (hasChanges) {
     localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
     recordPriceUpdateTimestamp();
 
     if (cloudScriptUrl) {
-      sendToSheet({ action: "savePrices", prices: changedPrices });
+      sendToSheet({ action: 'savePrices', prices: changedPrices });
     }
   }
 
   closeLivePricesModal();
-  recalculateAndRender();
-}
-
-/* ---------------- MILESTONE GOALS MODAL ---------------- */
-const GOAL_CONFIGS = {
-  netWorth: { title: 'Net Worth Target', desc: 'Set your total portfolio net worth target milestone.', prefix: '₹' },
-  netInvested: { title: 'Net Invested Target', desc: 'Set your target total contributed capital corpus.', prefix: '₹' },
-  lifetimePnL: { title: 'Lifetime Profit Target', desc: 'Set your all-time cumulative portfolio profit target.', prefix: '₹' },
-  currentFyPnL: { title: 'Current FY Realized Profit Target', desc: 'Set your strict FIFO realized profit target for the current financial year.', prefix: '₹' },
-  xirr: { title: 'Annualized XIRR Target', desc: 'Set your target annualized cash-flow hurdle percentage.', prefix: '%' }
-};
-
-function openGoalModal(key) {
-  const config = GOAL_CONFIGS[key];
-  if (!config) return;
-  currentEditingGoalKey = key;
-
-  document.getElementById('goalModalTitle').innerText = config.title;
-  document.getElementById('goalModalDesc').innerText = config.desc;
-  document.getElementById('goalInputPrefix').innerText = config.prefix;
-  document.getElementById('goalModalInput').value = milestoneGoals[key] || 0;
-
-  document.getElementById('goalModal').classList.remove('hidden');
-}
-
-function closeGoalModal() {
-  document.getElementById('goalModal').classList.add('hidden');
-  currentEditingGoalKey = null;
-}
-
-function saveGoalMilestone() {
-  if (!currentEditingGoalKey) return;
-  const val = Number(document.getElementById('goalModalInput').value);
-  if (isNaN(val) || val <= 0) return;
-
-  milestoneGoals[currentEditingGoalKey] = val;
-  localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
-
-  if (cloudScriptUrl) {
-    sendToSheet({
-      action: "saveGoals",
-      goals: { [currentEditingGoalKey]: val }
-    });
-  }
-
-  closeGoalModal();
-  recalculateAndRender();
+  recalculateAndRender(hasChanges);
 }
 
 /* ---------------- ALL PORTFOLIO TARGETS MODAL (PIN-GATED) ---------------- */
@@ -3971,7 +3860,7 @@ function saveAllTargetsWithPin() {
     const k = keys[i];
     const inp = document.getElementById(`targetInput-${k}`);
     const val = Number(inp ? inp.value : 0);
-    if (isNaN(val) || val <= 0) return;
+    if (isNaN(val) || val < 0) return;
     nextGoals[k] = val;
   }
 
@@ -3990,7 +3879,7 @@ function saveAllTargetsWithPin() {
       }
 
       closeAllTargetsModal();
-      recalculateAndRender();
+      recalculateAndRender(false);
     }
   );
 }
@@ -4028,7 +3917,7 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
   document.getElementById('monthEndModalSubtitle').innerText = `Provide closing prices as of ${targetDateStr}`;
 
   const cutoffTime = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate(), 23, 59, 59);
-  const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
+  const pastTxs = transactions.filter(t => parseLocalDate(t.date) <= cutoffTime);
 
   const inv = {};
   let netCap = 0;
@@ -4111,7 +4000,7 @@ function commitMonthEndSnapshot() {
   const dateStr = currentPendingMonthEndDateStr;
   const lastMonthEnd = getPrecedingMonthEndDate();
   const cutoffTime = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59);
-  const pastTxs = transactions.filter(t => new Date(t.date) <= cutoffTime);
+  const pastTxs = transactions.filter(t => parseLocalDate(t.date) <= cutoffTime);
 
   let netCap = 0;
   let cash = 0;
@@ -4135,7 +4024,7 @@ function commitMonthEndSnapshot() {
   const profit = portVal - netCap;
 
   const snapshotPayload = {
-    action: "recordSnapshot",
+    action: 'recordSnapshot',
     date: dateStr,
     netCapital: Math.round(netCap),
     cash: Math.round(cash),
@@ -4159,7 +4048,7 @@ function commitMonthEndSnapshot() {
   localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
 
   closeMonthEndModal();
-  recalculateAndRender();
+  recalculateAndRender(false);
 }
 
 /* ---------------- SETTINGS DROPDOWN & MODALS ---------------- */
@@ -4238,7 +4127,7 @@ async function updatePinFromSettings() {
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
   if (cloudScriptUrl) {
-    sendToSheet({ action: "setPinHash", pinHash: newHash });
+    sendToSheet({ action: 'setPinHash', pinHash: newHash });
   }
 
   msg.innerText = 'PIN updated successfully!';
@@ -4382,11 +4271,11 @@ function saveCashCalibration() {
   localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
 
   if (cloudScriptUrl) {
-    sendToSheet({ action: "saveCalibration", calibration: payload });
+    sendToSheet({ action: 'saveCalibration', calibration: payload });
   }
 
   closeCashCalibrateModal();
-  recalculateAndRender();
+  recalculateAndRender(true);
 }
 
 function openStockMasterModal() {
@@ -4427,7 +4316,7 @@ function handleAddStockMasterSubmit(e) {
 
   if (cloudScriptUrl) {
     sendToSheet({
-      action: "addStockMaster",
+      action: 'addStockMaster',
       symbol: symbol,
       name: name
     });
@@ -4453,11 +4342,6 @@ window.addEventListener('click', function(e) {
     closeSettingsDropdown();
   }
 
-  const chartViewDropdown = document.getElementById('chartViewSwitcherContainer');
-  if (chartViewDropdown && !chartViewDropdown.contains(e.target)) {
-    closeChartViewDropdown();
-  }
-
   const productsDropdown = document.getElementById('productsDropdownContainer');
   if (productsDropdown && !productsDropdown.contains(e.target)) {
     closeProductsDropdown();
@@ -4467,7 +4351,7 @@ window.addEventListener('click', function(e) {
 window.addEventListener('DOMContentLoaded', init);
 
 /* ============================================================================
-   DASHBOARD SESSION METRIC SELECTOR & TREND CHART (ISOLATED)
+   DASHBOARD SESSION METRIC SELECTOR & TREND CHART
    ============================================================================ */
 let dashboardChartInstance = null;
 let selectedDashboardMetric = 'netWorth'; // 'netWorth' | 'netInvested' | 'lifetimePnL' | 'currentFy' | 'xirr'
@@ -4790,7 +4674,7 @@ function filterPointsByDashboardRange(points, range) {
 
   const filtered = points.filter(pt => {
     if (pt.date === 'Current') return true;
-    const d = new Date(pt.date);
+    const d = parseLocalDate(pt.date);
     return !isNaN(d.getTime()) && d >= cutoff;
   });
 
@@ -4800,6 +4684,7 @@ function filterPointsByDashboardRange(points, range) {
 function buildDashboardMetricSeries(computed) {
   const basePoints = computeRocFourCurves(computed);
   const ranged = filterPointsByDashboardRange(basePoints, dashboardChartRange);
+  const curFy = getFinancialYear(todayLocalISO());
 
   return ranged.map((pt, idx) => {
     let val = 0;
@@ -4810,7 +4695,17 @@ function buildDashboardMetricSeries(computed) {
     } else if (selectedDashboardMetric === 'lifetimePnL') {
       val = pt.profit;
     } else if (selectedDashboardMetric === 'currentFy') {
-      val = idx === ranged.length - 1 ? Number(computed.totalUnrealizedPnL || 0) + Number((computed.fyRealized[getFinancialYear(todayLocalISO())] || {}).gain || 0) : pt.profit;
+      if (idx === ranged.length - 1) {
+        val = Number(computed.totalUnrealizedPnL || 0) + Number((computed.fyRealized[curFy] || {}).gain || 0);
+      } else {
+        const ptDate = parseLocalDate(pt.date);
+        const cutoffTime = !isNaN(ptDate.getTime())
+          ? new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate(), 23, 59, 59).getTime()
+          : Infinity;
+        val = (computed.taxClosedLots || [])
+          .filter(lot => lot.fy === curFy && parseLocalDate(lot.sellDate).getTime() <= cutoffTime)
+          .reduce((sum, lot) => sum + Number(lot.gain || 0), 0);
+      }
     } else if (selectedDashboardMetric === 'xirr') {
       const yearsElapsed = Math.max(0.25, (idx + 1) / 12);
       const ratio = pt.netCapital > 0 ? (pt.portfolioValue / pt.netCapital) : 1;
