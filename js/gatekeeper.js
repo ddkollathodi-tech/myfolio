@@ -7,7 +7,7 @@ let isSettingUpNewPin = false;
 let forcePinSetup = false;
 let tempPinForSetup = '';
 let lastActiveTimestamp = Date.now();
-const AUTO_LOCK_TIMEOUT_MS = 1 * 60 * 1000; // 1 minute
+const AUTO_LOCK_TIMEOUT_MS = 1 * 60 * 1000; // 1 minute auto-lock window
 
 // Default privacy mask states: all 4 key metric cards start masked
 let kpiMaskStates = {
@@ -30,7 +30,7 @@ function initKeyboardPinListener() {
     const isSessionUnlocked = sessionStorage.getItem('MYFOLIOAI_UNLOCKED') === 'true';
     if (isSessionUnlocked) return;
 
-    // Do not intercept if user is typing into an input field on the link overlay
+    // Do not intercept typing in form inputs on the sheet-linking screen
     if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
 
     if (e.key >= '0' && e.key <= '9') {
@@ -82,9 +82,7 @@ function checkGatekeeperState() {
   if (isSessionUnlocked) {
     if (overlay) overlay.classList.add('hidden');
     if (root) root.style.display = 'flex';
-    if (typeof checkPendingMonthEndSnapshot === 'function') {
-      checkPendingMonthEndSnapshot();
-    }
+    checkPendingMonthEndSnapshot();
   } else {
     if (root) root.style.display = 'none';
     if (overlay) overlay.classList.remove('hidden');
@@ -139,8 +137,7 @@ function renderSheetLinkOverlay(container) {
     </div>
   `;
 
-  if (typeof refreshIcons === 'function') refreshIcons();
-  else if (window.lucide) lucide.createIcons();
+  refreshIcons();
 }
 
 function bypassToPinCreation() {
@@ -241,8 +238,7 @@ function renderStandardPinLayout(container) {
     </div>
   `;
 
-  if (typeof refreshIcons === 'function') refreshIcons();
-  else if (window.lucide) lucide.createIcons();
+  refreshIcons();
 
   const title = document.getElementById('pinTitle');
   const subtitle = document.getElementById('pinSubtitle');
@@ -333,9 +329,7 @@ async function handlePinVerification() {
         forcePinSetup = false;
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
 
-        if (typeof sendToSheet === 'function') {
-          sendToSheet({ action: 'setPinHash', pinHash: hash });
-        }
+        sendToSheet({ action: 'setPinHash', pinHash: hash });
 
         tempPinForSetup = '';
         enteredPin = '';
@@ -343,7 +337,7 @@ async function handlePinVerification() {
         resetActivityTimer();
         resetKpiMasksToDefault();
         checkGatekeeperState();
-        if (typeof recalculateAndRender === 'function') recalculateAndRender();
+        recalculateAndRender();
         return;
       } else {
         showPinError('PINs do not match. Restarting setup.');
@@ -362,7 +356,7 @@ async function handlePinVerification() {
     enteredPin = '';
     resetKpiMasksToDefault();
     checkGatekeeperState();
-    if (typeof recalculateAndRender === 'function') recalculateAndRender();
+    recalculateAndRender();
   } else {
     showPinError('Incorrect PIN. Please re-enter.');
   }
@@ -378,9 +372,7 @@ function lockApplicationNow() {
 
   // Re-blur all KPI cards and table tabs
   resetKpiMasksToDefault();
-  if (typeof initTabMaskStates === 'function') {
-    initTabMaskStates();
-  }
+  initTabMaskStates();
 
   checkGatekeeperState();
 }
@@ -394,13 +386,6 @@ function resetKpiMasksToDefault() {
     currentFy: true
   };
   applyAllKpiMasks();
-}
-
-function toggleSingleKpiMask(cardKey) {
-  if (Object.prototype.hasOwnProperty.call(kpiMaskStates, cardKey)) {
-    kpiMaskStates[cardKey] = !kpiMaskStates[cardKey];
-    updateSingleMaskUI(cardKey);
-  }
 }
 
 function updateSingleMaskUI(cardKey) {
@@ -424,8 +409,7 @@ function updateSingleMaskUI(cardKey) {
     }
   });
 
-  if (typeof refreshIcons === 'function') refreshIcons();
-  else if (window.lucide) lucide.createIcons();
+  refreshIcons();
 }
 
 function applyAllKpiMasks() {
