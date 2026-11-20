@@ -1,19 +1,32 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
 // Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
-//             Blocking Sync Overlay with 15s Timeout & Work Offline Fail-Safe,
-//             and Blocking Database Backup Overlay with 4s Dismissal.
+//             Quotes Sheet Sync, Blocking Sync Overlay with Confirmation Flash,
+//             15s/28s Timeout & Work Offline Fail-Safe, and Database Backup.
 // ============================================================================
+
+const QUOTES_STORAGE_KEY = 'MYFOLIOAI_QUOTES_LIST';
 
 let activeSyncAbortController = null;
 let syncOfflineBtnTimer = null;
+let syncResultDismissTimer = null;
 let activeBackupAbortController = null;
 let backupOfflineBtnTimer = null;
 
 function showCloudSyncOverlay() {
   const overlay = document.getElementById('cloudSyncOverlay');
   const offlineBtn = document.getElementById('syncWorkOfflineBtn');
+  const animRow = document.getElementById('syncOverlayAnimRow');
+  const resultRow = document.getElementById('syncOverlayResultRow');
   if (!overlay) return;
+
+  if (syncResultDismissTimer) {
+    clearTimeout(syncResultDismissTimer);
+    syncResultDismissTimer = null;
+  }
+
+  if (animRow) animRow.classList.remove('hidden');
+  if (resultRow) resultRow.classList.add('hidden');
 
   overlay.classList.remove('hidden');
 
@@ -28,12 +41,60 @@ function showCloudSyncOverlay() {
   }
 }
 
+function finishCloudSyncOverlay(isSuccess) {
+  const overlay = document.getElementById('cloudSyncOverlay');
+  const offlineBtn = document.getElementById('syncWorkOfflineBtn');
+  const animRow = document.getElementById('syncOverlayAnimRow');
+  const resultRow = document.getElementById('syncOverlayResultRow');
+  const badgeEl = document.getElementById('syncOverlayResultBadge');
+  const labelEl = document.getElementById('syncOverlayResultLabel');
+
+  if (syncOfflineBtnTimer) {
+    clearTimeout(syncOfflineBtnTimer);
+    syncOfflineBtnTimer = null;
+  }
+  if (offlineBtn) {
+    offlineBtn.classList.add('hidden', 'opacity-0');
+  }
+
+  if (!overlay || overlay.classList.contains('hidden')) return;
+
+  if (animRow) animRow.classList.add('hidden');
+  if (resultRow) resultRow.classList.remove('hidden');
+
+  if (badgeEl && labelEl) {
+    if (isSuccess) {
+      badgeEl.className = 'h-11 w-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-2xs';
+      badgeEl.innerHTML = `<i data-lucide="check" class="w-6 h-6 stroke-[2.75]"></i>`;
+      labelEl.className = 'text-sm font-extrabold text-emerald-700 dark:text-emerald-400 tracking-tight';
+      labelEl.innerText = 'Synced';
+    } else {
+      badgeEl.className = 'h-11 w-11 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-500/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-2xs';
+      badgeEl.innerHTML = `<i data-lucide="x" class="w-6 h-6 stroke-[2.75]"></i>`;
+      labelEl.className = 'text-sm font-extrabold text-rose-600 dark:text-rose-400 tracking-tight';
+      labelEl.innerText = 'Not Synced';
+    }
+    if (typeof refreshIcons === 'function') refreshIcons();
+    else if (window.lucide) lucide.createIcons();
+  }
+
+  if (syncResultDismissTimer) clearTimeout(syncResultDismissTimer);
+  syncResultDismissTimer = setTimeout(() => {
+    syncResultDismissTimer = null;
+    hideCloudSyncOverlay();
+  }, 750);
+}
+
 function hideCloudSyncOverlay() {
   const overlay = document.getElementById('cloudSyncOverlay');
   const offlineBtn = document.getElementById('syncWorkOfflineBtn');
   if (syncOfflineBtnTimer) {
     clearTimeout(syncOfflineBtnTimer);
     syncOfflineBtnTimer = null;
+  }
+  if (syncResultDismissTimer) {
+    clearTimeout(syncResultDismissTimer);
+    syncResultDismissTimer = null;
   }
   if (offlineBtn) {
     offlineBtn.classList.add('hidden', 'opacity-0');
@@ -123,10 +184,14 @@ function updateSyncUI(status) {
     }
   }
 
-  // Toggle centered blocking sync overlay alongside top-bar status pill
+  // Toggle centered blocking sync overlay with brief completion indicator
   if (cloudScriptUrl && status === 'Syncing') {
     showCloudSyncOverlay();
-  } else {
+  } else if (status === 'Synced') {
+    finishCloudSyncOverlay(true);
+  } else if (status === 'Not synced' || status === 'Sync error') {
+    finishCloudSyncOverlay(false);
+  } else if (!syncResultDismissTimer) {
     hideCloudSyncOverlay();
   }
 
@@ -183,9 +248,9 @@ async function fetchFromGoogleSheet() {
     try { activeSyncAbortController.abort(); } catch (e) {}
   }
 
-const controller = new AbortController();
-// Increase timeout from 10000 / 12000 ms to 28000 ms (28 seconds) to accommodate Apps Script cold starts
-const timeoutId = setTimeout(() => controller.abort('Google Sheets sync timed out'), 28000);
+  const controller = new AbortController();
+  activeSyncAbortController = controller;
+  const timeoutId = setTimeout(() => controller.abort('Google Sheets sync timed out'), 28000);
 
   updateSyncUI('Syncing');
 
@@ -304,7 +369,15 @@ const timeoutId = setTimeout(() => controller.abort('Google Sheets sync timed ou
       localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
     }
 
-    updateSyncUI(null);
+    // 9. Process Quotes Sheet
+    if (data && Array.isArray(data.quotes) && data.quotes.length > 0) {
+      localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify(data.quotes));
+      if (typeof initHomeQuotesTicker === 'function') {
+        initHomeQuotesTicker(data.quotes);
+      }
+    }
+
+    updateSyncUI('Synced');
     if (typeof recalculateAndRender === 'function') {
       recalculateAndRender();
     }
@@ -321,8 +394,6 @@ const timeoutId = setTimeout(() => controller.abort('Google Sheets sync timed ou
     if (activeSyncAbortController === controller) {
       activeSyncAbortController = null;
     }
-    // Guarantee the blocking sync overlay is always dismissed
-    hideCloudSyncOverlay();
   }
 }
 
@@ -354,7 +425,7 @@ async function sendToSheet(payload, returnJson = false) {
       return null;
     }
 
-    updateSyncUI(null);
+    updateSyncUI('Synced');
     return returnJson ? result : true;
   } catch (err) {
     console.error('sendToSheet failed:', err);
