@@ -448,69 +448,55 @@ th.sortable:hover {
   background-color: rgba(30, 58, 138, 0.14);
 }
 /* ============================================================================
-   Horizontal 4-Node Circuit Strip (Closed Trades Book & Financial Year P&L)
-   ============================================================================ */
-/* ============================================================================
    Matched 4-Node Horizontal Circuit Strip (Closed Trades & Financial Year P&L)
    ============================================================================ */
-.prod-circuit-row {
+.prod-circuit-strip {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.35rem 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 0;
+  padding: 0.5rem 0.25rem;
 }
 
-@media (min-width: 1024px) {
-  .prod-circuit-row {
-    flex-direction: row;
-    align-items: center;
-    gap: 0;
-  }
-}
-
-.prod-node-card {
+.prod-circuit-chip {
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 84px;
+  min-height: 82px;
   border-radius: 1rem;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F5F9FF 100%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FF 100%);
   border: 1.5px solid #93C5FD;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.07);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08);
 }
 
-.dark .prod-node-card {
+.dark .prod-circuit-chip {
   background: linear-gradient(180deg, #131722 0%, #171E2E 100%);
   border-color: #1E3A8A;
   box-shadow: none;
 }
 
-.prod-trace-link {
+.prod-circuit-connector {
   display: none;
   align-items: center;
-  justify-content: center;
-  flex: 0 0 44px;
-  width: 44px;
+  flex: 1 1 28px;
+  min-width: 24px;
+  max-width: 72px;
 }
 
 @media (min-width: 1024px) {
-  .prod-trace-link {
+  .prod-circuit-connector {
     display: flex;
   }
 }
 
-.prod-trace-wire {
+.prod-circuit-line {
   height: 2px;
   flex: 1;
-  background: #2563EB;
+  background: linear-gradient(90deg, #2563EB 0%, #60A5FA 100%);
 }
 
-.dark .prod-trace-wire {
-  background: #3B82F6;
-}
-
-.prod-trace-port {
+.prod-circuit-dot {
   width: 8px;
   height: 8px;
   border-radius: 9999px;
@@ -519,7 +505,7 @@ th.sortable:hover {
   flex-shrink: 0;
 }
 
-.dark .prod-trace-port {
+.dark .prod-circuit-dot {
   background: #131722;
   border-color: #60A5FA;
 }
