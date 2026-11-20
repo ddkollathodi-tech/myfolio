@@ -2,7 +2,7 @@
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
 // Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
 //             Quotes Sheet Sync, Blocking Sync Overlay with Confirmation Flash,
-//             15s/28s Timeout & Work Offline Fail-Safe, and Database Backup.
+//             28s/25s Timeouts & Work Offline Fail-Safe, and Database Backup.
 // ============================================================================
 
 const QUOTES_STORAGE_KEY = 'MYFOLIOAI_QUOTES_LIST';
@@ -74,8 +74,7 @@ function finishCloudSyncOverlay(isSuccess) {
       labelEl.className = 'text-sm font-extrabold text-rose-600 dark:text-rose-400 tracking-tight';
       labelEl.innerText = 'Not Synced';
     }
-    if (typeof refreshIcons === 'function') refreshIcons();
-    else if (window.lucide) lucide.createIcons();
+    refreshIcons();
   }
 
   if (syncResultDismissTimer) clearTimeout(syncResultDismissTimer);
@@ -113,9 +112,7 @@ function cancelSyncAndWorkOffline() {
   }
   hideCloudSyncOverlay();
   updateSyncUI('Not synced');
-  if (typeof recalculateAndRender === 'function') {
-    recalculateAndRender();
-  }
+  recalculateAndRender();
 }
 
 // Database Backup Blocking Overlay Helpers
@@ -129,7 +126,7 @@ function showDatabaseBackupOverlay() {
   if (offlineBtn) {
     offlineBtn.classList.add('hidden', 'opacity-0');
     if (backupOfflineBtnTimer) clearTimeout(backupOfflineBtnTimer);
-    // Reveal "Dismiss / Cancel" escape hatch after 4 seconds
+    // Reveal "Dismiss" escape hatch after 4 seconds
     backupOfflineBtnTimer = setTimeout(() => {
       offlineBtn.classList.remove('hidden');
       requestAnimationFrame(() => offlineBtn.classList.remove('opacity-0'));
@@ -195,8 +192,7 @@ function updateSyncUI(status) {
     hideCloudSyncOverlay();
   }
 
-  if (typeof refreshIcons === 'function') refreshIcons();
-  else if (window.lucide) lucide.createIcons();
+  refreshIcons();
 }
 
 function mergeLedgerById(incomingLedger) {
@@ -317,18 +313,14 @@ async function fetchFromGoogleSheet() {
         localStorage.setItem(LAST_PRICE_UPDATE_KEY, 'Not refreshed yet');
       }
 
-      if (typeof renderLastPriceTimestamp === 'function') {
-        renderLastPriceTimestamp();
-      }
+      renderLastPriceTimestamp();
     }
 
     // 5. Process Stock Master
     if (data && Array.isArray(data.stockMaster)) {
       stockMasterList = data.stockMaster;
       localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
-      if (typeof updateStockAutocompleteOptions === 'function') {
-        updateStockAutocompleteOptions();
-      }
+      updateStockAutocompleteOptions();
     }
 
     // 6. Process Milestone Goals
@@ -344,18 +336,13 @@ async function fetchFromGoogleSheet() {
 
       const cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
-        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', cloudBackupTime);
-      } else if (!localStorage.getItem('MYFOLIOAI_LAST_BACKUP_TIME')) {
-        localStorage.setItem('MYFOLIOAI_LAST_BACKUP_TIME', 'Not backed up yet');
+        localStorage.setItem(LAST_BACKUP_TIME_KEY, cloudBackupTime);
+      } else if (!localStorage.getItem(LAST_BACKUP_TIME_KEY)) {
+        localStorage.setItem(LAST_BACKUP_TIME_KEY, 'Not backed up yet');
       }
 
-      if (typeof renderLastBackupTimestamp === 'function') {
-        renderLastBackupTimestamp();
-      }
-
-      if (typeof checkGatekeeperState === 'function') {
-        checkGatekeeperState();
-      }
+      renderLastBackupTimestamp();
+      checkGatekeeperState();
     }
 
     // 8. Process Cash Calibration Map
@@ -372,22 +359,16 @@ async function fetchFromGoogleSheet() {
     // 9. Process Quotes Sheet
     if (data && Array.isArray(data.quotes) && data.quotes.length > 0) {
       localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify(data.quotes));
-      if (typeof initHomeQuotesTicker === 'function') {
-        initHomeQuotesTicker(data.quotes);
-      }
+      initHomeQuotesTicker(data.quotes);
     }
 
     updateSyncUI('Synced');
-    if (typeof recalculateAndRender === 'function') {
-      recalculateAndRender();
-    }
+    recalculateAndRender();
     return true;
   } catch (err) {
     console.error('Failed to sync with Google Sheet:', err);
     updateSyncUI('Not synced');
-    if (typeof recalculateAndRender === 'function') {
-      recalculateAndRender();
-    }
+    recalculateAndRender();
     return false;
   } finally {
     clearTimeout(timeoutId);
@@ -397,7 +378,7 @@ async function fetchFromGoogleSheet() {
   }
 }
 
-async function sendToSheet(payload, returnJson = false) {
+async function sendToSheet(payload, returnJson = false, signal = null) {
   if (!cloudScriptUrl) return null;
 
   try {
@@ -406,12 +387,17 @@ async function sendToSheet(payload, returnJson = false) {
       bodyObj.token = apiToken;
     }
 
-    // Use text/plain simple CORS request so GAS returns a readable JSON response
-    const response = await fetch(cloudScriptUrl, {
+    const fetchOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(bodyObj)
-    });
+    };
+    if (signal) {
+      fetchOptions.signal = signal;
+    }
+
+    // Use text/plain simple CORS request so GAS returns a readable JSON response
+    const response = await fetch(cloudScriptUrl, fetchOptions);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -444,9 +430,7 @@ function persistManualPrice(stock, ltp) {
   marketPrices[sym] = priceObj;
 
   localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
-  if (typeof recordPriceUpdateTimestamp === 'function') {
-    recordPriceUpdateTimestamp();
-  }
+  recordPriceUpdateTimestamp();
 
   sendToSheet({
     action: 'savePrices',
@@ -485,7 +469,7 @@ async function triggerManualDatabaseBackup() {
   showDatabaseBackupOverlay();
 
   try {
-    const json = await sendToSheet({ action: "triggerDatabaseBackup" }, true);
+    const json = await sendToSheet({ action: 'triggerDatabaseBackup' }, true, controller.signal);
     if (json && json.status === 'success') {
       const backupTime = json.details && json.details.backupTime ? json.details.backupTime : null;
       recordBackupTimestamp(backupTime);
@@ -552,9 +536,7 @@ function saveAndFetchCloud() {
     fetchFromGoogleSheet();
   } else {
     updateSyncUI();
-    if (typeof recalculateAndRender === 'function') {
-      recalculateAndRender();
-    }
+    recalculateAndRender();
   }
 }
 
