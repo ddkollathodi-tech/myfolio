@@ -62,7 +62,7 @@ function refreshIcons() {
   });
 }
 
-/* ---------------- ROTATING HEADER INFO TICKER (POINT 1) ---------------- */
+/* ---------------- ROTATING HEADER INFO TICKER ---------------- */
 function initHeaderInfoTicker() {
   if (headerTickerInterval) clearInterval(headerTickerInterval);
   updateHeaderTickerDisplay();
@@ -126,6 +126,78 @@ function updateHeaderTickerDisplay() {
   refreshIcons();
 }
 
+/* ---------------- HOME SCREEN ROTATING QUOTES TICKER ---------------- */
+const DEFAULT_HOME_QUOTES = [
+  { quote: "Rule No. 1: Never lose money. Rule No. 2: Never forget rule No. 1.", author: "Warren Buffett" },
+  { quote: "Compound interest is the eighth wonder of the world. He who understands it, earns it; he who doesn't, pays it.", author: "Albert Einstein" },
+  { quote: "The big money is not in the buying and selling, but in the waiting.", author: "Charlie Munger" },
+  { quote: "Price is what you pay. Value is what you get.", author: "Warren Buffett" }
+];
+
+let homeQuotesList = [...DEFAULT_HOME_QUOTES];
+let homeQuoteIndex = 0;
+let homeQuoteInterval = null;
+let homeQuoteFadeTimeout = null;
+
+function initHomeQuotesTicker(incomingQuotes) {
+  if (Array.isArray(incomingQuotes) && incomingQuotes.length > 0) {
+    homeQuotesList = incomingQuotes.filter(q => q && q.quote);
+  } else {
+    try {
+      const storageKey = typeof QUOTES_STORAGE_KEY !== 'undefined' ? QUOTES_STORAGE_KEY : 'MYFOLIOAI_QUOTES_LIST';
+      const cached = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(cached) && cached.length > 0) {
+        homeQuotesList = cached.filter(q => q && q.quote);
+      }
+    } catch (e) {}
+  }
+
+  if (homeQuotesList.length === 0) {
+    homeQuotesList = [...DEFAULT_HOME_QUOTES];
+  }
+
+  if (homeQuoteIndex >= homeQuotesList.length) {
+    homeQuoteIndex = 0;
+  }
+
+  renderCurrentHomeQuote(false);
+
+  if (homeQuoteInterval) clearInterval(homeQuoteInterval);
+  if (homeQuotesList.length > 1) {
+    homeQuoteInterval = setInterval(() => {
+      homeQuoteIndex = (homeQuoteIndex + 1) % homeQuotesList.length;
+      renderCurrentHomeQuote(true);
+    }, 7000);
+  }
+}
+
+function renderCurrentHomeQuote(animate = true) {
+  const quoteEl = document.getElementById('homeQuoteText');
+  const authorEl = document.getElementById('homeQuoteAuthor');
+  const wrapEl = document.getElementById('homeQuoteRotatorItem');
+  if (!quoteEl || !authorEl || homeQuotesList.length === 0) return;
+
+  const item = homeQuotesList[homeQuoteIndex] || homeQuotesList[0];
+  if (homeQuoteFadeTimeout) {
+    clearTimeout(homeQuoteFadeTimeout);
+    homeQuoteFadeTimeout = null;
+  }
+
+  if (animate && wrapEl) {
+    wrapEl.style.opacity = '0';
+    homeQuoteFadeTimeout = setTimeout(() => {
+      quoteEl.innerText = `“${item.quote}”`;
+      authorEl.innerText = `— ${item.author || 'Unknown'}`;
+      wrapEl.style.opacity = '1';
+      homeQuoteFadeTimeout = null;
+    }, 180);
+  } else {
+    quoteEl.innerText = `“${item.quote}”`;
+    authorEl.innerText = `— ${item.author || 'Unknown'}`;
+    if (wrapEl) wrapEl.style.opacity = '1';
+  }
+}
+
 /* ---------------- APPLICATION INITIALIZATION ---------------- */
 function init() {
   initTheme();
@@ -135,6 +207,7 @@ function init() {
   renderLastPriceTimestamp();
   renderLastBackupTimestamp();
   initHeaderInfoTicker();
+  initHomeQuotesTicker();
   initAutoLockEngine();
   initKeyboardPinListener();
   resetKpiMasksToDefault();
@@ -185,13 +258,15 @@ function buildDynamicAccountControls() {
       return `<button onclick="setPurificationAccountFilter('${esc(acct)}')" id="purifAcctBtn-${esc(acct)}" class="${cls}">${label}</button>`;
     }).join('');
   }
-const chartAcctSelect = document.getElementById('chartAccountSelect');
+
+  const chartAcctSelect = document.getElementById('chartAccountSelect');
   if (chartAcctSelect) {
     const prevAcct = chartAcctSelect.value || 'ALL';
     chartAcctSelect.innerHTML = `<option value="ALL">Combined</option>` +
       CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
     chartAcctSelect.value = (prevAcct === 'ALL' || CALIB_ACCOUNTS.includes(prevAcct)) ? prevAcct : 'ALL';
   }
+
   const acctOptionsHtml = `<option value="">Select Account</option>` +
     CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
 
@@ -205,6 +280,7 @@ const chartAcctSelect = document.getElementById('chartAccountSelect');
 /* ---------------- STEALTH MASKING SYSTEM ---------------- */
 function initTabMaskStates() {
   tabMaskStates = {
+    dashboard: true,
     chart: true,
     holdings: true,
     closedTrades: true,
@@ -223,8 +299,18 @@ function toggleTabMask(tabKey) {
   updateTabMaskIcon(tabKey);
 
   const data = getCachedEngineData();
-  if (tabKey === 'chart') {
+  if (tabKey === 'dashboard') {
+    if (typeof kpiMaskStates !== 'undefined') {
+      kpiMaskStates.netWorth = tabMaskStates.dashboard;
+      kpiMaskStates.netInvested = tabMaskStates.dashboard;
+      kpiMaskStates.lifetimePnL = tabMaskStates.dashboard;
+      kpiMaskStates.currentFy = tabMaskStates.dashboard;
+    }
+    if (typeof applyAllKpiMasks === 'function') applyAllKpiMasks();
+    renderDashboardTrendChart(data);
+  } else if (tabKey === 'chart') {
     if (multiChartInstance) multiChartInstance.update('none');
+    renderCurveInsights(data);
     renderTtmTable(data);
   } else if (tabKey === 'holdings') {
     renderHoldings(data);
@@ -328,12 +414,10 @@ function renderLastPriceTimestamp() {
 
 function recordBackupTimestamp(customStr) {
   let formatted = customStr;
-  
+
   if (formatted) {
-    // If a string was passed, let's extract digits to rebuild it cleanly as dd - mm, time
     const matches = String(formatted).match(/\d+/g);
     if (matches && matches.length >= 4) {
-      // matches[0] = day, matches[1] = month, [matches[2] = year if present], matches[last-1] = hours, matches[last] = mins
       const dd = matches[0];
       const mm = matches[1];
       const hh = matches[matches.length - 2];
@@ -341,7 +425,7 @@ function recordBackupTimestamp(customStr) {
       formatted = `${dd}-${mm}, ${hh}:${min}`;
     }
   }
-  
+
   if (!formatted || formatted.includes('undefined')) {
     const d = new Date();
     const dd = String(d.getDate()).padStart(2, '0');
@@ -454,6 +538,13 @@ function recalculateAndRender() {
   bumpTxVersion();
   const data = getCachedEngineData();
 
+  if (typeof tabMaskStates !== 'undefined' && typeof tabMaskStates.dashboard === 'boolean' && typeof kpiMaskStates !== 'undefined') {
+    kpiMaskStates.netWorth = tabMaskStates.dashboard;
+    kpiMaskStates.netInvested = tabMaskStates.dashboard;
+    kpiMaskStates.lifetimePnL = tabMaskStates.dashboard;
+    kpiMaskStates.currentFy = tabMaskStates.dashboard;
+  }
+
   // Card 1: Total Net Worth
   document.getElementById('kpiNetWorth').innerText = formatINR(data.netWorth);
   document.getElementById('subPortfolioVal').innerText = formatCompactIndian(data.totalPortfolioVal);
@@ -470,7 +561,7 @@ function recalculateAndRender() {
   nwBarEl.className = 'dash-slot-progress-fill bg-blue-700 h-1.5 rounded-full transition-all duration-500';
   nwBarEl.style.width = `${nwPct}%`;
 
-  // Card 2: Net Invested (Red when unselected; turns white via .dash-metric-slot.is-active .dash-slot-value when selected)
+  // Card 2: Net Invested
   const invValEl = document.getElementById('kpiNetInvested');
   invValEl.innerText = formatINR(data.netInvested);
   invValEl.className = 'dash-slot-value text-xl sm:text-2xl font-extrabold tabular-nums tracking-tight leading-tight transition-all duration-200 text-rose-600 dark:text-rose-400';
@@ -522,7 +613,7 @@ function recalculateAndRender() {
   lifeBarEl.className = 'dash-slot-progress-fill bg-emerald-600 h-1.5 rounded-full transition-all duration-500';
   lifeBarEl.style.width = `${lifeTargetPct}%`;
 
-  // Card 4: Current FY Realized & Unrealized (Purple matching Extreme Target when unselected)
+  // Card 4: Current FY Realized & Unrealized
   const curFy = getFinancialYear(todayLocalISO());
   document.getElementById('kpiCurrentFyCardTitle').innerText = curFy;
   const curFyData = data.fyRealized[curFy] || { gain: 0 };
@@ -586,6 +677,7 @@ function recalculateAndRender() {
   renderActiveTabOnly(data);
   renderChartLegend();
   renderChart(data);
+  renderCurveInsights(data);
   renderTtmTable(data);
   renderDashboardTrendChart(data);
   updateHeaderTickerDisplay();
@@ -1127,7 +1219,7 @@ function renderClosedTrades(closedTrades) {
   tbody.innerHTML = '';
   if (tfoot) tfoot.innerHTML = '';
 
- const engineData = getCachedEngineData();
+  const engineData = getCachedEngineData();
   const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
   const maskClass = getMaskClass('closedTrades');
   updateSortHeaderIcons('closed', closedSort, ['stock', 'totalCostBasis', 'totalProceeds', 'netPnL', 'retPct']);
@@ -1168,7 +1260,7 @@ function renderClosedTrades(closedTrades) {
   }
   if (totRetEl) {
     totRetEl.innerText = `${overallRetPct >= 0 ? '+' : ''}${overallRetPct.toFixed(2)}%`;
-    totRetEl.className = `font-extrabold tabular-nums ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
+    totRetEl.className = `text-xs font-extrabold tabular-nums ${overallRetPct >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`;
   }
 
   const baseList = (closedTrades || []).filter(item => {
@@ -1300,7 +1392,7 @@ function renderFY(fyRealized) {
   tbody.innerHTML = '';
   if (tfoot) tfoot.innerHTML = '';
 
-const engineData = getCachedEngineData();
+  const engineData = getCachedEngineData();
   const allClosedLots = Array.isArray(engineData.closedLots) ? engineData.closedLots : (Array.isArray(engineData.taxClosedLots) ? engineData.taxClosedLots : []);
   const maskClass = getMaskClass('fyBreakdown');
   const activeFy = getFinancialYear(todayLocalISO());
@@ -1352,7 +1444,7 @@ const engineData = getCachedEngineData();
     return;
   }
 
-fys.forEach(fy => {
+  fys.forEach(fy => {
     const item = fyRealized[fy] || {};
     const costVal = Number(item.costBasis ?? item.cost ?? 0);
     const procVal = Number(item.sellProceeds ?? item.proceeds ?? 0);
@@ -1713,6 +1805,7 @@ function jumpToBankLedgerPage(val) {
   bankLedgerCurrentPage = target;
   renderBankLedger(getCachedEngineData().bankEntries);
 }
+
 /* ---------------- TAB 7: PURIFICATION & DONATIONS VIEW ---------------- */
 function togglePurificationTableAccordion() {
   const container = document.getElementById('purifTableContainer');
@@ -1728,7 +1821,6 @@ function getFilteredProfitablePurificationLots(engineData) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
-  // Filter strictly to profitable closed lots (gain > 0)
   return (source.purificationLots || []).filter(lot => {
     if (Number(lot.gain || 0) <= 0) return false;
     if (acctFilter !== 'ALL' && lot.account !== acctFilter) return false;
@@ -1811,7 +1903,6 @@ function renderPurificationView(data) {
   const acctFilter = currentPurificationAccountFilter || 'ALL';
   const fyFilter = currentPurificationFyFilter || 'ALL';
 
-  // Profitable closed lots only (gain > 0)
   const profitableLots = getFilteredProfitablePurificationLots(engineData);
 
   const filteredDonations = (donations || []).filter(d => {
@@ -1830,7 +1921,6 @@ function renderPurificationView(data) {
   const totalDonated = filteredDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
   const remainingDue = totalPurifDue - totalDonated;
 
-  // 1. Update 3 Purification KPI Cards
   const dueEl = document.getElementById('purifTotalDueVal');
   const profitSubEl = document.getElementById('purifTotalProfitSub');
   if (dueEl) {
@@ -1869,7 +1959,6 @@ function renderPurificationView(data) {
     }
   }
 
-  // 2. Render Table A: Profit-Only Paginated Purification Breakdown (Newest first)
   const lotsBadge = document.getElementById('purifLotsCountBadge');
   if (lotsBadge) lotsBadge.innerText = `${profitableLots.length} Profitable Lots`;
 
@@ -1928,7 +2017,6 @@ function renderPurificationView(data) {
     }
   }
 
-  // 3. Render Table B: Recorded Donations Log (Newest first)
   const donTbody = document.getElementById('donationsLogTableBody');
   if (donTbody) {
     donTbody.innerHTML = '';
@@ -2101,6 +2189,7 @@ function switchChartView(view) {
   renderChartLegend();
   const data = getCachedEngineData();
   renderChart(data);
+  renderCurveInsights(data);
   renderTtmTable(data);
 }
 
@@ -2306,7 +2395,6 @@ function exportPortfolioToExcel() {
     }
   }
 
-  // Tab 1: Summary Dashboard
   const summaryRows = [
     { "Metric": "Total Net Worth", "Value": Number(data.netWorth) },
     { "Metric": "Contributed Corpus (Net Invested)", "Value": Number(data.netInvested) },
@@ -2320,7 +2408,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsSummary, [38, 22]);
   XLSX.utils.book_append_sheet(wb, wsSummary, "Summary Dashboard");
 
-  // Tab 2: Holdings
   const holdingsRows = data.holdings.map(h => ({
     "Stock Ticker": h.stock,
     "Quantity": Number(h.qty),
@@ -2336,7 +2423,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsHoldings, [16, 12, 18, 14, 16, 16, 12, 16, 12]);
   XLSX.utils.book_append_sheet(wb, wsHoldings, "Active Holdings");
 
-  // Tab 3: Closed Trades
   const closedRows = data.closedTrades.map(c => ({
     "Stock Ticker": c.stock,
     "Total Sold Qty": Number(c.totalQty),
@@ -2349,7 +2435,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsClosed, [16, 16, 18, 18, 18, 16]);
   XLSX.utils.book_append_sheet(wb, wsClosed, "Closed Trades");
 
-  // Tab 4: Tradebook
   const tradebookRows = data.ledgerEntries.map(l => ({
     "Date": l.date,
     "Account": l.account,
@@ -2367,7 +2452,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTradebook, [14, 12, 14, 16, 12, 14, 14, 14, 20, 15, 25]);
   XLSX.utils.book_append_sheet(wb, wsTradebook, "Tradebook & Ledger");
 
-  // Tab 5: Tax Audit
   const taxRows = data.taxClosedLots.map(t => ({
     "Sell Date": t.sellDate,
     "Buy Date (FIFO)": t.buyDate,
@@ -2386,7 +2470,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsTax, [14, 14, 12, 16, 10, 14, 12, 16, 16, 18, 12, 14]);
   XLSX.utils.book_append_sheet(wb, wsTax, "Tax Audit Trail");
 
-  // Tab 6: Bank Ledger
   const bankRows = data.bankEntries.map(b => ({
     "Date": b.date,
     "Account": b.account,
@@ -2400,7 +2483,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsBank, [14, 12, 14, 16, 16, 22, 25]);
   XLSX.utils.book_append_sheet(wb, wsBank, "Bank Ledger");
 
-  // Tab 7 & 8: Unified Checkpoint History & RoC Curves
   const fourCurvePoints = computeRocFourCurves(data);
   const trajectoryHistory = fourCurvePoints.map(p => ({
     "Checkpoint Date": p.date,
@@ -2429,7 +2511,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsRoc, [16, 16, 16, 16, 22, 16, 16, 16, 16, 16]);
   XLSX.utils.book_append_sheet(wb, wsRoc, "Monthly RoC & Extreme Target");
 
-  // Tab 9: Purification Ledger (Profitable Trades Only)
   const purifRows = (data.purificationLots || [])
     .filter(p => Number(p.gain || 0) > 0)
     .map(p => ({
@@ -2448,7 +2529,6 @@ function exportPortfolioToExcel() {
   formatWorksheet(wsPurif, [14, 12, 16, 10, 16, 16, 18, 16, 18, 14]);
   XLSX.utils.book_append_sheet(wb, wsPurif, "Purification Ledger");
 
-  // Tab 10: Recorded Donations
   const donRows = (donations || []).map(d => ({
     "Date": d.date,
     "Account": d.account,
@@ -2648,6 +2728,7 @@ function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
     baseLine('Profit', displayPoints.map(p => p.profit), '#16a34a', { bg: greenGradient, fill: true, dash: [4, 4], order: 3 })
   ];
 }
+
 let selectedChartPeriod = '1Y'; // '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
 let selectedChartAccount = 'ALL'; // 'ALL' | account name
 let chartExpandedMode = false;
@@ -2838,7 +2919,6 @@ function renderCurveInsights(computed) {
     return;
   }
 
-  // Performance Curve Insights
   let highestVal = -Infinity;
   let lowestVal = Infinity;
   let peakSoFar = -Infinity;
@@ -2931,6 +3011,7 @@ function renderCurveInsights(computed) {
 
   refreshIcons();
 }
+
 function renderChart(computed) {
   const canvas = document.getElementById('multiCurveChart');
   if (!canvas) return;
@@ -2942,14 +3023,13 @@ function renderChart(computed) {
   const tickColor = isDark ? '#94A3B8' : '#64748B';
   const chartHeight = canvas.parentElement ? (canvas.parentElement.clientHeight || 430) : 430;
 
-const displayPoints = getFilteredChartPoints(computed);
+  const displayPoints = getFilteredChartPoints(computed);
 
   const labels = displayPoints.length > 0 ? displayPoints.map(p => p.date) : ['No Data'];
   const datasets = displayPoints.length > 0
     ? buildChartDatasets(ctx, chartHeight, isDark, displayPoints)
     : buildChartDatasets(ctx, chartHeight, isDark, [{ portfolioValue: 0, netCapital: 0, profit: 0, actualVal: 0, netCapBase: 0, pureTarget: 0, ratchetTarget: 0 }]);
 
-  // Update existing chart in place to prevent canvas flicker and memory churn
   if (multiChartInstance) {
     multiChartInstance.data.labels = labels;
     multiChartInstance.data.datasets = datasets;
@@ -3067,7 +3147,8 @@ function switchMainView(view) {
 
   if (view === 'home') {
     if (homeEl) homeEl.classList.remove('hidden');
-} else if (view === 'dashboard') {
+    renderCurrentHomeQuote(false);
+  } else if (view === 'dashboard') {
     if (dashEl) dashEl.classList.remove('hidden');
     if (btnDash) btnDash.className = activeClasses;
     if (typeof selectDashboardMetric === 'function') {
@@ -3081,6 +3162,7 @@ function switchMainView(view) {
     const data = getCachedEngineData();
     renderChartLegend();
     renderChart(data);
+    renderCurveInsights(data);
     renderTtmTable(data);
   } else if (view === 'portfolio') {
     if (portEl) portEl.classList.remove('hidden');
@@ -3170,7 +3252,6 @@ function closeTxDropdown() {
   closeCorpActionSubmenu();
 }
 
-// Keep backward compatibility for legacy switchTab calls if any
 function switchTab(t) {
   if (t === 'holdings') {
     switchMainView('portfolio');
@@ -3297,7 +3378,6 @@ function toggleFormFields() {
 
   if (stockFields) stockFields.style.display = isStock ? 'grid' : 'none';
 
-  // Show mandatory Debt-to-Asset % input only for SELL transactions
   if (debtGroup && amtGroup) {
     if (type === 'SELL') {
       debtGroup.classList.remove('hidden');
@@ -3423,7 +3503,6 @@ function handleTransactionSubmit(e) {
     return;
   }
 
-  // Mandatory Debt-to-Asset (%) validation for SELL transactions
   let debtToAssetVal = 'NA';
   if (type === 'SELL') {
     const parsedDebt = Number(rawDebtStr);
@@ -3494,7 +3573,6 @@ function handleTransactionSubmit(e) {
     }
   }
 
-  // If editing an existing transaction, check FIFO integrity and gate behind Master PIN
   if (editingId) {
     const updatedTx = {
       id: editingId,
@@ -3538,7 +3616,6 @@ function handleTransactionSubmit(e) {
     return;
   }
 
-  // New transaction creation
   const newEntry = {
     id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     date,
@@ -3917,6 +3994,7 @@ function saveAllTargetsWithPin() {
     }
   );
 }
+
 /* ---------------- AUTOMATIC MONTH-END REVIEW MODAL ---------------- */
 function getPrecedingMonthEndDate() {
   const today = new Date();
@@ -4103,7 +4181,6 @@ function closeSettingsDropdown() {
   if (chevron) chevron.classList.remove('rotate-180');
 }
 
-// 1. PIN Settings Modal
 function openPinSettingsModal() {
   closeAllTopDropdowns();
   document.getElementById('settingsCurrentPin').value = '';
@@ -4169,7 +4246,6 @@ async function updatePinFromSettings() {
   setTimeout(() => closePinSettingsModal(), 1200);
 }
 
-// 2. Custom In-App Backup Status Modal & Trigger
 function openBackupResultModal(isSuccess, title, message, details = null) {
   const modal = document.getElementById('backupResultModal');
   if (!modal) return;
@@ -4216,7 +4292,6 @@ function closeBackupResultModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// 3. Cash Calibration Modal
 function openCashCalibrateModal() {
   closeAllTopDropdowns();
   renderCashCalibrateRows();
@@ -4314,7 +4389,6 @@ function saveCashCalibration() {
   recalculateAndRender();
 }
 
-// 4. Stock Master Modal
 function openStockMasterModal() {
   closeAllTopDropdowns();
   document.getElementById('smSymbolInput').value = '';
@@ -4391,12 +4465,13 @@ window.addEventListener('click', function(e) {
 });
 
 window.addEventListener('DOMContentLoaded', init);
+
 /* ============================================================================
    DASHBOARD SESSION METRIC SELECTOR & TREND CHART (ISOLATED)
    ============================================================================ */
 let dashboardChartInstance = null;
 let selectedDashboardMetric = 'netWorth'; // 'netWorth' | 'netInvested' | 'lifetimePnL' | 'currentFy' | 'xirr'
-let dashboardChartRange = 'ALL'; // '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
+let dashboardChartRange = 'ALL'; // '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
 
 const DASHBOARD_METRIC_META = {
   netWorth: {
@@ -4446,6 +4521,39 @@ const DASHBOARD_METRIC_META = {
   }
 };
 
+const dashboardYAxisBlurPlugin = {
+  id: 'dashboardYAxisBlur',
+  afterDraw(chart) {
+    const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+    if (!tabMaskStates || !tabMaskStates.dashboard || meta.isPercent) return;
+    const { ctx, scales } = chart;
+    const yAxis = scales.y;
+    if (!yAxis) return;
+
+    ctx.save();
+    const isDark = document.documentElement.classList.contains('dark');
+    yAxis.ticks.forEach((tick, index) => {
+      const y = yAxis.getPixelForTick(index);
+      const xStart = yAxis.left + 2;
+      const xEnd = yAxis.right - 4;
+      const boxWidth = xEnd - xStart;
+      const boxHeight = 16;
+      const boxY = y - (boxHeight / 2);
+
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(xStart, boxY, boxWidth, boxHeight, 4);
+      } else {
+        ctx.rect(xStart, boxY, boxWidth, boxHeight);
+      }
+      ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.14)' : 'rgba(0, 0, 0, 0.10)';
+      ctx.filter = 'blur(6px)';
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+};
+
 function dashboardCustomTooltipHandler(context) {
   const { chart, tooltip } = context;
   const tooltipEl = document.getElementById('dashboardChartTooltip');
@@ -4457,6 +4565,7 @@ function dashboardCustomTooltipHandler(context) {
   }
 
   const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+  const maskClass = (tabMaskStates && tabMaskStates.dashboard && !meta.isPercent) ? 'privacy-blurred' : '';
 
   if (tooltip.body) {
     const titleLines = tooltip.title || [];
@@ -4481,7 +4590,7 @@ function dashboardCustomTooltipHandler(context) {
         const formattedDelta = meta.isPercent
           ? `${Math.abs(delta).toFixed(2)}%`
           : formatINR(Math.abs(delta), 0);
-        variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+        variationHtml = ` <span class="text-[10px] font-semibold ${maskClass} ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
       }
 
       innerHtml += `
@@ -4490,7 +4599,7 @@ function dashboardCustomTooltipHandler(context) {
             <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${dotColor}"></span>
             <span>${esc(meta.shortLabel)}:</span>
           </span>
-          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
             ${formattedVal}${variationHtml}
           </span>
         </div>
@@ -4532,6 +4641,8 @@ function renderDashboardTrendChart(computed) {
 
   const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
   const isDark = document.documentElement.classList.contains('dark');
+  const tickColor = isDark ? '#94A3B8' : '#64748B';
+  const shouldMaskY = !!(tabMaskStates && tabMaskStates.dashboard && !meta.isPercent);
   const series = buildDashboardMetricSeries(computed || getCachedEngineData());
 
   const labels = series.map(s => s.label);
@@ -4559,6 +4670,7 @@ function renderDashboardTrendChart(computed) {
   if (dashboardChartInstance) {
     dashboardChartInstance.data.labels = labels;
     dashboardChartInstance.data.datasets = [dataset];
+    dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
     dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
     dashboardChartInstance.update('none');
     return;
@@ -4590,7 +4702,7 @@ function renderDashboardTrendChart(computed) {
           border: { display: false },
           grid: { display: false },
           ticks: {
-            color: isDark ? '#94A3B8' : '#64748B',
+            color: tickColor,
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 12,
@@ -4601,13 +4713,14 @@ function renderDashboardTrendChart(computed) {
           border: { display: false },
           grid: { color: isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0' },
           ticks: {
-            color: isDark ? '#94A3B8' : '#64748B',
+            color: shouldMaskY ? 'transparent' : tickColor,
             font: { family: "'Inter', sans-serif", size: 11 },
             callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
           }
         }
       }
-    }
+    },
+    plugins: [dashboardYAxisBlurPlugin]
   });
 }
 
@@ -4634,7 +4747,6 @@ function selectDashboardMetric(metricKey) {
           slot.classList.add('slant-both', 'hide-left-divider', 'hide-right-divider');
         }
       } else if (activeIdx !== -1) {
-        // Hide the vertical divider on the adjacent unselected slot touching the active card
         if (idx === activeIdx + 1) {
           slot.classList.add('hide-left-divider');
         }
@@ -4669,7 +4781,7 @@ function setDashboardChartRange(range) {
 function filterPointsByDashboardRange(points, range) {
   if (!Array.isArray(points) || points.length === 0 || range === 'ALL') return points;
 
-  const monthsMap = { '1M': 1, '3M': 3, '6M': 6, '1Y': 12, '3Y': 36, '5Y': 60 };
+  const monthsMap = { '6M': 6, '1Y': 12, '3Y': 36, '5Y': 60 };
   const monthsBack = monthsMap[range];
   if (!monthsBack) return points;
 
