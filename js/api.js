@@ -316,11 +316,17 @@ async function fetchFromGoogleSheet() {
       renderLastPriceTimestamp();
     }
 
-    // 5. Process Stock Master
+    // 5. Process Stock Master & Reference Sectors
     if (data && Array.isArray(data.stockMaster)) {
       stockMasterList = data.stockMaster;
       localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
       updateStockAutocompleteOptions();
+    }
+
+    if (data && Array.isArray(data.sectors)) {
+      sectorsList = data.sectors;
+      localStorage.setItem(SECTORS_LIST_KEY, JSON.stringify(sectorsList));
+      updateSectorAutocompleteOptions();
     }
 
     // 6. Process Milestone Goals
