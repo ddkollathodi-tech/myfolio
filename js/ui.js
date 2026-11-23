@@ -504,7 +504,7 @@ function updateStockAutocompleteOptions() {
   });
 }
 
-let portAllocationMode = 'stock'; // 'stock' | 'sector'
+let portAllocationMode = 'sector'; // 'sector' | 'stock'
 let portAllocationChartInstance = null;
 
 function getStockMeta(symbol) {
@@ -2071,28 +2071,22 @@ document.addEventListener('click', (e) => {
   const targetDon = donations.find(d => String(d.id) === donId);
   if (!targetDon) return;
 
- requestPinAuthorization(
+  requestPinAuthorization(
     'Authorize Donation Deletion',
     `Enter Master PIN to delete donation of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
-    async () => {
-      const idx = donations.findIndex(d => String(d.id).trim() === String(targetDon.id).trim());
+    () => {
+      const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
       if (idx >= 0) {
         donations.splice(idx, 1);
       }
       localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+      sendToSheet({ action: 'deleteDonation', id: targetDon.id });
       bumpTxVersion();
       renderPurificationView(getCachedEngineData());
       refreshIcons();
-
-      if (cloudScriptUrl) {
-        const res = await sendToSheet({ action: 'deleteDonation', id: String(targetDon.id).trim() }, true);
-        if (!res || res.status === 'error') {
-          alert(`Warning: Donation removed locally, but Google Sheet deletion reported: ${(res && res.message) || 'Unknown error'}`);
-        }
-      }
     }
   );
-  });
+});
 
 function openRecordDonationModal() {
   const modal = document.getElementById('recordDonationModal');
@@ -4730,6 +4724,6 @@ function buildDashboardMetricSeries(computed) {
         : Number(((Math.pow(Math.max(0.1, ratio), 1 / yearsElapsed) - 1) * 100).toFixed(2));
     }
 
-return { label: pt.date, value: val };
+    return { label: pt.date, value: val };
   });
 }
