@@ -4731,4 +4731,3 @@ function buildDashboardMetricSeries(computed) {
 
     return { label: pt.date, value: val };
   });
-}
