@@ -2440,37 +2440,40 @@
         </button>
       </div>
 
-      <form id="stockMasterForm" onsubmit="handleAddStockMasterSubmit(event)" class="space-y-3.5 text-xs">
+      <form id="stockMasterForm" novalidate onsubmit="handleAddStockMasterSubmit(event)" class="space-y-3.5 text-xs">
         <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Stock Ticker Symbol</label>
+          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Stock Ticker Symbol *</label>
           <input
             type="text"
             id="smSymbolInput"
-            required
             placeholder="e.g. TATAMOTORS, DANISH"
+            autocomplete="off"
             class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-purple-500"
           >
         </div>
 
         <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Company / Script Name</label>
+          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Company / Script Name *</label>
           <input
             type="text"
             id="smNameInput"
-            required
             placeholder="e.g. Tata Motors Limited"
+            autocomplete="off"
             class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
           >
         </div>
 
         <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Sector</label>
+          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Sector *</label>
           <input
             type="text"
             id="smSectorInput"
-            placeholder="e.g. Capital Goods, Power, IT"
+            list="sectorSuggestionsList"
+            placeholder="Type or select reference sector..."
+            autocomplete="off"
             class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
           >
+          <datalist id="sectorSuggestionsList"></datalist>
         </div>
 
         <div id="smStatusMsg" class="text-xs font-semibold h-4 text-emerald-500 opacity-0 transition-opacity"></div>
