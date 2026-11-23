@@ -4729,5 +4729,6 @@ function buildDashboardMetricSeries(computed) {
         : Number(((Math.pow(Math.max(0.1, ratio), 1 / yearsElapsed) - 1) * 100).toFixed(2));
     }
 
-    return { label: pt.date, value: val };
+return { label: pt.date, value: val };
   });
+}
