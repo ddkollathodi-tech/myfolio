@@ -890,10 +890,7 @@ function renderHoldings(data) {
         <td class="py-3 px-3 text-slate-400 font-semibold tabular-nums">${idx + 1}</td>
         <td class="py-3 px-3">
           <div class="font-bold text-slate-900 dark:text-white leading-tight truncate">${safeStock}</div>
-          <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
-            <span class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${safeCompany}</span>
-            <span class="${getSectorBadgeClasses(h.sector)}">${safeSector}</span>
-          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${safeCompany}</div>
         </td>
         <td class="py-3 px-3 text-right tabular-nums font-semibold ${maskClass}">${h.qty}</td>
         <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
