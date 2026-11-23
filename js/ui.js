@@ -151,7 +151,7 @@ const DEFAULT_HOME_QUOTES = [
   { quote: "Price is what you pay. Value is what you get.", author: "Warren Buffett" }
 ];
 
-const HOME_QUOTE_INTERVAL_MS = 30000; // 30 seconds per quote
+const HOME_QUOTE_INTERVAL_MS = 20000; // 30 seconds per quote
 
 let homeQuotesList = [...DEFAULT_HOME_QUOTES];
 let homeQuoteIndex = 0;
