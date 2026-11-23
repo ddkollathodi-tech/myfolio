@@ -815,7 +815,28 @@
                 </div>
               </div>
 
-              <div class="flex items-center flex-wrap gap-3 text-xs" id="chartLegendContainer"></div>
+              <div class="flex items-center flex-wrap gap-3 text-xs">
+                <div class="flex items-center flex-wrap gap-3" id="chartLegendContainer"></div>
+
+                <div class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#222836]">
+                  <button
+                    type="button"
+                    onclick="setChartMetricMode(currentChartView === 'roc' ? 'trajectory' : 'roc')"
+                    class="p-1.5 rounded-md bg-[#0B1F4C] dark:bg-blue-600 text-white shadow-2xs transition"
+                    title="Switch Curve Mode"
+                  >
+                    <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button
+                    type="button"
+                    onclick="toggleChartExpandFocus()"
+                    class="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+                    title="Toggle Expanded Chart Height"
+                  >
+                    <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
 
             <!-- Canvas Container -->
             <div id="multiChartCanvasWrap" class="h-[340px] lg:h-[370px] w-full relative overflow-hidden transition-all duration-200">
