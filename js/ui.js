@@ -504,7 +504,7 @@ function updateStockAutocompleteOptions() {
   });
 }
 
-let portAllocationMode = 'sector'; // 'sector' | 'stock'
+let portAllocationMode = 'stock'; // 'stock' | 'sector'
 let portAllocationChartInstance = null;
 
 function getStockMeta(symbol) {
@@ -890,7 +890,10 @@ function renderHoldings(data) {
         <td class="py-3 px-3 text-slate-400 font-semibold tabular-nums">${idx + 1}</td>
         <td class="py-3 px-3">
           <div class="font-bold text-slate-900 dark:text-white leading-tight truncate">${safeStock}</div>
-          <div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${safeCompany}</div>
+          <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+            <span class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${safeCompany}</span>
+            <span class="${getSectorBadgeClasses(h.sector)}">${safeSector}</span>
+          </div>
         </td>
         <td class="py-3 px-3 text-right tabular-nums font-semibold ${maskClass}">${h.qty}</td>
         <td class="py-3 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">${formatINR(h.wap)}</td>
@@ -2074,16 +2077,31 @@ document.addEventListener('click', (e) => {
   requestPinAuthorization(
     'Authorize Donation Deletion',
     `Enter Master PIN to delete donation of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
-    () => {
+    async () => {
+      const prevDonations = [...donations];
       const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
       if (idx >= 0) {
         donations.splice(idx, 1);
       }
       localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
-      sendToSheet({ action: 'deleteDonation', id: targetDon.id });
       bumpTxVersion();
       renderPurificationView(getCachedEngineData());
       refreshIcons();
+
+      if (cloudScriptUrl) {
+        const res = await sendToSheet(
+          { action: 'deleteDonation', id: targetDon.id, donation: targetDon },
+          true
+        );
+        if (!res || res.status === 'error') {
+          donations = prevDonations;
+          localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+          bumpTxVersion();
+          renderPurificationView(getCachedEngineData());
+          refreshIcons();
+          alert(`Could not delete donation from Google Sheet: ${(res && res.message) || 'Sync failed'}`);
+        }
+      }
     }
   );
 });
@@ -4292,6 +4310,8 @@ function openStockMasterModal() {
   closeAllTopDropdowns();
   document.getElementById('smSymbolInput').value = '';
   document.getElementById('smNameInput').value = '';
+  const secInp = document.getElementById('smSectorInput');
+  if (secInp) secInp.value = '';
   const msg = document.getElementById('smStatusMsg');
   if (msg) {
     msg.innerText = '';
@@ -4308,27 +4328,33 @@ function handleAddStockMasterSubmit(e) {
   e.preventDefault();
   const symInput = document.getElementById('smSymbolInput');
   const nameInput = document.getElementById('smNameInput');
+  const secInput = document.getElementById('smSectorInput');
   const msg = document.getElementById('smStatusMsg');
 
   const symbol = symInput.value.trim().toUpperCase();
   const name = nameInput.value.trim();
+  const sector = secInput ? secInput.value.trim() : '';
   if (!symbol) return;
 
   const existingIndex = stockMasterList.findIndex(item => (item.symbol || '').toUpperCase() === symbol);
   if (existingIndex >= 0) {
     stockMasterList[existingIndex].name = name;
+    if (sector) stockMasterList[existingIndex].sector = sector;
   } else {
-    stockMasterList.push({ symbol: symbol, name: name });
+    stockMasterList.push({ symbol: symbol, name: name, sector: sector });
   }
 
   localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
   updateStockAutocompleteOptions();
+  bumpTxVersion();
+  renderHoldings(getCachedEngineData());
 
   if (cloudScriptUrl) {
     sendToSheet({
       action: 'addStockMaster',
       symbol: symbol,
-      name: name
+      name: name,
+      sector: sector
     });
   }
 
