@@ -4688,7 +4688,10 @@ function renderDashboardTrendChart(computed) {
         },
         y: {
           border: { display: false },
-          grid: { color: isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0' },
+          grid: {
+            color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
+            lineWidth: isDark ? 0.5 : 1
+          },
           ticks: {
             color: shouldMaskY ? 'transparent' : tickColor,
             font: { family: "'Inter', sans-serif", size: 11 },
