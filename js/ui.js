@@ -2092,6 +2092,7 @@ document.addEventListener('click', (e) => {
       }
     }
   );
+  });
 
 function openRecordDonationModal() {
   const modal = document.getElementById('recordDonationModal');
