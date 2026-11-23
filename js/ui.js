@@ -254,7 +254,8 @@ function init() {
   }
   bumpTxVersion();
 
-  updateStockAutocompleteOptions();
+updateStockAutocompleteOptions();
+  updateSectorAutocompleteOptions();
   checkGatekeeperState();
 
   if (cloudScriptUrl) {
@@ -503,7 +504,23 @@ function updateStockAutocompleteOptions() {
     }
   });
 }
+function updateSectorAutocompleteOptions() {
+  const datalist = document.getElementById('sectorSuggestionsList');
+  if (!datalist) return;
+  datalist.innerHTML = '';
 
+  const seen = new Set();
+  (Array.isArray(sectorsList) ? sectorsList : []).forEach(sec => {
+    const clean = String(sec || '').trim();
+    const key = clean.toLowerCase();
+    if (clean && !seen.has(key)) {
+      seen.add(key);
+      const opt = document.createElement('option');
+      opt.value = clean;
+      datalist.appendChild(opt);
+    }
+  });
+}
 let portAllocationMode = 'stock'; // 'stock' | 'sector'
 let portAllocationChartInstance = null;
 
@@ -4303,8 +4320,18 @@ function saveCashCalibration() {
   recalculateAndRender(true);
 }
 
+function clearInlineStockMasterWarnings() {
+  ['smSymbolInput', 'smNameInput', 'smSectorInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  });
+  document.querySelectorAll('#stockMasterForm .inline-tx-warning').forEach(el => el.remove());
+}
+
 function openStockMasterModal() {
   closeAllTopDropdowns();
+  clearInlineStockMasterWarnings();
+  updateSectorAutocompleteOptions();
   document.getElementById('smSymbolInput').value = '';
   document.getElementById('smNameInput').value = '';
   const secInp = document.getElementById('smSectorInput');
@@ -4318,27 +4345,60 @@ function openStockMasterModal() {
 }
 
 function closeStockMasterModal() {
+  clearInlineStockMasterWarnings();
   document.getElementById('stockMasterModal').classList.add('hidden');
 }
 
 function handleAddStockMasterSubmit(e) {
   e.preventDefault();
+  clearInlineStockMasterWarnings();
+
   const symInput = document.getElementById('smSymbolInput');
   const nameInput = document.getElementById('smNameInput');
   const secInput = document.getElementById('smSectorInput');
   const msg = document.getElementById('smStatusMsg');
 
-  const symbol = symInput.value.trim().toUpperCase();
-  const name = nameInput.value.trim();
-  const sector = secInput ? secInput.value.trim() : '';
-  if (!symbol) return;
+  const symbol = symInput ? symInput.value.trim().toUpperCase() : '';
+  const name = nameInput ? nameInput.value.trim() : '';
+  const rawSector = secInput ? secInput.value.trim() : '';
+
+  let hasError = false;
+
+  if (!symbol) {
+    showInlineError(symInput, 'Stock ticker symbol is required.');
+    hasError = true;
+  }
+
+  if (!name) {
+    showInlineError(nameInput, 'Company / Script name is required.');
+    hasError = true;
+  }
+
+  if (!rawSector) {
+    showInlineError(secInput, 'Sector is required.');
+    hasError = true;
+  }
+
+  // Enforce match against reference Sectors list (case-insensitive)
+  let matchedSector = rawSector;
+  if (rawSector && Array.isArray(sectorsList) && sectorsList.length > 0) {
+    const found = sectorsList.find(s => String(s || '').trim().toLowerCase() === rawSector.toLowerCase());
+    if (!found) {
+      showInlineError(secInput, 'Please select a valid sector from the reference list.');
+      hasError = true;
+    } else {
+      matchedSector = String(found).trim();
+    }
+  }
+
+  if (hasError) return;
 
   const existingIndex = stockMasterList.findIndex(item => (item.symbol || '').toUpperCase() === symbol);
   if (existingIndex >= 0) {
     stockMasterList[existingIndex].name = name;
-    if (sector) stockMasterList[existingIndex].sector = sector;
+    stockMasterList[existingIndex].sector = matchedSector;
   } else {
-    stockMasterList.push({ symbol: symbol, name: name, sector: sector });
+    stockMasterList.push({ symbol: symbol, name: name, sector: matchedSector });
   }
 
   localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
@@ -4351,11 +4411,11 @@ function handleAddStockMasterSubmit(e) {
       action: 'addStockMaster',
       symbol: symbol,
       name: name,
-      sector: sector
+      sector: matchedSector
     });
   }
 
-  msg.innerText = `Added ${symbol} to Master!`;
+  msg.innerText = `Added ${symbol} (${matchedSector}) to Master!`;
   msg.classList.remove('opacity-0');
 
   setTimeout(() => {
