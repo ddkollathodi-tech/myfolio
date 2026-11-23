@@ -151,10 +151,21 @@ const DEFAULT_HOME_QUOTES = [
   { quote: "Price is what you pay. Value is what you get.", author: "Warren Buffett" }
 ];
 
+const HOME_QUOTE_INTERVAL_MS = 30000; // 30 seconds per quote
+
 let homeQuotesList = [...DEFAULT_HOME_QUOTES];
 let homeQuoteIndex = 0;
 let homeQuoteInterval = null;
 let homeQuoteFadeTimeout = null;
+
+function pickRandomQuoteIndex(total, excludeIdx = -1) {
+  if (total <= 1) return 0;
+  let idx = Math.floor(Math.random() * total);
+  if (excludeIdx >= 0 && idx === excludeIdx) {
+    idx = (idx + 1) % total;
+  }
+  return idx;
+}
 
 function initHomeQuotesTicker(incomingQuotes) {
   if (Array.isArray(incomingQuotes) && incomingQuotes.length > 0) {
@@ -173,18 +184,20 @@ function initHomeQuotesTicker(incomingQuotes) {
     homeQuotesList = [...DEFAULT_HOME_QUOTES];
   }
 
-  if (homeQuoteIndex >= homeQuotesList.length) {
-    homeQuoteIndex = 0;
-  }
+  homeQuoteIndex = pickRandomQuoteIndex(homeQuotesList.length, -1);
 
   renderCurrentHomeQuote(false);
 
-  if (homeQuoteInterval) clearInterval(homeQuoteInterval);
+  if (homeQuoteInterval) {
+    clearInterval(homeQuoteInterval);
+    homeQuoteInterval = null;
+  }
+
   if (homeQuotesList.length > 1) {
     homeQuoteInterval = setInterval(() => {
-      homeQuoteIndex = (homeQuoteIndex + 1) % homeQuotesList.length;
+      homeQuoteIndex = pickRandomQuoteIndex(homeQuotesList.length, homeQuoteIndex);
       renderCurrentHomeQuote(true);
-    }, 30000);
+    }, HOME_QUOTE_INTERVAL_MS);
   }
 }
 
@@ -204,12 +217,14 @@ function renderCurrentHomeQuote(animate = true) {
     wrapEl.style.opacity = '0';
     homeQuoteFadeTimeout = setTimeout(() => {
       quoteEl.innerText = `“${item.quote}”`;
+      authorEl.className = 'text-xs font-semibold text-slate-600 dark:text-slate-400';
       authorEl.innerText = `— ${item.author || 'Unknown'}`;
       wrapEl.style.opacity = '1';
       homeQuoteFadeTimeout = null;
     }, 180);
   } else {
     quoteEl.innerText = `“${item.quote}”`;
+    authorEl.className = 'text-xs font-semibold text-slate-600 dark:text-slate-400';
     authorEl.innerText = `— ${item.author || 'Unknown'}`;
     if (wrapEl) wrapEl.style.opacity = '1';
   }
