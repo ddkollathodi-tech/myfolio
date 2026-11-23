@@ -10,6 +10,7 @@ const API_TOKEN_STORAGE_KEY = 'MYFOLIOAI_API_TOKEN';
 const MANUAL_PRICES_KEY = 'MYFOLIOAI_MANUAL_PRICES';
 const CHART_HISTORY_KEY = 'MYFOLIOAI_CHART_HISTORY';
 const STOCK_MASTER_KEY = 'MYFOLIOAI_STOCK_MASTER';
+const SECTORS_LIST_KEY = 'MYFOLIOAI_SECTORS_LIST';
 const GOALS_STORAGE_KEY = 'MYFOLIOAI_GOALS';
 const TAX_PAID_KEY = 'MYFOLIOAI_TAX_PAID';
 const SETTINGS_STORAGE_KEY = 'MYFOLIOAI_SETTINGS';
@@ -50,6 +51,13 @@ try {
   stockMasterList = JSON.parse(localStorage.getItem(STOCK_MASTER_KEY)) || [];
 } catch (e) {
   stockMasterList = [];
+}
+
+let sectorsList = [];
+try {
+  sectorsList = JSON.parse(localStorage.getItem(SECTORS_LIST_KEY)) || [];
+} catch (e) {
+  sectorsList = [];
 }
 
 let milestoneGoals = {
