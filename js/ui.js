@@ -155,7 +155,8 @@ const DEFAULT_HOME_QUOTES = [
   { quote: "Price is what you pay. Value is what you get.", author: "Warren Buffett" }
 ];
 
-const HOME_QUOTE_INTERVAL_MS = 20000; // 30 seconds per quote
+// Quote rotation interval (20 seconds per quote)
+const HOME_QUOTE_INTERVAL_MS = 20000;
 
 let homeQuotesList = [...DEFAULT_HOME_QUOTES];
 let homeQuoteIndex = 0;
@@ -248,17 +249,10 @@ function init() {
   initKeyboardPinListener();
   resetKpiMasksToDefault();
 
-  const savedTx = localStorage.getItem(STORAGE_KEY);
-  if (savedTx) {
-    try { transactions = JSON.parse(savedTx); } catch (e) { transactions = []; }
-  }
-  const savedDonations = localStorage.getItem(DONATIONS_STORAGE_KEY);
-  if (savedDonations) {
-    try { donations = JSON.parse(savedDonations); } catch (e) { donations = []; }
-  }
+  transactions = loadJsonStorage(STORAGE_KEY, []);
   bumpTxVersion();
 
-updateStockAutocompleteOptions();
+  updateStockAutocompleteOptions();
   updateSectorAutocompleteOptions();
   checkGatekeeperState();
 
@@ -426,13 +420,7 @@ function applyTheme(isDark) {
 
 /* ---------------- TIMESTAMP MANAGEMENT ---------------- */
 function recordPriceUpdateTimestamp(customDate) {
-  const d = customDate || new Date();
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const hours = String(d.getHours()).padStart(2, '0');
-  const mins = String(d.getMinutes()).padStart(2, '0');
-
-  const formatted = `${day}-${month}, ${hours}:${mins}`;
+  const formatted = formatShortTimestamp(customDate || new Date());
   localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
   renderLastPriceTimestamp();
 }
@@ -459,12 +447,7 @@ function recordBackupTimestamp(customStr) {
   }
 
   if (!formatted || formatted.includes('undefined')) {
-    const d = new Date();
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const hh = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-    formatted = `${dd}-${mm}, ${hh}:${min}`;
+    formatted = formatShortTimestamp(new Date());
   }
 
   localStorage.setItem(LAST_BACKUP_TIME_KEY, formatted);
@@ -538,17 +521,6 @@ function getStockMeta(symbol) {
     name: (found && found.name) ? String(found.name).trim() : sym,
     sector: (found && found.sector && String(found.sector).trim()) ? String(found.sector).trim() : 'Others'
   };
-}
-
-function getSectorBadgeClasses(sector) {
-  const key = String(sector || 'Others').toLowerCase();
-  if (key.includes('capital')) return 'port-sector-badge bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60';
-  if (key.includes('power') || key.includes('utilit')) return 'port-sector-badge bg-cyan-50 dark:bg-cyan-950/70 text-cyan-700 dark:text-cyan-300 border border-cyan-200/80 dark:border-cyan-800/60';
-  if (key.includes('engineer')) return 'port-sector-badge bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60';
-  if (key.includes('financ') || key.includes('bank')) return 'port-sector-badge bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60';
-  if (key.includes('chem')) return 'port-sector-badge bg-pink-50 dark:bg-pink-950/70 text-pink-700 dark:text-pink-300 border border-pink-200/80 dark:border-pink-800/60';
-  if (key.includes('it') || key.includes('tech')) return 'port-sector-badge bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60';
-  return 'port-sector-badge bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-[#222836]';
 }
 
 function handlePortfolioSortSelect(val) {
@@ -1162,11 +1134,6 @@ document.addEventListener('click', (e) => {
   const overrideCell = e.target.closest('[data-action="override-ltp"]');
   if (overrideCell) {
     manualOverridePrice(overrideCell.dataset.stock, Number(overrideCell.dataset.ltp));
-    return;
-  }
-  const sellBtn = e.target.closest('[data-action="quick-sell"]');
-  if (sellBtn) {
-    quickSellModal(sellBtn.dataset.stock, Number(sellBtn.dataset.qty), Number(sellBtn.dataset.ltp));
   }
 });
 
@@ -2371,13 +2338,32 @@ function renderTtmTable(computed) {
 }
 
 /* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
-function exportPortfolioToExcel() {
-  if (typeof XLSX === 'undefined') return;
+ 
+function ensureXlsxLoaded() {
+  if (typeof XLSX !== 'undefined') return Promise.resolve(true);
+  if (window.__xlsxLoadPromise) return window.__xlsxLoadPromise;
 
-  const data = getCachedEngineData();
-  const wb = XLSX.utils.book_new();
+  window.__xlsxLoadPromise = new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+    script.async = true;
+    script.onload = () => resolve(typeof XLSX !== 'undefined');
+    script.onerror = () => {
+      window.__xlsxLoadPromise = null;
+      resolve(false);
+    };
+    document.head.appendChild(script);
+  });
 
-  function formatWorksheet(ws, colWidths) {
+  return window.__xlsxLoadPromise;
+}
+
+async function exportPortfolioToExcel() {
+  const loaded = await ensureXlsxLoaded();
+  if (!loaded || typeof XLSX === 'undefined') return;
+
+  const data = getCachedEngineData();  
+function formatWorksheet(ws, colWidths) {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);
 
@@ -2795,18 +2781,6 @@ function setChartPeriod(period) {
   const data = getCachedEngineData();
   renderChart(data);
   renderCurveInsights(data);
-}
-
-function toggleChartExpandFocus() {
-  chartExpandedMode = !chartExpandedMode;
-  const wrap = document.getElementById('multiChartCanvasWrap');
-  if (!wrap) return;
-  wrap.className = chartExpandedMode
-    ? 'h-[450px] lg:h-[510px] w-full relative overflow-hidden transition-all duration-200'
-    : 'h-[340px] lg:h-[370px] w-full relative overflow-hidden transition-all duration-200';
-  if (multiChartInstance) {
-    setTimeout(() => multiChartInstance.resize(), 60);
-  }
 }
 
 function getFilteredChartPoints(computed) {
@@ -3655,26 +3629,6 @@ function handleTransactionSubmit(e) {
   recalculateAndRender(true);
 }
 
-function quickSellModal(stock, maxQty, currentPrice) {
-  openPresetModal('SELL');
-  document.getElementById('txStock').value = stock;
-
-  let targetQty = maxQty;
-  if (currentHoldingsAccountFilter && currentHoldingsAccountFilter !== 'ALL') {
-    const acctSelect = document.getElementById('txAccount');
-    if (acctSelect) acctSelect.value = currentHoldingsAccountFilter;
-
-    const data = getCachedEngineData();
-    targetQty = data.openLots
-      .filter(l => l.stock === stock && l.account === currentHoldingsAccountFilter)
-      .reduce((sum, l) => sum + l.qty, 0);
-  }
-
-  document.getElementById('txQty').value = targetQty;
-  document.getElementById('txPrice').value = currentPrice;
-  document.getElementById('txAmount').value = (targetQty * currentPrice).toFixed(2);
-  document.getElementById('txRemarks').value = 'Liquidation';
-}
 
 function manualOverridePrice(stock, cur) {
   const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
