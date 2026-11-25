@@ -11,23 +11,17 @@ function populateTaxFyOptions(fyRealized) {
   const select = document.getElementById('taxFyFilter');
   if (!select) return;
   const currentSelected = select.value;
-  select.innerHTML = '';
 
   const currentFy = getFinancialYear(todayLocalISO());
-  const availableFys = new Set([currentFy, ...Object.keys(fyRealized || {})]);
+  const sortedFys = Array.from(new Set([currentFy, ...Object.keys(fyRealized || {})])).sort().reverse();
+  const sig = sortedFys.join('|');
 
-  Array.from(availableFys).sort().reverse().forEach(fy => {
-    const opt = document.createElement('option');
-    opt.value = fy;
-    opt.innerText = fy;
-    select.appendChild(opt);
-  });
-
-  if (currentSelected && availableFys.has(currentSelected)) {
-    select.value = currentSelected;
-  } else {
-    select.value = currentFy;
+  if (select.dataset.optionsSig !== sig) {
+    select.innerHTML = sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+    select.dataset.optionsSig = sig;
   }
+
+  select.value = (currentSelected && sortedFys.includes(currentSelected)) ? currentSelected : currentFy;
 }
 
 function setTaxAccountFilter(acct) {
