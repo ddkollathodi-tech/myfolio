@@ -51,7 +51,7 @@ function toggleCurrentAccountExemption() {
   const newVal = isCurrentlyLow ? 'false' : 'true';
 
   appSettings[key] = newVal;
-  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+  saveJsonStorage(SETTINGS_STORAGE_KEY, appSettings);
 
   sendToSheet({
     action: 'saveSettings',
