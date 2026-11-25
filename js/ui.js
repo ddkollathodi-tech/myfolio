@@ -4,25 +4,33 @@
 
 let multiChartInstance = null;
 let currentPendingMonthEndDateStr = null;
+let activeMainView = 'home';
 let activeTabKey = 'holdings';
 let pendingPinActionCallback = null;
 let headerTickerInterval = null;
 let headerTickerStep = 0;
 
-// Memoization & Dirty-Tab Tracking
+// Memoization & Dirty-View/Tab Tracking
 let txVersion = 0;
 let cachedEngineVersion = -1;
 let cachedEngineResult = null;
+let dirtyViews = {
+  dashboard: true,
+  chart: true
+};
 let dirtyTabs = {
   holdings: true,
   closedTrades: true,
   fyBreakdown: true,
-  transactions: true,
+  ledger: true,
   bankLedger: true,
   taxPnl: true,
   purification: true
 };
 
+let cachedPriceUpdateStr = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
+let cachedBackupTimeStr = localStorage.getItem(LAST_BACKUP_TIME_KEY) || 'Not backed up yet';
+let stockMasterIndex = null;
 let iconRefreshQueued = false;
 
 /* ---------------- CORE HELPERS: ESCAPING, SORTING & MEMOIZATION ---------------- */
@@ -50,6 +58,8 @@ function sortTransactionsChronologically(txList) {
 
 function bumpTxVersion() {
   txVersion++;
+  dirtyViews.dashboard = true;
+  dirtyViews.chart = true;
   Object.keys(dirtyTabs).forEach(k => { dirtyTabs[k] = true; });
 }
 
@@ -96,22 +106,21 @@ function updateHeaderTickerDisplay() {
   const container = document.getElementById('tickerActiveItem');
   if (!container) return;
 
-  const syncStatusEl = document.getElementById('syncStatus');
-  const rawSyncText = syncStatusEl ? syncStatusEl.innerText.trim() : '';
+  const rawSyncText = typeof currentSyncState !== 'undefined' ? currentSyncState : '';
 
   let mappedSyncText = 'Sheet Synced';
   let dotColor = 'bg-emerald-500 dark:bg-emerald-400';
 
-  if (rawSyncText === 'Syncing' || rawSyncText === 'Sheet Syncing') {
+  if (rawSyncText === 'Syncing') {
     mappedSyncText = 'Sheet Syncing';
     dotColor = 'bg-amber-500 animate-pulse';
-  } else if (rawSyncText === 'Not synced' || rawSyncText === 'Sync error' || rawSyncText === 'Sheet Not Synced' || !cloudScriptUrl) {
+  } else if (rawSyncText === 'Not synced' || rawSyncText === 'Sync error' || !cloudScriptUrl) {
     mappedSyncText = 'Sheet Not Synced';
     dotColor = 'bg-rose-500';
   }
 
-  const priceTime = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
-  const backupTime = localStorage.getItem(LAST_BACKUP_TIME_KEY) || 'Not backed up yet';
+  const priceTime = cachedPriceUpdateStr;
+  const backupTime = cachedBackupTimeStr;
 
   let html = '';
   if (headerTickerStep === 0) {
@@ -420,15 +429,15 @@ function applyTheme(isDark) {
 
 /* ---------------- TIMESTAMP MANAGEMENT ---------------- */
 function recordPriceUpdateTimestamp(customDate) {
-  const formatted = formatShortTimestamp(customDate || new Date());
-  localStorage.setItem(LAST_PRICE_UPDATE_KEY, formatted);
+  cachedPriceUpdateStr = formatShortTimestamp(customDate || new Date());
+  localStorage.setItem(LAST_PRICE_UPDATE_KEY, cachedPriceUpdateStr);
   renderLastPriceTimestamp();
 }
 
 function renderLastPriceTimestamp() {
-  const val = localStorage.getItem(LAST_PRICE_UPDATE_KEY);
+  cachedPriceUpdateStr = localStorage.getItem(LAST_PRICE_UPDATE_KEY) || 'Not refreshed yet';
   const el = document.getElementById('lastSyncedTime');
-  if (el) el.innerText = val || 'Not refreshed yet';
+  if (el) el.innerText = cachedPriceUpdateStr;
   if (headerTickerStep === 1) updateHeaderTickerDisplay();
 }
 
@@ -450,19 +459,35 @@ function recordBackupTimestamp(customStr) {
     formatted = formatShortTimestamp(new Date());
   }
 
-  localStorage.setItem(LAST_BACKUP_TIME_KEY, formatted);
+  cachedBackupTimeStr = formatted;
+  localStorage.setItem(LAST_BACKUP_TIME_KEY, cachedBackupTimeStr);
   renderLastBackupTimestamp();
 }
 
 function renderLastBackupTimestamp() {
-  const val = localStorage.getItem(LAST_BACKUP_TIME_KEY);
+  cachedBackupTimeStr = localStorage.getItem(LAST_BACKUP_TIME_KEY) || 'Not backed up yet';
   const el = document.getElementById('lastBackupTime');
-  if (el) el.innerText = val || 'Not backed up yet';
+  if (el) el.innerText = cachedBackupTimeStr;
   if (headerTickerStep === 2) updateHeaderTickerDisplay();
 }
 
 /* ---------------- AUTOCOMPLETE SUGGESTIONS ---------------- */
+function rebuildStockMasterIndex() {
+  const map = Object.create(null);
+  (Array.isArray(stockMasterList) ? stockMasterList : []).forEach(item => {
+    const sym = String(item && item.symbol || '').toUpperCase().trim();
+    if (sym) {
+      map[sym] = {
+        name: item.name ? String(item.name).trim() : sym,
+        sector: (item.sector && String(item.sector).trim()) ? String(item.sector).trim() : 'Others'
+      };
+    }
+  });
+  stockMasterIndex = map;
+}
+
 function updateStockAutocompleteOptions() {
+  rebuildStockMasterIndex();
   const datalist = document.getElementById('stockSuggestionsList');
   if (!datalist) return;
   datalist.innerHTML = '';
@@ -513,14 +538,8 @@ let portAllocationChartInstance = null;
 
 function getStockMeta(symbol) {
   const sym = String(symbol || '').toUpperCase().trim();
-  const found = (typeof stockMasterList !== 'undefined' && Array.isArray(stockMasterList))
-    ? stockMasterList.find(item => String(item.symbol || '').toUpperCase().trim() === sym)
-    : null;
-
-  return {
-    name: (found && found.name) ? String(found.name).trim() : sym,
-    sector: (found && found.sector && String(found.sector).trim()) ? String(found.sector).trim() : 'Others'
-  };
+  if (!stockMasterIndex) rebuildStockMasterIndex();
+  return stockMasterIndex[sym] || { name: sym, sector: 'Others' };
 }
 
 function handlePortfolioSortSelect(val) {
@@ -691,12 +710,20 @@ function recalculateAndRender(dataMutated = false) {
   applyAllKpiMasks();
   populateTaxFyOptions(data.fyRealized);
   populatePurificationFyOptions(data.purificationLots);
-  renderActiveTabOnly(data);
-  renderChartLegend();
-  renderChart(data);
-  renderCurveInsights(data);
-  renderTtmTable(data);
-  renderDashboardTrendChart(data);
+
+  if (activeMainView === 'dashboard') {
+    renderDashboardTrendChart(data);
+    dirtyViews.dashboard = false;
+  } else if (activeMainView === 'chart') {
+    renderChartLegend();
+    renderChart(data);
+    renderCurveInsights(data);
+    renderTtmTable(data);
+    dirtyViews.chart = false;
+  } else if (activeMainView === 'portfolio' || activeMainView === 'products') {
+    renderActiveTabOnly(data);
+  }
+
   updateHeaderTickerDisplay();
   refreshIcons();
 }
@@ -712,9 +739,9 @@ function renderActiveTabOnly(data) {
   } else if (activeTabKey === 'fyBreakdown') {
     renderFY(engineData.fyRealized);
     dirtyTabs.fyBreakdown = false;
-  } else if (activeTabKey === 'transactions') {
+  } else if (activeTabKey === 'transactions' || activeTabKey === 'ledger') {
     renderLedger(engineData.ledgerEntries);
-    dirtyTabs.transactions = false;
+    dirtyTabs.ledger = false;
   } else if (activeTabKey === 'bankLedger') {
     renderBankLedger(engineData.bankEntries);
     dirtyTabs.bankLedger = false;
@@ -803,8 +830,18 @@ function renderHoldings(data) {
     });
   }
 
-  const totalEqVal = filteredHoldings.reduce((s, h) => s + Number(h.currentVal || 0), 0);
-  const totalInvVal = filteredHoldings.reduce((s, h) => s + Number(h.investedVal || 0), 0);
+  let totalEqVal = 0;
+  let totalInvVal = 0;
+  let greenCount = 0;
+  let redCount = 0;
+
+  filteredHoldings.forEach(h => {
+    totalEqVal += Number(h.currentVal || 0);
+    totalInvVal += Number(h.investedVal || 0);
+    if (h.pnlVal >= 0) greenCount++;
+    else redCount++;
+  });
+
   const totalUnrelPnl = totalEqVal - totalInvVal;
   const totalUnrelPct = totalInvVal > 0 ? (totalUnrelPnl / totalInvVal) * 100 : 0;
   const cashAmt = isCombined
@@ -846,13 +883,11 @@ function renderHoldings(data) {
 
   document.getElementById('holdingsCount').innerText = `${filteredHoldings.length} Open Positions`;
 
-  const profitPositions = filteredHoldings.filter(h => h.pnlVal >= 0);
-  const lossPositions = filteredHoldings.filter(h => h.pnlVal < 0);
   const totalCount = filteredHoldings.length;
-  const winRate = totalCount > 0 ? Math.round((profitPositions.length / totalCount) * 100) : 0;
+  const winRate = totalCount > 0 ? Math.round((greenCount / totalCount) * 100) : 0;
 
-  document.getElementById('holdingsProfitSummary').innerText = `${profitPositions.length} Green`;
-  document.getElementById('holdingsLossSummary').innerText = `${lossPositions.length} Red`;
+  document.getElementById('holdingsProfitSummary').innerText = `${greenCount} Green`;
+  document.getElementById('holdingsLossSummary').innerText = `${redCount} Red`;
   document.getElementById('holdingsWinRateBadge').innerText = `Win Rate: ${winRate}%`;
   document.getElementById('holdingsWinBar').style.width = `${winRate}%`;
   document.getElementById('holdingsLossBar').style.width = `${100 - winRate}%`;
@@ -1171,22 +1206,35 @@ function populateProdSubViewFilters(data) {
     if (e.date) fySet.add(getFinancialYear(e.date));
   });
   const sortedFys = Array.from(fySet).sort().reverse();
-  const fyOptionsHtml = `<option value="ALL">All FY</option>` + sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+  const fySig = sortedFys.join('|');
 
   const acctSet = new Set([...CALIB_ACCOUNTS]);
   (Array.isArray(transactions) ? transactions : []).forEach(tx => {
     if (tx.account) acctSet.add(String(tx.account).trim());
   });
-  const acctOptionsHtml = `<option value="ALL">All Accounts</option>` + Array.from(acctSet).map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
+  const sortedAccts = Array.from(acctSet);
+  const acctSig = sortedAccts.join('|');
 
   ['ledgerAccountFilter', 'bankAccountFilter'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) {
+    if (el && el.dataset.optionsSig !== acctSig) {
       const prev = el.value || 'ALL';
-      el.innerHTML = acctOptionsHtml;
+      el.innerHTML = `<option value="ALL">All Accounts</option>` + sortedAccts.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('');
       el.value = prev;
+      el.dataset.optionsSig = acctSig;
     }
   });
+
+  ['ledgerFyFilter', 'bankFyFilter'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.dataset.optionsSig !== fySig) {
+      const prev = el.value || 'ALL';
+      el.innerHTML = `<option value="ALL">All FY</option>` + sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+      el.value = prev;
+      el.dataset.optionsSig = fySig;
+    }
+  });
+}
 
   ['ledgerFyFilter', 'bankFyFilter'].forEach(id => {
     const el = document.getElementById(id);
@@ -1871,10 +1919,14 @@ function populatePurificationFyOptions(purificationLots) {
   (donations || []).forEach(d => { if (d.date) fySet.add(getFinancialYear(d.date)); });
 
   const sortedFys = Array.from(fySet).sort().reverse();
+  const fySig = sortedFys.join('|');
   const prevVal = currentPurificationFyFilter || 'ALL';
 
-  select.innerHTML = `<option value="ALL">All Financial Years</option>` +
-    sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+  if (select.dataset.optionsSig !== fySig) {
+    select.innerHTML = `<option value="ALL">All Financial Years</option>` +
+      sortedFys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+    select.dataset.optionsSig = fySig;
+  }
 
   select.value = (prevVal === 'ALL' || fySet.has(prevVal)) ? prevVal : 'ALL';
   currentPurificationFyFilter = select.value;
@@ -3091,52 +3143,40 @@ function closeAllTopDropdowns(exceptId = null) {
 }
 
 /* ---------------- HERO VIEW SWITCHING & PRODUCTS DROPDOWN ---------------- */
-function switchMainView(view) {
-  const homeEl = document.getElementById('mainViewHome');
-  const dashEl = document.getElementById('mainViewDashboard');
-  const chartEl = document.getElementById('mainViewChart');
-  const portEl = document.getElementById('mainViewPortfolio');
-  const prodEl = document.getElementById('mainViewProducts');
+const NAV_BTN_ACTIVE_CLS = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-1 lg:space-x-1.5 shrink-0';
+const NAV_BTN_INACTIVE_CLS = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-transparent flex items-center space-x-1 lg:space-x-1.5 shrink-0';
 
-  const btnDash = document.getElementById('navLink-dashboard');
-  const btnPort = document.getElementById('navLink-portfolio');
-  const btnChart = document.getElementById('navLink-chart');
-  const btnProd = document.getElementById('navLink-products');
-
-  const activeClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-1 lg:space-x-1.5 shrink-0';
-  const inactiveClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-transparent flex items-center space-x-1 lg:space-x-1.5 shrink-0';
-  
-  if (homeEl) homeEl.classList.add('hidden');
-  if (dashEl) dashEl.classList.add('hidden');
-  if (chartEl) chartEl.classList.add('hidden');
-  if (portEl) portEl.classList.add('hidden');
-  if (prodEl) prodEl.classList.add('hidden');
-
-  if (btnDash) btnDash.className = inactiveClasses;
-  if (btnPort) btnPort.className = inactiveClasses;
-  if (btnChart) btnChart.className = inactiveClasses;
-  if (btnProd) btnProd.className = inactiveClasses;
-
+function setActivePrimaryShell(viewElId, activeNavBtnId) {
+  ['mainViewHome', 'mainViewDashboard', 'mainViewChart', 'mainViewPortfolio', 'mainViewProducts'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', id !== viewElId);
+  });
+  ['navLink-dashboard', 'navLink-portfolio', 'navLink-chart', 'navLink-products'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.className = id === activeNavBtnId ? NAV_BTN_ACTIVE_CLS : NAV_BTN_INACTIVE_CLS;
+  });
   closeAllTopDropdowns();
+}
+
+function switchMainView(view) {
+  activeMainView = view;
 
   if (view === 'home') {
-    if (homeEl) homeEl.classList.remove('hidden');
+    setActivePrimaryShell('mainViewHome', null);
     renderCurrentHomeQuote(false);
   } else if (view === 'dashboard') {
-    if (dashEl) dashEl.classList.remove('hidden');
-    if (btnDash) btnDash.className = activeClasses;
+    setActivePrimaryShell('mainViewDashboard', 'navLink-dashboard');
+    dirtyViews.dashboard = false;
     selectDashboardMetric(selectedDashboardMetric || 'netWorth');
   } else if (view === 'chart') {
-    if (chartEl) chartEl.classList.remove('hidden');
-    if (btnChart) btnChart.className = activeClasses;
+    setActivePrimaryShell('mainViewChart', 'navLink-chart');
+    dirtyViews.chart = false;
     const data = getCachedEngineData();
     renderChartLegend();
     renderChart(data);
     renderCurveInsights(data);
     renderTtmTable(data);
   } else if (view === 'portfolio') {
-    if (portEl) portEl.classList.remove('hidden');
-    if (btnPort) btnPort.className = activeClasses;
     switchSubTab('holdings');
   }
   refreshIcons();
@@ -3144,53 +3184,23 @@ function switchMainView(view) {
 
 function switchSubTab(subTabKey) {
   activeTabKey = subTabKey;
-  const homeEl = document.getElementById('mainViewHome');
-  const prodEl = document.getElementById('mainViewProducts');
-  const portEl = document.getElementById('mainViewPortfolio');
-  const dashEl = document.getElementById('mainViewDashboard');
-  const chartEl = document.getElementById('mainViewChart');
-
-  const btnChart = document.getElementById('navLink-chart');
-  const btnProd = document.getElementById('navLink-products');
-  const btnDash = document.getElementById('navLink-dashboard');
-  const btnPort = document.getElementById('navLink-portfolio');
-
-  const activeClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-1 lg:space-x-1.5 shrink-0';
-  const inactiveClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-transparent flex items-center space-x-1 lg:space-x-1.5 shrink-0';
- 
-  if (homeEl) homeEl.classList.add('hidden');
-  if (dashEl) dashEl.classList.add('hidden');
-  if (chartEl) chartEl.classList.add('hidden');
-  if (portEl) portEl.classList.add('hidden');
-  if (prodEl) prodEl.classList.add('hidden');
-
-  if (btnDash) btnDash.className = inactiveClasses;
-  if (btnPort) btnPort.className = inactiveClasses;
-  if (btnChart) btnChart.className = inactiveClasses;
-  if (btnProd) btnProd.className = inactiveClasses;
+  activeMainView = subTabKey === 'holdings' ? 'portfolio' : 'products';
 
   if (subTabKey === 'holdings') {
-    if (portEl) portEl.classList.remove('hidden');
-    if (btnPort) btnPort.className = activeClasses;
+    setActivePrimaryShell('mainViewPortfolio', 'navLink-portfolio');
   } else {
-    if (prodEl) prodEl.classList.remove('hidden');
-    if (btnProd) btnProd.className = activeClasses;
-
+    setActivePrimaryShell('mainViewProducts', 'navLink-products');
     ['closedTrades', 'fyBreakdown', 'transactions', 'bankLedger', 'taxPnl', 'purification'].forEach(id => {
       const el = document.getElementById(`tabContent-${id}`);
-      if (el) el.classList.add('hidden');
+      if (el) el.classList.toggle('hidden', id !== subTabKey);
     });
-
-    const activeContent = document.getElementById(`tabContent-${subTabKey}`);
-    if (activeContent) activeContent.classList.remove('hidden');
   }
 
-  closeAllTopDropdowns();
-
+  const dirtyKey = subTabKey === 'transactions' ? 'ledger' : subTabKey;
   if (subTabKey === 'taxPnl') {
     setTaxAccountFilter(currentTaxAccountFilter || 'Me');
     dirtyTabs.taxPnl = false;
-  } else if (dirtyTabs[subTabKey]) {
+  } else if (dirtyTabs[dirtyKey]) {
     renderActiveTabOnly(getCachedEngineData());
   }
   refreshIcons();
@@ -3955,31 +3965,10 @@ function openMonthEndReviewModal(cutoffDate, targetDateStr) {
 
   const cutoffTime = new Date(cutoffDate.getFullYear(), cutoffDate.getMonth(), cutoffDate.getDate(), 23, 59, 59);
   const pastTxs = transactions.filter(t => parseLocalDate(t.date) <= cutoffTime);
-
-  const inv = {};
-  let netCap = 0;
-  let cash = 0;
-
-  pastTxs.forEach(t => {
-    const amt = Number(t.amount || 0);
-    if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
-    else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
-    else if (t.type === 'FEES') { cash -= amt; }
-    else if (t.type === 'BUY') {
-      cash -= amt;
-      if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] += Number(t.qty || 0);
-    } else if (t.type === 'SELL') {
-      cash += amt;
-      if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] -= Number(t.qty || 0);
-    } else if (t.type === 'BONUS') {
-      if (!inv[t.stock]) inv[t.stock] = 0;
-      inv[t.stock] += Number(t.qty || 0);
-    }
-  });
-
-  const openHoldings = Object.keys(inv).filter(s => inv[s] > 0).map(s => ({ stock: s, qty: inv[s] }));
+  const pastSnapshot = computeEngine(pastTxs);
+  const netCap = pastSnapshot.netInvested;
+  const cash = pastSnapshot.cashBalance;
+  const openHoldings = pastSnapshot.holdings.map(h => ({ stock: h.stock, qty: h.qty }));
   const container = document.getElementById('monthEndHoldingsContainer');
   container.innerHTML = '';
 
@@ -4038,17 +4027,9 @@ function commitMonthEndSnapshot() {
   const lastMonthEnd = getPrecedingMonthEndDate();
   const cutoffTime = new Date(lastMonthEnd.getFullYear(), lastMonthEnd.getMonth(), lastMonthEnd.getDate(), 23, 59, 59);
   const pastTxs = transactions.filter(t => parseLocalDate(t.date) <= cutoffTime);
-
-  let netCap = 0;
-  let cash = 0;
-  pastTxs.forEach(t => {
-    const amt = Number(t.amount || 0);
-    if (t.type === 'DEPOSIT') { netCap += amt; cash += amt; }
-    else if (t.type === 'WITHDRAWAL') { netCap -= amt; cash -= amt; }
-    else if (t.type === 'FEES') { cash -= amt; }
-    else if (t.type === 'BUY') { cash -= amt; }
-    else if (t.type === 'SELL') { cash += amt; }
-  });
+  const pastSnapshot = computeEngine(pastTxs);
+  const netCap = pastSnapshot.netInvested;
+  const cash = pastSnapshot.cashBalance;
 
   let stockVal = 0;
   document.querySelectorAll('#monthEndHoldingsContainer input').forEach(inp => {
