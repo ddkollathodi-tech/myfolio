@@ -192,42 +192,30 @@ function updateSyncUI(status) {
   refreshIcons();
 }
 
-function mergeLedgerById(incomingLedger) {
+function mergeRecordsById(incomingList, localList, actionName, payloadKey) {
+  const incoming = Array.isArray(incomingList) ? incomingList : [];
   const serverIds = new Set(
-    incomingLedger
-      .map(tx => String(tx.id || '').trim())
-      .filter(Boolean)
+    incoming.map(item => String(item && item.id || '').trim()).filter(Boolean)
   );
 
-  const unsyncedLocal = (Array.isArray(transactions) ? transactions : []).filter(tx => {
-    const localId = String(tx.id || '').trim();
+  const unsyncedLocal = (Array.isArray(localList) ? localList : []).filter(item => {
+    const localId = String(item && item.id || '').trim();
     return localId && !serverIds.has(localId);
   });
 
-  unsyncedLocal.forEach(tx => {
-    sendToSheet({ action: 'addTransaction', transaction: tx });
+  unsyncedLocal.forEach(entry => {
+    sendToSheet({ action: actionName, [payloadKey]: entry });
   });
 
-  return [...incomingLedger, ...unsyncedLocal];
+  return [...incoming, ...unsyncedLocal];
+}
+
+function mergeLedgerById(incomingLedger) {
+  return mergeRecordsById(incomingLedger, transactions, 'addTransaction', 'transaction');
 }
 
 function mergeDonationsById(incomingDonations) {
-  const serverIds = new Set(
-    incomingDonations
-      .map(d => String(d.id || '').trim())
-      .filter(Boolean)
-  );
-
-  const unsyncedLocal = (Array.isArray(donations) ? donations : []).filter(d => {
-    const localId = String(d.id || '').trim();
-    return localId && !serverIds.has(localId);
-  });
-
-  unsyncedLocal.forEach(d => {
-    sendToSheet({ action: 'addDonation', donation: d });
-  });
-
-  return [...incomingDonations, ...unsyncedLocal];
+  return mergeRecordsById(incomingDonations, donations, 'addDonation', 'donation');
 }
 
 async function fetchFromGoogleSheet() {
