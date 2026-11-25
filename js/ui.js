@@ -1236,16 +1236,6 @@ function populateProdSubViewFilters(data) {
   });
 }
 
-  ['ledgerFyFilter', 'bankFyFilter'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      const prev = el.value || 'ALL';
-      el.innerHTML = fyOptionsHtml;
-      el.value = prev;
-    }
-  });
-}
-
 function isWithinDateRange(dateStr, rangeKey) {
   if (!rangeKey || rangeKey === 'ALL') return true;
   if (!dateStr) return false;
