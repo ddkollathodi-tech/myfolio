@@ -4747,6 +4747,9 @@ function buildDashboardMetricSeries(computed) {
   const basePoints = computeRocFourCurves(computed);
   const ranged = filterPointsByDashboardRange(basePoints, dashboardChartRange);
   const curFy = getFinancialYear(todayLocalISO());
+  let curFySortedLots = null;
+  let curFyLotCursor = 0;
+  let curFyRunningGain = 0;
 
   return ranged.map((pt, idx) => {
     let val = 0;
