@@ -354,7 +354,24 @@ function getElapsedMonths(dateStr1, dateStr2) {
   return Math.max(1, diffYears * 12 + diffMonths);
 }
 
+let cachedRocVersion = -1;
+let cachedRocHistoryLen = -1;
+let cachedRocIsOverride = false;
+let cachedRocPoints = null;
+
 function computeRocFourCurves(computed) {
+  const isDefaultSnapshot = !computed || computed === cachedEngineResult;
+  const histLen = Array.isArray(chartHistoryRecords) ? chartHistoryRecords.length : 0;
+  if (
+    isDefaultSnapshot &&
+    !cachedRocIsOverride &&
+    cachedRocPoints &&
+    cachedRocVersion === cachedEngineVersion &&
+    cachedRocHistoryLen === histLen
+  ) {
+    return cachedRocPoints;
+  }
+
   const points = [];
 
   if (Array.isArray(chartHistoryRecords) && chartHistoryRecords.length > 0) {
@@ -421,6 +438,13 @@ function computeRocFourCurves(computed) {
     curr.pureGap = pureGap;
     curr.ratchetDeficit = ratchetDeficit;
     curr.startCapital = startCapital;
+  }
+
+  if (isDefaultSnapshot) {
+    cachedRocVersion = cachedEngineVersion;
+    cachedRocHistoryLen = histLen;
+    cachedRocIsOverride = false;
+    cachedRocPoints = points;
   }
 
   return points;
