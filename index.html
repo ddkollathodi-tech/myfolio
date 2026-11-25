@@ -299,10 +299,11 @@
               </div>
             </div>
 
-            <!-- 6. Live Prices (Desktop/Laptop lg:+ only so landscape has clean breathing room) -->
-            <button onclick="openLivePricesModal()" class="hidden lg:flex px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] items-center space-x-1.5 shrink-0">
-              <i data-lucide="refresh-cw" class="w-4 h-4 shrink-0"></i>
-              <span>Live Prices</span>
+            <!-- 6. Live Prices -->
+            <button type="button" onclick="openLivePricesModal()" title="Update Live Prices" class="px-1.5 md:px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1 lg:space-x-1.5 shrink-0">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0"></i>
+              <span class="hidden md:inline lg:hidden">Live</span>
+              <span class="hidden lg:inline">Live Prices</span>
             </button>
           </nav>
         </div>
