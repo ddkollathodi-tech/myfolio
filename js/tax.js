@@ -67,7 +67,7 @@ function recordTaxChallan(fy, acct, qKey, currentPaid) {
     const val = Math.max(0, Number(input));
     const key = `${fy}__${acct}__${qKey}`;
     taxPaidChallans[key] = val;
-    localStorage.setItem(TAX_PAID_KEY, JSON.stringify(taxPaidChallans));
+    saveJsonStorage(TAX_PAID_KEY, taxPaidChallans);
     renderTaxView();
   }
 }
