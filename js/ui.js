@@ -2617,7 +2617,7 @@ function customHtmlTooltipHandler(context) {
   const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
   const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
 
-  const isTtmMode = currentChartRange === 'TTM' || totalPoints <= 13;
+  const isTtmMode = selectedChartPeriod !== 'ALL' || totalPoints <= 13;
   const edgeThreshold = isTtmMode ? 3 : 5;
   const isNearRightEdge = dataIndex >= totalPoints - edgeThreshold;
 
