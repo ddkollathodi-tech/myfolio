@@ -2,7 +2,6 @@
 // MyFolioAI - Configuration, Shared Constants & Utility Formatters (js/config.js)
 // ============================================================================
 
-// LocalStorage Keys
 const THEME_KEY = 'MYFOLIOAI_THEME';
 const STORAGE_KEY = 'MYFOLIOAI_TRANSACTIONS';
 const SCRIPT_URL_KEY = 'MYFOLIOAI_SCRIPT_URL';
@@ -19,103 +18,70 @@ const LAST_BACKUP_TIME_KEY = 'MYFOLIOAI_LAST_BACKUP_TIME';
 const CASH_CALIB_KEY = 'MYFOLIOAI_CASH_CALIBRATION';
 const DONATIONS_STORAGE_KEY = 'MYFOLIOAI_DONATIONS';
 
-// Core Account & Layout Constants
 const CALIB_ACCOUNTS = ['Me', 'Wife', 'Mom', 'Brother'];
 const PAGE_SIZE = 12;
 
-// Compounding & Indian Capital Gains Tax Constants (Post-July 2024 Regime)
-const ROC_TARGET_MONTHLY_RATE = 0.02; // 2% per month compound baseline
-const TAX_BASIC_EXEMPTION_LIMIT = 400000; // ₹4,00,000 basic exemption shortfall cap
-const TAX_LTCG_EXEMPTION_LIMIT = 125000; // ₹1,25,000 Sec 112A exemption limit
-const TAX_STCG_RATE = 0.2080; // 20.80% Sec 111A
-const TAX_LTCG_RATE = 0.1300; // 13.00% Sec 112A
+// Post-July 2024 Indian Capital Gains & Compounding Constants
+const ROC_TARGET_MONTHLY_RATE = 0.02;
+const TAX_BASIC_EXEMPTION_LIMIT = 400000;
+const TAX_LTCG_EXEMPTION_LIMIT = 125000;
+const TAX_STCG_RATE = 0.2080;
+const TAX_LTCG_RATE = 0.1300;
+
+function loadJsonStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function saveJsonStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
 
 // ---------------- SHARED RUNTIME STATE ----------------
 let transactions = [];
-let donations = [];
-try {
-  donations = JSON.parse(localStorage.getItem(DONATIONS_STORAGE_KEY)) || [];
-} catch (e) {
-  donations = [];
-}
+let donations = loadJsonStorage(DONATIONS_STORAGE_KEY, []);
+let chartHistoryRecords = loadJsonStorage(CHART_HISTORY_KEY, []);
+let stockMasterList = loadJsonStorage(STOCK_MASTER_KEY, []);
+let sectorsList = loadJsonStorage(SECTORS_LIST_KEY, []);
 
-let chartHistoryRecords = [];
-try {
-  chartHistoryRecords = JSON.parse(localStorage.getItem(CHART_HISTORY_KEY)) || [];
-} catch (e) {
-  chartHistoryRecords = [];
-}
-
-let stockMasterList = [];
-try {
-  stockMasterList = JSON.parse(localStorage.getItem(STOCK_MASTER_KEY)) || [];
-} catch (e) {
-  stockMasterList = [];
-}
-
-let sectorsList = [];
-try {
-  sectorsList = JSON.parse(localStorage.getItem(SECTORS_LIST_KEY)) || [];
-} catch (e) {
-  sectorsList = [];
-}
-
-let milestoneGoals = {
+let milestoneGoals = Object.assign({
   netWorth: 10000000,
   netInvested: 5000000,
   lifetimePnL: 2500000,
   currentFyPnL: 1000000,
   xirr: 25
-};
-try {
-  const localGoals = JSON.parse(localStorage.getItem(GOALS_STORAGE_KEY));
-  if (localGoals) Object.assign(milestoneGoals, localGoals);
-} catch (e) {}
+}, loadJsonStorage(GOALS_STORAGE_KEY, {}));
 
-let appSettings = {
+let appSettings = Object.assign({
   pinHash: '',
   taxToggle_Me: 'false',
   taxToggle_Wife: 'true',
   taxToggle_Mom: 'true',
   taxToggle_Brother: 'false'
-};
-try {
-  const localSettings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
-  if (localSettings) Object.assign(appSettings, localSettings);
-} catch (e) {}
+}, loadJsonStorage(SETTINGS_STORAGE_KEY, {}));
 
-// Strict Runtime Isolation of Cash Calibration State
 let cashCalibration = {
   offsets: { 'Me': 0, 'Wife': 0, 'Mom': 0, 'Brother': 0 },
   records: {}
 };
-try {
-  const localCalib = JSON.parse(localStorage.getItem(CASH_CALIB_KEY));
-  if (localCalib && typeof localCalib === 'object') {
-    if (localCalib.offsets && typeof localCalib.offsets === 'object') {
-      Object.assign(cashCalibration.offsets, localCalib.offsets);
-    }
-    if (localCalib.records && typeof localCalib.records === 'object') {
-      cashCalibration.records = localCalib.records;
-    }
+const localCalib = loadJsonStorage(CASH_CALIB_KEY, null);
+if (localCalib && typeof localCalib === 'object') {
+  if (localCalib.offsets && typeof localCalib.offsets === 'object') {
+    Object.assign(cashCalibration.offsets, localCalib.offsets);
   }
-} catch (e) {}
-
-let taxPaidChallans = {};
-try {
-  taxPaidChallans = JSON.parse(localStorage.getItem(TAX_PAID_KEY)) || {};
-} catch (e) {
-  taxPaidChallans = {};
+  if (localCalib.records && typeof localCalib.records === 'object') {
+    cashCalibration.records = localCalib.records;
+  }
 }
 
-let savedManualPrices = {};
-try {
-  savedManualPrices = JSON.parse(localStorage.getItem(MANUAL_PRICES_KEY)) || {};
-} catch (e) {
-  savedManualPrices = {};
-}
-
-// Live Market Prices (falls back cleanly to WAP when unpriced)
+let taxPaidChallans = loadJsonStorage(TAX_PAID_KEY, {});
+let savedManualPrices = loadJsonStorage(MANUAL_PRICES_KEY, {});
 let marketPrices = Object.assign({}, savedManualPrices);
 
 // Active View & Filter State
@@ -123,10 +89,9 @@ let currentHoldingsAccountFilter = 'ALL';
 let currentTaxAccountFilter = 'Me';
 let currentPurificationAccountFilter = 'ALL';
 let currentPurificationFyFilter = 'ALL';
-let currentChartRange = 'TTM';
-let currentChartView = 'trajectory'; // 'trajectory' | 'roc'
+let currentChartView = 'trajectory';
 
-// Stealth Masking State (All blurred by default)
+// Stealth Masking State
 let tabMaskStates = {
   chart: true,
   holdings: true,
@@ -173,6 +138,15 @@ function parseLocalDate(dateVal) {
   return new Date(str);
 }
 
+function formatShortTimestamp(dateObj) {
+  const d = dateObj instanceof Date ? dateObj : new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  return `${day}-${month}, ${hours}:${mins}`;
+}
+
 function getCalibOffset(acct) {
   const v = Number(cashCalibration.offsets && cashCalibration.offsets[acct]);
   return isNaN(v) ? 0 : v;
@@ -183,13 +157,12 @@ function formatINR(val, decimals = 2) {
   const isNegative = val < 0;
   const absVal = Math.abs(val);
   const parts = absVal.toFixed(decimals).split('.');
-  let integerPart = parts[0];
+  const integerPart = parts[0];
   const decimalPart = parts[1] ? '.' + parts[1] : '';
 
-  let lastThree = integerPart.substring(integerPart.length - 3);
-  let otherNumbers = integerPart.substring(0, integerPart.length - 3);
-  if (otherNumbers !== '') lastThree = ',' + lastThree;
-  const formatted = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + lastThree;
+  const lastThree = integerPart.substring(integerPart.length - 3);
+  const otherNumbers = integerPart.substring(0, integerPart.length - 3);
+  const formatted = (otherNumbers !== '' ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' : '') + lastThree;
   return (isNegative ? '-₹' : '₹') + formatted + decimalPart;
 }
 
@@ -222,9 +195,9 @@ function getTaxQuarter(dateStr) {
   const m = d.getMonth() + 1;
   const day = d.getDate();
 
-  if ((m === 4) || (m === 5) || (m === 6 && day <= 15)) return 'Q1';
-  if ((m === 6 && day > 15) || (m === 7) || (m === 8) || (m === 9 && day <= 15)) return 'Q2';
-  if ((m === 9 && day > 15) || (m === 10) || (m === 11) || (m === 12 && day <= 15)) return 'Q3';
+  if (m === 4 || m === 5 || (m === 6 && day <= 15)) return 'Q1';
+  if ((m === 6 && day > 15) || m === 7 || m === 8 || (m === 9 && day <= 15)) return 'Q2';
+  if ((m === 9 && day > 15) || m === 10 || m === 11 || (m === 12 && day <= 15)) return 'Q3';
   return 'Q4';
 }
 
