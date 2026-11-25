@@ -138,7 +138,7 @@
   <!-- APPLICATION ROOT -->
   <div id="app-root" class="flex-1 flex flex-col">
 
-  <!-- TOP HEADER -->
+<!-- TOP HEADER -->
     <header class="border-b border-slate-200/90 dark:border-[#222836] bg-white/95 dark:bg-[#0E121B]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
       <div class="w-full max-w-[1520px] mx-auto px-4 sm:px-5 lg:px-8 xl:px-10 py-3 flex flex-nowrap items-center justify-between gap-2 xl:gap-4">
 
@@ -162,7 +162,7 @@
           <div class="hidden sm:block h-5 lg:h-6 w-px bg-slate-200 dark:bg-[#222836] shrink-0"></div>
 
           <!-- Primary Nav Links: Compact in Landscape (sm: to lg), Untouched on Laptop/PC (lg:+) -->
-          <nav class="hidden sm:flex items-center space-x-0 lg:space-x-1 text-[10.5px] lg:text-[12.5px] xl:text-[13.5px] font-semibold whitespace-nowrap">
+          <nav class="hidden sm:flex items-center space-x-0.5 lg:space-x-1 text-[10.5px] lg:text-[12.5px] xl:text-[13.5px] font-semibold whitespace-nowrap">
             <!-- 1. Dashboard -->
             <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="layout-dashboard" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
@@ -254,7 +254,7 @@
               </div>
             </div>
 
-           <!-- 5. Products Dropdown -->
+            <!-- 5. Products Dropdown -->
             <div class="relative shrink-0" id="productsDropdownContainer">
               <button
                 onclick="toggleProductsDropdown(event)"
@@ -299,7 +299,7 @@
               </div>
             </div>
 
-          <!-- 6. Live Prices -->
+            <!-- 6. Live Prices -->
             <button onclick="openLivePricesModal()" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="refresh-cw" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span class="lg:hidden">Live</span>
@@ -347,10 +347,10 @@
           <div class="relative" id="settingsDropdownContainer">
             <button
               onclick="toggleSettingsDropdown(event)"
-              class="flex items-center space-x-1 p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition focus:outline-none"
+              class="flex items-center space-x-1 p-1.5 sm:p-1 lg:p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition focus:outline-none"
               title="Platform Settings"
             >
-              <i data-lucide="settings" class="w-5 h-5"></i>
+              <i data-lucide="settings" class="w-5 h-5 sm:w-4 sm:h-4 lg:w-5 lg:h-5"></i>
               <i data-lucide="chevron-down" id="settingsDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
             </button>
 
@@ -416,13 +416,22 @@
 
           <!-- "D" Avatar -->
           <div class="flex items-center space-x-1 pl-0.5">
-            <div class="w-9 h-9 rounded-full bg-[#0B1736] dark:bg-blue-600 text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
+            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0B1736] dark:bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs sm:text-sm shadow-sm">
               D
             </div>
           </div>
 
         </div>
       </div>
+
+      <!-- Mobile/Tablet Right-Aligned Rotating Status (< lg, Transparent Page Background, No Bar/Label) -->
+      <div class="flex lg:hidden justify-end px-4 sm:px-6 pt-1.5 pb-0.5 bg-transparent text-[11px] font-medium text-slate-600 dark:text-slate-300 pointer-events-none">
+        <div id="mobileTickerMirror" class="flex items-center justify-end space-x-1.5 truncate"></div>
+      </div>
+
+      <!-- Collapsible Mobile Navigation Drawer (Portrait < sm only) -->
+      <div id="mobileNavDrawer" class="hidden sm:hidden border-t border-slate-200 dark:border-[#222836] bg-white dark:bg-[#0E121B] px-4 py-3 space-y-3 text-xs">
+        <div class="grid grid-cols-3 gap-2 font-bold">
     </header>
     <!-- Collapsible Mobile Navigation Drawer (< md) -->
       <div id="mobileNavDrawer" class="hidden md:hidden border-t border-slate-200 dark:border-[#222836] bg-white dark:bg-[#0E121B] px-4 py-3 space-y-3 text-xs">
