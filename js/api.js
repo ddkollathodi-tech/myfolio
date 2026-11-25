@@ -1,8 +1,5 @@
 // ============================================================================
 // MyFolioAI - Cloud Synchronization & Google Sheets API Engine (js/api.js)
-// Integrates: Token Handshake Auth, ID-Based Offline Merge (Ledger & Donations),
-//             Quotes Sheet Sync, Blocking Sync Overlay with Confirmation Flash,
-//             28s/25s Timeouts & Work Offline Fail-Safe, and Database Backup.
 // ============================================================================
 
 const QUOTES_STORAGE_KEY = 'MYFOLIOAI_QUOTES_LIST';
@@ -33,7 +30,6 @@ function showCloudSyncOverlay() {
   if (offlineBtn) {
     offlineBtn.classList.add('hidden', 'opacity-0');
     if (syncOfflineBtnTimer) clearTimeout(syncOfflineBtnTimer);
-    // Reveal "Work Offline" escape hatch after 4 seconds on slow connections
     syncOfflineBtnTimer = setTimeout(() => {
       offlineBtn.classList.remove('hidden');
       requestAnimationFrame(() => offlineBtn.classList.remove('opacity-0'));
@@ -105,9 +101,7 @@ function hideCloudSyncOverlay() {
 
 function cancelSyncAndWorkOffline() {
   if (activeSyncAbortController) {
-    try {
-      activeSyncAbortController.abort();
-    } catch (e) {}
+    try { activeSyncAbortController.abort(); } catch (e) {}
     activeSyncAbortController = null;
   }
   hideCloudSyncOverlay();
@@ -115,7 +109,6 @@ function cancelSyncAndWorkOffline() {
   recalculateAndRender();
 }
 
-// Database Backup Blocking Overlay Helpers
 function showDatabaseBackupOverlay() {
   const overlay = document.getElementById('databaseBackupOverlay');
   const offlineBtn = document.getElementById('backupWorkOfflineBtn');
@@ -126,7 +119,6 @@ function showDatabaseBackupOverlay() {
   if (offlineBtn) {
     offlineBtn.classList.add('hidden', 'opacity-0');
     if (backupOfflineBtnTimer) clearTimeout(backupOfflineBtnTimer);
-    // Reveal "Dismiss" escape hatch after 4 seconds
     backupOfflineBtnTimer = setTimeout(() => {
       offlineBtn.classList.remove('hidden');
       requestAnimationFrame(() => offlineBtn.classList.remove('opacity-0'));
@@ -151,9 +143,7 @@ function hideDatabaseBackupOverlay() {
 
 function cancelBackupAndDismiss() {
   if (activeBackupAbortController) {
-    try {
-      activeBackupAbortController.abort();
-    } catch (e) {}
+    try { activeBackupAbortController.abort(); } catch (e) {}
     activeBackupAbortController = null;
   }
   hideDatabaseBackupOverlay();
@@ -181,7 +171,6 @@ function updateSyncUI(status) {
     }
   }
 
-  // Toggle centered blocking sync overlay with brief completion indicator
   if (cloudScriptUrl && status === 'Syncing') {
     showCloudSyncOverlay();
   } else if (status === 'Synced') {
@@ -202,13 +191,11 @@ function mergeLedgerById(incomingLedger) {
       .filter(Boolean)
   );
 
-  // Preserve any local offline transactions whose IDs have not yet reached the sheet
   const unsyncedLocal = (Array.isArray(transactions) ? transactions : []).filter(tx => {
     const localId = String(tx.id || '').trim();
     return localId && !serverIds.has(localId);
   });
 
-  // Push any unsynced local entries up in the background
   unsyncedLocal.forEach(tx => {
     sendToSheet({ action: 'addTransaction', transaction: tx });
   });
@@ -223,7 +210,6 @@ function mergeDonationsById(incomingDonations) {
       .filter(Boolean)
   );
 
-  // Preserve any local offline donations whose IDs have not yet reached the Donations sheet
   const unsyncedLocal = (Array.isArray(donations) ? donations : []).filter(d => {
     const localId = String(d.id || '').trim();
     return localId && !serverIds.has(localId);
@@ -239,7 +225,6 @@ function mergeDonationsById(incomingDonations) {
 async function fetchFromGoogleSheet() {
   if (!cloudScriptUrl) return false;
 
-  // Cancel any stale in-flight request before starting a fresh sync
   if (activeSyncAbortController) {
     try { activeSyncAbortController.abort(); } catch (e) {}
   }
@@ -269,7 +254,6 @@ async function fetchFromGoogleSheet() {
       return false;
     }
 
-    // 1. Merge Transactions by ID (prevents wiping unsynced offline entries)
     let incomingLedger = [];
     if (data && Array.isArray(data.ledger)) {
       incomingLedger = data.ledger;
@@ -279,26 +263,23 @@ async function fetchFromGoogleSheet() {
 
     if (incomingLedger.length > 0 || transactions.length === 0) {
       transactions = mergeLedgerById(incomingLedger);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      saveJsonStorage(STORAGE_KEY, transactions);
     }
 
-    // 2. Process Isolated Purification Donations Sheet
     if (data && Array.isArray(data.donations)) {
       donations = mergeDonationsById(data.donations);
-      localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+      saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
     }
 
-    // 3. Process Performance History
     if (data && Array.isArray(data.chartHistory)) {
       chartHistoryRecords = data.chartHistory;
-      localStorage.setItem(CHART_HISTORY_KEY, JSON.stringify(chartHistoryRecords));
+      saveJsonStorage(CHART_HISTORY_KEY, chartHistoryRecords);
     }
 
-    // 4. Process Custom / Manual Prices & Extract Latest Timestamp from Prices Sheet
     if (data && data.customPrices && typeof data.customPrices === 'object') {
       savedManualPrices = Object.assign({}, data.customPrices);
       marketPrices = Object.assign({}, savedManualPrices);
-      localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+      saveJsonStorage(MANUAL_PRICES_KEY, savedManualPrices);
 
       let latestPriceTime = '';
       Object.values(data.customPrices).forEach(pObj => {
@@ -316,29 +297,26 @@ async function fetchFromGoogleSheet() {
       renderLastPriceTimestamp();
     }
 
-    // 5. Process Stock Master & Reference Sectors
     if (data && Array.isArray(data.stockMaster)) {
       stockMasterList = data.stockMaster;
-      localStorage.setItem(STOCK_MASTER_KEY, JSON.stringify(stockMasterList));
+      saveJsonStorage(STOCK_MASTER_KEY, stockMasterList);
       updateStockAutocompleteOptions();
     }
 
     if (data && Array.isArray(data.sectors)) {
       sectorsList = data.sectors;
-      localStorage.setItem(SECTORS_LIST_KEY, JSON.stringify(sectorsList));
+      saveJsonStorage(SECTORS_LIST_KEY, sectorsList);
       updateSectorAutocompleteOptions();
     }
 
-    // 6. Process Milestone Goals
     if (data && data.goals && typeof data.goals === 'object') {
       milestoneGoals = Object.assign(milestoneGoals, data.goals);
-      localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(milestoneGoals));
+      saveJsonStorage(GOALS_STORAGE_KEY, milestoneGoals);
     }
 
-    // 7. Process Settings & PIN Hash
     if (data && data.settings && typeof data.settings === 'object') {
       appSettings = Object.assign(appSettings, data.settings);
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+      saveJsonStorage(SETTINGS_STORAGE_KEY, appSettings);
 
       const cloudBackupTime = data.settings.lastDatabaseBackup;
       if (cloudBackupTime && cloudBackupTime !== 'Not backed up yet') {
@@ -351,7 +329,6 @@ async function fetchFromGoogleSheet() {
       checkGatekeeperState();
     }
 
-    // 8. Process Cash Calibration Map
     if (data && data.cashCalibration && typeof data.cashCalibration === 'object') {
       if (data.cashCalibration.offsets) {
         cashCalibration.offsets = Object.assign(cashCalibration.offsets, data.cashCalibration.offsets);
@@ -359,12 +336,11 @@ async function fetchFromGoogleSheet() {
       if (data.cashCalibration.records) {
         cashCalibration.records = data.cashCalibration.records;
       }
-      localStorage.setItem(CASH_CALIB_KEY, JSON.stringify(cashCalibration));
+      saveJsonStorage(CASH_CALIB_KEY, cashCalibration);
     }
 
-    // 9. Process Quotes Sheet
     if (data && Array.isArray(data.quotes) && data.quotes.length > 0) {
-      localStorage.setItem(QUOTES_STORAGE_KEY, JSON.stringify(data.quotes));
+      saveJsonStorage(QUOTES_STORAGE_KEY, data.quotes);
       initHomeQuotesTicker(data.quotes);
     }
 
@@ -402,9 +378,7 @@ async function sendToSheet(payload, returnJson = false, signal = null) {
       fetchOptions.signal = signal;
     }
 
-    // Use text/plain simple CORS request so GAS returns a readable JSON response
     const response = await fetch(cloudScriptUrl, fetchOptions);
-
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -435,7 +409,7 @@ function persistManualPrice(stock, ltp) {
   savedManualPrices[sym] = priceObj;
   marketPrices[sym] = priceObj;
 
-  localStorage.setItem(MANUAL_PRICES_KEY, JSON.stringify(savedManualPrices));
+  saveJsonStorage(MANUAL_PRICES_KEY, savedManualPrices);
   recordPriceUpdateTimestamp();
 
   sendToSheet({
@@ -461,7 +435,6 @@ async function triggerManualDatabaseBackup() {
     refreshIcons();
   }
 
-  // Cancel any stale backup request
   if (activeBackupAbortController) {
     try { activeBackupAbortController.abort(); } catch (e) {}
   }
@@ -470,7 +443,7 @@ async function triggerManualDatabaseBackup() {
   activeBackupAbortController = controller;
   const timeoutId = setTimeout(() => {
     try { controller.abort(); } catch (e) {}
-  }, 25000); // 25s timeout for drive file creation
+  }, 25000);
 
   showDatabaseBackupOverlay();
 
@@ -526,11 +499,8 @@ function saveAndFetchCloud() {
   const urlInput = document.getElementById('scriptUrlInput');
   const tokenInput = document.getElementById('apiTokenInput');
 
-  const newUrl = urlInput ? urlInput.value.trim() : '';
-  const newToken = tokenInput ? tokenInput.value.trim() : '';
-
-  cloudScriptUrl = newUrl;
-  apiToken = newToken;
+  cloudScriptUrl = urlInput ? urlInput.value.trim() : '';
+  apiToken = tokenInput ? tokenInput.value.trim() : '';
 
   localStorage.setItem(SCRIPT_URL_KEY, cloudScriptUrl);
   localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
