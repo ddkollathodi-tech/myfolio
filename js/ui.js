@@ -2362,8 +2362,10 @@ async function exportPortfolioToExcel() {
   const loaded = await ensureXlsxLoaded();
   if (!loaded || typeof XLSX === 'undefined') return;
 
-  const data = getCachedEngineData();  
-function formatWorksheet(ws, colWidths) {
+  const data = getCachedEngineData();
+  const wb = XLSX.utils.book_new();
+
+  function formatWorksheet(ws, colWidths) {
     if (!ws['!ref']) return;
     const range = XLSX.utils.decode_range(ws['!ref']);
 
@@ -2720,7 +2722,6 @@ function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
 
 let selectedChartPeriod = '1Y'; // '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
 let selectedChartAccount = 'ALL'; // 'ALL' | account name
-let chartExpandedMode = false;
 
 function setChartAccountFilter(acct) {
   selectedChartAccount = acct || 'ALL';
