@@ -300,16 +300,16 @@
             </div>
 
             <!-- 6. Live Prices -->
-            <button onclick="openLivePricesModal()" class="-ml-0.5 lg:ml-0 px-1.5 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1 lg:space-x-1.5 shrink-0">
+            <button onclick="openLivePricesModal()" class="px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1 lg:space-x-1.5 shrink-0">
               <i data-lucide="refresh-cw" class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0"></i>
-              <span class="lg:hidden">Live</span>
+              <span class="hidden md:inline lg:hidden">Live</span>
               <span class="hidden lg:inline">Live Prices</span>
             </button>
           </nav>
         </div>
 
        <!-- Right Cluster: Rotating Info Ticker (lg:+) + Portrait Controls + Lock + Settings + "D" Avatar -->
-        <div class="flex items-center ml-1.5 sm:ml-2 lg:ml-0 space-x-1 sm:space-x-1.5 lg:space-x-2 xl:space-x-3 shrink-0">
+        <div class="flex items-center ml-2 lg:ml-0 space-x-1.5 sm:space-x-2 xl:space-x-3 shrink-0">
 
           <!-- Rotating Status Ticker (Desktop/Laptop lg:+) -->
           <div id="headerInfoTicker" class="hidden lg:flex items-center px-1.5 py-1.5 text-[12.5px] xl:text-[13px] font-medium text-slate-600 dark:text-slate-300 min-w-[185px] xl:min-w-[215px] justify-start overflow-hidden h-9 select-none whitespace-nowrap">
@@ -339,18 +339,18 @@
           </button>
 
           <!-- Lock Button -->
-          <button onclick="lockApplicationNow()" class="translate-x-1 lg:translate-x-0 p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition" title="Instant PIN Lock Screen">
-            <i data-lucide="lock" class="w-5 h-5"></i>
+          <button onclick="lockApplicationNow()" class="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] hover:text-slate-900 dark:hover:text-white transition shrink-0" title="Instant PIN Lock Screen">
+            <i data-lucide="lock" class="w-4 h-4 sm:w-5 sm:h-5"></i>
           </button>
 
           <!-- Settings Dropdown -->
-          <div class="relative" id="settingsDropdownContainer">
+          <div class="relative shrink-0" id="settingsDropdownContainer">
             <button
               onclick="toggleSettingsDropdown(event)"
-              class="flex items-center space-x-1 p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition focus:outline-none"
+              class="flex items-center space-x-0.5 sm:space-x-1 p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] hover:text-slate-900 dark:hover:text-white transition focus:outline-none"
               title="Platform Settings"
             >
-              <i data-lucide="settings" class="w-5 h-5"></i>
+              <i data-lucide="settings" class="w-4 h-4 sm:w-5 sm:h-5"></i>
               <i data-lucide="chevron-down" id="settingsDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
             </button>
 
@@ -475,9 +475,6 @@
       <div class="lg:hidden absolute top-2 right-4 sm:right-6 z-20 pointer-events-none text-[11px] font-medium text-slate-600 dark:text-slate-300">
         <div id="mobileTickerMirror" class="flex items-center justify-end space-x-1.5"></div>
       </div>
-
-    <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 w-full flex flex-col">
 
       <!-- ========================================================== -->
       <!-- VIEW 0: HOME / LANDING PAGE VIEW -->
