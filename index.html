@@ -161,22 +161,22 @@
 
           <div class="hidden sm:block h-5 lg:h-6 w-px bg-slate-200 dark:bg-[#222836] shrink-0"></div>
 
-          <!-- Primary Nav Links: Compact in Landscape (sm: to lg), Untouched on Laptop/PC (lg:+) -->
-          <nav class="hidden sm:flex items-center space-x-0.5 lg:space-x-1 text-[10.5px] lg:text-[12.5px] xl:text-[13.5px] font-semibold whitespace-nowrap">
+          <!-- Primary Nav Links: Clean Landscape (sm: to lg), Untouched on Laptop/PC (lg:+) -->
+          <nav class="hidden sm:flex items-center space-x-1 lg:space-x-1 text-[11.5px] lg:text-[12.5px] xl:text-[13.5px] font-semibold whitespace-nowrap">
             <!-- 1. Dashboard -->
-            <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+            <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="layout-dashboard" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span>Dashboard</span>
             </button>
 
             <!-- 2. Portfolio -->
-            <button onclick="switchMainView('portfolio')" id="navLink-portfolio" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+            <button onclick="switchMainView('portfolio')" id="navLink-portfolio" class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="briefcase" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span>Portfolio</span>
             </button>
 
             <!-- 3. Chart -->
-            <button onclick="switchMainView('chart')" id="navLink-chart" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+            <button onclick="switchMainView('chart')" id="navLink-chart" class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="bar-chart-3" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span>Chart</span>
             </button>
@@ -186,7 +186,7 @@
               <button
                 id="txDropdownBtn"
                 onclick="toggleTxDropdown(event)"
-                class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
+                class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
               >
                 <i data-lucide="arrow-left-right" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
                 <span>Transactions</span>
@@ -259,7 +259,7 @@
               <button
                 onclick="toggleProductsDropdown(event)"
                 id="navLink-products"
-                class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
+                class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
               >
                 <i data-lucide="box" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
                 <span>Products</span>
@@ -300,7 +300,7 @@
             </div>
 
             <!-- 6. Live Prices -->
-            <button onclick="openLivePricesModal()" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+            <button onclick="openLivePricesModal()" class="px-2 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
               <i data-lucide="refresh-cw" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span class="lg:hidden">Live</span>
               <span class="hidden lg:inline">Live Prices</span>
