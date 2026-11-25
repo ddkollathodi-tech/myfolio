@@ -3296,7 +3296,7 @@ function toggleTxDropdown(e) {
 
   if (isHidden) {
     menu.classList.remove('hidden');
-    menu.classList.add('max-h-[65vh]', 'overflow-y-auto', 'custom-scroll');
+    menu.classList.add('max-h-[72vh]', 'overflow-y-auto', 'overscroll-contain', 'custom-scroll');
     if (chevron) chevron.classList.add('rotate-180');
   } else {
     menu.classList.add('hidden');
