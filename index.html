@@ -138,32 +138,7 @@
   <!-- APPLICATION ROOT -->
   <div id="app-root" class="flex-1 flex flex-col">
 
-   <!-- TOP HEADER -->
-    <header class="border-b border-slate-200/90 dark:border-[#222836] bg-white/95 dark:bg-[#0E121B]/95 backdrop-blur sticky top-0 z-40 transition-colors duration-200">
-      <div class="w-full max-w-[1520px] mx-auto px-3 sm:px-5 lg:px-8 xl:px-10 py-2.5 sm:py-3 flex flex-nowrap items-center justify-between gap-1.5 sm:gap-2 xl:gap-4">
-
-        <!-- Left Cluster: Brand Logo + Primary Navigation Shifted Left -->
-        <div class="flex items-center space-x-1.5 sm:space-x-2.5 lg:space-x-4 xl:space-x-6 min-w-0">
-          <!-- 3 Ascending Slanted Bars + MyFolio.AI Lockup (Clicking returns to Home) -->
-          <div onclick="switchMainView('home')" class="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0 select-none cursor-pointer group">
-            <svg class="w-7 h-6 sm:w-10 sm:h-8 shrink-0 transition-transform duration-200 group-hover:scale-[1.03]" viewBox="0 0 40 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <polygon points="1,32 6,17 13,15 8,32" class="fill-[#1E40AF] dark:fill-blue-500" />
-              <polygon points="13,32 19.8,10.5 26.8,8.5 20,32" class="fill-[#1D4ED8] dark:fill-blue-400" />
-              <polygon points="25,32 33.2,4 40,2 32,32" class="fill-[#2563EB] dark:fill-blue-300" />
-            </svg>
-            <div class="flex flex-col justify-center">
-              <div class="flex items-baseline leading-none">
-                <span class="text-[17px] sm:text-[20px] xl:text-[22px] font-extrabold tracking-tight text-[#0F172A] dark:text-white">MyFolio.</span><span class="text-[17px] sm:text-[20px] xl:text-[22px] font-extrabold tracking-tight text-[#1D4ED8] dark:text-blue-400">AI</span>
-              </div>
-              <p class="text-[9.5px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-tight mt-0.5 leading-none whitespace-nowrap">Portfolio Tracker Engine</p>
-            </div>
-          </div>
-
-          <div class="hidden sm:block h-5 lg:h-6 w-px bg-slate-200 dark:bg-[#222836] shrink-0"></div>
-
-          <!-- Primary Nav Links: Tightened in Landscape (sm: to lg), Untouched on Laptop/PC (lg:+) -->
-          <nav class="hidden sm:flex items-center space-x-0.5 lg:space-x-1 text-[11px] lg:text-[12.5px] xl:text-[13.5px] font-semibold whitespace-nowrap">
-            <!-- 1. Dashboard -->
+  <!-- 1. Dashboard -->
             <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1.5 shrink-0">
               <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
               <span>Dashboard</span>
@@ -191,6 +166,35 @@
                 <i data-lucide="arrow-left-right" class="w-4 h-4 shrink-0"></i>
                 <span>Transactions</span>
                 <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
+              </button>
+           <!-- 1. Dashboard -->
+            <button onclick="switchMainView('dashboard')" id="navLink-dashboard" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+              <i data-lucide="layout-dashboard" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
+              <span>Dashboard</span>
+            </button>
+
+            <!-- 2. Portfolio -->
+            <button onclick="switchMainView('portfolio')" id="navLink-portfolio" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+              <i data-lucide="briefcase" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
+              <span>Portfolio</span>
+            </button>
+
+            <!-- 3. Chart -->
+            <button onclick="switchMainView('chart')" id="navLink-chart" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+              <i data-lucide="bar-chart-3" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
+              <span>Chart</span>
+            </button>
+
+            <!-- 4. Transactions Dropdown -->
+            <div class="relative shrink-0" id="txDropdownContainer">
+              <button
+                id="txDropdownBtn"
+                onclick="toggleTxDropdown(event)"
+                class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
+              >
+                <i data-lucide="arrow-left-right" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
+                <span>Transactions</span>
+                <i data-lucide="chevron-down" id="txDropdownChevron" class="w-3 h-3 lg:w-3.5 lg:h-3.5 transition-transform duration-150"></i>
               </button>
 
               <!-- Dropdown Menu -->
@@ -259,11 +263,11 @@
               <button
                 onclick="toggleProductsDropdown(event)"
                 id="navLink-products"
-                class="px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1.5 focus:outline-none"
+                class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-0.5 lg:space-x-1.5 focus:outline-none"
               >
-                <i data-lucide="box" class="w-4 h-4 shrink-0"></i>
+                <i data-lucide="box" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
                 <span>Products</span>
-                <i data-lucide="chevron-down" id="productsDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
+                <i data-lucide="chevron-down" id="productsDropdownChevron" class="w-3 h-3 lg:w-3.5 lg:h-3.5 transition-transform duration-150"></i>
               </button>
 
               <div
@@ -300,8 +304,8 @@
             </div>
 
             <!-- 6. Live Prices -->
-            <button onclick="openLivePricesModal()" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-1 lg:space-x-1.5 shrink-0">
-              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0"></i>
+            <button onclick="openLivePricesModal()" class="px-1.5 lg:px-2.5 xl:px-3 py-1.5 lg:py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center lg:space-x-1.5 shrink-0">
+              <i data-lucide="refresh-cw" class="hidden lg:inline-block w-4 h-4 shrink-0"></i>
               <span class="lg:hidden">Live</span>
               <span class="hidden lg:inline">Live Prices</span>
             </button>
@@ -309,7 +313,7 @@
         </div>
 
         <!-- Right Cluster: Rotating Info Ticker (lg:+) + Portrait Controls + Lock + Settings + "D" Avatar -->
-        <div class="flex items-center space-x-1 sm:space-x-1.5 lg:space-x-2 xl:space-x-3 shrink-0">
+        <div class="flex items-center space-x-1.5 sm:space-x-1 lg:space-x-2 xl:space-x-3 shrink-0">
 
           <!-- Rotating Status Ticker (Desktop/Laptop lg:+) -->
           <div id="headerInfoTicker" class="hidden lg:flex items-center px-1.5 py-1.5 text-[12.5px] xl:text-[13px] font-medium text-slate-600 dark:text-slate-300 min-w-[185px] xl:min-w-[215px] justify-start overflow-hidden h-9 select-none whitespace-nowrap">
@@ -330,17 +334,17 @@
             aria-label="Toggle Navigation Menu"
             class="sm:hidden p-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition"
           >
-            <i data-lucide="menu" id="mobileMenuIcon" class="w-4 h-4"></i>
+            <i data-lucide="menu" id="mobileMenuIcon" class="w-5 h-5"></i>
           </button>
 
           <!-- Portrait-Only Live Prices Trigger (< sm) -->
           <button onclick="openLivePricesModal()" class="sm:hidden p-1.5 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition" title="Update Live Prices">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           </button>
 
           <!-- Lock Button -->
-          <button onclick="lockApplicationNow()" class="p-1 sm:p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition" title="Instant PIN Lock Screen">
-            <i data-lucide="lock" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          <button onclick="lockApplicationNow()" class="p-1.5 sm:p-1 lg:p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition" title="Instant PIN Lock Screen">
+            <i data-lucide="lock" class="w-5 h-5 sm:w-4 sm:h-4 lg:w-5 lg:h-5"></i>
           </button>
 
           <!-- Settings Dropdown -->
