@@ -4757,6 +4757,12 @@ function buildDashboardMetricSeries(computed) {
     } else if (selectedDashboardMetric === 'lifetimePnL') {
       val = pt.profit;
     } else if (selectedDashboardMetric === 'currentFy') {
+      if (!curFySortedLots) {
+        curFySortedLots = (computed.taxClosedLots || [])
+          .filter(lot => lot.fy === curFy)
+          .map(lot => ({ time: parseLocalDate(lot.sellDate).getTime(), gain: Number(lot.gain || 0) }))
+          .sort((a, b) => a.time - b.time);
+      }
       if (idx === ranged.length - 1) {
         val = Number(computed.totalUnrealizedPnL || 0) + Number((computed.fyRealized[curFy] || {}).gain || 0);
       } else {
@@ -4764,9 +4770,11 @@ function buildDashboardMetricSeries(computed) {
         const cutoffTime = !isNaN(ptDate.getTime())
           ? new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate(), 23, 59, 59).getTime()
           : Infinity;
-        val = (computed.taxClosedLots || [])
-          .filter(lot => lot.fy === curFy && parseLocalDate(lot.sellDate).getTime() <= cutoffTime)
-          .reduce((sum, lot) => sum + Number(lot.gain || 0), 0);
+        while (curFyLotCursor < curFySortedLots.length && curFySortedLots[curFyLotCursor].time <= cutoffTime) {
+          curFyRunningGain += curFySortedLots[curFyLotCursor].gain;
+          curFyLotCursor++;
+        }
+        val = curFyRunningGain;
       }
     } else if (selectedDashboardMetric === 'xirr') {
       const yearsElapsed = Math.max(0.25, (idx + 1) / 12);
