@@ -3217,7 +3217,44 @@ function switchSubTab(subTabKey) {
   }
   refreshIcons();
 }
+function toggleMobileNavDrawer(e) {
+  if (e) e.stopPropagation();
+  const drawer = document.getElementById('mobileNavDrawer');
+  const icon = document.getElementById('mobileMenuIcon');
+  if (!drawer) return;
+  const isHidden = drawer.classList.contains('hidden');
+  closeAllTopDropdowns();
+  drawer.classList.toggle('hidden', !isHidden);
+  if (icon) {
+    icon.setAttribute('data-lucide', isHidden ? 'x' : 'menu');
+    refreshIcons();
+  }
+}
 
+function closeMobileNavDrawer() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const icon = document.getElementById('mobileMenuIcon');
+  if (drawer) drawer.classList.add('hidden');
+  if (icon) {
+    icon.setAttribute('data-lucide', 'menu');
+    refreshIcons();
+  }
+}
+
+function mobileNavGo(view) {
+  closeMobileNavDrawer();
+  switchMainView(view);
+}
+
+function mobileSelectPreset(type) {
+  closeMobileNavDrawer();
+  selectDropdownPreset(type);
+}
+
+function mobileGoSubTab(subTabKey) {
+  closeMobileNavDrawer();
+  switchSubTab(subTabKey);
+}
 function toggleProductsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('productsDropdownMenu');
