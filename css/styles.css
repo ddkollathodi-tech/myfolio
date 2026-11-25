@@ -2,38 +2,36 @@
    MyFolioAI - Stylesheet (css/styles.css)
    ============================================================================ */
 
-/* Enable Smooth Scrolling for Hero Anchor Jumps */
 html {
   scroll-behavior: smooth;
 }
 
-/* Base Font & Typographic Feature Flags */
-:root {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
-  -webkit-font-smoothing: antialiased;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* Tabular Numerics for Financial Tables & KPI Figures */
+:root,
+body,
 .mono-font,
 .tabular-nums,
 table,
 [id^="kpi"] {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+:root {
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono-font,
+.tabular-nums,
+table,
+[id^="kpi"] {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'cv02' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1, 'tnum' 1, 'zero' 0;
 }
 
-/* Anti-FOUC Gatekeeper: Conceals dashboard until master PIN unlock */
 #app-root {
   display: none;
 }
 
-/* PIN Card Error Shake Animation */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-8px); }
@@ -44,7 +42,6 @@ table,
   animation: shake 0.35s cubic-bezier(.36, .07, .19, .97) both;
 }
 
-/* Sequential Moving-Dots Sync / File-Transfer Animation */
 @keyframes syncDotTravel {
   0%, 100% {
     transform: translateY(0) scale(0.85);
@@ -66,7 +63,6 @@ table,
 .sync-transfer-dot:nth-child(4) { animation-delay: 0.48s; }
 .sync-transfer-dot:nth-child(5) { animation-delay: 0.64s; }
 
-/* Rotating Ticker Fade/Slide Keyframes for Info Ticker */
 @keyframes tickerFade {
   0% {
     opacity: 0;
@@ -90,7 +86,6 @@ table,
   animation: tickerFade 4s infinite ease-in-out;
 }
 
-/* Gaussian Privacy Mask (Granular Stealth Mode) */
 .privacy-blurred {
   filter: blur(7px) !important;
   user-select: none !important;
@@ -98,12 +93,10 @@ table,
   transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Unmasked State Smooth Transition */
 .mask-transition {
   transition: filter 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Custom Scrollbar */
 .custom-scroll::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -123,7 +116,6 @@ table,
   border-radius: 4px;
 }
 
-/* Interactive Sortable Table Headers */
 th.sortable {
   cursor: pointer;
   user-select: none;
@@ -133,12 +125,30 @@ th.sortable:hover {
   background-color: rgba(148, 163, 184, 0.12);
 }
 
-/* Accessibility: Respect Reduced Motion Preferences */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile/Tablet Landscape (640px - 1023px): Keep nav items compact */
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  header nav > button,
+  header nav > div > button {
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+    font-size: 11px !important;
+  }
+  #navLink-portfolio.bg-blue-50,
+  #navLink-portfolio[class*="bg-blue-50"] {
+    padding-left: 0.4rem !important;
+    padding-right: 0.4rem !important;
+  }
+  header > div > div:last-child {
+    margin-left: 0.25rem !important;
+    gap: 0.125rem !important;
   }
 }
 
@@ -174,7 +184,6 @@ th.sortable:hover {
   background: rgba(19, 53, 122, 0.24);
 }
 
-/* Unified title icon badge: soft navy tint when unselected, crisp white/translucent when selected */
 .dash-slot-icon-badge {
   width: 28px;
   height: 28px;
@@ -198,7 +207,6 @@ th.sortable:hover {
   color: #FFFFFF;
 }
 
-/* Unified mask toggle button matching the Total Net Worth card */
 .dash-mask-btn {
   width: 28px;
   height: 28px;
@@ -233,7 +241,6 @@ th.sortable:hover {
   background: rgba(255, 255, 255, 0.24);
 }
 
-/* Active Selected Slot: Deep Navy-Blue + Uniform Slant (Outer Strip Keeps All 4 Corners Curved) */
 .dash-metric-slot.is-active {
   background: linear-gradient(135deg, #071940 0%, #0C255C 52%, #13357A 100%);
   color: #FFFFFF;
@@ -241,18 +248,14 @@ th.sortable:hover {
   z-index: 3;
 }
 
-/* Uniform slant direction: top shifted right, bottom shifted left */
-/* First card (Total Net Worth): slanted right edge only */
 .dash-metric-slot.is-active.slant-right {
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 
-/* Last card (Annualized XIRR): slanted left edge only */
 .dash-metric-slot.is-active.slant-left {
   clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%);
 }
 
-/* Intermediate cards: parallel slanted left & right edges */
 .dash-metric-slot.is-active.slant-both {
   clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
@@ -275,7 +278,6 @@ th.sortable:hover {
   background: linear-gradient(90deg, #60A5FA 0%, #93C5FD 100%) !important;
 }
 
-/* Suppress straight vertical divider lines touching the selected card (except extreme outer edges) */
 @media (min-width: 640px) {
   .dash-unified-strip > .dash-metric-slot.hide-left-divider {
     border-left-color: transparent !important;
@@ -286,22 +288,11 @@ th.sortable:hover {
 }
 
 /* ============================================================================
-   Portfolio View Layout, 5-Row Scroll Viewport & Allocation Styling
+   Portfolio View Layout, Scroll Viewport & Allocation Styling
    ============================================================================ */
 .port-holdings-scroll {
   max-height: 295px;
   overflow-y: auto;
-}
-
-.port-sector-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1.35;
-  white-space: nowrap;
 }
 
 .port-alloc-pill-active {
@@ -415,7 +406,6 @@ th.sortable:hover {
   border-color: #60A5FA;
 }
 
-/* Subtle Semantic Row Tints for Tradebook & Cash Ledger */
 .ledger-row-outflow {
   background-color: rgba(254, 242, 242, 0.72);
 }
