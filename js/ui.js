@@ -140,6 +140,10 @@ function updateHeaderTickerDisplay() {
   }
 
   container.innerHTML = html;
+  const mobileMirror = document.getElementById('mobileTickerMirror');
+  if (mobileMirror) {
+    mobileMirror.innerHTML = html.replace(/id="(syncDot|syncStatus)"/g, 'data-mobile-id="$1"');
+  }
   refreshIcons();
 }
 
