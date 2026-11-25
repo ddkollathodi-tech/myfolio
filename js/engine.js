@@ -16,6 +16,16 @@ function computeEngine(txListOverride) {
     .map(item => item.tx);
 
   const openLots = [];
+  const fifoQueues = Object.create(null);
+
+  function pushFifoLot(lot) {
+    openLots.push(lot);
+    const key = `${lot.account}::${lot.stock}`;
+    if (!fifoQueues[key]) {
+      fifoQueues[key] = { list: [], cursor: 0 };
+    }
+    fifoQueues[key].list.push(lot);
+  }
   const closedTradesMap = {};
   const fyRealized = {};
   const taxClosedLots = [];
@@ -118,9 +128,15 @@ function computeEngine(txListOverride) {
           ? Math.max(0, Number(rawDebt) || 0)
           : 0;
 
-        for (let i = 0; i < openLots.length && remQtyToSell > 0; i++) {
-          const lot = openLots[i];
-          if (lot.stock === stock && lot.account === acct && lot.qty > 0) {
+        const queue = fifoQueues[`${acct}::${stock}`];
+        if (queue) {
+          while (queue.cursor < queue.list.length && remQtyToSell > 0) {
+            const lot = queue.list[queue.cursor];
+            if (lot.qty <= 0) {
+              queue.cursor++;
+              continue;
+            }
+
             const matchedQty = Math.min(lot.qty, remQtyToSell);
             const costBasis = matchedQty * lot.price;
             const proceeds = matchedQty * effectiveSellPrice;
@@ -128,6 +144,9 @@ function computeEngine(txListOverride) {
 
             lot.qty -= matchedQty;
             remQtyToSell -= matchedQty;
+            if (lot.qty <= 0) {
+              queue.cursor++;
+            }
 
             if (!closedTradesMap[stock]) {
               closedTradesMap[stock] = { stock, totalQty: 0, totalCostBasis: 0, totalProceeds: 0, netPnL: 0 };
