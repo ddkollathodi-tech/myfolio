@@ -101,7 +101,7 @@ function computeEngine(txListOverride) {
           rawAccountCashMap[acct] -= buyCost;
         }
 
-        openLots.push({
+        pushFifoLot({
           id: tx.id || `LOT_${seqIdx}`,
           date: tx.date,
           stock: stock,
@@ -207,7 +207,7 @@ function computeEngine(txListOverride) {
       }
 
       case 'BONUS':
-        openLots.push({
+        pushFifoLot({
           id: tx.id || `LOT_${seqIdx}`,
           date: tx.date,
           stock: stock,
@@ -230,7 +230,7 @@ function computeEngine(txListOverride) {
       }
 
       case 'DEMERGER':
-        openLots.push({
+        pushFifoLot({
           id: tx.id || `LOT_${seqIdx}`,
           date: tx.date,
           stock: stock,
@@ -239,8 +239,7 @@ function computeEngine(txListOverride) {
           account: acct
         });
         break;
-    }
-
+      }
     ledgerEntries.push({
       id: tx.id || '',
       date: tx.date,
