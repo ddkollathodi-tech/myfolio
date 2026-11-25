@@ -3181,9 +3181,9 @@ function switchSubTab(subTabKey) {
   const btnDash = document.getElementById('navLink-dashboard');
   const btnPort = document.getElementById('navLink-portfolio');
 
-  const activeClasses = 'px-3.5 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-2';
-  const inactiveClasses = 'px-3.5 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] flex items-center space-x-2';
-
+  const activeClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 flex items-center space-x-1 lg:space-x-1.5 shrink-0';
+  const inactiveClasses = 'px-2 lg:px-2.5 xl:px-3 py-2 rounded-xl transition text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-transparent flex items-center space-x-1 lg:space-x-1.5 shrink-0';
+ 
   if (homeEl) homeEl.classList.add('hidden');
   if (dashEl) dashEl.classList.add('hidden');
   if (chartEl) chartEl.classList.add('hidden');
