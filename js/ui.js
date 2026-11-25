@@ -2769,7 +2769,6 @@ function setChartMetricMode(mode) {
 
 function setChartPeriod(period) {
   selectedChartPeriod = period || '1Y';
-  currentChartRange = selectedChartPeriod === 'ALL' ? 'ALL' : 'TTM';
 
   document.querySelectorAll('#chartPeriodPills .chart-period-btn').forEach(btn => {
     const isActive = btn.dataset.chartPeriod === selectedChartPeriod;
