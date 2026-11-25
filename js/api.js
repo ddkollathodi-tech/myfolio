@@ -149,7 +149,15 @@ function cancelBackupAndDismiss() {
   hideDatabaseBackupOverlay();
 }
 
+let currentSyncState = 'Not synced';
+
 function updateSyncUI(status) {
+  if (status) {
+    currentSyncState = status;
+  } else if (!cloudScriptUrl) {
+    currentSyncState = 'Not synced';
+  }
+
   const syncDot = document.getElementById('syncDot');
   const syncStatus = document.getElementById('syncStatus');
 
@@ -345,12 +353,12 @@ async function fetchFromGoogleSheet() {
     }
 
     updateSyncUI('Synced');
-    recalculateAndRender();
+    recalculateAndRender(true);
     return true;
   } catch (err) {
     console.error('Failed to sync with Google Sheet:', err);
     updateSyncUI('Not synced');
-    recalculateAndRender();
+    recalculateAndRender(true);
     return false;
   } finally {
     clearTimeout(timeoutId);
