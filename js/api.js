@@ -263,8 +263,19 @@ async function fetchFromGoogleSheet() {
     }
 
     if (data && Array.isArray(data.donations)) {
-      donations = mergeDonationsById(data.donations);
+      const normalizedIncoming = data.donations.map(d => {
+        const catRaw = String(d && d.category || '').trim().toLowerCase();
+        return {
+          ...d,
+          category: (catRaw === 'zakath' || catRaw === 'zakat') ? 'Zakath' : 'Purification'
+        };
+      });
+      donations = mergeDonationsById(normalizedIncoming);
       saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
+    }
+
+    if (data && Array.isArray(data.taxChallans) && typeof applyRemoteTaxChallans === 'function') {
+      applyRemoteTaxChallans(data.taxChallans);
     }
 
     if (data && Array.isArray(data.chartHistory)) {
