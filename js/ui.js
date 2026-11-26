@@ -4599,6 +4599,25 @@ const fyZeroBarMarkerPlugin = {
   }
 };
 
+const fyCompactBarSpacingPlugin = {
+  id: 'fyCompactBarSpacing',
+  afterDatasetsUpdate(chart) {
+    if (selectedDashboardMetric !== 'currentFy') return;
+    const meta0 = chart.getDatasetMeta(0); // Gross Realized P&L
+    const meta4 = chart.getDatasetMeta(4); // Final Net P&L
+    if (!meta0 || !meta4) return;
+
+    const pullPx = 6; // Adjust 4–10 px to taste; 0 = default Chart.js spacing
+    const len = meta0.data ? meta0.data.length : 0;
+    for (let i = 0; i < len; i++) {
+      const b0 = meta0.data && meta0.data[i];
+      const b4 = meta4.data && meta4.data[i];
+      if (b0) b0.x += pullPx;
+      if (b4) b4.x -= pullPx;
+    }
+  }
+};
+
 function getFyTooltipBreakdownByLabel(fyLabel) {
   const snap = typeof getCachedEngineData === 'function' ? getCachedEngineData() : computeEngine();
   const fyMap = (snap && snap.fyRealized) ? snap.fyRealized : {};
@@ -5113,7 +5132,7 @@ dashboardChartInstance = new Chart(ctx, {
       }
     }
   },
-  plugins: [dashboardYAxisBlurPlugin, fyZeroBarMarkerPlugin]
+  plugins: [dashboardYAxisBlurPlugin, fyZeroBarMarkerPlugin, fyCompactBarSpacingPlugin]
 });
 dashboardChartInstance.$fyBreakdownSeries = fyBreakdown;
 }
