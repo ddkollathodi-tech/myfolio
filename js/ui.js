@@ -4802,63 +4802,63 @@ const datasets = isBar
   ? [
       {
         label: 'Gross Realized P&L',
-        stack: 'fyGroup',
+        stack: 'colGross',
         data: fyBreakdown.map(r => r.grossPnl),
         backgroundColor: 'rgba(37, 99, 235, 0.85)',
         borderColor: '#1D4ED8',
         borderWidth: 1,
         borderRadius: 0,
-        categoryPercentage: 0.68,
+        categoryPercentage: 0.52,
         barPercentage: 1.0,
-        maxBarThickness: 38
+        maxBarThickness: 32
       },
       {
         label: 'Tax Paid',
-        stack: 'fyGroup',
+        stack: 'colDeductions',
         data: fyBreakdown.map(r => r.taxPaid),
         backgroundColor: 'rgba(244, 63, 94, 0.88)',
         borderColor: '#E11D48',
         borderWidth: 1,
         borderRadius: 0,
-        categoryPercentage: 0.68,
+        categoryPercentage: 0.52,
         barPercentage: 1.0,
-        maxBarThickness: 38
+        maxBarThickness: 32
       },
       {
         label: 'Zakath',
-        stack: 'fyGroup',
+        stack: 'colDeductions',
         data: fyBreakdown.map(r => r.zakathPaid),
         backgroundColor: 'rgba(139, 92, 246, 0.88)',
         borderColor: '#7C3AED',
         borderWidth: 1,
         borderRadius: 0,
-        categoryPercentage: 0.68,
+        categoryPercentage: 0.52,
         barPercentage: 1.0,
-        maxBarThickness: 38
+        maxBarThickness: 32
       },
       {
         label: 'Purification',
-        stack: 'fyGroup',
+        stack: 'colDeductions',
         data: fyBreakdown.map(r => r.purifPaid),
         backgroundColor: 'rgba(20, 184, 166, 0.88)',
         borderColor: '#0D9488',
         borderWidth: 1,
         borderRadius: 0,
-        categoryPercentage: 0.68,
+        categoryPercentage: 0.52,
         barPercentage: 1.0,
-        maxBarThickness: 38
+        maxBarThickness: 32
       },
       {
         label: 'Final Net P&L',
-        stack: 'fyGroup',
+        stack: 'colNet',
         data: fyBreakdown.map(r => r.netPnl),
         backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(225, 29, 72, 0.85)'),
         borderColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#059669' : '#E11D48'),
         borderWidth: 1,
         borderRadius: 0,
-        categoryPercentage: 0.68,
+        categoryPercentage: 0.52,
         barPercentage: 1.0,
-        maxBarThickness: 38
+        maxBarThickness: 32
       }
     ]
   : [
@@ -4885,8 +4885,8 @@ if (dashboardChartInstance && dashboardChartInstance.config.type === chartType) 
   dashboardChartInstance.data.datasets = datasets;
   dashboardChartInstance.options.interaction = { mode: isBar ? 'index' : 'index', intersect: false };
   dashboardChartInstance.options.plugins.legend.display = isBar;
-  dashboardChartInstance.options.scales.x.stacked = isBar;
-  dashboardChartInstance.options.scales.y.stacked = isBar;
+  dashboardChartInstance.options.scales.x.stacked = false;
+  dashboardChartInstance.options.scales.y.stacked = false;
   dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
   dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
   dashboardChartInstance.update('none');
@@ -4930,7 +4930,7 @@ dashboardChartInstance = new Chart(ctx, {
     },
     scales: {
       x: {
-        stacked: isBar,
+        stacked: false,
         border: { display: false },
         grid: { display: false },
         ticks: {
@@ -4942,7 +4942,7 @@ dashboardChartInstance = new Chart(ctx, {
         }
       },
       y: {
-        stacked: isBar,
+        stacked: false,
         border: { display: false },
         grid: {
           color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
