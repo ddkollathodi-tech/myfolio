@@ -2642,26 +2642,32 @@ innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b
 });
 
 innerHtml += '<div class="space-y-1 pt-0.5">';
-if (selectedDashboardMetric === 'currentFy' && chart.$fyBreakdownSeries) {
-  const idx = tooltip.dataPoints && tooltip.dataPoints[0] ? tooltip.dataPoints[0].dataIndex : 0;
-  const row = chart.$fyBreakdownSeries[idx];
+if (selectedDashboardMetric === 'currentFy') {
+  const dataIdx = tooltip.dataPoints && tooltip.dataPoints[0] ? tooltip.dataPoints[0].dataIndex : 0;
+  const seriesList = chart.$fyBreakdownSeries || buildFyStackedBreakdownSeries(getCachedEngineData());
+  const row = seriesList[dataIdx];
   if (row) {
     const breakdownItems = [
-      { label: 'Gross Realized P&L', val: row.grossPnl, color: '#2563EB' },
-      { label: 'Tax Paid', val: row.taxPaid, color: '#8B5CF6' },
-      { label: 'Zakath', val: row.zakathPaid, color: '#10B981' },
-      { label: 'Purification', val: row.purifPaid, color: '#EAB308' },
-      { label: 'Total Deductions', val: row.totalDeductions, color: '#64748B' },
-      { label: 'Final Net P&L', val: row.netPnl, color: row.netPnl >= 0 ? '#16A34A' : '#EF4444' }
+      { label: 'Gross Realized P&L', val: row.grossPnl, color: '#2563EB', bold: false },
+      { label: 'Tax Paid', val: row.taxPaid, color: '#8B5CF6', bold: false },
+      { label: 'Zakath', val: row.zakathPaid, color: '#10B981', bold: false },
+      { label: 'Purification', val: row.purifPaid, color: '#EAB308', bold: false },
+      { label: 'Total Deductions', val: row.totalDeductions, color: '#64748B', bold: true },
+      { label: 'Final Net P&L', val: row.netPnl, color: row.netPnl >= 0 ? '#16A34A' : '#EF4444', bold: true }
     ];
-    breakdownItems.forEach(item => {
+    breakdownItems.forEach((item, i) => {
+      const isFinalRow = i === breakdownItems.length - 1;
+      const rowBorderCls = isFinalRow ? 'pt-1 mt-1 border-t border-slate-100 dark:border-[#222836]' : '';
+      const valColorCls = isFinalRow
+        ? (item.val >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')
+        : 'text-slate-900 dark:text-white';
       innerHtml += `
-        <div class="flex items-center justify-between space-x-3 text-[11px]">
-          <span class="flex items-center text-slate-600 dark:text-slate-300">
+        <div class="flex items-center justify-between space-x-4 text-[11px] ${rowBorderCls}">
+          <span class="flex items-center text-slate-600 dark:text-slate-300 ${item.bold ? 'font-bold text-slate-800 dark:text-slate-100' : ''}">
             <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${item.color}"></span>
             <span>${esc(item.label)}:</span>
           </span>
-          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+          <span class="font-mono font-bold tabular-nums ${valColorCls} ${maskClass}">
             ${formatINR(item.val, 0)}
           </span>
         </div>
@@ -2672,6 +2678,7 @@ if (selectedDashboardMetric === 'currentFy' && chart.$fyBreakdownSeries) {
   tooltip.dataPoints.forEach(dp => {
     const dataset = chart.data.datasets[dp.datasetIndex];
     const dotColor = dataset.borderColor || meta.color;
+    const itemLabel = dataset.label || meta.shortLabel;
     const rawVal = dp.raw !== undefined ? Number(dp.raw) : 0;
     const formattedVal = meta.isPercent ? `${rawVal.toFixed(2)}%` : formatINR(rawVal, 0);
 
@@ -2690,7 +2697,7 @@ if (selectedDashboardMetric === 'currentFy' && chart.$fyBreakdownSeries) {
       <div class="flex items-center justify-between space-x-3 text-[11px]">
         <span class="flex items-center text-slate-600 dark:text-slate-300">
           <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${dotColor}"></span>
-          <span>${esc(meta.shortLabel)}:</span>
+          <span>${esc(itemLabel)}:</span>
         </span>
         <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
           ${formattedVal}${variationHtml}
