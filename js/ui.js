@@ -4724,7 +4724,15 @@ function buildFyStackedBreakdownSeries(computed) {
     }
   });
 
-  const fys = Array.from(fySet).sort();
+ let fys = Array.from(fySet).sort();
+  if (dashboardChartRange === '6M' || dashboardChartRange === '1Y') {
+    fys = fys.slice(-1);
+  } else if (dashboardChartRange === '3Y') {
+    fys = fys.slice(-3);
+  } else if (dashboardChartRange === '5Y') {
+    fys = fys.slice(-5);
+  }
+
   return fys.map(fy => {
     const grossPnl = Number((fyMap[fy] && fyMap[fy].gain) || 0);
     const taxPaid = Number(taxByFy[fy] || 0);
@@ -4878,10 +4886,10 @@ if (dashboardChartInstance && dashboardChartInstance.config.type === chartType) 
   dashboardChartInstance.$fyBreakdownSeries = fyBreakdown;
   dashboardChartInstance.data.labels = labels;
   dashboardChartInstance.data.datasets = datasets;
-  dashboardChartInstance.options.interaction = { mode: isBar ? 'index' : 'index', intersect: false };
+  dashboardChartInstance.options.interaction = { mode: 'index', intersect: false };
   dashboardChartInstance.options.plugins.legend.display = isBar;
-  dashboardChartInstance.options.scales.x.stacked = false;
-  dashboardChartInstance.options.scales.y.stacked = false;
+  dashboardChartInstance.options.scales.x.stacked = isBar;
+  dashboardChartInstance.options.scales.y.stacked = isBar;
   dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
   dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
   dashboardChartInstance.update('none');
@@ -4925,7 +4933,7 @@ dashboardChartInstance = new Chart(ctx, {
     },
     scales: {
       x: {
-        stacked: false,
+        stacked: isBar,
         border: { display: false },
         grid: { display: false },
         ticks: {
@@ -4937,7 +4945,7 @@ dashboardChartInstance = new Chart(ctx, {
         }
       },
       y: {
-        stacked: false,
+        stacked: isBar,
         border: { display: false },
         grid: {
           color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
