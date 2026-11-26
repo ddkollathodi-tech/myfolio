@@ -4607,7 +4607,7 @@ const fyCompactBarSpacingPlugin = {
     const meta4 = chart.getDatasetMeta(4); // Final Net P&L
     if (!meta0 || !meta4) return;
 
-    const pullPx = 6; // Adjust 4–10 px to taste; 0 = default Chart.js spacing
+    const pullPx = 20; // Adjust 4–10 px to taste; 0 = default Chart.js spacing
     const len = meta0.data ? meta0.data.length : 0;
     for (let i = 0; i < len; i++) {
       const b0 = meta0.data && meta0.data[i];
