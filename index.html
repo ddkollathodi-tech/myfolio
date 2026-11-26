@@ -292,7 +292,7 @@
                   </button>
                   <button onclick="switchSubTab('purification')" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 flex items-center space-x-2.5 transition font-medium">
                     <i data-lucide="hand-heart" class="w-4 h-4 text-teal-500"></i>
-                    <span>Purification &amp; Donation</span>
+                    <span>Zakath &amp; Donations</span>
                   </button>
                 </div>
               </div>
@@ -461,7 +461,7 @@
             <button onclick="mobileGoSubTab('transactions')" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836] text-slate-700 dark:text-slate-200">Tradebook &amp; Ledger</button>
             <button onclick="mobileGoSubTab('bankLedger')" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836] text-slate-700 dark:text-slate-200">Bank Ledger</button>
             <button onclick="mobileGoSubTab('taxPnl')" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836] text-slate-700 dark:text-slate-200">Tax P&amp;L Cockpit</button>
-            <button onclick="mobileGoSubTab('purification')" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836] text-slate-700 dark:text-slate-200">Purification &amp; Donation</button>
+            <button onclick="mobileGoSubTab('purification')" class="text-left px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#131722] border border-slate-200/80 dark:border-[#222836] text-slate-700 dark:text-slate-200">Zakath &amp; Donations</button>
           </div>
         </div>
       </div>
@@ -774,7 +774,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Performance Chart</h1>
-            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Track portfolio performance over time.</p>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Track combined portfolio performance over time.</p>
           </div>
 
           <button
@@ -1883,22 +1883,22 @@
           </div>
         </div>
 
-        <!-- TAB 7: PURIFICATION & DONATION TRACKER -->
+        <!-- TAB 7: ZAKATH & DONATIONS TRACKER -->
         <div id="tabContent-purification" class="space-y-5 hidden">
           <!-- Page Title Header -->
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div class="flex flex-wrap items-center gap-2.5">
-                <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Purification &amp; Donation</h1>
-                <span class="text-[10.5px] bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 px-2.5 py-0.5 rounded-full font-bold">Debt-to-Asset Ratio</span>
+                <h1 class="text-2xl sm:text-[28px] font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">Zakath &amp; Donations</h1>
+                <span class="text-[10.5px] bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 px-2.5 py-0.5 rounded-full font-bold">Zakath &amp; Debt-to-Asset Purification</span>
               </div>
-              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Computes donation obligation on realized profits proportional to company Debt-to-Asset %. Isolated from portfolio cash.</p>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">Tracks annual Zakath distributions and Debt-to-Asset stock purification separately as external records with zero impact on portfolio cash.</p>
             </div>
 
             <button
               onclick="toggleTabMask('purification')"
               class="p-2 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] text-slate-600 dark:text-slate-300 transition shadow-2xs"
-              title="Toggle Purification Stealth Mask"
+              title="Toggle Zakath & Donations Stealth Mask"
             >
               <i data-lucide="eye-off" id="maskToggleIcon-purification" class="w-4 h-4"></i>
             </button>
@@ -1919,16 +1919,16 @@
 
             <button onclick="openRecordDonationModal()" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-2xs transition">
               <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-              <span>Record Donation</span>
+              <span>Record Zakath / Donation</span>
             </button>
           </div>
-
-          <!-- 3 Purification Summary KPI Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-amber-200/80 dark:border-[#222836] shadow-2xs space-y-1">
+          <!-- 4 KPI Cards: 3 Purification Cards + 1 Zakath Paid Card -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <!-- Card 1: Total Purification Obligation -->
+            <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Total Purification Obligation</span>
-                <span class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Purification Obligation</span>
+                <span class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                   <i data-lucide="scale" class="w-3.5 h-3.5"></i>
                 </span>
               </div>
@@ -1936,58 +1936,64 @@
               <div id="purifTotalProfitSub" class="text-[11px] text-slate-500 dark:text-slate-400">From ₹0.00 positive realized profit</div>
             </div>
 
-            <div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-emerald-200/80 dark:border-[#222836] shadow-2xs space-y-1">
+            <!-- Card 2: Total Purification Donated -->
+            <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Total Donated (Recorded)</span>
-                <span class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Purification Donated</span>
+                <span class="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i>
                 </span>
               </div>
               <div id="purifTotalDonatedVal" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">₹0.00</div>
-              <div id="purifDonationCountSub" class="text-[11px] text-slate-500 dark:text-slate-400">0 donation entries recorded</div>
+              <div id="purifDonationCountSub" class="text-[11px] text-slate-500 dark:text-slate-400">0 purification entries recorded</div>
             </div>
 
-            <div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs space-y-1">
+            <!-- Card 3: Remaining Purification Balance -->
+            <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Remaining / Surplus Balance</span>
-                <span class="h-7 w-7 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Remaining Balance</span>
+                <span class="h-7 w-7 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
                 </span>
               </div>
               <div id="purifRemainingVal" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">₹0.00</div>
-              <div id="purifStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400">Pending donation balance</div>
+              <div id="purifStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400">Pending purification donation balance</div>
+            </div>
+
+            <!-- Card 4: Zakath Paid (Separate Annual Distribution) -->
+            <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">Zakath Paid</span>
+                <span class="h-7 w-7 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <i data-lucide="hand-coins" class="w-3.5 h-3.5"></i>
+                </span>
+              </div>
+              <div id="purifTotalZakathVal" class="text-2xl font-extrabold text-purple-600 dark:text-purple-400 tabular-nums">₹0.00</div>
+              <div id="purifZakathCountSub" class="text-[11px] text-slate-500 dark:text-slate-400">0 Zakath entries recorded</div>
             </div>
           </div>
 
-          <!-- Collapsible, Paginated, Profit-Only Purification Breakdown Accordion -->
-          <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs">
+          <!-- Profitable SELL Lots Purification Ledger Accordion -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs">
             <button
               type="button"
               onclick="togglePurificationTableAccordion()"
-              class="w-full flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-[#1A1F2E]/50 dark:hover:bg-[#1A1F2E] text-xs font-semibold text-slate-700 dark:text-slate-300 transition"
+              class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/60 text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white transition"
             >
-              <span class="flex items-center space-x-2">
-                <i data-lucide="calculator" class="w-4 h-4 text-teal-500"></i>
-                <span>View Trade-by-Trade Purification Calculation (Strict FIFO)</span>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Profitable Trades Only</span>
+              <span class="flex items-center space-x-2.5">
+                <span class="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <i data-lucide="list-checks" class="w-4 h-4"></i>
+                </span>
+                <span>Profitable SELL Lots &amp; Purification Breakdown</span>
+                <span id="purifLotsCountBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">0 Profitable Lots</span>
               </span>
-              <span class="flex items-center space-x-2">
-                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium" id="purifLotsCountBadge">0 Profitable Lots</span>
-                <i data-lucide="chevron-down" id="purifAccordionChevron" class="w-4 h-4 transition-transform duration-200"></i>
-              </span>
+              <i data-lucide="chevron-down" id="purifAccordionChevron" class="w-4 h-4 text-slate-500 transition-transform duration-200"></i>
             </button>
 
             <div id="purifTableContainer" class="hidden mt-3 space-y-3">
-              <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200/80 dark:border-teal-800/60 text-[11px] text-teal-800 dark:text-teal-300">
-                <span class="flex items-center space-x-1.5">
-                  <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i>
-                  <span>Showing <b>profit-making closed trades only</b> (Realized P&amp;L &gt; ₹0). Loss-making trades carry ₹0.00 purification obligation and are excluded.</span>
-                </span>
-              </div>
-
-              <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222836] max-h-[450px] custom-scroll">
+              <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222836] max-h-[420px] custom-scroll">
                 <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
-                  <thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+                  <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                     <tr>
                       <th class="py-2.5 px-3">Sell Date</th>
                       <th class="py-2.5 px-2">Account</th>
@@ -1995,20 +2001,23 @@
                       <th class="py-2.5 px-2 text-right">Qty</th>
                       <th class="py-2.5 px-3 text-right">Cost Basis</th>
                       <th class="py-2.5 px-3 text-right">Proceeds</th>
-                      <th class="py-2.5 px-3 text-right">Realized Profit</th>
-                      <th class="py-2.5 px-3 text-right text-teal-600 dark:text-teal-400">Debt / Asset %</th>
-                      <th class="py-2.5 px-3 text-right font-bold text-amber-600 dark:text-amber-400">Purification Due (₹)</th>
+                      <th class="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Realized Profit</th>
+                      <th class="py-2.5 px-3 text-right text-teal-600 dark:text-teal-400">Debt / Asset</th>
+                      <th class="py-2.5 px-3 text-right font-bold text-amber-600 dark:text-amber-400">Purification Due</th>
                     </tr>
                   </thead>
                   <tbody id="purificationLotsTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
                 </table>
               </div>
 
-              <div id="purifPaginationContainer" class="flex items-center justify-between text-xs px-2 py-1 text-slate-500">
-                <span id="purifPageInfo">Showing 1–12 entries</span>
+              <!-- Pagination -->
+              <div id="purifPaginationContainer" class="flex flex-wrap items-center justify-between gap-3 text-xs px-1 text-slate-600 dark:text-slate-400">
+                <span id="purifPageInfo" class="font-medium">Showing 0 entries</span>
                 <div class="flex items-center space-x-2">
-                  <button id="purifPrevBtn" onclick="prevPurifPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Previous</button>
-                  <div class="flex items-center space-x-1 font-semibold text-slate-700 dark:text-slate-300">
+                  <button id="purifPrevBtn" onclick="prevPurifPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                  </button>
+                  <div class="flex items-center space-x-1.5 font-semibold text-slate-700 dark:text-slate-300">
                     <span>Page</span>
                     <input
                       type="number"
@@ -2016,33 +2025,37 @@
                       min="1"
                       value="1"
                       onchange="jumpToPurifPage(this.value)"
-                      class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] py-0.5 text-xs font-bold font-mono text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
+                      class="w-12 text-center rounded-xl bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] py-1 text-xs font-extrabold tabular-nums text-slate-900 dark:text-white focus:outline-none focus:border-teal-500"
                     />
                     <span id="purifTotalPagesLabel">of 1</span>
                   </div>
-                  <button id="purifNextBtn" onclick="nextPurifPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
+                  <button id="purifNextBtn" onclick="nextPurifPage()" class="w-8 h-8 rounded-xl bg-white dark:bg-[#131722] hover:bg-slate-100 dark:hover:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] flex items-center justify-center font-bold disabled:opacity-40 transition">
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Table B: Recorded Donations Log -->
-          <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs space-y-3">
+          <!-- Zakath & Purification Log Table -->
+          <div class="bg-white dark:bg-[#131722] rounded-2xl border border-slate-200/90 dark:border-[#222836] p-4 shadow-2xs space-y-3">
             <div class="flex items-center justify-between">
               <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-                <i data-lucide="heart" class="w-4 h-4 text-emerald-500"></i>
-                <span>Recorded Donations Log (Isolated Sheet)</span>
+                <i data-lucide="book-open-check" class="w-4 h-4 text-teal-500"></i>
+                <span>Zakath &amp; Purification Distribution Log</span>
               </h4>
+              <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">External records • Does not alter portfolio cash</span>
             </div>
 
-            <div class="overflow-x-auto max-h-[360px] custom-scroll">
+            <div class="overflow-x-auto max-h-[420px] custom-scroll rounded-xl border border-slate-200 dark:border-[#222836]">
               <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
                 <thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
                   <tr>
                     <th class="py-2.5 px-3">Date</th>
+                    <th class="py-2.5 px-3">Category</th>
                     <th class="py-2.5 px-3">Account</th>
-                    <th class="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Donated Amount (₹)</th>
-                    <th class="py-2.5 px-3">Remarks / Recipient</th>
+                    <th class="py-2.5 px-3 text-right">Amount</th>
+                    <th class="py-2.5 px-3">Remarks / Purpose</th>
                     <th class="py-2.5 px-3 text-center">Action</th>
                   </tr>
                 </thead>
@@ -2051,173 +2064,148 @@
             </div>
           </div>
         </div>
+
       </div>
-
     </main>
-
   </div>
 
-  <!-- MODAL: RECORD / EDIT TRANSACTION & CORPORATE ACTIONS -->
-  <div id="txModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Transaction</h3>
-        <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+  <!-- ======================================================================== -->
+  <!-- MODALS                                                                   -->
+  <!-- ======================================================================== -->
+
+  <!-- RECORD / EDIT TRANSACTION MODAL -->
+  <div id="txModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <h3 id="modalTitle" class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Record Transaction</h3>
+        <button type="button" onclick="closeTransactionModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="space-y-3.5 text-xs">
+      <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="p-5 space-y-4 text-xs">
         <input type="hidden" id="txEditingId" value="">
         <input type="hidden" id="txType" value="BUY">
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Date</label>
-            <input type="date" id="txDate" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Date</label>
+            <input type="date" id="txDate" required class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500">
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Account</label>
-            <select id="txAccount" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold"></select>
-          </div>
-        </div>
-
-        <div id="stockFields" class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Stock Ticker</label>
-            <input
-              type="text"
-              id="txStock"
-              list="stockSuggestionsList"
-              placeholder="e.g. RELIANCE"
-              autocomplete="off"
-              class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white uppercase font-semibold focus:outline-none focus:border-emerald-500"
-            >
-            <datalist id="stockSuggestionsList"></datalist>
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1" id="txQtyLabel">Quantity</label>
-            <input type="number" step="any" min="0.0001" id="txQty" placeholder="10" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
-          </div>
-          <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1" id="txPriceLabel">Price / Share (₹)</label>
-            <input type="number" step="any" id="txPrice" placeholder="2500" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white tabular-nums" oninput="autoComputeAmount()">
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Account</label>
+            <select id="txAccount" required class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-blue-500">
+              <option value="">Select Account</option>
+            </select>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="txAmountAndDebtRow">
+        <div id="stockFields" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Stock Symbol</label>
+            <input type="text" id="txStock" list="stockSuggestionsList" placeholder="e.g. TCS" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label id="txQtyLabel" class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Quantity</label>
+            <input type="number" step="any" id="txQty" oninput="autoComputeAmount()" placeholder="0" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums focus:outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label id="txPriceLabel" class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Price / Share (₹)</label>
+            <input type="number" step="any" id="txPrice" oninput="autoComputeAmount()" placeholder="0.00" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums focus:outline-none focus:border-blue-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div id="txAmountFieldGroup" class="sm:col-span-2">
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Total Amount (₹)</label>
-            <input type="number" step="0.01" id="txAmount" required placeholder="Total net rupees" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white mono-font">
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Total Amount (₹)</label>
+            <input type="number" step="any" id="txAmount" placeholder="0.00" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-extrabold tabular-nums focus:outline-none focus:border-blue-500">
           </div>
-
           <div id="txDebtToAssetGroup" class="hidden">
-            <label class="block text-teal-700 dark:text-teal-400 font-semibold mb-1">Debt to Total Assets (%) *</label>
-            <input type="number" step="0.01" min="0" max="100" id="txDebtToAsset" placeholder="e.g. 14.50" class="w-full bg-teal-50/60 dark:bg-[#1A1F2E] border border-teal-300 dark:border-teal-700 rounded-lg p-2 text-slate-900 dark:text-white tabular-nums font-bold focus:outline-none focus:border-teal-500">
+            <label class="block text-[11px] font-bold text-teal-700 dark:text-teal-400 mb-1">Debt / Total Assets (%)</label>
+            <input type="number" step="0.01" min="0" max="100" id="txDebtToAsset" placeholder="e.g. 12.50" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums focus:outline-none focus:border-teal-500">
           </div>
         </div>
 
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">Remarks</label>
-          <input type="text" id="txRemarks" placeholder="Note / Reference / Corporate Action Details" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Remarks / Reference</label>
+          <input type="text" id="txRemarks" required placeholder="Brokerage note, bank ref, etc." class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-blue-500">
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
-          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
-          <button type="submit" id="txSubmitBtn" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold">Save Entry</button>
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-[#232A3B] transition">Cancel</button>
+          <button type="submit" id="txSubmitBtn" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-2xs transition">Save Entry</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: RECORD PURIFICATION DONATION -->
-  <div id="recordDonationModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-            <i data-lucide="hand-heart" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Record Purification Donation</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Saved to isolated Donations sheet (does not affect cash ledger)</p>
-          </div>
+  <!-- RECORD ZAKATH / DONATION MODAL -->
+  <div id="recordDonationModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Record Zakath / Donation</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Logged externally with zero impact on portfolio cash</p>
         </div>
-        <button onclick="closeRecordDonationModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeRecordDonationModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
 
-      <form id="donationForm" onsubmit="handleDonationSubmit(event)" class="space-y-3.5 text-xs">
-        <div class="grid grid-cols-2 gap-3">
+      <form id="donationForm" onsubmit="handleDonationSubmit(event)" class="p-5 space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Donation Date</label>
-            <input type="date" id="donationDate" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Date</label>
+            <input type="date" id="donationDate" required class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-teal-500">
           </div>
           <div>
-            <label class="block text-slate-500 dark:text-slate-400 mb-1">Account</label>
-            <select id="donationAccount" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold"></select>
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Category</label>
+            <select id="donationCategory" required class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-teal-500">
+              <option value="Purification">Purification</option>
+              <option value="Zakath">Zakath</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Account</label>
+            <select id="donationAccount" required class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold focus:outline-none focus:border-teal-500">
+              <option value="">Select Account</option>
+            </select>
           </div>
         </div>
 
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">Donated Amount (₹)</label>
-          <input type="number" step="0.01" min="1" id="donationAmount" required placeholder="e.g. 5000" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold tabular-nums">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Amount Distributed (₹)</label>
+          <input type="number" step="any" min="0.01" id="donationAmount" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-extrabold tabular-nums focus:outline-none focus:border-teal-500">
         </div>
 
         <div>
-          <label class="block text-slate-500 dark:text-slate-400 mb-1">Remarks / Charity / Reference</label>
-          <input type="text" id="donationRemarks" required placeholder="e.g. Charity transfer / Relief fund" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Remarks / Recipient / Hijri Year</label>
+          <input type="text" id="donationRemarks" required placeholder="e.g. Ramadan 1447H Zakath / Purification charity" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-teal-500">
         </div>
 
-        <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
-          <button type="button" onclick="closeRecordDonationModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs">Save Donation</button>
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeRecordDonationModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-[#232A3B] transition">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs transition">Save Record</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: DATABASE BACKUP STATUS -->
-  <div id="backupResultModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4 text-center">
-      <div class="flex flex-col items-center space-y-2">
-        <div id="backupModalIconWrap" class="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-          <i id="backupModalIcon" data-lucide="database-backup" class="w-6 h-6"></i>
+  <!-- LAST 10 TRANSACTIONS MODAL -->
+  <div id="recentTxModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-4xl bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Last 10 Recorded Transactions</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">PIN-protected edit and delete controls</p>
         </div>
-        <h3 id="backupModalTitle" class="text-base font-extrabold text-slate-900 dark:text-white">Database Vault Backup</h3>
-        <p id="backupModalMessage" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">Backup completed successfully.</p>
-      </div>
-
-      <div id="backupModalMeta" class="bg-slate-50 dark:bg-[#0A0C10] border border-slate-200 dark:border-[#222836] rounded-xl p-3 text-[11px] text-slate-500 dark:text-slate-400 space-y-1 hidden"></div>
-
-      <div class="pt-1">
-        <button type="button" onclick="closeBackupResultModal()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-2xs transition">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: LAST 10 TRANSACTIONS -->
-  <div id="recentTxModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-6xl p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-            <i data-lucide="history" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Last 10 Transactions</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Edit or delete recent entries (Master PIN required to commit changes)</p>
-          </div>
-        </div>
-        <button onclick="closeRecentTransactionsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeRecentTransactionsModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
-
-      <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-[#222836] max-h-[60vh] custom-scroll">
-        <table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
-          <thead class="bg-slate-100/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+      <div class="p-4 overflow-x-auto max-h-[65vh] custom-scroll">
+        <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+          <thead class="bg-slate-50 dark:bg-[#0A0C10]/80 uppercase text-[10.5px] font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836]">
             <tr>
               <th class="py-2.5 px-3">Date</th>
               <th class="py-2.5 px-2">Account</th>
@@ -2225,7 +2213,7 @@
               <th class="py-2.5 px-3">Stock</th>
               <th class="py-2.5 px-2 text-right">Qty</th>
               <th class="py-2.5 px-2 text-right">Price</th>
-              <th class="py-2.5 px-3 text-right">Amount (₹)</th>
+              <th class="py-2.5 px-3 text-right">Amount</th>
               <th class="py-2.5 px-2 text-right">Debt %</th>
               <th class="py-2.5 px-3">Remarks</th>
               <th class="py-2.5 px-3 text-center">Actions</th>
@@ -2234,352 +2222,259 @@
           <tbody id="recentTxTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
         </table>
       </div>
-
-      <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-[#222836]">
-        <button type="button" onclick="closeRecentTransactionsModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Close</button>
-      </div>
     </div>
   </div>
 
-  <!-- MODAL: PIN CONFIRMATION CHALLENGE -->
-  <div id="pinVerifyModal" class="app-modal fixed inset-0 bg-slate-900/70 dark:bg-black/85 backdrop-blur-sm z-[110] flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-xs p-6 shadow-2xl space-y-4 text-center">
-      <div class="flex flex-col items-center space-y-1.5">
-        <div class="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
-          <i data-lucide="key-round" class="w-5 h-5"></i>
+  <!-- LIVE PRICES MODAL -->
+  <div id="livePricesModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Update Live Prices (LTP)</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Persist closing prices across your active holdings</p>
         </div>
-        <h4 id="pinVerifyTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Authorize Action</h4>
-        <p id="pinVerifyDesc" class="text-[11px] text-slate-500 dark:text-slate-400">Enter your 4-digit Master PIN to confirm</p>
-      </div>
-
-      <form onsubmit="submitPinVerifyChallenge(event)" class="space-y-3">
-        <input
-          type="password"
-          inputmode="numeric"
-          maxlength="4"
-          id="pinVerifyInput"
-          placeholder="••••"
-          autocomplete="off"
-          class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl py-2.5 text-center font-extrabold tracking-[0.5em] text-lg text-slate-900 dark:text-white focus:outline-none focus:border-amber-500"
-        >
-        <div id="pinVerifyError" class="text-[11px] font-semibold text-rose-500 h-4 opacity-0 transition-opacity">Incorrect PIN.</div>
-
-        <div class="flex items-center justify-end space-x-2 pt-1">
-          <button type="button" onclick="closePinVerifyModal()" class="flex-1 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Cancel</button>
-          <button type="submit" class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold text-xs shadow-2xs">Confirm</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: MANUAL LTP ENTRY -->
-  <div id="livePricesModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Update Current Stock Prices (LTP)</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Enter current market prices to refresh your live portfolio value</p>
-          </div>
-        </div>
-        <button onclick="closeLivePricesModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeLivePricesModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
-
-      <p class="text-xs text-slate-600 dark:text-slate-300">
-        Enter latest market closing prices for open holdings. Values persist across devices via your <b>Prices</b> sheet.
-      </p>
-
-      <div id="livePricesContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
-
-      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
-        <button type="button" onclick="closeLivePricesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Cancel</button>
-        <button type="button" onclick="saveAllLivePrices()" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-2xs">Save &amp; Recalculate</button>
+      <div id="livePricesContainer" class="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto custom-scroll text-xs"></div>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-end space-x-2">
+        <button type="button" onclick="closeLivePricesModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+        <button type="button" onclick="saveAllLivePrices()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs">Save &amp; Sync Prices</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: SET ALL PORTFOLIO TARGETS (GATED BY MASTER PIN) -->
-  <div id="allTargetsModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
+  <!-- ALL PORTFOLIO TARGETS MODAL -->
+  <div id="allTargetsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Portfolio Milestone Targets</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">PIN-authorized goal benchmarks</p>
+        </div>
+        <button type="button" onclick="closeAllTargetsModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3 text-xs">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Total Net Worth Target (₹)</label>
+          <input type="number" id="targetInput-netWorth" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Net Invested Target (₹)</label>
+          <input type="number" id="targetInput-netInvested" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Lifetime P&amp;L Target (₹)</label>
+          <input type="number" id="targetInput-lifetimePnL" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Current FY Realized P&amp;L Target (₹)</label>
+          <input type="number" id="targetInput-currentFyPnL" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Annualized XIRR Target (%)</label>
+          <input type="number" step="0.1" id="targetInput-xirr" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-bold tabular-nums">
+        </div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-end space-x-2">
+        <button type="button" onclick="closeAllTargetsModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+        <button type="button" onclick="saveAllTargetsWithPin()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-2xs">Authorize &amp; Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTH-END REVIEW MODAL -->
+  <div id="monthEndReviewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Month-End Snapshot (<span id="monthEndDateDisplay">—</span>)</h3>
+          <p id="monthEndModalSubtitle" class="text-[11px] text-slate-500 dark:text-slate-400">Provide closing prices for checkpoint</p>
+        </div>
+        <button type="button" onclick="closeMonthEndModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="monthEndHoldingsContainer" class="p-4 space-y-2.5 max-h-[45vh] overflow-y-auto custom-scroll text-xs"></div>
+      <div class="px-5 py-3 bg-slate-50 dark:bg-[#0A0C10]/60 border-t border-slate-100 dark:border-[#222836] grid grid-cols-2 gap-2 text-xs">
+        <div>Stocks: <b id="meModalStockVal" class="tabular-nums">₹0.00</b></div>
+        <div>Cash: <b id="meModalCash" class="tabular-nums">₹0</b></div>
+        <div>Net Capital: <b id="meModalNetCap" class="tabular-nums">₹0</b></div>
+        <div>Portfolio Val: <b id="meModalPortVal" class="tabular-nums">₹0.00</b></div>
+        <div class="col-span-2">Profit: <b id="meModalProfit" class="tabular-nums text-emerald-600 dark:text-emerald-400">₹0.00</b></div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-end space-x-2">
+        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Later</button>
+        <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-2xs">Record Checkpoint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOOGLE SHEETS SYNC CONFIG MODAL -->
+  <div id="syncModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Google Sheets Cloud Sync</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Connect your Apps Script Web App endpoint &amp; API token</p>
+        </div>
+        <button type="button" onclick="closeSyncModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-5 space-y-3.5 text-xs">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Apps Script Web App URL</label>
+          <input type="url" id="cloudUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-medium">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">API Secret Token</label>
+          <input type="password" id="apiTokenInput" placeholder="Enter your API_SECRET" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-medium">
+        </div>
+      </div>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <button type="button" onclick="disconnectCloudSync()" class="px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold">Disconnect</button>
         <div class="flex items-center space-x-2">
-          <div class="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <i data-lucide="target" class="w-4 h-4"></i>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Set Portfolio Targets</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Master PIN required to save target changes</p>
-          </div>
-        </div>
-        <button onclick="closeAllTargetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Total Net Worth Target (₹)</label>
-          <input type="number" step="any" id="targetInput-netWorth" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-xs focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Net Invested Target (₹)</label>
-          <input type="number" step="any" id="targetInput-netInvested" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-xs focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Lifetime Profit Target (₹)</label>
-          <input type="number" step="any" id="targetInput-lifetimePnL" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-xs focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Current FY Realized Profit Target (₹)</label>
-          <input type="number" step="any" id="targetInput-currentFyPnL" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-xs focus:outline-none focus:border-blue-500">
-        </div>
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Annualized XIRR Target (%)</label>
-          <input type="number" step="any" id="targetInput-xirr" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg px-3 py-2 text-slate-900 dark:text-white font-bold tabular-nums text-xs focus:outline-none focus:border-blue-500">
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
-        <button type="button" onclick="closeAllTargetsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-medium">Cancel</button>
-        <button type="button" onclick="saveAllTargetsWithPin()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-2xs">Authorize &amp; Save Targets</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: GOOGLE SHEETS SYNC -->
-  <div id="syncModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2">
-          <i data-lucide="cloud" class="w-5 h-5 text-emerald-500 dark:text-emerald-400"></i>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Google Sheets Cloud Sync</h3>
-        </div>
-        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Web App Deployment URL</label>
-          <input type="text" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
-        </div>
-
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">API Secret Token (Handshake)</label>
-          <input type="password" id="apiTokenInput" placeholder="Enter matching API_SECRET key" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white mono-font text-xs focus:outline-none focus:border-emerald-500">
-          <p class="text-[10.5px] text-slate-400 dark:text-slate-500 mt-1">Must match the <code>API_SECRET</code> Script Property configured in Apps Script.</p>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-[#222836]">
-        <button onclick="disconnectCloudSync()" class="text-xs text-rose-500 hover:text-rose-600 dark:hover:text-rose-400">Disconnect</button>
-        <div class="flex items-center space-x-2">
-          <button onclick="closeSyncModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs">Cancel</button>
-          <button onclick="saveAndFetchCloud()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-semibold text-xs">Save &amp; Pull Data</button>
+          <button type="button" onclick="closeSyncModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+          <button type="button" onclick="saveCloudConfig()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs">Connect &amp; Sync</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: PIN & SECURITY SETTINGS -->
-  <div id="pinSettingsModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-2xs">
-            <i data-lucide="shield-check" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Security &amp; PIN</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Master gatekeeper credential</p>
-          </div>
-        </div>
-        <button onclick="closePinSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+  <!-- MASTER PIN SETTINGS MODAL -->
+  <div id="pinSettingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-sm bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Master PIN &amp; Security</h3>
+        <button type="button" onclick="closePinSettingsModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
-
-      <div class="space-y-3 text-xs">
+      <div class="p-5 space-y-3 text-xs">
         <div id="currentPinFieldGroup">
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Current 4-Digit PIN</label>
-          <input type="password" inputmode="numeric" maxlength="4" id="settingsCurrentPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Current 4-Digit PIN</label>
+          <input type="password" maxlength="4" inputmode="numeric" id="settingsCurrentPin" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-center tracking-[0.5em] font-extrabold text-slate-900 dark:text-white">
         </div>
         <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">New 4-Digit PIN</label>
-          <input type="password" inputmode="numeric" maxlength="4" id="settingsNewPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">New 4-Digit PIN</label>
+          <input type="password" maxlength="4" inputmode="numeric" id="settingsNewPin" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-center tracking-[0.5em] font-extrabold text-slate-900 dark:text-white">
         </div>
         <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Confirm New PIN</label>
-          <input type="password" inputmode="numeric" maxlength="4" id="settingsConfirmPin" placeholder="••••" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white text-center font-bold tracking-widest text-sm focus:outline-none focus:border-emerald-500">
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Confirm New PIN</label>
+          <input type="password" maxlength="4" inputmode="numeric" id="settingsConfirmPin" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-center tracking-[0.5em] font-extrabold text-slate-900 dark:text-white">
         </div>
-        <div id="settingsPinMsg" class="text-xs font-semibold h-4 text-rose-500 opacity-0 transition-opacity"></div>
+        <div id="settingsPinMsg" class="text-center font-bold opacity-0 transition-opacity"></div>
       </div>
-
-      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836]">
-        <button type="button" onclick="closePinSettingsModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium text-xs">Cancel</button>
-        <button type="button" onclick="updatePinFromSettings()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold text-xs shadow-2xs">Update PIN</button>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-end space-x-2">
+        <button type="button" onclick="closePinSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+        <button type="button" onclick="updatePinFromSettings()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs">Update PIN</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: CASH CALIBRATION -->
-  <div id="cashCalibrateModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-lg p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-2xs">
-            <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Cash Calibration</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Baseline per-account cash balances</p>
-          </div>
-        </div>
-        <button onclick="closeCashCalibrateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <!-- PIN VERIFICATION CHALLENGE MODAL -->
+  <div id="pinVerifyModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/70 dark:bg-black/80 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-xs bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-5 text-center space-y-4">
+      <div class="h-11 w-11 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+        <i data-lucide="shield-alert" class="w-5 h-5"></i>
       </div>
-
-      <div class="p-3 bg-emerald-50/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-500/30 space-y-1 text-xs">
-        <span class="font-bold text-emerald-900 dark:text-emerald-300 flex items-center space-x-1.5">
-          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
-          <span>Baseline Cash Calibration Engine</span>
-        </span>
-        <p class="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-          Compensates for historical unassigned transactions without modifying legacy records. Enter the <b>actual cash balance</b> each account currently holds. Saved directly to the <b>Cash_Calibration</b> sheet.
-        </p>
+      <div>
+        <h3 id="pinVerifyTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Authorize Action</h3>
+        <p id="pinVerifyDesc" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Enter your 4-digit Master PIN</p>
       </div>
-
-      <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1 text-xs" id="cashCalibrateRows"></div>
-
-      <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836] text-xs">
-        <button type="button" onclick="closeCashCalibrateModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
-        <button type="button" onclick="saveCashCalibration()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold shadow-2xs">Save &amp; Calibrate Baseline</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: STOCK MASTER REGISTRY -->
-  <div id="stockMasterModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-2xs">
-            <i data-lucide="database" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Stock Master Registry</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">Add new symbols to master autocomplete</p>
-          </div>
-        </div>
-        <button onclick="closeStockMasterModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <form id="stockMasterForm" novalidate onsubmit="handleAddStockMasterSubmit(event)" class="space-y-3.5 text-xs">
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Stock Ticker Symbol *</label>
-          <input
-            type="text"
-            id="smSymbolInput"
-            placeholder="e.g. TATAMOTORS, DANISH"
-            autocomplete="off"
-            class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white uppercase font-bold focus:outline-none focus:border-purple-500"
-          >
-        </div>
-
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Company / Script Name *</label>
-          <input
-            type="text"
-            id="smNameInput"
-            placeholder="e.g. Tata Motors Limited"
-            autocomplete="off"
-            class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
-          >
-        </div>
-
-        <div>
-          <label class="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Sector *</label>
-          <input
-            type="text"
-            id="smSectorInput"
-            list="sectorSuggestionsList"
-            placeholder="Type or select reference sector..."
-            autocomplete="off"
-            class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:border-purple-500"
-          >
-          <datalist id="sectorSuggestionsList"></datalist>
-        </div>
-
-        <div id="smStatusMsg" class="text-xs font-semibold h-4 text-emerald-500 opacity-0 transition-opacity"></div>
-
-        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-[#222836]">
-          <button type="button" onclick="closeStockMasterModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-2xs">Save Ticker</button>
+      <form onsubmit="submitPinVerifyChallenge(event)" class="space-y-3">
+        <input type="password" maxlength="4" inputmode="numeric" id="pinVerifyInput" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-center tracking-[0.5em] text-base font-extrabold text-slate-900 dark:text-white focus:outline-none focus:border-amber-500">
+        <div id="pinVerifyError" class="text-[11px] font-bold text-rose-500 opacity-0 transition-opacity">Incorrect Master PIN.</div>
+        <div class="flex items-center justify-center space-x-2">
+          <button type="button" onclick="closePinVerifyModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-2xs">Confirm</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: AUTOMATIC MONTH-END REVIEW -->
-  <div id="monthEndReviewModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white dark:bg-[#131722] border border-blue-500/40 rounded-3xl w-full max-w-xl p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
-        <div class="flex items-center space-x-2.5">
-          <div class="h-9 w-9 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-            <i data-lucide="calendar-check" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900 dark:text-white">Month-End Valuation Review</h3>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400" id="monthEndModalSubtitle">Provide closing prices as of month-end date</p>
-          </div>
+  <!-- CASH CALIBRATION MODAL -->
+  <div id="cashCalibrateModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Account Cash Calibration</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Reconcile actual bank/broker cash balances per account</p>
         </div>
-        <button onclick="closeMonthEndModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeCashCalibrateModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>
-
-      <p class="text-xs text-slate-600 dark:text-slate-300">
-        Review or enter month-end closing prices for your holdings as of <b id="monthEndDateDisplay" class="text-blue-600 dark:text-blue-400"></b> to record an accurate milestone in <b>Performance_History</b>:
-      </p>
-
-      <div id="monthEndHoldingsContainer" class="space-y-2.5 max-h-64 overflow-y-auto pr-1"></div>
-
-      <div class="bg-slate-50 dark:bg-[#0A0C10] p-3 rounded-2xl border border-slate-200 dark:border-[#222836] text-xs space-y-1.5">
-        <div class="flex justify-between text-slate-500 dark:text-slate-400">
-          <span>Total Stock Value:</span>
-          <b id="meModalStockVal" class="text-slate-900 dark:text-white font-bold tabular-nums">₹0.00</b>
-        </div>
-        <div class="flex justify-between text-slate-500 dark:text-slate-400">
-          <span>Cash Balance + Net Capital:</span>
-          <span class="text-slate-700 dark:text-slate-300 tabular-nums"><b id="meModalCash">₹0</b> / <b id="meModalNetCap">₹0</b></span>
-        </div>
-        <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-[#222836] font-bold text-slate-900 dark:text-white">
-          <span>Computed Month-End Net Worth &amp; Profit:</span>
-          <span class="text-emerald-600 dark:text-emerald-400 tabular-nums"><span id="meModalPortVal">₹0.00</span> (<span id="meModalProfit">₹0.00</span>)</span>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-[#222836]">
-        <button type="button" onclick="closeMonthEndModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 text-xs font-semibold">Remind Me Later</button>
-        <button type="button" onclick="commitMonthEndSnapshot()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-2xs">Confirm &amp; Record Month-End</button>
+      <div id="cashCalibrateRows" class="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto custom-scroll text-xs"></div>
+      <div class="px-5 py-3.5 border-t border-slate-100 dark:border-[#222836] flex items-center justify-end space-x-2">
+        <button type="button" onclick="closeCashCalibrateModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 text-xs font-bold">Cancel</button>
+        <button type="button" onclick="saveCashCalibration()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-2xs">Save Calibration</button>
       </div>
     </div>
   </div>
 
-  <!-- MODULAR JAVASCRIPT ARCHITECTURE -->
+  <!-- STOCK MASTER REGISTRY MODAL -->
+  <div id="stockMasterModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-md bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 dark:border-[#222836] flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-extrabold text-slate-900 dark:text-white tracking-tight">Stock Master Registry</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Map ticker symbols to company names and sectors</p>
+        </div>
+        <button type="button" onclick="closeStockMasterModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1A1F2E] transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="stockMasterForm" onsubmit="handleAddStockMasterSubmit(event)" class="p-5 space-y-3.5 text-xs">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Stock Symbol</label>
+          <input type="text" id="smSymbolInput" placeholder="e.g. DANISH" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white uppercase font-bold">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Company Name</label>
+          <input type="text" id="smNameInput" placeholder="e.g. Danish Power Limited" class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Sector</label>
+          <input type="text" id="smSectorInput" list="sectorSuggestionsList" placeholder="Select sector..." class="w-full bg-slate-50 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-xl p-2.5 text-slate-900 dark:text-white font-semibold">
+        </div>
+        <div id="smStatusMsg" class="text-center font-bold text-emerald-600 dark:text-emerald-400 opacity-0 transition-opacity"></div>
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeStockMasterModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 font-bold">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-2xs">Save to Master</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- BACKUP RESULT MODAL -->
+  <div id="backupResultModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/75 backdrop-blur-xs p-4 hidden">
+    <div class="w-full max-w-sm bg-white dark:bg-[#131722] rounded-3xl border border-slate-200 dark:border-[#222836] shadow-2xl p-6 text-center space-y-4">
+      <div id="backupModalIconWrap" class="h-12 w-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto">
+        <i data-lucide="check-circle-2" id="backupModalIcon" class="w-6 h-6"></i>
+      </div>
+      <div class="space-y-1">
+        <h3 id="backupModalTitle" class="text-sm font-extrabold text-slate-900 dark:text-white">Database Backup Complete</h3>
+        <p id="backupModalMessage" class="text-xs text-slate-500 dark:text-slate-400">Snapshot saved to Google Drive vault.</p>
+      </div>
+      <div id="backupModalMeta" class="hidden text-[11px] bg-slate-50 dark:bg-[#0A0C10]/60 rounded-xl p-3 border border-slate-200 dark:border-[#222836] space-y-1 text-slate-600 dark:text-slate-300"></div>
+      <button type="button" onclick="closeBackupResultModal()" class="w-full py-2 rounded-xl bg-slate-900 dark:bg-blue-600 text-white text-xs font-bold">Close</button>
+    </div>
+  </div>
+
+  <!-- AUTOCOMPLETE DATALISTS -->
+  <datalist id="stockSuggestionsList"></datalist>
+  <datalist id="sectorSuggestionsList"></datalist>
+
+  <!-- MODULAR SCRIPTS -->
   <script src="js/config.js"></script>
-  <script src="js/gatekeeper.js"></script>
-  <script src="js/api.js"></script>
   <script src="js/engine.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/security.js"></script>
   <script src="js/tax.js"></script>
   <script src="js/ui.js"></script>
 </body>
