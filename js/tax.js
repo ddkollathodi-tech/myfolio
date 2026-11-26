@@ -148,20 +148,30 @@ function closeRecordTaxPaidModal() {
 function applyRemoteTaxChallanLogs(remoteLogs) {
   if (!Array.isArray(remoteLogs)) return;
   const serverIds = new Set(remoteLogs.map(r => String(r && r.id || '').trim()).filter(Boolean));
-  const unsyncedLocal = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
+
+  // Only keep & re-push entries marked _pendingSync (created while offline).
+  // Rows deleted or edited directly in Google Sheets take full precedence.
+  const offlinePending = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
     const lid = String(item && item.id || '').trim();
-    return lid && !serverIds.has(lid);
+    return item && item._pendingSync === true && lid && !serverIds.has(lid);
   });
 
-  unsyncedLocal.forEach(entry => {
+  offlinePending.forEach(entry => {
     if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-      sendToSheet({ action: 'addTaxChallanLog', challanLog: entry });
+      const cleanEntry = { ...entry };
+      delete cleanEntry._pendingSync;
+      sendToSheet({ action: 'addTaxChallanLog', challanLog: cleanEntry }).then(ok => {
+        if (ok) {
+          entry._pendingSync = false;
+          saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
+        }
+      });
     }
   });
 
-  taxChallanLogs = [...remoteLogs, ...unsyncedLocal];
+  taxChallanLogs = [...remoteLogs, ...offlinePending];
   saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
-  recalculateTaxChallansRollup(false);
+  recalculateTaxChallansRollup();
 }
 
 function syncQuarterRollupToSheet(fy, account, quarter) {
