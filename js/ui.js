@@ -2083,7 +2083,7 @@ const donTbody = document.getElementById('donationsLogTableBody');
     const sortedEntries = [...filteredEntries].sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
 
     if (sortedEntries.length === 0) {
-      donTbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No Zakath or Purification entries recorded yet. Click "+ Record Donation" to add one.</td></tr>`;
+      donTbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No Zakath or Purification entries recorded yet. Click <b>+ Record Transaction</b> to add one.</td></tr>`;
     } else {
       sortedEntries.forEach(don => {
         const donId = esc(String(don.id || ''));
@@ -2099,8 +2099,9 @@ const donTbody = document.getElementById('donationsLogTableBody');
           <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${catBadgeCls}">${esc(cat)}</span></td>
           <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 ${maskClass}">${formatINR(don.amount)}</td>
           <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">${esc(don.remarks)}</td>
-          <td class="py-2.5 px-3 text-center">
-            <button data-donation-delete-id="${donId}" class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
+          <td class="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
+            <button type="button" data-donation-edit-id="${donId}" class="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-[11px] font-bold transition">Edit</button>
+            <button type="button" data-donation-delete-id="${donId}" class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
           </td>
         `;
         donTbody.appendChild(tr);
@@ -2109,62 +2110,150 @@ const donTbody = document.getElementById('donationsLogTableBody');
   }
 }
 
-// Event delegation for Deleting a Donation record (PIN-gated)
+// Event delegation for Editing & Deleting a Donation/Zakath record (PIN-gated)
 document.addEventListener('click', (e) => {
-const delBtn = e.target.closest('[data-donation-delete-id]');
-if (!delBtn) return;
-const donId = delBtn.dataset.donationDeleteId;
-const targetDon = donations.find(d => String(d.id) === donId);
-if (!targetDon) return;
+  const editBtn = e.target.closest('[data-donation-edit-id]');
+  if (editBtn) {
+    const donId = editBtn.dataset.donationEditId;
+    const targetDon = donations.find(d => String(d.id) === donId);
+    if (!targetDon) return;
+    const cat = getNormalizedEntryCategory(targetDon);
 
-requestPinAuthorization(
-'Authorize Donation Deletion',
-`Enter Master PIN to delete donation of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
-async () => {
-const prevDonations = [...donations];
-const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
-if (idx >= 0) {
-donations.splice(idx, 1);
-}
-localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
-bumpTxVersion();
-renderPurificationView(getCachedEngineData());
-refreshIcons();
-
-if (cloudScriptUrl) {
-const res = await sendToSheet(
-{ action: 'deleteDonation', id: targetDon.id, donation: targetDon },
-true
-);
-if (!res || res.status === 'error') {
-donations = prevDonations;
-localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
-bumpTxVersion();
-renderPurificationView(getCachedEngineData());
-refreshIcons();
-alert(`Could not delete donation from Google Sheet: ${(res && res.message) || 'Sync failed'}`);
-}
-}
-}
-);
-});
-
-function openRecordDonationModal() {
-  const modal = document.getElementById('recordDonationModal');
-  if (!modal) return;
-  document.getElementById('donationForm').reset();
-  document.getElementById('donationDate').value = todayLocalISO();
-
-  const acctSelect = document.getElementById('donationAccount');
-  if (acctSelect) {
-    acctSelect.value = (currentPurificationAccountFilter && currentPurificationAccountFilter !== 'ALL')
-      ? currentPurificationAccountFilter
-      : '';
+    requestPinAuthorization(
+      `Authorize ${cat} Edit`,
+      `Enter Master PIN to edit ${cat} entry of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+      () => {
+        openRecordDonationModal(cat, targetDon);
+      }
+    );
+    return;
   }
 
-  const catSelect = document.getElementById('donationCategory');
-  if (catSelect) {
-    catSelect.value = 'Purification';
+  const delBtn = e.target.closest('[data-donation-delete-id]');
+  if (!delBtn) return;
+  const donId = delBtn.dataset.donationDeleteId;
+  const targetDon = donations.find(d => String(d.id) === donId);
+  if (!targetDon) return;
+  const cat = getNormalizedEntryCategory(targetDon);
+
+  requestPinAuthorization(
+    `Authorize ${cat} Deletion`,
+    `Enter Master PIN to delete ${cat} entry of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+    async () => {
+      const prevDonations = [...donations];
+      const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
+      if (idx >= 0) {
+        donations.splice(idx, 1);
+      }
+      localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+      bumpTxVersion();
+      renderPurificationView(getCachedEngineData());
+      if (selectedDashboardMetric === 'currentFy') {
+        renderDashboardTrendChart(getCachedEngineData());
+      }
+      refreshIcons();
+
+      if (cloudScriptUrl) {
+        const res = await sendToSheet(
+          { action: 'deleteDonation', id: targetDon.id, donation: targetDon },
+          true
+        );
+        if (!res || res.status === 'error') {
+          donations = prevDonations;
+          localStorage.setItem(DONATIONS_STORAGE_KEY, JSON.stringify(donations));
+          bumpTxVersion();
+          renderPurificationView(getCachedEngineData());
+          refreshIcons();
+          alert(`Could not delete entry from Google Sheet: ${(res && res.message) || 'Sync failed'}`);
+        }
+      }
+    }
+  );
+});
+
+function toggleDonationActionDropdown(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('donationActionDropdownMenu');
+  const chev = document.getElementById('donationDropdownChevron');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  menu.classList.toggle('hidden', !isHidden);
+  if (chev) chev.classList.toggle('rotate-180', isHidden);
+}
+
+function closeDonationActionDropdown() {
+  const menu = document.getElementById('donationActionDropdownMenu');
+  const chev = document.getElementById('donationDropdownChevron');
+  if (menu) menu.classList.add('hidden');
+  if (chev) chev.classList.remove('rotate-180');
+}
+
+function openRecordDonationModal(presetCategory = 'Purification', existingEntry = null) {
+  closeDonationActionDropdown();
+  const modal = document.getElementById('recordDonationModal');
+  if (!modal) return;
+
+  ['donationDate', 'donationAccount', 'donationAmount', 'donationRemarks'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && typeof clearFieldValidationError === 'function') {
+      clearFieldValidationError(el);
+    } else if (el) {
+      el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+      const errEl = document.getElementById(`err-${id}`);
+      if (errEl) errEl.classList.add('hidden');
+    }
+  });
+
+  const normalizedCat = (String(presetCategory || '').trim().toLowerCase() === 'zakath' || String(presetCategory || '').trim().toLowerCase() === 'zakat')
+    ? 'Zakath'
+    : 'Purification';
+
+  const titleEl = document.getElementById('donationModalTitle');
+  const submitBtn = document.getElementById('donationSubmitBtn');
+  const iconWrap = document.getElementById('donationModalIconWrap');
+  const editIdEl = document.getElementById('donationEditingId');
+  const catInput = document.getElementById('donationCategory');
+  const catLockedBadge = document.getElementById('donationCategoryLockedBadge');
+  const catLockedText = document.getElementById('donationCategoryLockedText');
+
+  if (catInput) catInput.value = normalizedCat;
+  if (catLockedText) catLockedText.innerText = normalizedCat;
+
+  if (normalizedCat === 'Zakath') {
+    if (titleEl) titleEl.innerText = existingEntry ? 'Edit Zakath Entry' : 'Record Zakath';
+    if (submitBtn) {
+      submitBtn.innerText = existingEntry ? 'Update Zakath' : 'Save Zakath';
+      submitBtn.className = 'px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-2xs';
+    }
+    if (iconWrap) iconWrap.className = 'h-9 w-9 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center';
+    if (catLockedBadge) catLockedBadge.className = 'w-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-lg p-2 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-between select-none';
+  } else {
+    if (titleEl) titleEl.innerText = existingEntry ? 'Edit Purification Donation' : 'Record Purification Donation';
+    if (submitBtn) {
+      submitBtn.innerText = existingEntry ? 'Update Donation' : 'Save Donation';
+      submitBtn.className = 'px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs';
+    }
+    if (iconWrap) iconWrap.className = 'h-9 w-9 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 flex items-center justify-center';
+    if (catLockedBadge) catLockedBadge.className = 'w-full bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 rounded-lg p-2 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-between select-none';
+  }
+
+  const acctSelect = document.getElementById('donationAccount');
+  if (existingEntry) {
+    if (editIdEl) editIdEl.value = existingEntry.id || '';
+    document.getElementById('donationDate').value = existingEntry.date || todayLocalISO();
+    if (acctSelect) acctSelect.value = existingEntry.account || '';
+    document.getElementById('donationAmount').value = existingEntry.amount || '';
+    document.getElementById('donationRemarks').value = existingEntry.remarks || '';
+  } else {
+    if (editIdEl) editIdEl.value = '';
+    document.getElementById('donationDate').value = todayLocalISO();
+    if (acctSelect) {
+      acctSelect.value = (currentPurificationAccountFilter && currentPurificationAccountFilter !== 'ALL')
+        ? currentPurificationAccountFilter
+        : '';
+    }
+    document.getElementById('donationAmount').value = '';
+    document.getElementById('donationRemarks').value = '';
   }
 
   modal.classList.remove('hidden');
@@ -2178,32 +2267,84 @@ function closeRecordDonationModal() {
 
 function handleDonationSubmit(e) {
   e.preventDefault();
-  const date = document.getElementById('donationDate').value;
-  const account = document.getElementById('donationAccount').value.trim();
-  const catSelect = document.getElementById('donationCategory');
-  const category = (catSelect && catSelect.value === 'Zakath') ? 'Zakath' : 'Purification';
-  const amount = Number(document.getElementById('donationAmount').value || 0);
-  const remarks = document.getElementById('donationRemarks').value.trim();
 
-  if (!date || !account || amount <= 0 || !remarks) return;
+  const dateEl = document.getElementById('donationDate');
+  const acctEl = document.getElementById('donationAccount');
+  const amtEl = document.getElementById('donationAmount');
+  const remEl = document.getElementById('donationRemarks');
+  const editIdEl = document.getElementById('donationEditingId');
+  const catInput = document.getElementById('donationCategory');
 
-  const newDonation = {
-    id: `DON_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    date,
-    account,
-    category,
-    amount,
-    remarks
+  const date = dateEl ? String(dateEl.value || '').trim() : '';
+  const account = acctEl ? String(acctEl.value || '').trim() : '';
+  const category = (catInput && catInput.value === 'Zakath') ? 'Zakath' : 'Purification';
+  const amount = amtEl ? Number(amtEl.value) : NaN;
+  const remarks = remEl ? String(remEl.value || '').trim() : '';
+
+  const markErr = (el, msg) => {
+    if (!el) return;
+    el.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+    const errEl = document.getElementById(`err-${el.id}`);
+    if (errEl) {
+      if (msg) errEl.innerText = msg;
+      errEl.classList.remove('hidden');
+    }
   };
 
-  donations.push(newDonation);
-  saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
-  sendToSheet({ action: 'addDonation', donation: newDonation });
-  bumpTxVersion();
+  let hasError = false;
+  if (!date) { markErr(dateEl, 'Date is required'); hasError = true; }
+  if (!account) { markErr(acctEl, 'Account is required'); hasError = true; }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    markErr(amtEl, 'Enter a valid amount greater than ₹0');
+    hasError = true;
+  }
+  if (!remarks) { markErr(remEl, 'Remarks / recipient details are required'); hasError = true; }
 
+  if (hasError) return;
+
+  const roundedAmt = Number(amount.toFixed(2));
+  const editingId = editIdEl ? String(editIdEl.value || '').trim() : '';
+
+  if (editingId) {
+    const idx = donations.findIndex(d => String(d.id) === editingId);
+    if (idx !== -1) {
+      const updatedDonation = {
+        ...donations[idx],
+        date,
+        account,
+        category,
+        amount: roundedAmt,
+        remarks
+      };
+      donations[idx] = updatedDonation;
+      saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
+      if (cloudScriptUrl) {
+        sendToSheet({ action: 'updateDonation', donation: updatedDonation });
+      }
+    }
+  } else {
+    const newDonation = {
+      id: `DON_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      date,
+      account,
+      category,
+      amount: roundedAmt,
+      remarks
+    };
+    donations.push(newDonation);
+    saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
+    if (cloudScriptUrl) {
+      sendToSheet({ action: 'addDonation', donation: newDonation });
+    }
+  }
+
+  bumpTxVersion();
   closeRecordDonationModal();
   populatePurificationFyOptions(getCachedEngineData().purificationLots);
   renderPurificationView(getCachedEngineData());
+  if (selectedDashboardMetric === 'currentFy') {
+    renderDashboardTrendChart(getCachedEngineData());
+  }
   refreshIcons();
 }
 
@@ -4450,7 +4591,16 @@ const productsDropdown = document.getElementById('productsDropdownContainer');
 if (productsDropdown && !productsDropdown.contains(e.target)) {
 closeProductsDropdown();
 }
+
+const donationDropdown = document.getElementById('donationActionDropdownWrap');
+if (donationDropdown && !donationDropdown.contains(e.target)) {
+closeDonationActionDropdown();
+}
 });
+
+function openPinVerifyModal(title, desc, onSuccessCallback) {
+  requestPinAuthorization(title, desc, onSuccessCallback);
+}
 
 window.addEventListener('DOMContentLoaded', init);
 
@@ -4601,14 +4751,15 @@ const fyZeroBarMarkerPlugin = {
 
 const fyCompactBarSpacingPlugin = {
   id: 'fyCompactBarSpacing',
-  afterDatasetsUpdate(chart) {
+  beforeDatasetsDraw(chart) {
     if (selectedDashboardMetric !== 'currentFy') return;
     const meta0 = chart.getDatasetMeta(0); // Gross Realized P&L
+    const meta1 = chart.getDatasetMeta(1); // Deductions stack
     const meta4 = chart.getDatasetMeta(4); // Final Net P&L
-    if (!meta0 || !meta4) return;
+    if (!meta0 || !meta1 || !meta4) return;
 
-    const pullPx = 17; // Adjust 4–10 px to taste; 0 = default Chart.js spacing
-    const len = meta0.data ? meta0.data.length : 0;
+    const pullPx = 17;
+    const len = meta1.data ? meta1.data.length : 0;
     for (let i = 0; i < len; i++) {
       const b0 = meta0.data && meta0.data[i];
       const b4 = meta4.data && meta4.data[i];
