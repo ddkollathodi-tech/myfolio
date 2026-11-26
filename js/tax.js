@@ -55,7 +55,14 @@ settings: { [key]: newVal }
 renderTaxView();
 }
 
+function getTaxChallanKey(fy, account, quarter) {
+  return `${fy}__${account}__${quarter}`;
+}
+
 function applyRemoteTaxChallans(challanList) {
+  if (!Array.isArray(challanList)) return;
+  const baseMap = (typeof taxPaidChallans !== 'undefined' && taxPaidChallans) ? taxPaidChallans : {};
+  const nextMap = { ...baseMap };
   challanList.forEach(item => {
     if (!item || !item.fy || !item.quarter || !item.account) return;
     const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
