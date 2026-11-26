@@ -145,7 +145,42 @@ function closeRecordTaxPaidModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function recalculateTaxChallansRollup(syncToCloud = false) {
+function applyRemoteTaxChallanLogs(remoteLogs) {
+  if (!Array.isArray(remoteLogs)) return;
+  const serverIds = new Set(remoteLogs.map(r => String(r && r.id || '').trim()).filter(Boolean));
+  const unsyncedLocal = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
+    const lid = String(item && item.id || '').trim();
+    return lid && !serverIds.has(lid);
+  });
+
+  unsyncedLocal.forEach(entry => {
+    if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+      sendToSheet({ action: 'addTaxChallanLog', challanLog: entry });
+    }
+  });
+
+  taxChallanLogs = [...remoteLogs, ...unsyncedLocal];
+  saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
+  recalculateTaxChallansRollup(false);
+}
+
+function syncQuarterRollupToSheet(fy, account, quarter) {
+  if (typeof cloudScriptUrl === 'undefined' || !cloudScriptUrl || typeof sendToSheet !== 'function') return;
+  const key = getTaxChallanKey(fy, account, quarter);
+  const sumAmt = Number(taxPaidChallans[key] || 0);
+  sendToSheet({
+    action: 'saveTaxChallan',
+    challan: {
+      fy,
+      quarter,
+      account,
+      amount: sumAmt,
+      remarks: `${fy} ${quarter} (${account})`
+    }
+  });
+}
+
+function recalculateTaxChallansRollup() {
   const nextMap = {};
   taxChallanLogs.forEach(item => {
     if (!item || !item.fy || !item.account || !item.quarter) return;
@@ -157,30 +192,6 @@ function recalculateTaxChallansRollup(syncToCloud = false) {
   taxPaidChallans = nextMap;
   saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
   saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
-
-  if (syncToCloud && typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-    const fySelect = document.getElementById('taxFyFilter');
-    const targetFy = fySelect ? fySelect.value : getFinancialYear(todayLocalISO());
-    const accts = Array.from(new Set([...CALIB_ACCOUNTS, ...taxChallanLogs.map(c => c.account)]));
-    ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
-      accts.forEach(acct => {
-        const key = getTaxChallanKey(targetFy, acct, q);
-        const sumAmt = Number(taxPaidChallans[key] || 0);
-        if (sumAmt > 0) {
-          sendToSheet({
-            action: 'saveTaxChallan',
-            challan: {
-              fy: targetFy,
-              quarter: q,
-              account: acct,
-              amount: sumAmt,
-              remarks: `${targetFy} ${q} (${acct})`
-            }
-          });
-        }
-      });
-    });
-  }
 }
 
 function handleTaxChallanSubmit(event) {
@@ -222,8 +233,9 @@ function handleTaxChallanSubmit(event) {
   if (editingId) {
     const idx = taxChallanLogs.findIndex(c => String(c.id) === editingId);
     if (idx !== -1) {
-      taxChallanLogs[idx] = {
-        ...taxChallanLogs[idx],
+      const prevEntry = { ...taxChallanLogs[idx] };
+      const updatedEntry = {
+        ...prevEntry,
         date: dateVal,
         fy: fyVal,
         account: acctVal,
@@ -231,9 +243,19 @@ function handleTaxChallanSubmit(event) {
         bsr: bsrVal,
         amount: roundedAmt
       };
+      taxChallanLogs[idx] = updatedEntry;
+      recalculateTaxChallansRollup();
+
+      if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+        sendToSheet({ action: 'updateTaxChallanLog', challanLog: updatedEntry });
+        syncQuarterRollupToSheet(fyVal, acctVal, qVal);
+        if (prevEntry.fy !== fyVal || prevEntry.account !== acctVal || prevEntry.quarter !== qVal) {
+          syncQuarterRollupToSheet(prevEntry.fy, prevEntry.account, prevEntry.quarter);
+        }
+      }
     }
   } else {
-    taxChallanLogs.unshift({
+    const newEntry = {
       id: `tch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       date: dateVal,
       fy: fyVal,
@@ -241,10 +263,16 @@ function handleTaxChallanSubmit(event) {
       quarter: qVal,
       bsr: bsrVal,
       amount: roundedAmt
-    });
+    };
+    taxChallanLogs.unshift(newEntry);
+    recalculateTaxChallansRollup();
+
+    if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+      sendToSheet({ action: 'addTaxChallanLog', challanLog: newEntry });
+      syncQuarterRollupToSheet(fyVal, acctVal, qVal);
+    }
   }
 
-  recalculateTaxChallansRollup(true);
   closeRecordTaxPaidModal();
   renderTaxView();
   if (typeof renderDashboardTrendChart === 'function' && selectedDashboardMetric === 'currentFy') {
@@ -253,12 +281,21 @@ function handleTaxChallanSubmit(event) {
 }
 
 function authorizeTaxChallanAction(actionType, challanId) {
+  const targetChallan = taxChallanLogs.find(c => String(c.id) === String(challanId));
+  if (!targetChallan) return;
+
   const runAction = () => {
     if (actionType === 'edit') {
       openRecordTaxPaidModal(challanId);
     } else if (actionType === 'delete') {
       taxChallanLogs = taxChallanLogs.filter(c => String(c.id) !== String(challanId));
-      recalculateTaxChallansRollup(true);
+      recalculateTaxChallansRollup();
+
+      if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+        sendToSheet({ action: 'deleteTaxChallanLog', id: targetChallan.id });
+        syncQuarterRollupToSheet(targetChallan.fy, targetChallan.account, targetChallan.quarter);
+      }
+
       renderTaxView();
       if (typeof renderDashboardTrendChart === 'function' && selectedDashboardMetric === 'currentFy') {
         renderDashboardTrendChart(getTaxEngineSnapshot());
