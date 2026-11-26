@@ -4751,15 +4751,14 @@ const fyZeroBarMarkerPlugin = {
 
 const fyCompactBarSpacingPlugin = {
   id: 'fyCompactBarSpacing',
-  beforeDatasetsDraw(chart) {
+  afterDatasetsUpdate(chart) {
     if (selectedDashboardMetric !== 'currentFy') return;
     const meta0 = chart.getDatasetMeta(0); // Gross Realized P&L
-    const meta1 = chart.getDatasetMeta(1); // Deductions stack
     const meta4 = chart.getDatasetMeta(4); // Final Net P&L
-    if (!meta0 || !meta1 || !meta4) return;
+    if (!meta0 || !meta4) return;
 
-    const pullPx = 17;
-    const len = meta1.data ? meta1.data.length : 0;
+    const pullPx = 17; // Adjust 4–10 px to taste; 0 = default Chart.js spacing
+    const len = meta0.data ? meta0.data.length : 0;
     for (let i = 0; i < len; i++) {
       const b0 = meta0.data && meta0.data[i];
       const b4 = meta4.data && meta4.data[i];
