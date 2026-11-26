@@ -198,16 +198,24 @@ const serverIds = new Set(
 incoming.map(item => String(item && item.id || '').trim()).filter(Boolean)
 );
 
-const unsyncedLocal = (Array.isArray(localList) ? localList : []).filter(item => {
+// Only re-push local records that explicitly failed offline sync (_pendingSync === true).
+// Any previously synced record missing from Google Sheets was deleted in the Sheet and must stay deleted.
+const offlinePending = (Array.isArray(localList) ? localList : []).filter(item => {
 const localId = String(item && item.id || '').trim();
-return localId && !serverIds.has(localId);
+return item && item._pendingSync === true && localId && !serverIds.has(localId);
 });
 
-unsyncedLocal.forEach(entry => {
-sendToSheet({ action: actionName, [payloadKey]: entry });
+offlinePending.forEach(entry => {
+const cleanEntry = { ...entry };
+delete cleanEntry._pendingSync;
+sendToSheet({ action: actionName, [payloadKey]: cleanEntry }).then(ok => {
+if (ok) {
+entry._pendingSync = false;
+}
+});
 });
 
-return [...incoming, ...unsyncedLocal];
+return [...incoming, ...offlinePending];
 }
 
 function mergeLedgerById(incomingLedger) {
