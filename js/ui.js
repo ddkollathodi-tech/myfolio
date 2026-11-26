@@ -4542,59 +4542,152 @@ ctx.restore();
 }
 };
 
+function getFyTooltipBreakdownByLabel(fyLabel) {
+  const snap = typeof getCachedEngineData === 'function' ? getCachedEngineData() : computeEngine();
+  const fyMap = (snap && snap.fyRealized) ? snap.fyRealized : {};
+  const grossPnl = Number((fyMap[fyLabel] && fyMap[fyLabel].gain) || 0);
+
+  let taxPaid = 0;
+  if (typeof taxPaidChallans !== 'undefined' && taxPaidChallans && typeof taxPaidChallans === 'object') {
+    Object.keys(taxPaidChallans).forEach(k => {
+      const parts = String(k).split('__');
+      const fy = (parts[0] || '').trim();
+      const acct = (parts[1] || '').trim();
+      if (fy === fyLabel && acct !== 'ALL') {
+        taxPaid += Number(taxPaidChallans[k] || 0);
+      }
+    });
+  }
+
+  let zakathPaid = 0;
+  let purifPaid = 0;
+  (Array.isArray(donations) ? donations : []).forEach(d => {
+    if (!d || !d.date) return;
+    if (getFinancialYear(d.date) !== fyLabel) return;
+    const amt = Number(d.amount || 0);
+    const cat = String(d.category || '').trim().toLowerCase();
+    if (cat === 'zakath' || cat === 'zakat') {
+      zakathPaid += amt;
+    } else {
+      purifPaid += amt;
+    }
+  });
+
+  const totalDeductions = taxPaid + zakathPaid + purifPaid;
+  const netPnl = grossPnl - totalDeductions;
+
+  return { grossPnl, taxPaid, zakathPaid, purifPaid, totalDeductions, netPnl };
+}
+
 function dashboardCustomTooltipHandler(context) {
-const { chart, tooltip } = context;
-const tooltipEl = document.getElementById('dashboardChartTooltip');
-if (!tooltipEl) return;
+  const { chart, tooltip } = context;
+  const tooltipEl = document.getElementById('dashboardChartTooltip');
+  if (!tooltipEl) return;
 
-if (tooltip.opacity === 0) {
-tooltipEl.style.opacity = '0';
-return;
-}
+  if (tooltip.opacity === 0) {
+    tooltipEl.style.opacity = '0';
+    return;
+  }
 
-const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
-const maskClass = (tabMaskStates && tabMaskStates.dashboard && !meta.isPercent) ? 'privacy-blurred' : '';
+  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+  const maskClass = (tabMaskStates && tabMaskStates.dashboard && !meta.isPercent) ? 'privacy-blurred' : '';
+  const titleLines = tooltip.title || [];
+  const fyLabel = titleLines[0] ? String(titleLines[0]).trim() : '';
 
-if (tooltip.body) {
-const titleLines = tooltip.title || [];
-let innerHtml = '<div class="space-y-1.5">';
+  let innerHtml = '<div class="space-y-1.5">';
+  titleLines.forEach(title => {
+    innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-[#222836] text-[11.5px]">${esc(title)}</div>`;
+  });
 
-titleLines.forEach(title => {
-innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b border-slate-100 dark:border-[#222836] text-[11.5px]">${esc(title)}</div>`;
-});
+  innerHtml += '<div class="space-y-1 pt-0.5">';
 
-innerHtml += '<div class="space-y-1 pt-0.5">';
-tooltip.dataPoints.forEach(dp => {
-const dataset = chart.data.datasets[dp.datasetIndex];
-const dotColor = dataset.borderColor || meta.color;
-const rawVal = dp.raw !== undefined ? Number(dp.raw) : 0;
-const formattedVal = meta.isPercent ? `${rawVal.toFixed(2)}%` : formatINR(rawVal, 0);
+  if (selectedDashboardMetric === 'currentFy' && fyLabel) {
+    const row = getFyTooltipBreakdownByLabel(fyLabel);
+    const items = [
+      { label: 'Gross Realized P&L', val: row.grossPnl, dot: '#2563EB', valCls: 'text-slate-900 dark:text-white', sep: false },
+      { label: 'Tax Paid', val: row.taxPaid, dot: '#8B5CF6', valCls: 'text-slate-900 dark:text-white', sep: false },
+      { label: 'Zakath', val: row.zakathPaid, dot: '#10B981', valCls: 'text-slate-900 dark:text-white', sep: false },
+      { label: 'Purification', val: row.purifPaid, dot: '#EAB308', valCls: 'text-slate-900 dark:text-white', sep: false },
+      { label: 'Total Deductions', val: row.totalDeductions, dot: '#64748B', valCls: 'text-slate-900 dark:text-white', sep: true },
+      {
+        label: 'Final Net P&L',
+        val: row.netPnl,
+        dot: row.netPnl >= 0 ? '#16A34A' : '#EF4444',
+        valCls: row.netPnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
+        sep: true
+      }
+    ];
 
-let variationHtml = '';
-if (dp.dataIndex > 0) {
-const prevVal = Number(dataset.data[dp.dataIndex - 1] || 0);
-const delta = rawVal - prevVal;
-const isPos = delta >= 0;
-const formattedDelta = meta.isPercent
-? `${Math.abs(delta).toFixed(2)}%`
-: formatINR(Math.abs(delta), 0);
-variationHtml = ` <span class="text-[10px] font-semibold ${maskClass} ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
-}
+    items.forEach(it => {
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-4 text-[11px] ${it.sep ? 'pt-1 mt-1 border-t border-slate-100 dark:border-[#222836] font-bold' : ''}">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color:${it.dot}"></span>
+            <span>${esc(it.label)}:</span>
+          </span>
+          <span class="font-mono font-bold tabular-nums ${it.valCls} ${maskClass}">${formatINR(it.val, 0)}</span>
+        </div>
+      `;
+    });
+  } else if (tooltip.body) {
+    tooltip.dataPoints.forEach(dp => {
+      const dataset = chart.data.datasets[dp.datasetIndex] || {};
+      const dotColor = dataset.borderColor || meta.color;
+      const rowLabel = dataset.label || meta.shortLabel;
+      const rawVal = dp.raw !== undefined ? Number(dp.raw) : 0;
+      const formattedVal = meta.isPercent ? `${rawVal.toFixed(2)}%` : formatINR(rawVal, 0);
 
-innerHtml += `
-<div class="flex items-center justify-between space-x-3 text-[11px]">
-<span class="flex items-center text-slate-600 dark:text-slate-300">
-<span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${dotColor}"></span>
-<span>${esc(meta.shortLabel)}:</span>
-</span>
-<span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
-${formattedVal}${variationHtml}
-</span>
-</div>
-`;
-});
-innerHtml += '</div></div>';
-tooltipEl.innerHTML = innerHtml;
+      let variationHtml = '';
+      if (dp.dataIndex > 0) {
+        const prevVal = Number(dataset.data[dp.dataIndex - 1] || 0);
+        const delta = rawVal - prevVal;
+        const isPos = delta >= 0;
+        const formattedDelta = meta.isPercent
+          ? `${Math.abs(delta).toFixed(2)}%`
+          : formatINR(Math.abs(delta), 0);
+        variationHtml = ` <span class="text-[10px] font-semibold ${maskClass} ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+      }
+
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-3 text-[11px]">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color:${dotColor}"></span>
+            <span>${esc(rowLabel)}:</span>
+          </span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+            ${formattedVal}${variationHtml}
+          </span>
+        </div>
+      `;
+    });
+  }
+
+  innerHtml += '</div></div>';
+  tooltipEl.innerHTML = innerHtml;
+
+  const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
+  const chartCanvasWidth = chart.width;
+  const chartCanvasHeight = chart.height;
+  const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
+  const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
+  const isNearRightEdge = dataIndex >= totalPoints - 3;
+
+  tooltipEl.style.opacity = '1';
+
+  const tooltipWidth = tooltipEl.offsetWidth || 220;
+  const tooltipHeight = tooltipEl.offsetHeight || 110;
+  const caretX = tooltip.caretX;
+  const caretY = tooltip.caretY;
+
+  const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
+  tooltipEl.style.left = (isNearRightEdge || willOverflowRight)
+    ? (positionX + caretX - tooltipWidth - 12) + 'px'
+    : (positionX + caretX + 12) + 'px';
+
+  const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
+  tooltipEl.style.top = willOverflowBottom
+    ? (positionY + caretY - tooltipHeight - 12) + 'px'
+    : (positionY + caretY - 12) + 'px';
 }
 
 const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
