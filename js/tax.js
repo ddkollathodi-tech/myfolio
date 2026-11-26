@@ -149,8 +149,8 @@ function applyRemoteTaxChallanLogs(remoteLogs) {
   if (!Array.isArray(remoteLogs)) return;
   const serverIds = new Set(remoteLogs.map(r => String(r && r.id || '').trim()).filter(Boolean));
 
-  // Only keep & re-push entries marked _pendingSync (created while offline).
-  // Rows deleted or edited directly in Google Sheets take full precedence.
+  // Only retain local entries explicitly flagged as offline-pending (_pendingSync === true).
+  // Any entry deleted directly in Google Sheets is permanently removed from local cache.
   const offlinePending = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
     const lid = String(item && item.id || '').trim();
     return item && item._pendingSync === true && lid && !serverIds.has(lid);
@@ -278,7 +278,12 @@ function handleTaxChallanSubmit(event) {
     recalculateTaxChallansRollup();
 
     if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-      sendToSheet({ action: 'addTaxChallanLog', challanLog: newEntry });
+      sendToSheet({ action: 'addTaxChallanLog', challanLog: newEntry }).then(ok => {
+        if (!ok) {
+          newEntry._pendingSync = true;
+          saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
+        }
+      });
       syncQuarterRollupToSheet(fyVal, acctVal, qVal);
     }
   }
@@ -364,12 +369,23 @@ function renderTaxChallansLog(targetFy, accountFilter) {
 
 function applyRemoteTaxChallans(challanList) {
   if (!Array.isArray(challanList)) return;
-  const baseMap = (typeof taxPaidChallans !== 'undefined' && taxPaidChallans) ? taxPaidChallans : {};
-  const nextMap = { ...baseMap };
+
+  // If Tax_Challan_Logs is the active ledger, keep its summed totals authoritative
+  // so deleted challan rows do not get resurrected by stale Tax_Challans summary rows.
+  if (Array.isArray(taxChallanLogs) && taxChallanLogs.length > 0) {
+    recalculateTaxChallansRollup();
+    return;
+  }
+
+  // Otherwise build a clean map from Tax_Challans (do not spread old localStorage keys)
+  const nextMap = {};
   challanList.forEach(item => {
     if (!item || !item.fy || !item.quarter || !item.account) return;
     const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
-    nextMap[key] = Number(Number(item.amount || 0).toFixed(2));
+    const amt = Number(Number(item.amount || 0).toFixed(2));
+    if (amt > 0) {
+      nextMap[key] = amt;
+    }
   });
   taxPaidChallans = nextMap;
   saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
