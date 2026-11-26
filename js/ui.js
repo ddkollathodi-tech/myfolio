@@ -2642,38 +2642,63 @@ innerHtml += `<div class="font-bold text-slate-900 dark:text-white pb-1 border-b
 });
 
 innerHtml += '<div class="space-y-1 pt-0.5">';
-tooltip.dataPoints.forEach(dp => {
-const dataset = chart.data.datasets[dp.datasetIndex];
-const color = dataset.borderColor || '#2563eb';
-const label = dataset.label || '';
-const rawVal = dp.raw || 0;
-const formattedVal = formatINR(rawVal, 0);
+if (selectedDashboardMetric === 'currentFy' && chart.$fyBreakdownSeries) {
+  const idx = tooltip.dataPoints && tooltip.dataPoints[0] ? tooltip.dataPoints[0].dataIndex : 0;
+  const row = chart.$fyBreakdownSeries[idx];
+  if (row) {
+    const breakdownItems = [
+      { label: 'Gross Realized P&L', val: row.grossPnl, color: '#2563EB' },
+      { label: 'Tax Paid', val: row.taxPaid, color: '#F43F5E' },
+      { label: 'Zakath', val: row.zakathPaid, color: '#8B5CF6' },
+      { label: 'Purification', val: row.purifPaid, color: '#14B8A6' },
+      { label: 'Total Deductions', val: row.totalDeductions, color: '#64748B' },
+      { label: 'Final Net P&L', val: row.netPnl, color: row.netPnl >= 0 ? '#10B981' : '#E11D48' }
+    ];
+    breakdownItems.forEach(item => {
+      innerHtml += `
+        <div class="flex items-center justify-between space-x-3 text-[11px]">
+          <span class="flex items-center text-slate-600 dark:text-slate-300">
+            <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${item.color}"></span>
+            <span>${esc(item.label)}:</span>
+          </span>
+          <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+            ${formatINR(item.val, 0)}
+          </span>
+        </div>
+      `;
+    });
+  }
+} else {
+  tooltip.dataPoints.forEach(dp => {
+    const dataset = chart.data.datasets[dp.datasetIndex];
+    const dotColor = dataset.borderColor || meta.color;
+    const rawVal = dp.raw !== undefined ? Number(dp.raw) : 0;
+    const formattedVal = meta.isPercent ? `${rawVal.toFixed(2)}%` : formatINR(rawVal, 0);
 
-let variationHtml = '';
-if ((label === 'Profit' || label === 'Actual Track' || label === 'My Capital') && dp.dataIndex > 0) {
-const datasetData = dataset.data;
-const currVal = datasetData[dp.dataIndex];
-const prevVal = datasetData[dp.dataIndex - 1];
-if (currVal !== undefined && prevVal !== undefined) {
-const delta = currVal - prevVal;
-const isPos = delta >= 0;
-const formattedDelta = formatINR(Math.abs(delta), 0);
-variationHtml = ` <span class="text-[10px] font-semibold ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
-}
-}
+    let variationHtml = '';
+    if (dp.dataIndex > 0) {
+      const prevVal = Number(dataset.data[dp.dataIndex - 1] || 0);
+      const delta = rawVal - prevVal;
+      const isPos = delta >= 0;
+      const formattedDelta = meta.isPercent
+        ? `${Math.abs(delta).toFixed(2)}%`
+        : formatINR(Math.abs(delta), 0);
+      variationHtml = ` <span class="text-[10px] font-semibold ${maskClass} ${isPos ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">(${isPos ? '+' : '-'}${formattedDelta})</span>`;
+    }
 
-innerHtml += `
-<div class="flex items-center justify-between space-x-3 text-[11px]">
-<span class="flex items-center text-slate-600 dark:text-slate-300">
-<span class="w-2 h-2 rounded-full mr-1.5" style="background-color: ${color}"></span>
-<span>${esc(label)}:</span>
-</span>
-<span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
-${formattedVal}${variationHtml}
-</span>
-</div>
-`;
-});
+    innerHtml += `
+      <div class="flex items-center justify-between space-x-3 text-[11px]">
+        <span class="flex items-center text-slate-600 dark:text-slate-300">
+          <span class="w-2 h-2 rounded-full mr-1.5 inline-block shrink-0" style="background-color: ${dotColor}"></span>
+          <span>${esc(meta.shortLabel)}:</span>
+        </span>
+        <span class="font-mono font-bold text-slate-900 dark:text-white tabular-nums ${maskClass}">
+          ${formattedVal}${variationHtml}
+        </span>
+      </div>
+    `;
+  });
+}
 innerHtml += '</div></div>';
 tooltipEl.innerHTML = innerHtml;
 }
@@ -4662,13 +4687,63 @@ return !isNaN(d.getTime()) && d >= cutoff;
 
 return filtered.length > 0 ? filtered : points.slice(-2);
 }
-function buildFyBarSeries(computed) {
-const fyMap = (computed && computed.fyRealized) ? computed.fyRealized : {};
-const fys = Object.keys(fyMap).sort();
-return fys.map(fy => ({
-label: fy,
-value: Number((fyMap[fy] && fyMap[fy].gain) || 0)
-}));
+function getNormalizedEntryCategory(entry) {
+  const clean = String((entry && entry.category) || '').trim().toLowerCase();
+  return (clean === 'zakath' || clean === 'zakat') ? 'Zakath' : 'Purification';
+}
+
+function buildFyStackedBreakdownSeries(computed) {
+  const snap = computed || getCachedEngineData();
+  const fyMap = (snap && snap.fyRealized) ? snap.fyRealized : {};
+  const fySet = new Set(Object.keys(fyMap));
+
+  const taxByFy = {};
+  if (typeof taxPaidChallans !== 'undefined' && taxPaidChallans && typeof taxPaidChallans === 'object') {
+    Object.keys(taxPaidChallans).forEach(k => {
+      const parts = String(k).split('__');
+      const fy = (parts[0] || '').trim();
+      const acct = (parts[1] || '').trim();
+      if (!fy) return;
+      if (acct === 'ALL') return;
+      fySet.add(fy);
+      taxByFy[fy] = (taxByFy[fy] || 0) + Number(taxPaidChallans[k] || 0);
+    });
+  }
+
+  const zakathByFy = {};
+  const purifByFy = {};
+  (Array.isArray(donations) ? donations : []).forEach(d => {
+    if (!d || !d.date) return;
+    const fy = getFinancialYear(d.date);
+    fySet.add(fy);
+    const amt = Number(d.amount || 0);
+    if (getNormalizedEntryCategory(d) === 'Zakath') {
+      zakathByFy[fy] = (zakathByFy[fy] || 0) + amt;
+    } else {
+      purifByFy[fy] = (purifByFy[fy] || 0) + amt;
+    }
+  });
+
+  const fys = Array.from(fySet).sort();
+  return fys.map(fy => {
+    const grossPnl = Number((fyMap[fy] && fyMap[fy].gain) || 0);
+    const taxPaid = Number(taxByFy[fy] || 0);
+    const zakathPaid = Number(zakathByFy[fy] || 0);
+    const purifPaid = Number(purifByFy[fy] || 0);
+    const totalDeductions = taxPaid + zakathPaid + purifPaid;
+    const netPnl = grossPnl - totalDeductions;
+
+    return {
+      label: fy,
+      grossPnl,
+      taxPaid,
+      zakathPaid,
+      purifPaid,
+      totalDeductions,
+      netPnl,
+      value: netPnl
+    };
+  });
 }
 
 function buildDashboardMetricSeries(computed) {
@@ -4710,9 +4785,11 @@ const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_
 const isDark = document.documentElement.classList.contains('dark');
 const tickColor = isDark ? '#94A3B8' : '#64748B';
 const shouldMaskY = !!(tabMaskStates && tabMaskStates.dashboard && !meta.isPercent);
-const series = buildDashboardMetricSeries(computed || getCachedEngineData());
 const isBar = selectedDashboardMetric === 'currentFy';
 const chartType = isBar ? 'bar' : 'line';
+
+const fyBreakdown = isBar ? buildFyStackedBreakdownSeries(computed || getCachedEngineData()) : null;
+const series = isBar ? fyBreakdown : buildDashboardMetricSeries(computed || getCachedEngineData());
 
 const labels = series.map(s => s.label);
 const values = series.map(s => s.value);
@@ -4721,92 +4798,156 @@ const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement ? canvas
 gradient.addColorStop(0, isDark ? `rgba(${meta.rgba}, 0.24)` : `rgba(${meta.rgba}, 0.18)`);
 gradient.addColorStop(1, `rgba(${meta.rgba}, 0.01)`);
 
-const barColors = isBar
-? values.map(v => v >= 0 ? 'rgba(147, 51, 234, 0.78)' : 'rgba(225, 29, 72, 0.78)')
-: meta.color;
-const barBorders = isBar
-? values.map(v => v >= 0 ? '#9333EA' : '#E11D48')
-: meta.color;
-
-const dataset = {
-label: meta.shortLabel,
-data: values,
-borderColor: barBorders,
-backgroundColor: isBar ? barColors : gradient,
-fill: !isBar,
-borderWidth: isBar ? 1.5 : 2.25,
-borderRadius: isBar ? 8 : 0,
-maxBarThickness: isBar ? 64 : undefined,
-tension: 0.2,
-pointRadius: values.length <= 14 ? 3.5 : 1.5,
-pointHoverRadius: 5.5,
-pointBackgroundColor: meta.color,
-pointBorderColor: isDark ? '#131722' : '#FFFFFF',
-pointBorderWidth: 1.5
-};
+const datasets = isBar
+  ? [
+      {
+        label: 'Gross Realized P&L',
+        stack: 'gross',
+        data: fyBreakdown.map(r => r.grossPnl),
+        backgroundColor: 'rgba(37, 99, 235, 0.82)',
+        borderColor: '#2563EB',
+        borderWidth: 1.5,
+        borderRadius: 6,
+        maxBarThickness: 36
+      },
+      {
+        label: 'Tax Paid',
+        stack: 'deductions',
+        data: fyBreakdown.map(r => r.taxPaid),
+        backgroundColor: 'rgba(244, 63, 94, 0.85)',
+        borderColor: '#F43F5E',
+        borderWidth: 1,
+        borderRadius: 4,
+        maxBarThickness: 36
+      },
+      {
+        label: 'Zakath',
+        stack: 'deductions',
+        data: fyBreakdown.map(r => r.zakathPaid),
+        backgroundColor: 'rgba(139, 92, 246, 0.85)',
+        borderColor: '#8B5CF6',
+        borderWidth: 1,
+        borderRadius: 4,
+        maxBarThickness: 36
+      },
+      {
+        label: 'Purification',
+        stack: 'deductions',
+        data: fyBreakdown.map(r => r.purifPaid),
+        backgroundColor: 'rgba(20, 184, 166, 0.85)',
+        borderColor: '#14B8A6',
+        borderWidth: 1,
+        borderRadius: 4,
+        maxBarThickness: 36
+      },
+      {
+        label: 'Final Net P&L',
+        stack: 'net',
+        data: fyBreakdown.map(r => r.netPnl),
+        backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(225, 29, 72, 0.85)'),
+        borderColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#E11D48'),
+        borderWidth: 1.5,
+        borderRadius: 6,
+        maxBarThickness: 36
+      }
+    ]
+  : [
+      {
+        label: meta.shortLabel,
+        data: values,
+        borderColor: meta.color,
+        backgroundColor: gradient,
+        fill: true,
+        borderWidth: 2.25,
+        borderRadius: 0,
+        tension: 0.2,
+        pointRadius: values.length <= 14 ? 3.5 : 1.5,
+        pointHoverRadius: 5.5,
+        pointBackgroundColor: meta.color,
+        pointBorderColor: isDark ? '#131722' : '#FFFFFF',
+        pointBorderWidth: 1.5
+      }
+    ];
 
 if (dashboardChartInstance && dashboardChartInstance.config.type === chartType) {
-dashboardChartInstance.data.labels = labels;
-dashboardChartInstance.data.datasets = [dataset];
-dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
-dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
-dashboardChartInstance.update('none');
-return;
+  dashboardChartInstance.$fyBreakdownSeries = fyBreakdown;
+  dashboardChartInstance.data.labels = labels;
+  dashboardChartInstance.data.datasets = datasets;
+  dashboardChartInstance.options.interaction = { mode: isBar ? 'index' : 'index', intersect: false };
+  dashboardChartInstance.options.plugins.legend.display = isBar;
+  dashboardChartInstance.options.scales.x.stacked = isBar;
+  dashboardChartInstance.options.scales.y.stacked = isBar;
+  dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
+  dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
+  dashboardChartInstance.update('none');
+  return;
 }
 
 if (dashboardChartInstance) {
-dashboardChartInstance.destroy();
-dashboardChartInstance = null;
+  dashboardChartInstance.destroy();
+  dashboardChartInstance = null;
 }
 
 dashboardChartInstance = new Chart(ctx, {
-type: chartType,
-data: { labels, datasets: [dataset] },
-options: {
-responsive: true,
-maintainAspectRatio: false,
-events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
-onHover: (event, chartElement) => {
-if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
-const tooltipEl = document.getElementById('dashboardChartTooltip');
-if (tooltipEl) tooltipEl.style.opacity = '0';
-}
-},
-interaction: { mode: isBar ? 'nearest' : 'index', intersect: isBar },
-plugins: {
-legend: { display: false },
-tooltip: {
-enabled: false,
-external: dashboardCustomTooltipHandler
-}
-},
-scales: {
-x: {
-border: { display: false },
-grid: { display: false },
-ticks: {
-color: tickColor,
-maxRotation: 0,
-autoSkip: true,
-maxTicksLimit: 12,
-font: { family: "'Inter', sans-serif", size: 11 }
-}
-},
-y: {
-border: { display: false },
-grid: {
-color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
-lineWidth: isDark ? 0.5 : 1
-},
-ticks: {
-color: shouldMaskY ? 'transparent' : tickColor,
-font: { family: "'Inter', sans-serif", size: 11 },
-callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
-}
-}
-}
-},
-plugins: [dashboardYAxisBlurPlugin]
+  type: chartType,
+  data: { labels, datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+    onHover: (event, chartElement) => {
+      if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+        const tooltipEl = document.getElementById('dashboardChartTooltip');
+        if (tooltipEl) tooltipEl.style.opacity = '0';
+      }
+    },
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: isBar,
+        labels: {
+          color: tickColor,
+          boxWidth: 10,
+          boxHeight: 10,
+          usePointStyle: true,
+          font: { family: "'Inter', sans-serif", size: 11, weight: '600' }
+        }
+      },
+      tooltip: {
+        enabled: false,
+        external: dashboardCustomTooltipHandler
+      }
+    },
+    scales: {
+      x: {
+        stacked: isBar,
+        border: { display: false },
+        grid: { display: false },
+        ticks: {
+          color: tickColor,
+          maxRotation: 0,
+          autoSkip: true,
+          maxTicksLimit: 12,
+          font: { family: "'Inter', sans-serif", size: 11 }
+        }
+      },
+      y: {
+        stacked: isBar,
+        border: { display: false },
+        grid: {
+          color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
+          lineWidth: isDark ? 0.5 : 1
+        },
+        ticks: {
+          color: shouldMaskY ? 'transparent' : tickColor,
+          font: { family: "'Inter', sans-serif", size: 11 },
+          callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
+        }
+      }
+    }
+  },
+  plugins: [dashboardYAxisBlurPlugin]
 });
+dashboardChartInstance.$fyBreakdownSeries = fyBreakdown;
 }
 
