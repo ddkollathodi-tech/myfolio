@@ -299,14 +299,6 @@ function buildDynamicAccountControls() {
     }).join('');
   }
 
-  const chartAcctSelect = document.getElementById('chartAccountSelect');
-  if (chartAcctSelect) {
-    const prevAcct = chartAcctSelect.value || 'ALL';
-    chartAcctSelect.innerHTML = `<option value="ALL">Combined</option>` +
-      CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
-    chartAcctSelect.value = (prevAcct === 'ALL' || CALIB_ACCOUNTS.includes(prevAcct)) ? prevAcct : 'ALL';
-  }
-
   const acctOptionsHtml = `<option value="">Select Account</option>` +
     CALIB_ACCOUNTS.map(acct => `<option value="${esc(acct)}">${esc(acct)}</option>`).join('');
 
@@ -2763,16 +2755,6 @@ function buildChartDatasets(ctx, chartHeight, isDark, displayPoints) {
 }
 
 let selectedChartPeriod = '1Y'; // '6M' | '1Y' | '3Y' | '5Y' | 'ALL'
-let selectedChartAccount = 'ALL'; // 'ALL' | account name
-
-function setChartAccountFilter(acct) {
-  selectedChartAccount = acct || 'ALL';
-  const data = getCachedEngineData();
-  renderChart(data);
-  renderCurveInsights(data);
-  renderTtmTable(data);
-  refreshIcons();
-}
 
 function setChartMetricMode(mode) {
   currentChartView = mode === 'roc' ? 'roc' : 'trajectory';
@@ -4445,9 +4427,9 @@ const DASHBOARD_METRIC_META = {
     isPercent: false
   },
   currentFy: {
-    title: 'FY P&L – Trend',
-    shortLabel: 'FY P&L',
-    subtitle: 'Financial year realized & unrealized performance',
+    title: 'FY P&L – By Financial Year',
+    shortLabel: 'Realized P&L',
+    subtitle: 'Realized profit & loss across financial years',
     icon: 'calendar',
     color: '#9333EA',
     rgba: '147, 51, 234',
@@ -4577,99 +4559,6 @@ function dashboardCustomTooltipHandler(context) {
     : (positionY + caretY - 12) + 'px';
 }
 
-function renderDashboardTrendChart(computed) {
-  const canvas = document.getElementById('dashboardMetricChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-
-  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
-  const isDark = document.documentElement.classList.contains('dark');
-  const tickColor = isDark ? '#94A3B8' : '#64748B';
-  const shouldMaskY = !!(tabMaskStates && tabMaskStates.dashboard && !meta.isPercent);
-  const series = buildDashboardMetricSeries(computed || getCachedEngineData());
-
-  const labels = series.map(s => s.label);
-  const values = series.map(s => s.value);
-
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement ? canvas.parentElement.clientHeight : 340);
-  gradient.addColorStop(0, isDark ? `rgba(${meta.rgba}, 0.24)` : `rgba(${meta.rgba}, 0.18)`);
-  gradient.addColorStop(1, `rgba(${meta.rgba}, 0.01)`);
-
-  const dataset = {
-    label: meta.shortLabel,
-    data: values,
-    borderColor: meta.color,
-    backgroundColor: gradient,
-    fill: true,
-    borderWidth: 2.25,
-    tension: 0.2,
-    pointRadius: values.length <= 14 ? 3.5 : 1.5,
-    pointHoverRadius: 5.5,
-    pointBackgroundColor: meta.color,
-    pointBorderColor: isDark ? '#131722' : '#FFFFFF',
-    pointBorderWidth: 1.5
-  };
-
-  if (dashboardChartInstance) {
-    dashboardChartInstance.data.labels = labels;
-    dashboardChartInstance.data.datasets = [dataset];
-    dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
-    dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
-    dashboardChartInstance.update('none');
-    return;
-  }
-
-  dashboardChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets: [dataset] },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
-      onHover: (event, chartElement) => {
-        if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
-          const tooltipEl = document.getElementById('dashboardChartTooltip');
-          if (tooltipEl) tooltipEl.style.opacity = '0';
-        }
-      },
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: false,
-          external: dashboardCustomTooltipHandler
-        }
-      },
-      scales: {
-        x: {
-          border: { display: false },
-          grid: { display: false },
-          ticks: {
-            color: tickColor,
-            maxRotation: 0,
-            autoSkip: true,
-            maxTicksLimit: 12,
-            font: { family: "'Inter', sans-serif", size: 11 }
-          }
-        },
-        y: {
-          border: { display: false },
-          grid: {
-            color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
-            lineWidth: isDark ? 0.5 : 1
-          },
-          ticks: {
-            color: shouldMaskY ? 'transparent' : tickColor,
-            font: { family: "'Inter', sans-serif", size: 11 },
-            callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
-          }
-        }
-      }
-    },
-    plugins: [dashboardYAxisBlurPlugin]
-  });
-}
-
 function selectDashboardMetric(metricKey) {
   if (!DASHBOARD_METRIC_META[metricKey]) return;
   selectedDashboardMetric = metricKey;
@@ -4742,16 +4631,30 @@ function filterPointsByDashboardRange(points, range) {
 
   return filtered.length > 0 ? filtered : points.slice(-2);
 }
+function buildFyBarSeries(computed) {
+  const fyMap = (computed && computed.fyRealized) ? computed.fyRealized : {};
+  const fys = Object.keys(fyMap).sort();
+  return fys.map(fy => ({
+    label: fy,
+    value: Number((fyMap[fy] && fyMap[fy].gain) || 0)
+  }));
+}
 
 function buildDashboardMetricSeries(computed) {
-  const basePoints = computeRocFourCurves(computed);
-  const ranged = filterPointsByDashboardRange(basePoints, dashboardChartRange);
-  const curFy = getFinancialYear(todayLocalISO());
-  let curFySortedLots = null;
-  let curFyLotCursor = 0;
-  let curFyRunningGain = 0;
+  const snap = computed || getCachedEngineData();
+  if (selectedDashboardMetric === 'currentFy') {
+    return buildFyBarSeries(snap);
+  }
 
-  return ranged.map((pt, idx) => {
+  const basePoints = computeRocFourCurves(snap);
+  const fullXirrSeries = selectedDashboardMetric === 'xirr'
+    ? computeHistoricalXirrSeries(basePoints)
+    : null;
+
+  const ranged = filterPointsByDashboardRange(basePoints, dashboardChartRange);
+  const xirrByLabel = new Map((fullXirrSeries || []).map(item => [item.label, item.value]));
+
+  return ranged.map(pt => {
     let val = 0;
     if (selectedDashboardMetric === 'netWorth') {
       val = pt.portfolioValue;
@@ -4759,34 +4662,119 @@ function buildDashboardMetricSeries(computed) {
       val = pt.netCapital;
     } else if (selectedDashboardMetric === 'lifetimePnL') {
       val = pt.profit;
-    } else if (selectedDashboardMetric === 'currentFy') {
-      if (!curFySortedLots) {
-        curFySortedLots = (computed.taxClosedLots || [])
-          .filter(lot => lot.fy === curFy)
-          .map(lot => ({ time: parseLocalDate(lot.sellDate).getTime(), gain: Number(lot.gain || 0) }))
-          .sort((a, b) => a.time - b.time);
-      }
-      if (idx === ranged.length - 1) {
-        val = Number(computed.totalUnrealizedPnL || 0) + Number((computed.fyRealized[curFy] || {}).gain || 0);
-      } else {
-        const ptDate = parseLocalDate(pt.date);
-        const cutoffTime = !isNaN(ptDate.getTime())
-          ? new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate(), 23, 59, 59).getTime()
-          : Infinity;
-        while (curFyLotCursor < curFySortedLots.length && curFySortedLots[curFyLotCursor].time <= cutoffTime) {
-          curFyRunningGain += curFySortedLots[curFyLotCursor].gain;
-          curFyLotCursor++;
-        }
-        val = curFyRunningGain;
-      }
     } else if (selectedDashboardMetric === 'xirr') {
-      const yearsElapsed = Math.max(0.25, (idx + 1) / 12);
-      const ratio = pt.netCapital > 0 ? (pt.portfolioValue / pt.netCapital) : 1;
-      val = idx === ranged.length - 1 && computed.xirrValue !== null && !isNaN(computed.xirrValue)
-        ? Number(computed.xirrValue.toFixed(2))
-        : Number(((Math.pow(Math.max(0.1, ratio), 1 / yearsElapsed) - 1) * 100).toFixed(2));
+      const xVal = xirrByLabel.get(pt.date);
+      val = (xVal !== null && xVal !== undefined) ? xVal : 0;
     }
-
     return { label: pt.date, value: val };
+  });
+}
+
+function renderDashboardTrendChart(computed) {
+  const canvas = document.getElementById('dashboardMetricChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const meta = DASHBOARD_METRIC_META[selectedDashboardMetric] || DASHBOARD_METRIC_META.netWorth;
+  const isDark = document.documentElement.classList.contains('dark');
+  const tickColor = isDark ? '#94A3B8' : '#64748B';
+  const shouldMaskY = !!(tabMaskStates && tabMaskStates.dashboard && !meta.isPercent);
+  const series = buildDashboardMetricSeries(computed || getCachedEngineData());
+  const isBar = selectedDashboardMetric === 'currentFy';
+  const chartType = isBar ? 'bar' : 'line';
+
+  const labels = series.map(s => s.label);
+  const values = series.map(s => s.value);
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.parentElement ? canvas.parentElement.clientHeight : 340);
+  gradient.addColorStop(0, isDark ? `rgba(${meta.rgba}, 0.24)` : `rgba(${meta.rgba}, 0.18)`);
+  gradient.addColorStop(1, `rgba(${meta.rgba}, 0.01)`);
+
+  const barColors = isBar
+    ? values.map(v => v >= 0 ? 'rgba(147, 51, 234, 0.78)' : 'rgba(225, 29, 72, 0.78)')
+    : meta.color;
+  const barBorders = isBar
+    ? values.map(v => v >= 0 ? '#9333EA' : '#E11D48')
+    : meta.color;
+
+  const dataset = {
+    label: meta.shortLabel,
+    data: values,
+    borderColor: barBorders,
+    backgroundColor: isBar ? barColors : gradient,
+    fill: !isBar,
+    borderWidth: isBar ? 1.5 : 2.25,
+    borderRadius: isBar ? 8 : 0,
+    maxBarThickness: isBar ? 64 : undefined,
+    tension: 0.2,
+    pointRadius: values.length <= 14 ? 3.5 : 1.5,
+    pointHoverRadius: 5.5,
+    pointBackgroundColor: meta.color,
+    pointBorderColor: isDark ? '#131722' : '#FFFFFF',
+    pointBorderWidth: 1.5
+  };
+
+  if (dashboardChartInstance && dashboardChartInstance.config.type === chartType) {
+    dashboardChartInstance.data.labels = labels;
+    dashboardChartInstance.data.datasets = [dataset];
+    dashboardChartInstance.options.scales.y.ticks.color = shouldMaskY ? 'transparent' : tickColor;
+    dashboardChartInstance.options.scales.y.ticks.callback = (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v);
+    dashboardChartInstance.update('none');
+    return;
+  }
+
+  if (dashboardChartInstance) {
+    dashboardChartInstance.destroy();
+    dashboardChartInstance = null;
+  }
+
+  dashboardChartInstance = new Chart(ctx, {
+    type: chartType,
+    data: { labels, datasets: [dataset] },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      events: ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'],
+      onHover: (event, chartElement) => {
+        if (event.type === 'touchmove' && (!chartElement || chartElement.length === 0)) {
+          const tooltipEl = document.getElementById('dashboardChartTooltip');
+          if (tooltipEl) tooltipEl.style.opacity = '0';
+        }
+      },
+      interaction: { mode: isBar ? 'nearest' : 'index', intersect: isBar },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: false,
+          external: dashboardCustomTooltipHandler
+        }
+      },
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: {
+            color: tickColor,
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 12,
+            font: { family: "'Inter', sans-serif", size: 11 }
+          }
+        },
+        y: {
+          border: { display: false },
+          grid: {
+            color: isDark ? 'rgba(148, 163, 184, 0.06)' : '#E2E8F0',
+            lineWidth: isDark ? 0.5 : 1
+          },
+          ticks: {
+            color: shouldMaskY ? 'transparent' : tickColor,
+            font: { family: "'Inter', sans-serif", size: 11 },
+            callback: (v) => meta.isPercent ? `${Number(v).toFixed(1)}%` : formatCompactIndian(v)
+          }
+        }
+      }
+    },
+    plugins: [dashboardYAxisBlurPlugin]
   });
 }
