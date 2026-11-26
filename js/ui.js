@@ -4802,53 +4802,63 @@ const datasets = isBar
   ? [
       {
         label: 'Gross Realized P&L',
-        stack: 'gross',
+        stack: 'fyGroup',
         data: fyBreakdown.map(r => r.grossPnl),
-        backgroundColor: 'rgba(37, 99, 235, 0.82)',
-        borderColor: '#2563EB',
-        borderWidth: 1.5,
-        borderRadius: 6,
-        maxBarThickness: 36
+        backgroundColor: 'rgba(37, 99, 235, 0.85)',
+        borderColor: '#1D4ED8',
+        borderWidth: 1,
+        borderRadius: 0,
+        categoryPercentage: 0.68,
+        barPercentage: 1.0,
+        maxBarThickness: 38
       },
       {
         label: 'Tax Paid',
-        stack: 'deductions',
+        stack: 'fyGroup',
         data: fyBreakdown.map(r => r.taxPaid),
-        backgroundColor: 'rgba(244, 63, 94, 0.85)',
-        borderColor: '#F43F5E',
+        backgroundColor: 'rgba(244, 63, 94, 0.88)',
+        borderColor: '#E11D48',
         borderWidth: 1,
-        borderRadius: 4,
-        maxBarThickness: 36
+        borderRadius: 0,
+        categoryPercentage: 0.68,
+        barPercentage: 1.0,
+        maxBarThickness: 38
       },
       {
         label: 'Zakath',
-        stack: 'deductions',
+        stack: 'fyGroup',
         data: fyBreakdown.map(r => r.zakathPaid),
-        backgroundColor: 'rgba(139, 92, 246, 0.85)',
-        borderColor: '#8B5CF6',
+        backgroundColor: 'rgba(139, 92, 246, 0.88)',
+        borderColor: '#7C3AED',
         borderWidth: 1,
-        borderRadius: 4,
-        maxBarThickness: 36
+        borderRadius: 0,
+        categoryPercentage: 0.68,
+        barPercentage: 1.0,
+        maxBarThickness: 38
       },
       {
         label: 'Purification',
-        stack: 'deductions',
+        stack: 'fyGroup',
         data: fyBreakdown.map(r => r.purifPaid),
-        backgroundColor: 'rgba(20, 184, 166, 0.85)',
-        borderColor: '#14B8A6',
+        backgroundColor: 'rgba(20, 184, 166, 0.88)',
+        borderColor: '#0D9488',
         borderWidth: 1,
-        borderRadius: 4,
-        maxBarThickness: 36
+        borderRadius: 0,
+        categoryPercentage: 0.68,
+        barPercentage: 1.0,
+        maxBarThickness: 38
       },
       {
         label: 'Final Net P&L',
-        stack: 'net',
+        stack: 'fyGroup',
         data: fyBreakdown.map(r => r.netPnl),
         backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? 'rgba(16, 185, 129, 0.85)' : 'rgba(225, 29, 72, 0.85)'),
-        borderColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#E11D48'),
-        borderWidth: 1.5,
-        borderRadius: 6,
-        maxBarThickness: 36
+        borderColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#059669' : '#E11D48'),
+        borderWidth: 1,
+        borderRadius: 0,
+        categoryPercentage: 0.68,
+        barPercentage: 1.0,
+        maxBarThickness: 38
       }
     ]
   : [
