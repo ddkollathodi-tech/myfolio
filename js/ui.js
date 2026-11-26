@@ -4690,31 +4690,6 @@ function dashboardCustomTooltipHandler(context) {
     : (positionY + caretY - 12) + 'px';
 }
 
-const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
-const chartCanvasWidth = chart.width;
-const chartCanvasHeight = chart.height;
-const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
-const totalPoints = chart.data.labels ? chart.data.labels.length : 10;
-const isNearRightEdge = dataIndex >= totalPoints - 3;
-
-tooltipEl.style.opacity = '1';
-
-const tooltipWidth = tooltipEl.offsetWidth || 210;
-const tooltipHeight = tooltipEl.offsetHeight || 90;
-const caretX = tooltip.caretX;
-const caretY = tooltip.caretY;
-
-const willOverflowRight = (caretX + tooltipWidth + 24) > chartCanvasWidth;
-tooltipEl.style.left = (isNearRightEdge || willOverflowRight)
-? (positionX + caretX - tooltipWidth - 12) + 'px'
-: (positionX + caretX + 12) + 'px';
-
-const willOverflowBottom = (caretY + tooltipHeight + 16) > chartCanvasHeight;
-tooltipEl.style.top = willOverflowBottom
-? (positionY + caretY - tooltipHeight - 12) + 'px'
-: (positionY + caretY - 12) + 'px';
-}
-
 function selectDashboardMetric(metricKey) {
 if (!DASHBOARD_METRIC_META[metricKey]) return;
 selectedDashboardMetric = metricKey;
