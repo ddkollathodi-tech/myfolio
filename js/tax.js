@@ -56,40 +56,42 @@ renderTaxView();
 }
 
 function applyRemoteTaxChallans(challanList) {
-if (!Array.isArray(challanList)) return;
-const nextMap = { ...(taxPaidChallans || {}) };
-challanList.forEach(item => {
-if (!item || !item.fy || !item.quarter || !item.account) return;
-const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
-nextMap[key] = Number(Number(item.amount || 0).toFixed(2));
-});
-taxPaidChallans = nextMap;
-saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
+  if (!Array.isArray(challanList)) return;
+  const nextMap = { ...(taxPaidChallans || {}) };
+  challanList.forEach(item => {
+    if (!item || !item.fy || !item.quarter || !item.account) return;
+    const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
+    nextMap[key] = Number(Number(item.amount || 0).toFixed(2));
+  });
+  taxPaidChallans = nextMap;
+  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
 }
 
 function recordTaxChallan(fy, acct, qKey, currentPaid) {
-const inp = document.getElementById(`taxChallanInp-${qKey}`);
-const val = Number(inp ? inp.value : currentPaid);
-if (isNaN(val) || val < 0) return;
+  const inp = document.getElementById(`taxChallanInp-${qKey}`);
+  const rawPromptVal = inp ? inp.value : prompt(`Enter paid tax challan (₹) for ${fy} ${qKey} (${acct}):`, currentPaid);
+  if (rawPromptVal === null) return;
+  const val = Number(rawPromptVal);
+  if (isNaN(val) || val < 0) return;
 
-const roundedVal = Number(val.toFixed(2));
-const key = getTaxChallanKey(fy, acct, qKey);
-taxPaidChallans[key] = roundedVal;
-saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
-renderTaxView();
+  const roundedVal = Number(val.toFixed(2));
+  const key = getTaxChallanKey(fy, acct, qKey);
+  taxPaidChallans[key] = roundedVal;
+  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
+  renderTaxView();
 
-if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-sendToSheet({
-action: 'saveTaxChallan',
-challan: {
-fy: fy,
-quarter: qKey,
-account: acct,
-amount: roundedVal,
-remarks: `${fy} ${qKey} (${acct})`
-}
-});
-}
+  if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+    sendToSheet({
+      action: 'saveTaxChallan',
+      challan: {
+        fy: fy,
+        quarter: qKey,
+        account: acct,
+        amount: roundedVal,
+        remarks: `${fy} ${qKey} (${acct})`
+      }
+    });
+  }
 }
 
 function renderTaxView() {
@@ -280,8 +282,9 @@ const approxQTax = (qGains / Math.max(1, (stcgGrossGain + ltcgGrossGain))) * tot
 cumulativeTaxAccrued = Math.min(totalTaxLiability, cumulativeTaxAccrued + approxQTax);
 
 const statutoryMinDue = Math.round(totalTaxLiability * q.pct);
-const challanKey = `${targetFy}__${currentTaxAccountFilter}__${q.key}`;
-const actualPaid = taxPaidChallans[challanKey] || 0;
+const actualPaid = currentTaxAccountFilter === 'ALL'
+  ? CALIB_ACCOUNTS.reduce((sum, a) => sum + Number(taxPaidChallans[getTaxChallanKey(targetFy, a, q.key)] || 0), 0)
+  : Number(taxPaidChallans[getTaxChallanKey(targetFy, currentTaxAccountFilter, q.key)] || 0);
 totalPaidAllQuarters += actualPaid;
 cumulativePaid += actualPaid;
 
@@ -482,4 +485,3 @@ lossList.appendChild(row);
 }
 }
 }
-
