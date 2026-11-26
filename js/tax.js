@@ -55,14 +55,40 @@ function toggleCurrentAccountExemption() {
   renderTaxView();
 }
 
+function applyRemoteTaxChallans(challanList) {
+  if (!Array.isArray(challanList)) return;
+  const nextMap = { ...(taxPaidChallans || {}) };
+  challanList.forEach(item => {
+    if (!item || !item.fy || !item.quarter || !item.account) return;
+    const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
+    nextMap[key] = Number(Number(item.amount || 0).toFixed(2));
+  });
+  taxPaidChallans = nextMap;
+  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
+}
+
 function recordTaxChallan(fy, acct, qKey, currentPaid) {
-  const input = prompt(`Enter total advance tax challan amount paid for ${qKey} (${fy} - ${acct}):`, currentPaid || 0);
-  if (input !== null && !isNaN(Number(input))) {
-    const val = Math.max(0, Number(input));
-    const key = `${fy}__${acct}__${qKey}`;
-    taxPaidChallans[key] = val;
-    saveJsonStorage(TAX_PAID_KEY, taxPaidChallans);
-    renderTaxView();
+  const inp = document.getElementById(`taxChallanInp-${qKey}`);
+  const val = Number(inp ? inp.value : currentPaid);
+  if (isNaN(val) || val < 0) return;
+
+  const roundedVal = Number(val.toFixed(2));
+  const key = getTaxChallanKey(fy, acct, qKey);
+  taxPaidChallans[key] = roundedVal;
+  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
+  renderTaxView();
+
+  if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+    sendToSheet({
+      action: 'saveTaxChallan',
+      challan: {
+        fy: fy,
+        quarter: qKey,
+        account: acct,
+        amount: roundedVal,
+        remarks: `${fy} ${qKey} (${acct})`
+      }
+    });
   }
 }
 
