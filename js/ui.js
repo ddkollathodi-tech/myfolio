@@ -4542,6 +4542,63 @@ ctx.restore();
 }
 };
 
+const fyZeroBarMarkerPlugin = {
+  id: 'fyZeroBarMarker',
+  afterDatasetsDraw(chart) {
+    // Only draw these markers on the Dashboard FY P&L bar chart
+    if (selectedDashboardMetric !== 'currentFy') return;
+    const series = chart.$fyBreakdownSeries;
+    if (!Array.isArray(series) || series.length === 0) return;
+
+    const yScale = chart.scales.y;
+    if (!yScale) return;
+
+    // Pixel Y position corresponding to value 0 on the Y-axis
+    const zeroY = yScale.getPixelForValue(0);
+    const isDark = document.documentElement.classList.contains('dark');
+    const markerColor = isDark ? '#F8FAFC' : '#0F172A';
+
+    // Dataset order:
+    // 0 = Gross Realized P&L
+    // 1 = Tax Paid (bottom of middle stacked bar)
+    // 2 = Zakath (middle of middle stacked bar)
+    // 3 = Purification (top of middle stacked bar)
+    // 4 = Final Net P&L
+    const grossMeta = chart.getDatasetMeta(0);
+    const dedMeta = chart.getDatasetMeta(1);
+    const netMeta = chart.getDatasetMeta(4);
+    if (!grossMeta || !dedMeta || !netMeta) return;
+
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = markerColor;
+    ctx.lineWidth = 2;
+
+    series.forEach((row, idx) => {
+      const slots = [
+        { isZero: Number(row.grossPnl || 0) === 0, barEl: grossMeta.data && grossMeta.data[idx] },
+        { isZero: Number(row.totalDeductions || 0) === 0, barEl: dedMeta.data && dedMeta.data[idx] },
+        { isZero: Number(row.netPnl || 0) === 0, barEl: netMeta.data && netMeta.data[idx] }
+      ];
+
+      slots.forEach(slot => {
+        if (!slot.isZero || !slot.barEl) return;
+        const barWidth = slot.barEl.width || 16;
+        const centerX = slot.barEl.x;
+        const leftX = centerX - (barWidth / 2);
+        const rightX = centerX + (barWidth / 2);
+
+        ctx.beginPath();
+        ctx.moveTo(leftX, zeroY);
+        ctx.lineTo(rightX, zeroY);
+        ctx.stroke();
+      });
+    });
+
+    ctx.restore();
+  }
+};
+
 function getFyTooltipBreakdownByLabel(fyLabel) {
   const snap = typeof getCachedEngineData === 'function' ? getCachedEngineData() : computeEngine();
   const fyMap = (snap && snap.fyRealized) ? snap.fyRealized : {};
@@ -4890,10 +4947,54 @@ const datasets = isBar
         backgroundColor: '#2563EB',
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.72,
+        categoryPercentage: 0.95,
         barPercentage: 1.0,
-        maxBarThickness: 36
+        maxBarThickness: 56
       },
+      {
+        label: 'Tax Paid',
+        stack: 'colDeductions',
+        data: fyBreakdown.map(r => r.taxPaid),
+        backgroundColor: '#8B5CF6',
+        borderWidth: 0,
+        borderRadius: 0,
+        categoryPercentage: 0.95,
+        barPercentage: 1.0,
+        maxBarThickness: 56
+      },
+      {
+        label: 'Zakath',
+        stack: 'colDeductions',
+        data: fyBreakdown.map(r => r.zakathPaid),
+        backgroundColor: '#64748B',
+        borderWidth: 0,
+        borderRadius: 0,
+        categoryPercentage: 0.95,
+        barPercentage: 1.0,
+        maxBarThickness: 56
+      },
+      {
+        label: 'Purification',
+        stack: 'colDeductions',
+        data: fyBreakdown.map(r => r.purifPaid),
+        backgroundColor: '#EAB308',
+        borderWidth: 0,
+        borderRadius: 0,
+        categoryPercentage: 0.95,
+        barPercentage: 1.0,
+        maxBarThickness: 56
+      },
+      {
+        label: 'Final Net P&L',
+        stack: 'colNet',
+        data: fyBreakdown.map(r => r.netPnl),
+        backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#F43F5E'),
+        borderWidth: 0,
+        borderRadius: 0,
+        categoryPercentage: 0.95,
+        barPercentage: 1.0,
+        maxBarThickness: 56
+      }
       {
         label: 'Tax Paid',
         stack: 'colDeductions',
@@ -5056,7 +5157,7 @@ dashboardChartInstance = new Chart(ctx, {
       }
     }
   },
-  plugins: [dashboardYAxisBlurPlugin]
+  plugins: [dashboardYAxisBlurPlugin, fyZeroBarMarkerPlugin]
 });
 dashboardChartInstance.$fyBreakdownSeries = fyBreakdown;
 }
