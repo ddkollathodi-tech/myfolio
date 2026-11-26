@@ -2107,6 +2107,7 @@ const donTbody = document.getElementById('donationsLogTableBody');
       });
     }
   }
+}
 
 // Event delegation for Deleting a Donation record (PIN-gated)
 document.addEventListener('click', (e) => {
