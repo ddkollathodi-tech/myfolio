@@ -4602,8 +4602,18 @@ function openPinVerifyModal(title, desc, onSuccessCallback) {
   requestPinAuthorization(title, desc, onSuccessCallback);
 }
 
-window.addEventListener('DOMContentLoaded', init);
+let lastAutoFocusSyncMs = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (!cloudScriptUrl || typeof fetchFromGoogleSheet !== 'function') return;
+  if (sessionStorage.getItem('MYFOLIOAI_UNLOCKED') !== 'true') return;
+  const now = Date.now();
+  if (now - lastAutoFocusSyncMs < 20000) return;
+  lastAutoFocusSyncMs = now;
+  fetchFromGoogleSheet();
+});
 
+window.addEventListener('DOMContentLoaded', init);
 /* ============================================================================
 DASHBOARD SESSION METRIC SELECTOR & TREND CHART
 ============================================================================ */
