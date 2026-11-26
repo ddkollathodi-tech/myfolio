@@ -534,3 +534,47 @@ function calculateAccurateXIRR(cashFlows) {
 
   return null;
 }
+
+function computeHistoricalXirrSeries(points) {
+  if (!Array.isArray(points) || points.length === 0) return [];
+
+  const sortedTx = sortTransactionsChronologically(transactions);
+  const now = new Date();
+
+  return points.map(pt => {
+    const isCurrent = pt.date === 'Current';
+    const ptDate = isCurrent ? now : parseLocalDate(pt.date);
+    if (isNaN(ptDate.getTime())) {
+      return { label: pt.date, value: null };
+    }
+
+    const cutoffTime = isCurrent
+      ? now.getTime()
+      : new Date(ptDate.getFullYear(), ptDate.getMonth(), ptDate.getDate(), 23, 59, 59).getTime();
+
+    const flows = [];
+    for (let i = 0; i < sortedTx.length; i++) {
+      const tx = sortedTx[i];
+      const txDate = parseLocalDate(tx.date);
+      if (isNaN(txDate.getTime()) || txDate.getTime() > cutoffTime) continue;
+
+      const amt = Number(tx.amount || 0);
+      if (tx.type === 'DEPOSIT' && amt !== 0) {
+        flows.push({ date: txDate, amount: -Math.abs(amt) });
+      } else if (tx.type === 'WITHDRAWAL' && amt !== 0) {
+        flows.push({ date: txDate, amount: Math.abs(amt) });
+      }
+    }
+
+    const endVal = Number(pt.portfolioValue || 0);
+    if (endVal > 0 && flows.length > 0) {
+      flows.push({ date: isCurrent ? now : ptDate, amount: endVal });
+    }
+
+    const xirr = calculateAccurateXIRR(flows);
+    return {
+      label: pt.date,
+      value: (xirr !== null && !isNaN(xirr)) ? Number(xirr.toFixed(2)) : null
+    };
+  });
+}
