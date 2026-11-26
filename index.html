@@ -1713,6 +1713,7 @@ title="Toggle Tax Cockpit Stealth Mask"
 
 <!-- Tax Filters Bar -->
 <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#131722] px-4 py-3 rounded-2xl border border-slate-200/90 dark:border-[#222836] shadow-2xs">
+<div class="flex flex-wrap items-center gap-3">
 <div class="flex items-center space-x-2 text-xs">
 <span class="text-slate-500 dark:text-slate-400 font-bold">FY:</span>
 <select id="taxFyFilter" onchange="renderTaxView()" class="bg-slate-50 dark:bg-[#1A1F2E] border border-slate-200 dark:border-[#222836] rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white font-bold focus:outline-none focus:border-rose-500"></select>
@@ -1725,6 +1726,12 @@ title="Toggle Tax Cockpit Stealth Mask"
 <button onclick="setTaxAccountFilter('Brother')" id="taxAcctBtn-Brother" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Brother</button>
 <button onclick="setTaxAccountFilter('ALL')" id="taxAcctBtn-ALL" class="px-2.5 py-1 rounded-lg transition-all text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">Combined</button>
 </div>
+</div>
+
+<button type="button" onclick="openRecordTaxPaidModal()" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-2xs transition cursor-pointer">
+<i data-lucide="plus" class="w-3.5 h-3.5"></i>
+<span>Record Tax Paid</span>
+</button>
 </div>
 
 <div id="basicExemptionBanner" class="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-transparent border border-emerald-500/30 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
@@ -1851,6 +1858,37 @@ class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs flex ite
 </div>
 </div>
 
+<!-- Recorded Tax Challans Log -->
+<div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+<i data-lucide="receipt" class="w-4 h-4 text-rose-500"></i>
+<span>Recorded Tax Challans Log</span>
+</h4>
+<p class="text-[11.5px] text-slate-500 dark:text-slate-400">Individual challan payments with date &amp; BSR code (Master PIN required to edit or delete)</p>
+</div>
+<span class="text-xs font-semibold text-slate-500 dark:text-slate-400" id="taxChallansLogCount">0 Challans</span>
+</div>
+
+<div class="overflow-x-auto max-h-[360px] custom-scroll">
+<table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+<thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+<tr>
+<th class="py-2.5 px-3">Challan Date</th>
+<th class="py-2.5 px-3">FY</th>
+<th class="py-2.5 px-3">Account</th>
+<th class="py-2.5 px-3">Quarter</th>
+<th class="py-2.5 px-3">BSR Code</th>
+<th class="py-2.5 px-3 text-right font-bold text-rose-600 dark:text-rose-400">Amount Paid (₹)</th>
+<th class="py-2.5 px-3 text-center">Action</th>
+</tr>
+</thead>
+<tbody id="taxChallansLogTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+</table>
+</div>
+</div>
+
 <div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs space-y-3">
 <div class="flex items-center justify-between">
 <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
@@ -1917,10 +1955,24 @@ title="Toggle Purification Stealth Mask"
 <div id="purificationAccountFilterGroup" class="inline-flex items-center bg-slate-100 dark:bg-[#1A1F2E] p-1 rounded-xl border border-slate-200/90 dark:border-[#222836] text-xs font-bold"></div>
 </div>
 
-<button onclick="openRecordDonationModal()" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-2xs transition">
+<div class="relative" id="donationActionDropdownWrap">
+<button type="button" onclick="toggleDonationActionDropdown(event)" class="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-2xs transition cursor-pointer">
 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-<span>Record Donation</span>
+<span>Record Transaction</span>
+<i data-lucide="chevron-down" id="donationDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
 </button>
+
+<div id="donationActionDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-40 text-xs font-semibold">
+<button type="button" onclick="openRecordDonationModal('Zakath')" class="w-full flex items-center px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition text-left">
+<span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5 shrink-0"></span>
+<span>Record Zakath</span>
+</button>
+<button type="button" onclick="openRecordDonationModal('Purification')" class="w-full flex items-center px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition text-left">
+<span class="w-2 h-2 rounded-full bg-teal-500 mr-2.5 shrink-0"></span>
+<span>Record Purification Donation</span>
+</button>
+</div>
+</div>
 </div>
 
 <!-- 4 Summary KPI Cards: Purification Due, Purification Donated, Purification Balance, Zakath Paid -->
@@ -2142,56 +2194,139 @@ class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border
 </div>
 </div>
 
-<!-- MODAL: RECORD ZAKATH / DONATION -->
+<!-- MODAL: RECORD / EDIT ZAKATH OR PURIFICATION DONATION -->
 <div id="recordDonationModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
 <div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
 <div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
 <div class="flex items-center space-x-2.5">
-<div class="h-9 w-9 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+<div id="donationModalIconWrap" class="h-9 w-9 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 flex items-center justify-center">
 <i data-lucide="hand-heart" class="w-5 h-5"></i>
 </div>
 <div>
-<h3 class="text-base font-bold text-slate-900 dark:text-white">Record Zakath / Donation</h3>
-<p class="text-[11px] text-slate-500 dark:text-slate-400">Saved to Donations sheet with Category (does not affect cash ledger)</p>
+<h3 id="donationModalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Zakath / Donation</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Saved to Donations sheet (isolated from portfolio cash)</p>
 </div>
 </div>
-<button onclick="closeRecordDonationModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<button type="button" onclick="closeRecordDonationModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
 <i data-lucide="x" class="w-5 h-5"></i>
 </button>
 </div>
 
-<form id="donationForm" onsubmit="handleDonationSubmit(event)" class="space-y-3.5 text-xs">
+<form id="donationForm" novalidate onsubmit="handleDonationSubmit(event)" class="space-y-3.5 text-xs">
+<input type="hidden" id="donationEditingId" value="">
+<input type="hidden" id="donationCategory" value="Purification">
+
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 <div>
-<label class="block text-slate-500 dark:text-slate-400 mb-1">Date</label>
-<input type="date" id="donationDate" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Date *</label>
+<input type="date" id="donationDate" oninput="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<p id="err-donationDate" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Date is required</p>
 </div>
 <div>
-<label class="block text-slate-500 dark:text-slate-400 mb-1">Account</label>
-<select id="donationAccount" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold"></select>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Account *</label>
+<select id="donationAccount" onchange="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold"></select>
+<p id="err-donationAccount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Account is required</p>
 </div>
 <div>
-<label class="block text-slate-500 dark:text-slate-400 mb-1">Category</label>
-<select id="donationCategory" required class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
-<option value="Purification">Purification</option>
-<option value="Zakath">Zakath</option>
-</select>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Category (Locked)</label>
+<div id="donationCategoryLockedBadge" class="w-full bg-slate-200/80 dark:bg-[#0E121B] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-800 dark:text-slate-200 font-bold flex items-center justify-between select-none">
+<span id="donationCategoryLockedText">Purification</span>
+<i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
+</div>
 </div>
 </div>
 
 <div>
-<label class="block text-slate-500 dark:text-slate-400 mb-1">Amount (₹)</label>
-<input type="number" step="0.01" min="1" id="donationAmount" required placeholder="e.g. 5000" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold tabular-nums">
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Amount (₹) *</label>
+<input type="number" step="0.01" min="0.01" id="donationAmount" oninput="clearFieldValidationError(this)" placeholder="e.g. 5000" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold tabular-nums">
+<p id="err-donationAmount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Enter a valid amount greater than ₹0</p>
 </div>
 
 <div>
-<label class="block text-slate-500 dark:text-slate-400 mb-1">Remarks / Charity / Reference</label>
-<input type="text" id="donationRemarks" required placeholder="e.g. Ramadan Zakath / Charity transfer" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Remarks / Charity / Reference *</label>
+<input type="text" id="donationRemarks" oninput="clearFieldValidationError(this)" placeholder="e.g. Ramadan Zakath / Charity transfer" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<p id="err-donationRemarks" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Remarks / recipient details are required</p>
 </div>
 
 <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
 <button type="button" onclick="closeRecordDonationModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
-<button type="submit" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs">Save Entry</button>
+<button type="submit" id="donationSubmitBtn" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs">Save Entry</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- MODAL: RECORD / EDIT TAX PAID CHALLAN -->
+<div id="recordTaxPaidModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+<div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+<div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
+<div class="flex items-center space-x-2.5">
+<div class="h-9 w-9 rounded-xl bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+<i data-lucide="receipt" class="w-5 h-5"></i>
+</div>
+<div>
+<h3 id="taxChallanModalTitle" class="text-base font-bold text-slate-900 dark:text-white">Record Tax Paid (Challan)</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Logged individually &amp; rolled into quarterly advance tax</p>
+</div>
+</div>
+<button type="button" onclick="closeRecordTaxPaidModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<i data-lucide="x" class="w-5 h-5"></i>
+</button>
+</div>
+
+<form id="taxChallanForm" novalidate onsubmit="handleTaxChallanSubmit(event)" class="space-y-3.5 text-xs">
+<input type="hidden" id="taxChallanEditingId" value="">
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Challan Date *</label>
+<input type="date" id="taxChallanDate" oninput="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<p id="err-taxChallanDate" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Challan date is required</p>
+</div>
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Financial Year *</label>
+<select id="taxChallanFy" onchange="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold"></select>
+<p id="err-taxChallanFy" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Financial year is required</p>
+</div>
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Account *</label>
+<select id="taxChallanAccount" onchange="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+<option value="Me">Me</option>
+<option value="Wife">Wife</option>
+<option value="Mom">Mom</option>
+<option value="Brother">Brother</option>
+</select>
+<p id="err-taxChallanAccount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Account is required</p>
+</div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Quarter *</label>
+<select id="taxChallanQuarter" onchange="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold">
+<option value="Q1">Q1 (Apr 1 – Jun 15)</option>
+<option value="Q2">Q2 (Jun 16 – Sep 15)</option>
+<option value="Q3">Q3 (Sep 16 – Dec 15)</option>
+<option value="Q4">Q4 (Dec 16 – Mar 31)</option>
+</select>
+<p id="err-taxChallanQuarter" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Quarter is required</p>
+</div>
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">BSR Code *</label>
+<input type="text" id="taxChallanBsr" oninput="clearFieldValidationError(this)" placeholder="e.g. 0510002" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-mono font-semibold">
+<p id="err-taxChallanBsr" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">BSR code is required</p>
+</div>
+</div>
+
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Tax Paid Amount (₹) *</label>
+<input type="number" step="0.01" min="0.01" id="taxChallanAmount" oninput="clearFieldValidationError(this)" placeholder="e.g. 15000" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold tabular-nums">
+<p id="err-taxChallanAmount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Enter a valid tax amount greater than ₹0</p>
+</div>
+
+<div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
+<button type="button" onclick="closeRecordTaxPaidModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
+<button type="submit" id="taxChallanSubmitBtn" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-2xs">Save Challan</button>
 </div>
 </form>
 </div>
