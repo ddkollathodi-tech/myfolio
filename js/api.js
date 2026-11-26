@@ -350,8 +350,8 @@ saveJsonStorage(CASH_CALIB_KEY, cashCalibration);
 }
 
 if (data && Array.isArray(data.taxChallans)) {
-  if (typeof syncIncomingTaxChallans === 'function') {
-    syncIncomingTaxChallans(data.taxChallans);
+  if (typeof applyRemoteTaxChallans === 'function') {
+    applyRemoteTaxChallans(data.taxChallans);
   }
 }
 
