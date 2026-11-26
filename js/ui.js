@@ -4606,13 +4606,13 @@ function dashboardCustomTooltipHandler(context) {
     const items = [
       { label: 'Gross Realized P&L', val: row.grossPnl, dot: '#2563EB', valCls: 'text-slate-900 dark:text-white', sep: false },
       { label: 'Tax Paid', val: row.taxPaid, dot: '#8B5CF6', valCls: 'text-slate-900 dark:text-white', sep: false },
-      { label: 'Zakath', val: row.zakathPaid, dot: '#10B981', valCls: 'text-slate-900 dark:text-white', sep: false },
+      { label: 'Zakath', val: row.zakathPaid, dot: '#64748B', valCls: 'text-slate-900 dark:text-white', sep: false },
       { label: 'Purification', val: row.purifPaid, dot: '#EAB308', valCls: 'text-slate-900 dark:text-white', sep: false },
-      { label: 'Total Deductions', val: row.totalDeductions, dot: '#64748B', valCls: 'text-slate-900 dark:text-white', sep: true },
+      { label: 'Total Deductions', val: row.totalDeductions, dot: '#94A3B8', valCls: 'text-slate-900 dark:text-white', sep: true },
       {
         label: 'Final Net P&L',
         val: row.netPnl,
-        dot: row.netPnl >= 0 ? '#16A34A' : '#EF4444',
+        dot: row.netPnl >= 0 ? '#10B981' : '#F43F5E',
         valCls: row.netPnl >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400',
         sep: true
       }
@@ -4909,7 +4909,7 @@ const datasets = isBar
         label: 'Zakath',
         stack: 'colDeductions',
         data: fyBreakdown.map(r => r.zakathPaid),
-        backgroundColor: '#10B981',
+        backgroundColor: '#64748B',
         borderWidth: 0,
         borderRadius: 0,
         categoryPercentage: 0.72,
@@ -4931,7 +4931,7 @@ const datasets = isBar
         label: 'Final Net P&L',
         stack: 'colNet',
         data: fyBreakdown.map(r => r.netPnl),
-        backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#16A34A' : '#EF4444'),
+        backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#F43F5E'),
         borderWidth: 0,
         borderRadius: 0,
         categoryPercentage: 0.72,
@@ -4995,10 +4995,32 @@ dashboardChartInstance = new Chart(ctx, {
         display: isBar,
         labels: {
           color: tickColor,
-          boxWidth: 10,
-          boxHeight: 10,
+          boxWidth: 12,
+          boxHeight: 12,
           usePointStyle: true,
-          font: { family: "'Inter', sans-serif", size: 11, weight: '600' }
+          font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
+          generateLabels(chart) {
+            const baseLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+            return baseLabels.map(lbl => {
+              if (lbl.text === 'Final Net P&L') {
+                const splitCanvas = document.createElement('canvas');
+                splitCanvas.width = 16;
+                splitCanvas.height = 16;
+                const sctx = splitCanvas.getContext('2d');
+                sctx.save();
+                sctx.beginPath();
+                sctx.arc(8, 8, 6.5, 0, Math.PI * 2);
+                sctx.clip();
+                sctx.fillStyle = '#10B981';
+                sctx.fillRect(0, 0, 8, 16);
+                sctx.fillStyle = '#F43F5E';
+                sctx.fillRect(8, 0, 8, 16);
+                sctx.restore();
+                return { ...lbl, pointStyle: splitCanvas };
+              }
+              return lbl;
+            });
+          }
         }
       },
       tooltip: {
