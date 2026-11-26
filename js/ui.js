@@ -508,6 +508,7 @@ function updateStockAutocompleteOptions() {
     }
   });
 }
+
 function updateSectorAutocompleteOptions() {
   const datalist = document.getElementById('sectorSuggestionsList');
   if (!datalist) return;
@@ -525,6 +526,7 @@ function updateSectorAutocompleteOptions() {
     }
   });
 }
+
 let portAllocationMode = 'stock'; // 'stock' | 'sector'
 let portAllocationChartInstance = null;
 
@@ -903,7 +905,6 @@ function renderHoldings(data) {
       const isPos = h.pnlVal >= 0;
       const safeStock = esc(h.stock);
       const safeCompany = esc(h.companyName || h.stock);
-      const safeSector = esc(h.sector || 'Others');
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 transition-colors';
       tr.innerHTML = `
@@ -933,7 +934,7 @@ function renderHoldings(data) {
       tbody.appendChild(tr);
     });
 
-   if (tfoot) {
+    if (tfoot) {
       const isPosTotal = totalUnrelPnl >= 0;
       tfoot.innerHTML = `
         <tr>
@@ -1843,7 +1844,7 @@ function jumpToBankLedgerPage(val) {
   renderBankLedger(getCachedEngineData().bankEntries);
 }
 
-/* ---------------- TAB 7: PURIFICATION & DONATIONS VIEW ---------------- */
+/* ---------------- TAB 7: ZAKATH & DONATIONS VIEW ---------------- */
 function togglePurificationTableAccordion() {
   const container = document.getElementById('purifTableContainer');
   const chevron = document.getElementById('purifAccordionChevron');
@@ -1937,6 +1938,11 @@ function setPurificationAccountFilter(acct) {
   refreshIcons();
 }
 
+function isZakathEntry(entry) {
+  const raw = String((entry && entry.category) || '').trim().toLowerCase();
+  return raw === 'zakath' || raw === 'zakat';
+}
+
 function renderPurificationView(data) {
   const engineData = data || getCachedEngineData();
   const maskClass = getMaskClass('purification');
@@ -1952,6 +1958,9 @@ function renderPurificationView(data) {
     return true;
   });
 
+  const purifEntries = filteredDonations.filter(d => !isZakathEntry(d));
+  const zakathEntries = filteredDonations.filter(d => isZakathEntry(d));
+
   let totalPositiveGain = 0;
   let totalPurifDue = 0;
   profitableLots.forEach(lot => {
@@ -1959,7 +1968,8 @@ function renderPurificationView(data) {
     totalPurifDue += Number(lot.purificationDue || 0);
   });
 
-  const totalDonated = filteredDonations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const totalDonated = purifEntries.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const totalZakathPaid = zakathEntries.reduce((sum, d) => sum + Number(d.amount || 0), 0);
   const remainingDue = totalPurifDue - totalDonated;
 
   const dueEl = document.getElementById('purifTotalDueVal');
@@ -1979,7 +1989,7 @@ function renderPurificationView(data) {
     donatedEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
   }
   if (countSubEl) {
-    countSubEl.innerText = `${filteredDonations.length} donation ${filteredDonations.length === 1 ? 'entry' : 'entries'} recorded`;
+    countSubEl.innerText = `${purifEntries.length} purification ${purifEntries.length === 1 ? 'entry' : 'entries'} recorded`;
   }
 
   const remEl = document.getElementById('purifRemainingVal');
@@ -1998,6 +2008,16 @@ function renderPurificationView(data) {
       remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
       if (statusSubEl) statusSubEl.innerText = 'Fully purified & settled';
     }
+  }
+
+  const zakathEl = document.getElementById('purifTotalZakathVal');
+  const zakathSubEl = document.getElementById('purifZakathCountSub');
+  if (zakathEl) {
+    zakathEl.innerText = formatINR(totalZakathPaid);
+    zakathEl.className = `text-2xl font-extrabold text-purple-600 dark:text-purple-400 tabular-nums ${maskClass}`;
+  }
+  if (zakathSubEl) {
+    zakathSubEl.innerText = `${zakathEntries.length} Zakath ${zakathEntries.length === 1 ? 'entry' : 'entries'} recorded`;
   }
 
   const lotsBadge = document.getElementById('purifLotsCountBadge');
@@ -2064,16 +2084,26 @@ function renderPurificationView(data) {
     const sortedDonations = [...filteredDonations].sort((a, b) => parseLocalDate(b.date) - parseLocalDate(a.date));
 
     if (sortedDonations.length === 0) {
-      donTbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No donations recorded yet. Click "+ Record Donation" to log a contribution.</td></tr>`;
+      donTbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400 dark:text-slate-500 font-medium">No Zakath or purification entries recorded yet. Click "+ Record Zakath / Donation" to log a contribution.</td></tr>`;
     } else {
       sortedDonations.forEach(don => {
         const donId = esc(String(don.id || ''));
+        const isZakath = isZakathEntry(don);
+        const catLabel = isZakath ? 'Zakath' : 'Purification';
+        const catBadgeCls = isZakath
+          ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+        const amtColorCls = isZakath
+          ? 'text-purple-600 dark:text-purple-400'
+          : 'text-emerald-600 dark:text-emerald-400';
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
         tr.innerHTML = `
           <td class="py-2.5 px-3 tabular-nums text-slate-500 dark:text-slate-400">${esc(don.date)}</td>
+          <td class="py-2.5 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold border ${catBadgeCls}">${esc(catLabel)}</span></td>
           <td class="py-2.5 px-3"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-[#1A1F2E] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">${esc(don.account)}</span></td>
-          <td class="py-2.5 px-3 text-right tabular-nums font-bold text-emerald-600 dark:text-emerald-400 ${maskClass}">${formatINR(don.amount)}</td>
+          <td class="py-2.5 px-3 text-right tabular-nums font-bold ${amtColorCls} ${maskClass}">${formatINR(don.amount)}</td>
           <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">${esc(don.remarks)}</td>
           <td class="py-2.5 px-3 text-center">
             <button data-donation-delete-id="${donId}" class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
@@ -2085,17 +2115,18 @@ function renderPurificationView(data) {
   }
 }
 
-// Event delegation for Deleting a Donation record (PIN-gated)
+// Event delegation for Deleting a Zakath / Donation record (PIN-gated)
 document.addEventListener('click', (e) => {
   const delBtn = e.target.closest('[data-donation-delete-id]');
   if (!delBtn) return;
   const donId = delBtn.dataset.donationDeleteId;
   const targetDon = donations.find(d => String(d.id) === donId);
   if (!targetDon) return;
+  const entryLabel = isZakathEntry(targetDon) ? 'Zakath' : 'Purification';
 
   requestPinAuthorization(
-    'Authorize Donation Deletion',
-    `Enter Master PIN to delete donation of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+    `Authorize ${entryLabel} Deletion`,
+    `Enter Master PIN to delete ${entryLabel.toLowerCase()} record of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
     async () => {
       const prevDonations = [...donations];
       const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
@@ -2118,7 +2149,7 @@ document.addEventListener('click', (e) => {
           bumpTxVersion();
           renderPurificationView(getCachedEngineData());
           refreshIcons();
-          alert(`Could not delete donation from Google Sheet: ${(res && res.message) || 'Sync failed'}`);
+          alert(`Could not delete record from Google Sheet: ${(res && res.message) || 'Sync failed'}`);
         }
       }
     }
@@ -2130,6 +2161,9 @@ function openRecordDonationModal() {
   if (!modal) return;
   document.getElementById('donationForm').reset();
   document.getElementById('donationDate').value = todayLocalISO();
+
+  const catSelect = document.getElementById('donationCategory');
+  if (catSelect) catSelect.value = 'Purification';
 
   const acctSelect = document.getElementById('donationAccount');
   if (acctSelect) {
@@ -2150,6 +2184,8 @@ function closeRecordDonationModal() {
 function handleDonationSubmit(e) {
   e.preventDefault();
   const date = document.getElementById('donationDate').value;
+  const catSelect = document.getElementById('donationCategory');
+  const category = (catSelect && catSelect.value === 'Zakath') ? 'Zakath' : 'Purification';
   const account = document.getElementById('donationAccount').value.trim();
   const amount = Number(document.getElementById('donationAmount').value || 0);
   const remarks = document.getElementById('donationRemarks').value.trim();
@@ -2159,6 +2195,7 @@ function handleDonationSubmit(e) {
   const newDonation = {
     id: `DON_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     date,
+    category,
     account,
     amount,
     remarks
@@ -2372,7 +2409,6 @@ function renderTtmTable(computed) {
 }
 
 /* ---------------- MULTI-TAB EXCEL EXPORT (.XLSX) ---------------- */
- 
 function ensureXlsxLoaded() {
   if (typeof XLSX !== 'undefined') return Promise.resolve(true);
   if (window.__xlsxLoadPromise) return window.__xlsxLoadPromise;
@@ -2577,13 +2613,14 @@ async function exportPortfolioToExcel() {
 
   const donRows = (donations || []).map(d => ({
     "Date": d.date,
+    "Category": isZakathEntry(d) ? 'Zakath' : 'Purification',
     "Account": d.account,
-    "Donated Amount": Number(d.amount || 0),
+    "Amount": Number(d.amount || 0),
     "Remarks": d.remarks
   }));
   const wsDon = XLSX.utils.json_to_sheet(donRows);
-  formatWorksheet(wsDon, [14, 14, 18, 32]);
-  XLSX.utils.book_append_sheet(wb, wsDon, "Purification Donations");
+  formatWorksheet(wsDon, [14, 15, 14, 18, 32]);
+  XLSX.utils.book_append_sheet(wb, wsDon, "Zakath & Donations");
 
   XLSX.writeFile(wb, `MyFolioAI_Portfolio_Report_${todayLocalISO()}.xlsx`);
 }
@@ -3177,6 +3214,7 @@ function switchSubTab(subTabKey) {
   }
   refreshIcons();
 }
+
 function toggleMobileNavDrawer(e) {
   if (e) e.stopPropagation();
   const drawer = document.getElementById('mobileNavDrawer');
@@ -3215,6 +3253,7 @@ function mobileGoSubTab(subTabKey) {
   closeMobileNavDrawer();
   switchSubTab(subTabKey);
 }
+
 function toggleProductsDropdown(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('productsDropdownMenu');
@@ -3610,7 +3649,6 @@ function handleTransactionSubmit(e) {
   closeTransactionModal();
   recalculateAndRender(true);
 }
-
 
 function manualOverridePrice(stock, cur) {
   const p = prompt(`Set LTP (₹) for ${stock}:`, cur);
@@ -4631,6 +4669,7 @@ function filterPointsByDashboardRange(points, range) {
 
   return filtered.length > 0 ? filtered : points.slice(-2);
 }
+
 function buildFyBarSeries(computed) {
   const fyMap = (computed && computed.fyRealized) ? computed.fyRealized : {};
   const fys = Object.keys(fyMap).sort();
