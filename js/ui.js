@@ -4947,7 +4947,7 @@ const datasets = isBar
         backgroundColor: '#2563EB',
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.95,
+        categoryPercentage: 1.0,
         barPercentage: 1.0,
         maxBarThickness: 56
       },
@@ -4958,7 +4958,7 @@ const datasets = isBar
         backgroundColor: '#8B5CF6',
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.95,
+        categoryPercentage: 1.0,
         barPercentage: 1.0,
         maxBarThickness: 56
       },
@@ -4969,7 +4969,7 @@ const datasets = isBar
         backgroundColor: '#64748B',
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.95,
+        categoryPercentage: 1.0,
         barPercentage: 1.0,
         maxBarThickness: 56
       },
@@ -4980,7 +4980,7 @@ const datasets = isBar
         backgroundColor: '#EAB308',
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.95,
+        categoryPercentage: 1.0,
         barPercentage: 1.0,
         maxBarThickness: 56
       },
@@ -4991,7 +4991,7 @@ const datasets = isBar
         backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#F43F5E'),
         borderWidth: 0,
         borderRadius: 0,
-        categoryPercentage: 0.95,
+        categoryPercentage: 1.0,
         barPercentage: 1.0,
         maxBarThickness: 56
       }
