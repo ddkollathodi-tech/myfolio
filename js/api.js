@@ -214,8 +214,22 @@ function mergeLedgerById(incomingLedger) {
 return mergeRecordsById(incomingLedger, transactions, 'addTransaction', 'transaction');
 }
 
+function normalizeDonationCategory(rawCat) {
+  const clean = String(rawCat || '').trim().toLowerCase();
+  if (clean === 'zakath' || clean === 'zakat') return 'Zakath';
+  return 'Purification';
+}
+
 function mergeDonationsById(incomingDonations) {
-return mergeRecordsById(incomingDonations, donations, 'addDonation', 'donation');
+  const normalizedIncoming = (Array.isArray(incomingDonations) ? incomingDonations : []).map(item => ({
+    ...item,
+    category: normalizeDonationCategory(item && item.category)
+  }));
+  const normalizedLocal = (Array.isArray(donations) ? donations : []).map(item => ({
+    ...item,
+    category: normalizeDonationCategory(item && item.category)
+  }));
+  return mergeRecordsById(normalizedIncoming, normalizedLocal, 'addDonation', 'donation');
 }
 
 async function fetchFromGoogleSheet() {
@@ -335,9 +349,15 @@ cashCalibration.records = data.cashCalibration.records;
 saveJsonStorage(CASH_CALIB_KEY, cashCalibration);
 }
 
+if (data && Array.isArray(data.taxChallans)) {
+  if (typeof syncIncomingTaxChallans === 'function') {
+    syncIncomingTaxChallans(data.taxChallans);
+  }
+}
+
 if (data && Array.isArray(data.quotes) && data.quotes.length > 0) {
-saveJsonStorage(QUOTES_STORAGE_KEY, data.quotes);
-initHomeQuotesTicker(data.quotes);
+  saveJsonStorage(QUOTES_STORAGE_KEY, data.quotes);
+  initHomeQuotesTicker(data.quotes);
 }
 
 updateSyncUI('Synced');
@@ -414,6 +434,13 @@ prices: { [sym]: priceObj }
 });
 }
 
+function persistTaxChallan(challan) {
+  if (!challan || !cloudScriptUrl) return;
+  sendToSheet({
+    action: 'saveTaxChallan',
+    challan
+  });
+}
 async function triggerManualDatabaseBackup() {
 closeSettingsDropdown();
 if (!cloudScriptUrl) {
