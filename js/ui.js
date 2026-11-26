@@ -4995,50 +4995,6 @@ const datasets = isBar
         barPercentage: 1.0,
         maxBarThickness: 56
       }
-      {
-        label: 'Tax Paid',
-        stack: 'colDeductions',
-        data: fyBreakdown.map(r => r.taxPaid),
-        backgroundColor: '#8B5CF6',
-        borderWidth: 0,
-        borderRadius: 0,
-        categoryPercentage: 0.72,
-        barPercentage: 1.0,
-        maxBarThickness: 36
-      },
-      {
-        label: 'Zakath',
-        stack: 'colDeductions',
-        data: fyBreakdown.map(r => r.zakathPaid),
-        backgroundColor: '#64748B',
-        borderWidth: 0,
-        borderRadius: 0,
-        categoryPercentage: 0.72,
-        barPercentage: 1.0,
-        maxBarThickness: 36
-      },
-      {
-        label: 'Purification',
-        stack: 'colDeductions',
-        data: fyBreakdown.map(r => r.purifPaid),
-        backgroundColor: '#EAB308',
-        borderWidth: 0,
-        borderRadius: 0,
-        categoryPercentage: 0.72,
-        barPercentage: 1.0,
-        maxBarThickness: 36
-      },
-      {
-        label: 'Final Net P&L',
-        stack: 'colNet',
-        data: fyBreakdown.map(r => r.netPnl),
-        backgroundColor: fyBreakdown.map(r => r.netPnl >= 0 ? '#10B981' : '#F43F5E'),
-        borderWidth: 0,
-        borderRadius: 0,
-        categoryPercentage: 0.72,
-        barPercentage: 1.0,
-        maxBarThickness: 36
-      }
     ]
   : [
       {
