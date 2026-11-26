@@ -55,8 +55,264 @@ settings: { [key]: newVal }
 renderTaxView();
 }
 
+const TAX_CHALLAN_LOGS_STORAGE_KEY = 'MYFOLIOAI_TAX_CHALLAN_LOGS';
+let taxChallanLogs = loadJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, []);
+if (!Array.isArray(taxChallanLogs)) taxChallanLogs = [];
+
 function getTaxChallanKey(fy, account, quarter) {
   return `${fy}__${account}__${quarter}`;
+}
+
+function clearFieldValidationError(el) {
+  if (!el) return;
+  el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+  const errEl = document.getElementById(`err-${el.id}`);
+  if (errEl) errEl.classList.add('hidden');
+}
+
+function setFieldValidationError(el, msg) {
+  if (!el) return;
+  el.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+  const errEl = document.getElementById(`err-${el.id}`);
+  if (errEl) {
+    if (msg) errEl.innerText = msg;
+    errEl.classList.remove('hidden');
+  }
+}
+
+function populateTaxChallanFyOptions(selectedFy) {
+  const sel = document.getElementById('taxChallanFy');
+  if (!sel) return;
+  const currentFy = getFinancialYear(todayLocalISO());
+  const taxFySel = document.getElementById('taxFyFilter');
+  const fys = Array.from(new Set([
+    currentFy,
+    taxFySel ? taxFySel.value : '',
+    ...Object.keys(getTaxEngineSnapshot().fyRealized || {}),
+    ...taxChallanLogs.map(c => c.fy)
+  ].filter(Boolean))).sort().reverse();
+
+  sel.innerHTML = fys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+  sel.value = (selectedFy && fys.includes(selectedFy)) ? selectedFy : (taxFySel && taxFySel.value ? taxFySel.value : currentFy);
+}
+
+function openRecordTaxPaidModal(editId = null, defaults = {}) {
+  const modal = document.getElementById('recordTaxPaidModal');
+  const form = document.getElementById('taxChallanForm');
+  if (!modal || !form) return;
+
+  ['taxChallanDate', 'taxChallanFy', 'taxChallanAccount', 'taxChallanQuarter', 'taxChallanBsr', 'taxChallanAmount'].forEach(id => {
+    clearFieldValidationError(document.getElementById(id));
+  });
+
+  const titleEl = document.getElementById('taxChallanModalTitle');
+  const submitBtn = document.getElementById('taxChallanSubmitBtn');
+  const idInput = document.getElementById('taxChallanEditingId');
+
+  const existing = editId ? taxChallanLogs.find(c => String(c.id) === String(editId)) : null;
+  populateTaxChallanFyOptions(existing ? existing.fy : defaults.fy);
+
+  if (existing) {
+    if (titleEl) titleEl.innerText = 'Edit Tax Challan';
+    if (submitBtn) submitBtn.innerText = 'Update Challan';
+    if (idInput) idInput.value = existing.id;
+    document.getElementById('taxChallanDate').value = existing.date || todayLocalISO();
+    document.getElementById('taxChallanFy').value = existing.fy;
+    document.getElementById('taxChallanAccount').value = existing.account;
+    document.getElementById('taxChallanQuarter').value = existing.quarter;
+    document.getElementById('taxChallanBsr').value = existing.bsr || '';
+    document.getElementById('taxChallanAmount').value = existing.amount;
+  } else {
+    if (titleEl) titleEl.innerText = 'Record Tax Paid (Challan)';
+    if (submitBtn) submitBtn.innerText = 'Save Challan';
+    if (idInput) idInput.value = '';
+    document.getElementById('taxChallanDate').value = defaults.date || todayLocalISO();
+    const acctDefault = (defaults.account && defaults.account !== 'ALL')
+      ? defaults.account
+      : (currentTaxAccountFilter && currentTaxAccountFilter !== 'ALL' ? currentTaxAccountFilter : 'Me');
+    document.getElementById('taxChallanAccount').value = acctDefault;
+    document.getElementById('taxChallanQuarter').value = defaults.quarter || 'Q1';
+    document.getElementById('taxChallanBsr').value = '';
+    document.getElementById('taxChallanAmount').value = '';
+  }
+
+  modal.classList.remove('hidden');
+  if (typeof refreshIcons === 'function') refreshIcons();
+}
+
+function closeRecordTaxPaidModal() {
+  const modal = document.getElementById('recordTaxPaidModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function recalculateTaxChallansRollup(syncToCloud = false) {
+  const nextMap = {};
+  taxChallanLogs.forEach(item => {
+    if (!item || !item.fy || !item.account || !item.quarter) return;
+    const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
+    const cur = Number(nextMap[key] || 0);
+    nextMap[key] = Number((cur + Number(item.amount || 0)).toFixed(2));
+  });
+
+  taxPaidChallans = nextMap;
+  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
+  saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
+
+  if (syncToCloud && typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
+    const fySelect = document.getElementById('taxFyFilter');
+    const targetFy = fySelect ? fySelect.value : getFinancialYear(todayLocalISO());
+    const accts = Array.from(new Set([...CALIB_ACCOUNTS, ...taxChallanLogs.map(c => c.account)]));
+    ['Q1', 'Q2', 'Q3', 'Q4'].forEach(q => {
+      accts.forEach(acct => {
+        const key = getTaxChallanKey(targetFy, acct, q);
+        const sumAmt = Number(taxPaidChallans[key] || 0);
+        if (sumAmt > 0) {
+          sendToSheet({
+            action: 'saveTaxChallan',
+            challan: {
+              fy: targetFy,
+              quarter: q,
+              account: acct,
+              amount: sumAmt,
+              remarks: `${targetFy} ${q} (${acct})`
+            }
+          });
+        }
+      });
+    });
+  }
+}
+
+function handleTaxChallanSubmit(event) {
+  if (event) event.preventDefault();
+
+  const dateEl = document.getElementById('taxChallanDate');
+  const fyEl = document.getElementById('taxChallanFy');
+  const acctEl = document.getElementById('taxChallanAccount');
+  const qEl = document.getElementById('taxChallanQuarter');
+  const bsrEl = document.getElementById('taxChallanBsr');
+  const amtEl = document.getElementById('taxChallanAmount');
+  const editIdEl = document.getElementById('taxChallanEditingId');
+
+  const dateVal = dateEl ? String(dateEl.value || '').trim() : '';
+  const fyVal = fyEl ? String(fyEl.value || '').trim() : '';
+  const acctVal = acctEl ? String(acctEl.value || '').trim() : '';
+  const qVal = qEl ? String(qEl.value || '').trim() : '';
+  const bsrVal = bsrEl ? String(bsrEl.value || '').trim() : '';
+  const amtVal = amtEl ? Number(amtEl.value) : NaN;
+
+  [dateEl, fyEl, acctEl, qEl, bsrEl, amtEl].forEach(clearFieldValidationError);
+
+  let hasError = false;
+  if (!dateVal) { setFieldValidationError(dateEl, 'Challan date is required'); hasError = true; }
+  if (!fyVal) { setFieldValidationError(fyEl, 'Financial year is required'); hasError = true; }
+  if (!acctVal) { setFieldValidationError(acctEl, 'Account is required'); hasError = true; }
+  if (!qVal) { setFieldValidationError(qEl, 'Quarter is required'); hasError = true; }
+  if (!bsrVal) { setFieldValidationError(bsrEl, 'BSR code is required'); hasError = true; }
+  if (!Number.isFinite(amtVal) || amtVal <= 0) {
+    setFieldValidationError(amtEl, 'Enter a valid tax amount greater than ₹0');
+    hasError = true;
+  }
+
+  if (hasError) return;
+
+  const roundedAmt = Number(amtVal.toFixed(2));
+  const editingId = editIdEl ? String(editIdEl.value || '').trim() : '';
+
+  if (editingId) {
+    const idx = taxChallanLogs.findIndex(c => String(c.id) === editingId);
+    if (idx !== -1) {
+      taxChallanLogs[idx] = {
+        ...taxChallanLogs[idx],
+        date: dateVal,
+        fy: fyVal,
+        account: acctVal,
+        quarter: qVal,
+        bsr: bsrVal,
+        amount: roundedAmt
+      };
+    }
+  } else {
+    taxChallanLogs.unshift({
+      id: `tch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      date: dateVal,
+      fy: fyVal,
+      account: acctVal,
+      quarter: qVal,
+      bsr: bsrVal,
+      amount: roundedAmt
+    });
+  }
+
+  recalculateTaxChallansRollup(true);
+  closeRecordTaxPaidModal();
+  renderTaxView();
+  if (typeof renderDashboardTrendChart === 'function' && selectedDashboardMetric === 'currentFy') {
+    renderDashboardTrendChart(getTaxEngineSnapshot());
+  }
+}
+
+function authorizeTaxChallanAction(actionType, challanId) {
+  const runAction = () => {
+    if (actionType === 'edit') {
+      openRecordTaxPaidModal(challanId);
+    } else if (actionType === 'delete') {
+      taxChallanLogs = taxChallanLogs.filter(c => String(c.id) !== String(challanId));
+      recalculateTaxChallansRollup(true);
+      renderTaxView();
+      if (typeof renderDashboardTrendChart === 'function' && selectedDashboardMetric === 'currentFy') {
+        renderDashboardTrendChart(getTaxEngineSnapshot());
+      }
+    }
+  };
+
+  if (typeof openPinVerifyModal === 'function') {
+    openPinVerifyModal(
+      actionType === 'edit' ? 'Authorize Edit Challan' : 'Authorize Delete Challan',
+      'Enter your 4-digit Master PIN to proceed',
+      runAction
+    );
+  } else {
+    runAction();
+  }
+}
+
+function renderTaxChallansLog(targetFy, accountFilter) {
+  const tbody = document.getElementById('taxChallansLogTableBody');
+  const countBadge = document.getElementById('taxChallansLogCount');
+  if (!tbody) return;
+
+  const filtered = taxChallanLogs.filter(c => {
+    if (!c) return false;
+    if (targetFy && c.fy !== targetFy) return false;
+    if (accountFilter && accountFilter !== 'ALL' && c.account !== accountFilter) return false;
+    return true;
+  }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+  if (countBadge) {
+    countBadge.innerText = `${filtered.length} Challan${filtered.length === 1 ? '' : 's'}`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 dark:text-gray-500 font-medium">No tax challans recorded for ${esc(targetFy)}${accountFilter !== 'ALL' ? ` (${esc(accountFilter)})` : ''}. Click <b>+ Record Tax Paid</b> to add one.</td></tr>`;
+    return;
+  }
+
+  const maskClass = typeof getMaskClass === 'function' ? getMaskClass('taxPnl') : '';
+  tbody.innerHTML = filtered.map(c => `
+    <tr class="hover:bg-slate-50 dark:hover:bg-gray-800/40 border-b border-slate-100 dark:border-gray-800/60">
+      <td class="py-2.5 px-3 tabular-nums text-slate-600 dark:text-gray-300 font-medium">${esc(c.date)}</td>
+      <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200">${esc(c.fy)}</td>
+      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10.5px] font-semibold bg-slate-100 dark:bg-gray-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-gray-700">${esc(c.account)}</span></td>
+      <td class="py-2.5 px-3 font-bold text-slate-700 dark:text-slate-300">${esc(c.quarter)}</td>
+      <td class="py-2.5 px-3 font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">${esc(c.bsr)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-rose-600 dark:text-rose-400 ${maskClass}">${formatINR(c.amount)}</td>
+      <td class="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
+        <button type="button" onclick="authorizeTaxChallanAction('edit', '${esc(c.id)}')" class="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold transition">Edit</button>
+        <button type="button" onclick="authorizeTaxChallanAction('delete', '${esc(c.id)}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-[11px] font-bold transition">Delete</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function applyRemoteTaxChallans(challanList) {
@@ -72,31 +328,8 @@ function applyRemoteTaxChallans(challanList) {
   saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
 }
 
-function recordTaxChallan(fy, acct, qKey, currentPaid) {
-  const inp = document.getElementById(`taxChallanInp-${qKey}`);
-  const rawPromptVal = inp ? inp.value : prompt(`Enter paid tax challan (₹) for ${fy} ${qKey} (${acct}):`, currentPaid);
-  if (rawPromptVal === null) return;
-  const val = Number(rawPromptVal);
-  if (isNaN(val) || val < 0) return;
-
-  const roundedVal = Number(val.toFixed(2));
-  const key = getTaxChallanKey(fy, acct, qKey);
-  taxPaidChallans[key] = roundedVal;
-  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
-  renderTaxView();
-
-  if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-    sendToSheet({
-      action: 'saveTaxChallan',
-      challan: {
-        fy: fy,
-        quarter: qKey,
-        account: acct,
-        amount: roundedVal,
-        remarks: `${fy} ${qKey} (${acct})`
-      }
-    });
-  }
+function recordTaxChallan(fy, acct, qKey) {
+  openRecordTaxPaidModal(null, { fy, account: acct, quarter: qKey });
 }
 
 function renderTaxView() {
@@ -339,6 +572,8 @@ summaryBadge.innerText = `Net Pending Tax: ${formatINR(netYearBalance)}`;
 }
 }
 }
+
+renderTaxChallansLog(targetFy, currentTaxAccountFilter);
 
 // Closed Lots Tax Audit Trail
 const auditTbody = document.getElementById('taxAuditTableBody');
