@@ -1164,6 +1164,15 @@ manualOverridePrice(overrideCell.dataset.stock, Number(overrideCell.dataset.ltp)
 }
 });
 
+// Submit Live Prices on Enter key inside LTP modal inputs
+document.addEventListener('keydown', (e) => {
+if (e.key !== 'Enter') return;
+const ltpInp = e.target.closest('#livePricesContainer input');
+if (!ltpInp) return;
+e.preventDefault();
+saveAllLivePrices();
+});
+
 function handleHoldingsSort(key) {
 if (holdingsSort.key === key) {
 holdingsSort.dir = holdingsSort.dir === 'desc' ? 'asc' : 'desc';
