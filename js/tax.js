@@ -129,7 +129,7 @@ function openRecordTaxPaidModal(editId = null, defaults = {}) {
     document.getElementById('taxChallanDate').value = defaults.date || todayLocalISO();
     const acctDefault = (defaults.account && defaults.account !== 'ALL')
       ? defaults.account
-      : (currentTaxAccountFilter && currentTaxAccountFilter !== 'ALL' ? currentTaxAccountFilter : 'Me');
+      : '';
     document.getElementById('taxChallanAccount').value = acctDefault;
     document.getElementById('taxChallanQuarter').value = defaults.quarter || 'Q1';
     document.getElementById('taxChallanBsr').value = '';
