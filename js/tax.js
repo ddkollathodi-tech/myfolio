@@ -147,10 +147,24 @@ function closeRecordTaxPaidModal() {
 
 function applyRemoteTaxChallans(remoteRows) {
   if (!Array.isArray(remoteRows)) return;
-  const serverIds = new Set(remoteRows.map(r => String(r && r.id || '').trim()).filter(Boolean));
 
-  // Only keep local rows explicitly marked offline-pending (_pendingSync === true).
-  // Any row deleted or edited directly in the Tax_Challans sheet overwrites local state cleanly.
+  const normalizedRemote = remoteRows
+    .filter(r => r && (r.date || r.fy || r.amount))
+    .map((r, idx) => {
+      const cleanId = String(r.id || '').trim() || `TCH_SHEET_${idx}_${String(r.date || '').trim()}_${Number(r.amount || 0)}`;
+      return {
+        id: cleanId,
+        date: String(r.date || '').trim(),
+        fy: String(r.fy || '').trim(),
+        account: String(r.account || 'Me').trim(),
+        quarter: String(r.quarter || 'Q1').trim(),
+        bsr: String(r.bsr || '').trim(),
+        amount: Number(Number(r.amount || 0).toFixed(2))
+      };
+    });
+
+  const serverIds = new Set(normalizedRemote.map(r => String(r.id || '').trim()).filter(Boolean));
+
   const offlinePending = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
     const lid = String(item && item.id || '').trim();
     return item && item._pendingSync === true && lid && !serverIds.has(lid);
@@ -169,9 +183,21 @@ function applyRemoteTaxChallans(remoteRows) {
     }
   });
 
-  taxChallanLogs = [...remoteRows, ...offlinePending];
-  saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
+  taxChallanLogs = [...normalizedRemote, ...offlinePending];
   recalculateTaxChallansRollup();
+
+  if (typeof populateTaxFyOptions === 'function') {
+    const snap = typeof getTaxEngineSnapshot === 'function' ? getTaxEngineSnapshot() : null;
+    const fyMap = { ...((snap && snap.fyRealized) || {}) };
+    taxChallanLogs.forEach(c => {
+      if (c.fy && !fyMap[c.fy]) fyMap[c.fy] = { gain: 0 };
+    });
+    populateTaxFyOptions(fyMap);
+  }
+
+  if (typeof activeTabKey !== 'undefined' && activeTabKey === 'taxPnl' && typeof renderTaxView === 'function') {
+    renderTaxView();
+  }
 }
 
 function recalculateTaxChallansRollup() {
