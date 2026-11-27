@@ -145,12 +145,12 @@ function closeRecordTaxPaidModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function applyRemoteTaxChallanLogs(remoteLogs) {
-  if (!Array.isArray(remoteLogs)) return;
-  const serverIds = new Set(remoteLogs.map(r => String(r && r.id || '').trim()).filter(Boolean));
+function applyRemoteTaxChallans(remoteRows) {
+  if (!Array.isArray(remoteRows)) return;
+  const serverIds = new Set(remoteRows.map(r => String(r && r.id || '').trim()).filter(Boolean));
 
-  // Only retain local entries explicitly flagged as offline-pending (_pendingSync === true).
-  // Any entry deleted directly in Google Sheets is permanently removed from local cache.
+  // Only keep local rows explicitly marked offline-pending (_pendingSync === true).
+  // Any row deleted or edited directly in the Tax_Challans sheet overwrites local state cleanly.
   const offlinePending = (Array.isArray(taxChallanLogs) ? taxChallanLogs : []).filter(item => {
     const lid = String(item && item.id || '').trim();
     return item && item._pendingSync === true && lid && !serverIds.has(lid);
@@ -160,7 +160,7 @@ function applyRemoteTaxChallanLogs(remoteLogs) {
     if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
       const cleanEntry = { ...entry };
       delete cleanEntry._pendingSync;
-      sendToSheet({ action: 'addTaxChallanLog', challanLog: cleanEntry }).then(ok => {
+      sendToSheet({ action: 'addTaxChallan', challan: cleanEntry }).then(ok => {
         if (ok) {
           entry._pendingSync = false;
           saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
@@ -169,25 +169,9 @@ function applyRemoteTaxChallanLogs(remoteLogs) {
     }
   });
 
-  taxChallanLogs = [...remoteLogs, ...offlinePending];
+  taxChallanLogs = [...remoteRows, ...offlinePending];
   saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
   recalculateTaxChallansRollup();
-}
-
-function syncQuarterRollupToSheet(fy, account, quarter) {
-  if (typeof cloudScriptUrl === 'undefined' || !cloudScriptUrl || typeof sendToSheet !== 'function') return;
-  const key = getTaxChallanKey(fy, account, quarter);
-  const sumAmt = Number(taxPaidChallans[key] || 0);
-  sendToSheet({
-    action: 'saveTaxChallan',
-    challan: {
-      fy,
-      quarter,
-      account,
-      amount: sumAmt,
-      remarks: `${fy} ${quarter} (${account})`
-    }
-  });
 }
 
 function recalculateTaxChallansRollup() {
@@ -243,9 +227,8 @@ function handleTaxChallanSubmit(event) {
   if (editingId) {
     const idx = taxChallanLogs.findIndex(c => String(c.id) === editingId);
     if (idx !== -1) {
-      const prevEntry = { ...taxChallanLogs[idx] };
       const updatedEntry = {
-        ...prevEntry,
+        ...taxChallanLogs[idx],
         date: dateVal,
         fy: fyVal,
         account: acctVal,
@@ -257,16 +240,12 @@ function handleTaxChallanSubmit(event) {
       recalculateTaxChallansRollup();
 
       if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-        sendToSheet({ action: 'updateTaxChallanLog', challanLog: updatedEntry });
-        syncQuarterRollupToSheet(fyVal, acctVal, qVal);
-        if (prevEntry.fy !== fyVal || prevEntry.account !== acctVal || prevEntry.quarter !== qVal) {
-          syncQuarterRollupToSheet(prevEntry.fy, prevEntry.account, prevEntry.quarter);
-        }
+        sendToSheet({ action: 'updateTaxChallan', challan: updatedEntry });
       }
     }
   } else {
     const newEntry = {
-      id: `tch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: `TCH_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       date: dateVal,
       fy: fyVal,
       account: acctVal,
@@ -278,13 +257,12 @@ function handleTaxChallanSubmit(event) {
     recalculateTaxChallansRollup();
 
     if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-      sendToSheet({ action: 'addTaxChallanLog', challanLog: newEntry }).then(ok => {
+      sendToSheet({ action: 'addTaxChallan', challan: newEntry }).then(ok => {
         if (!ok) {
           newEntry._pendingSync = true;
           saveJsonStorage(TAX_CHALLAN_LOGS_STORAGE_KEY, taxChallanLogs);
         }
       });
-      syncQuarterRollupToSheet(fyVal, acctVal, qVal);
     }
   }
 
@@ -307,8 +285,7 @@ function authorizeTaxChallanAction(actionType, challanId) {
       recalculateTaxChallansRollup();
 
       if (typeof cloudScriptUrl !== 'undefined' && cloudScriptUrl && typeof sendToSheet === 'function') {
-        sendToSheet({ action: 'deleteTaxChallanLog', id: targetChallan.id });
-        syncQuarterRollupToSheet(targetChallan.fy, targetChallan.account, targetChallan.quarter);
+        sendToSheet({ action: 'deleteTaxChallan', id: targetChallan.id });
       }
 
       renderTaxView();
