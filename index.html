@@ -1962,11 +1962,16 @@ title="Toggle Purification Stealth Mask"
 <i data-lucide="chevron-down" id="donationDropdownChevron" class="w-3.5 h-3.5 transition-transform duration-150"></i>
 </button>
 
-<div id="donationActionDropdownMenu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-40 text-xs font-semibold">
+<div id="donationActionDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-[#131722] rounded-2xl shadow-xl border border-slate-200 dark:border-[#222836] py-1.5 z-40 text-xs font-semibold">
+<button type="button" onclick="openZakathObligationModal()" class="w-full flex items-center px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition text-left">
+<span class="w-2 h-2 rounded-full bg-purple-500 mr-2.5 shrink-0"></span>
+<span>Set Zakath Obligation (FY)</span>
+</button>
 <button type="button" onclick="openRecordDonationModal('Zakath')" class="w-full flex items-center px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition text-left">
 <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2.5 shrink-0"></span>
-<span>Record Zakath</span>
+<span>Record Zakath Payment</span>
 </button>
+<div class="border-t border-slate-100 dark:border-[#222836] my-1"></div>
 <button type="button" onclick="openRecordDonationModal('Purification')" class="w-full flex items-center px-3.5 py-2.5 hover:bg-slate-50 dark:hover:bg-[#1A1F2E] text-slate-700 dark:text-slate-200 transition text-left">
 <span class="w-2 h-2 rounded-full bg-teal-500 mr-2.5 shrink-0"></span>
 <span>Record Purification Donation</span>
@@ -1975,8 +1980,8 @@ title="Toggle Purification Stealth Mask"
 </div>
 </div>
 
-<!-- 4 Summary KPI Cards: Purification Due, Purification Donated, Purification Balance, Zakath Paid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Row 1: 3 Purification Summary Cards (FY + Account Filtered) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 <div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-amber-200/80 dark:border-[#222836] shadow-2xs space-y-1">
 <div class="flex items-center justify-between">
 <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Purification Obligation</span>
@@ -2009,16 +2014,51 @@ title="Toggle Purification Stealth Mask"
 <div id="purifRemainingVal" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">₹0.00</div>
 <div id="purifStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400">Pending purification balance</div>
 </div>
+</div>
+
+<!-- Row 2: 3 Combined Zakath Summary Cards (FY Filtered Only — Combined Across All Accounts) -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-purple-200/80 dark:border-[#222836] shadow-2xs space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-1.5">
+<span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Zakath Obligation</span>
+<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60">Combined</span>
+</div>
+<button type="button" onclick="openZakathObligationModal()" title="Add or Edit FY Zakath Obligation (PIN Protected)" class="px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10.5px] font-bold flex items-center space-x-1 transition cursor-pointer">
+<i data-lucide="plus" class="w-3 h-3"></i>
+<span>Set FY</span>
+</button>
+</div>
+<div id="zakathTotalDueVal" class="text-2xl font-extrabold text-purple-600 dark:text-purple-400 tabular-nums">₹0.00</div>
+<div id="zakathDueSub" class="text-[11px] text-slate-500 dark:text-slate-400">Manual annual obligation (Combined)</div>
+</div>
 
 <div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-indigo-200/80 dark:border-[#222836] shadow-2xs space-y-1">
 <div class="flex items-center justify-between">
+<div class="flex items-center space-x-1.5">
 <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Zakath Paid (Recorded)</span>
+<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60">Combined</span>
+</div>
 <span class="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
 <i data-lucide="coins" class="w-3.5 h-3.5"></i>
 </span>
 </div>
 <div id="zakathTotalPaidVal" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">₹0.00</div>
 <div id="zakathCountSub" class="text-[11px] text-slate-500 dark:text-slate-400">0 zakath entries recorded</div>
+</div>
+
+<div class="bg-white dark:bg-[#131722] p-4 rounded-2xl border border-slate-200 dark:border-[#222836] shadow-2xs space-y-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-1.5">
+<span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Zakath Balance</span>
+<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-[#1A1F2E] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#222836]">Combined</span>
+</div>
+<span class="h-7 w-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+</span>
+</div>
+<div id="zakathRemainingVal" class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums">₹0.00</div>
+<div id="zakathStatusSub" class="text-[11px] text-slate-500 dark:text-slate-400">Pending zakath balance</div>
 </div>
 </div>
 
@@ -2086,6 +2126,40 @@ class="w-12 text-center rounded bg-slate-100 dark:bg-[#1A1F2E] border border-sla
 <button id="purifNextBtn" onclick="nextPurifPage()" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1F2E] dark:hover:bg-[#232A3B] font-semibold disabled:opacity-40">Next</button>
 </div>
 </div>
+</div>
+</div>
+
+<!-- Table A2: Annual Combined Zakath Obligations by Financial Year (PIN-Gated Edit/Delete) -->
+<div class="bg-white dark:bg-[#131722] rounded-xl border border-slate-200 dark:border-[#222836] p-4 shadow-2xs space-y-3">
+<div class="flex flex-wrap items-center justify-between gap-2">
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+<i data-lucide="landmark" class="w-4 h-4 text-purple-500"></i>
+<span>Annual Combined Zakath Obligations (By FY)</span>
+</h4>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Manual annual Zakath obligations stored in Donations sheet (Master PIN required to add, edit, or delete)</p>
+</div>
+<button type="button" onclick="openZakathObligationModal()" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-2xs transition cursor-pointer">
+<i data-lucide="plus" class="w-3.5 h-3.5"></i>
+<span>Add / Update FY Obligation</span>
+</button>
+</div>
+
+<div class="overflow-x-auto max-h-[260px] custom-scroll">
+<table class="w-full text-left text-[12.5px] text-slate-700 dark:text-slate-300">
+<thead class="bg-slate-50/95 dark:bg-[#0A0C10]/90 uppercase tracking-wider text-[11px] font-semibold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-[#222836] sticky top-0 z-10 backdrop-blur">
+<tr>
+<th class="py-2.5 px-3">Financial Year</th>
+<th class="py-2.5 px-3">Scope</th>
+<th class="py-2.5 px-3 text-right text-purple-600 dark:text-purple-400">Obligation (₹)</th>
+<th class="py-2.5 px-3 text-right text-indigo-600 dark:text-indigo-400">Zakath Paid (₹)</th>
+<th class="py-2.5 px-3 text-right font-bold">Balance (₹)</th>
+<th class="py-2.5 px-3">Notes / Remarks</th>
+<th class="py-2.5 px-3 text-center">Action</th>
+</tr>
+</thead>
+<tbody id="zakathObligationsTableBody" class="divide-y divide-slate-100 dark:divide-[#222836]/80"></tbody>
+</table>
 </div>
 </div>
 
@@ -2216,13 +2290,13 @@ class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border
 <input type="hidden" id="donationEditingId" value="">
 <input type="hidden" id="donationCategory" value="Purification">
 
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div id="donationTopFieldsGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 <div>
 <label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Date *</label>
 <input type="date" id="donationDate" oninput="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
 <p id="err-donationDate" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Date is required</p>
 </div>
-<div>
+<div id="donationAccountFieldGroup">
 <label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Account *</label>
 <select id="donationAccount" onchange="clearFieldValidationError(this)" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-semibold"></select>
 <p id="err-donationAccount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Account is required</p>
@@ -2251,6 +2325,62 @@ class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border
 <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
 <button type="button" onclick="closeRecordDonationModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
 <button type="submit" id="donationSubmitBtn" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-2xs">Save Entry</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- MODAL: SET / EDIT COMBINED ZAKATH OBLIGATION BY FY (PIN-GATED) -->
+<div id="zakathObligationModal" class="app-modal fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+<div class="bg-white dark:bg-[#131722] border border-slate-200 dark:border-[#222836] rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
+<div class="flex items-center justify-between border-b border-slate-200 dark:border-[#222836] pb-3">
+<div class="flex items-center space-x-2.5">
+<div class="h-9 w-9 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+<i data-lucide="landmark" class="w-5 h-5"></i>
+</div>
+<div>
+<h3 id="zakathObligationModalTitle" class="text-base font-bold text-slate-900 dark:text-white">Set Combined Zakath Obligation</h3>
+<p class="text-[11px] text-slate-500 dark:text-slate-400">Stored in Donations sheet (Master PIN required)</p>
+</div>
+</div>
+<button type="button" onclick="closeZakathObligationModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+<i data-lucide="x" class="w-5 h-5"></i>
+</button>
+</div>
+
+<form id="zakathObligationForm" novalidate onsubmit="handleZakathObligationSubmit(event)" class="space-y-3.5 text-xs">
+<input type="hidden" id="zakathObligationEditingId" value="">
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Financial Year *</label>
+<select id="zakathObligationFy" onchange="onZakathObligationFyChange()" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold"></select>
+<p id="err-zakathObligationFy" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Financial year is required</p>
+</div>
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Scope (Locked)</label>
+<div class="w-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 rounded-lg p-2 text-purple-700 dark:text-purple-300 font-bold flex items-center justify-between select-none">
+<span>Combined</span>
+<i data-lucide="lock" class="w-3.5 h-3.5 text-purple-400"></i>
+</div>
+</div>
+</div>
+
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Obligation Amount (₹) *</label>
+<input type="number" step="0.01" min="0.01" id="zakathObligationAmount" oninput="clearFieldValidationError(this)" placeholder="e.g. 25000" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white font-bold tabular-nums">
+<p id="err-zakathObligationAmount" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Enter a valid obligation amount greater than ₹0</p>
+</div>
+
+<div>
+<label class="block text-slate-500 dark:text-slate-400 font-semibold mb-1">Notes / Calculation Basis *</label>
+<input type="text" id="zakathObligationRemarks" oninput="clearFieldValidationError(this)" placeholder="e.g. FY 2026-27 Annual Zakath Assessment" class="w-full bg-slate-100 dark:bg-[#1A1F2E] border border-slate-300 dark:border-[#222836] rounded-lg p-2 text-slate-900 dark:text-white">
+<p id="err-zakathObligationRemarks" class="hidden text-[10.5px] font-semibold text-rose-500 mt-1">Notes / calculation basis is required</p>
+</div>
+
+<div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200 dark:border-[#222836]">
+<button type="button" onclick="closeZakathObligationModal()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-[#1A1F2E] hover:bg-slate-200 dark:hover:bg-[#232A3B] text-slate-700 dark:text-slate-300 font-medium">Cancel</button>
+<button type="submit" id="zakathObligationSubmitBtn" class="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-2xs">Authorize &amp; Save</button>
 </div>
 </form>
 </div>
