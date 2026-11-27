@@ -370,30 +370,6 @@ function renderTaxChallansLog(targetFy, accountFilter) {
   `).join('');
 }
 
-function applyRemoteTaxChallans(challanList) {
-  if (!Array.isArray(challanList)) return;
-
-  // If Tax_Challan_Logs is the active ledger, keep its summed totals authoritative
-  // so deleted challan rows do not get resurrected by stale Tax_Challans summary rows.
-  if (Array.isArray(taxChallanLogs) && taxChallanLogs.length > 0) {
-    recalculateTaxChallansRollup();
-    return;
-  }
-
-  // Otherwise build a clean map from Tax_Challans (do not spread old localStorage keys)
-  const nextMap = {};
-  challanList.forEach(item => {
-    if (!item || !item.fy || !item.quarter || !item.account) return;
-    const key = getTaxChallanKey(String(item.fy).trim(), String(item.account).trim(), String(item.quarter).trim());
-    const amt = Number(Number(item.amount || 0).toFixed(2));
-    if (amt > 0) {
-      nextMap[key] = amt;
-    }
-  });
-  taxPaidChallans = nextMap;
-  saveJsonStorage(TAX_CHALLANS_KEY, taxPaidChallans);
-}
-
 function recordTaxChallan(fy, acct, qKey) {
   openRecordTaxPaidModal(null, { fy, account: acct, quarter: qKey });
 }
