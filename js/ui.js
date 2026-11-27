@@ -1955,19 +1955,30 @@ const fyFilter = currentPurificationFyFilter || 'ALL';
 
 const profitableLots = getFilteredProfitablePurificationLots(engineData);
 
-const resolveCat = (d) => {
-    const clean = String((d && d.category) || '').trim().toLowerCase();
-    return (clean === 'zakath' || clean === 'zakat') ? 'Zakath' : 'Purification';
-  };
+const resolveCat = (d) => getNormalizedEntryCategory(d);
 
-  const filteredEntries = (donations || []).filter(d => {
+  const allDonations = Array.isArray(donations) ? donations : [];
+
+  // Purification: filtered by BOTH FY and Account
+  const filteredPurificationEntries = allDonations.filter(d => {
+    if (resolveCat(d) !== 'Purification') return false;
     if (acctFilter !== 'ALL' && d.account !== acctFilter) return false;
     if (fyFilter !== 'ALL' && getFinancialYear(d.date) !== fyFilter) return false;
     return true;
   });
 
-  const filteredPurificationEntries = filteredEntries.filter(d => resolveCat(d) === 'Purification');
-  const filteredZakathEntries = filteredEntries.filter(d => resolveCat(d) === 'Zakath');
+  // Zakath (Payments & Obligations): ALWAYS Combined across accounts, filtered by FY only
+  const filteredZakathEntries = allDonations.filter(d => {
+    if (resolveCat(d) !== 'Zakath') return false;
+    if (fyFilter !== 'ALL' && getFinancialYear(d.date) !== fyFilter) return false;
+    return true;
+  });
+
+  const allZakathObligations = allDonations.filter(d => resolveCat(d) === 'Zakath Obligation');
+  const filteredZakathObligations = allZakathObligations.filter(d => {
+    if (fyFilter !== 'ALL' && getFinancialYear(d.date) !== fyFilter) return false;
+    return true;
+  });
 
   let totalPositiveGain = 0;
   let totalPurifDue = 0;
@@ -1977,8 +1988,11 @@ const resolveCat = (d) => {
   });
 
   const totalDonated = filteredPurificationEntries.reduce((sum, d) => sum + Number(d.amount || 0), 0);
-  const totalZakathPaid = filteredZakathEntries.reduce((sum, d) => sum + Number(d.amount || 0), 0);
   const remainingDue = totalPurifDue - totalDonated;
+
+  const totalZakathDue = filteredZakathObligations.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const totalZakathPaid = filteredZakathEntries.reduce((sum, d) => sum + Number(d.amount || 0), 0);
+  const zakathBalance = totalZakathDue - totalZakathPaid;
 
   const dueEl = document.getElementById('purifTotalDueVal');
   const profitSubEl = document.getElementById('purifTotalProfitSub');
@@ -2000,6 +2014,37 @@ const resolveCat = (d) => {
     countSubEl.innerText = `${filteredPurificationEntries.length} purification ${filteredPurificationEntries.length === 1 ? 'entry' : 'entries'} recorded`;
   }
 
+  const remEl = document.getElementById('purifRemainingVal');
+  const statusSubEl = document.getElementById('purifStatusSub');
+  if (remEl) {
+    if (remainingDue > 0.005) {
+      remEl.innerText = formatINR(remainingDue);
+      remEl.className = `text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Pending purification donation balance';
+    } else if (remainingDue < -0.005) {
+      remEl.innerText = `+${formatINR(Math.abs(remainingDue))}`;
+      remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Surplus donated above obligation';
+    } else {
+      remEl.innerText = '₹0.00';
+      remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (statusSubEl) statusSubEl.innerText = 'Fully purified & settled';
+    }
+  }
+
+  // Combined Zakath KPI Cards
+  const zDueEl = document.getElementById('zakathTotalDueVal');
+  const zDueSubEl = document.getElementById('zakathDueSub');
+  if (zDueEl) {
+    zDueEl.innerText = formatINR(totalZakathDue);
+    zDueEl.className = `text-2xl font-extrabold text-purple-600 dark:text-purple-400 tabular-nums ${maskClass}`;
+  }
+  if (zDueSubEl) {
+    zDueSubEl.innerText = fyFilter === 'ALL'
+      ? `Across ${filteredZakathObligations.length} recorded FY ${filteredZakathObligations.length === 1 ? 'assessment' : 'assessments'}`
+      : (filteredZakathObligations.length > 0 ? `Manual obligation for ${fyFilter}` : `No obligation set for ${fyFilter}`);
+  }
+
   const zakathEl = document.getElementById('zakathTotalPaidVal');
   const zakathSubEl = document.getElementById('zakathCountSub');
   if (zakathEl) {
@@ -2007,26 +2052,32 @@ const resolveCat = (d) => {
     zakathEl.className = `text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums ${maskClass}`;
   }
   if (zakathSubEl) {
-    zakathSubEl.innerText = `${filteredZakathEntries.length} zakath ${filteredZakathEntries.length === 1 ? 'entry' : 'entries'} recorded`;
+    zakathSubEl.innerText = `${filteredZakathEntries.length} zakath ${filteredZakathEntries.length === 1 ? 'payment' : 'payments'} recorded`;
   }
 
-const remEl = document.getElementById('purifRemainingVal');
-const statusSubEl = document.getElementById('purifStatusSub');
-if (remEl) {
-if (remainingDue > 0.005) {
-remEl.innerText = formatINR(remainingDue);
-remEl.className = `text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}`;
-if (statusSubEl) statusSubEl.innerText = 'Pending purification donation balance';
-} else if (remainingDue < -0.005) {
-remEl.innerText = `+${formatINR(Math.abs(remainingDue))}`;
-remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
-if (statusSubEl) statusSubEl.innerText = 'Surplus donated above obligation';
-} else {
-remEl.innerText = '₹0.00';
-remEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
-if (statusSubEl) statusSubEl.innerText = 'Fully purified & settled';
-}
-}
+  const zRemEl = document.getElementById('zakathRemainingVal');
+  const zStatusSubEl = document.getElementById('zakathStatusSub');
+  if (zRemEl) {
+    if (zakathBalance > 0.005) {
+      zRemEl.innerText = formatINR(zakathBalance);
+      zRemEl.className = `text-2xl font-extrabold text-rose-600 dark:text-rose-400 tabular-nums ${maskClass}`;
+      if (zStatusSubEl) zStatusSubEl.innerText = 'Pending zakath balance';
+    } else if (zakathBalance < -0.005) {
+      zRemEl.innerText = `+${formatINR(Math.abs(zakathBalance))}`;
+      zRemEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (zStatusSubEl) zStatusSubEl.innerText = 'Surplus paid above obligation';
+    } else {
+      zRemEl.innerText = '₹0.00';
+      zRemEl.className = `text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums ${maskClass}`;
+      if (zStatusSubEl) zStatusSubEl.innerText = totalZakathDue > 0 ? 'Zakath settled in full' : 'No obligation due';
+    }
+  }
+
+  // Render Annual Combined Zakath Obligations Table
+  renderZakathObligationsTable(allZakathObligations, allDonations, fyFilter, maskClass);
+
+  // Payment Log combines Purification (account+FY filtered) and Combined Zakath (FY filtered)
+  const filteredEntries = [...filteredPurificationEntries, ...filteredZakathEntries];
 
 const lotsBadge = document.getElementById('purifLotsCountBadge');
 if (lotsBadge) lotsBadge.innerText = `${profitableLots.length} Profitable Lots`;
@@ -2119,7 +2170,246 @@ const donTbody = document.getElementById('donationsLogTableBody');
   }
 }
 
-// Event delegation for Editing & Deleting a Donation/Zakath record (PIN-gated)
+function getFyAnchorIsoDate(fyStr) {
+  const m = String(fyStr || '').match(/(\d{4})/);
+  const startYear = m ? Number(m[1]) : new Date().getFullYear();
+  return `${startYear}-04-01`;
+}
+
+function getAvailableZakathFyList() {
+  const curFy = getFinancialYear(todayLocalISO());
+  const curStart = Number(curFy.slice(3, 7)) || new Date().getFullYear();
+  const fySet = new Set([curFy]);
+  for (let i = 1; i <= 6; i++) {
+    const y = curStart - i;
+    fySet.add(`FY ${y}-${String(y + 1).slice(-2)}`);
+  }
+  (Array.isArray(donations) ? donations : []).forEach(d => {
+    if (d && d.date) fySet.add(getFinancialYear(d.date));
+  });
+  return Array.from(fySet).sort().reverse();
+}
+
+function renderZakathObligationsTable(allObligations, allDonationsList, fyFilter, maskClass) {
+  const tbody = document.getElementById('zakathObligationsTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const rows = (Array.isArray(allObligations) ? allObligations : [])
+    .filter(ob => fyFilter === 'ALL' || getFinancialYear(ob.date) === fyFilter)
+    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-slate-400 dark:text-slate-500 font-medium">No combined Zakath obligation recorded${fyFilter !== 'ALL' ? ` for ${esc(fyFilter)}` : ''}. Click <b>+ Add / Update FY Obligation</b> to set one.</td></tr>`;
+    return;
+  }
+
+  rows.forEach(ob => {
+    const obFy = getFinancialYear(ob.date);
+    const obId = esc(String(ob.id || ''));
+    const obAmt = Number(ob.amount || 0);
+    const paidForFy = (Array.isArray(allDonationsList) ? allDonationsList : [])
+      .filter(d => getNormalizedEntryCategory(d) === 'Zakath' && getFinancialYear(d.date) === obFy)
+      .reduce((s, d) => s + Number(d.amount || 0), 0);
+    const bal = obAmt - paidForFy;
+
+    let balCls = 'text-emerald-600 dark:text-emerald-400';
+    let balLabel = '₹0.00 (Settled)';
+    if (bal > 0.005) {
+      balCls = 'text-rose-600 dark:text-rose-400';
+      balLabel = `${formatINR(bal)} Due`;
+    } else if (bal < -0.005) {
+      balCls = 'text-emerald-600 dark:text-emerald-400';
+      balLabel = `+${formatINR(Math.abs(bal))} Surplus`;
+    }
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 dark:hover:bg-[#1A1F2E]/50 border-b border-slate-100 dark:border-[#222836]/80 transition-colors';
+    tr.innerHTML = `
+      <td class="py-2.5 px-3 font-bold text-slate-900 dark:text-white">${esc(obFy)}</td>
+      <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">Combined</span></td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold text-purple-600 dark:text-purple-400 ${maskClass}">${formatINR(obAmt)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-semibold text-indigo-600 dark:text-indigo-400 ${maskClass}">${formatINR(paidForFy)}</td>
+      <td class="py-2.5 px-3 text-right tabular-nums font-bold ${balCls} ${maskClass}">${balLabel}</td>
+      <td class="py-2.5 px-3 text-slate-600 dark:text-slate-300">${esc(ob.remarks || '—')}</td>
+      <td class="py-2.5 px-3 text-center whitespace-nowrap space-x-1.5">
+        <button type="button" data-donation-edit-id="${obId}" class="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-[11px] font-bold transition">Edit</button>
+        <button type="button" data-donation-delete-id="${obId}" class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800 text-[11px] font-bold transition">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openZakathObligationModal(editId = null) {
+  closeDonationActionDropdown();
+  const modal = document.getElementById('zakathObligationModal');
+  if (!modal) return;
+
+  ['zakathObligationFy', 'zakathObligationAmount', 'zakathObligationRemarks'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && typeof clearFieldValidationError === 'function') {
+      clearFieldValidationError(el);
+    } else if (el) {
+      el.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500');
+      const errEl = document.getElementById(`err-${id}`);
+      if (errEl) errEl.classList.add('hidden');
+    }
+  });
+
+  const fySelect = document.getElementById('zakathObligationFy');
+  const amtInput = document.getElementById('zakathObligationAmount');
+  const remInput = document.getElementById('zakathObligationRemarks');
+  const editIdInput = document.getElementById('zakathObligationEditingId');
+  const titleEl = document.getElementById('zakathObligationModalTitle');
+
+  const fys = getAvailableZakathFyList();
+  const curFy = getFinancialYear(todayLocalISO());
+  if (fySelect) {
+    fySelect.innerHTML = fys.map(fy => `<option value="${esc(fy)}">${esc(fy)}</option>`).join('');
+  }
+
+  const targetOb = editId
+    ? (Array.isArray(donations) ? donations : []).find(d => String(d.id) === String(editId))
+    : null;
+
+  if (targetOb) {
+    const obFy = getFinancialYear(targetOb.date);
+    if (titleEl) titleEl.innerText = `Edit Zakath Obligation (${obFy})`;
+    if (editIdInput) editIdInput.value = targetOb.id || '';
+    if (fySelect) fySelect.value = obFy;
+    if (amtInput) amtInput.value = targetOb.amount || '';
+    if (remInput) remInput.value = targetOb.remarks || '';
+  } else {
+    const activeFilterFy = (currentPurificationFyFilter && currentPurificationFyFilter !== 'ALL')
+      ? currentPurificationFyFilter
+      : curFy;
+    if (fySelect) fySelect.value = fys.includes(activeFilterFy) ? activeFilterFy : curFy;
+    onZakathObligationFyChange();
+  }
+
+  modal.classList.remove('hidden');
+  refreshIcons();
+}
+
+function onZakathObligationFyChange() {
+  const fySelect = document.getElementById('zakathObligationFy');
+  const amtInput = document.getElementById('zakathObligationAmount');
+  const remInput = document.getElementById('zakathObligationRemarks');
+  const editIdInput = document.getElementById('zakathObligationEditingId');
+  const titleEl = document.getElementById('zakathObligationModalTitle');
+  if (!fySelect) return;
+
+  const chosenFy = fySelect.value || getFinancialYear(todayLocalISO());
+  const existingForFy = (Array.isArray(donations) ? donations : []).find(d =>
+    getNormalizedEntryCategory(d) === 'Zakath Obligation' && getFinancialYear(d.date) === chosenFy
+  );
+
+  if (existingForFy) {
+    if (titleEl) titleEl.innerText = `Edit Zakath Obligation (${chosenFy})`;
+    if (editIdInput) editIdInput.value = existingForFy.id || '';
+    if (amtInput) amtInput.value = existingForFy.amount || '';
+    if (remInput) remInput.value = existingForFy.remarks || '';
+  } else {
+    if (titleEl) titleEl.innerText = 'Set Combined Zakath Obligation';
+    if (editIdInput) editIdInput.value = '';
+    if (amtInput) amtInput.value = '';
+    if (remInput) remInput.value = `${chosenFy} Annual Zakath Assessment`;
+  }
+}
+
+function closeZakathObligationModal() {
+  const modal = document.getElementById('zakathObligationModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleZakathObligationSubmit(e) {
+  e.preventDefault();
+
+  const fyEl = document.getElementById('zakathObligationFy');
+  const amtEl = document.getElementById('zakathObligationAmount');
+  const remEl = document.getElementById('zakathObligationRemarks');
+  const editIdEl = document.getElementById('zakathObligationEditingId');
+
+  const fyVal = fyEl ? String(fyEl.value || '').trim() : '';
+  const amtVal = amtEl ? Number(amtEl.value) : NaN;
+  const remVal = remEl ? String(remEl.value || '').trim() : '';
+
+  const markErr = (el, msg) => {
+    if (!el) return;
+    el.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+    const errEl = document.getElementById(`err-${el.id}`);
+    if (errEl) {
+      if (msg) errEl.innerText = msg;
+      errEl.classList.remove('hidden');
+    }
+  };
+
+  let hasError = false;
+  if (!fyVal) { markErr(fyEl, 'Financial year is required'); hasError = true; }
+  if (!Number.isFinite(amtVal) || amtVal <= 0) {
+    markErr(amtEl, 'Enter a valid obligation amount greater than ₹0');
+    hasError = true;
+  }
+  if (!remVal) { markErr(remEl, 'Notes / calculation basis is required'); hasError = true; }
+  if (hasError) return;
+
+  const roundedAmt = Number(amtVal.toFixed(2));
+  const anchorDate = getFyAnchorIsoDate(fyVal);
+  const existingById = editIdEl && editIdEl.value
+    ? donations.find(d => String(d.id) === String(editIdEl.value).trim())
+    : null;
+  const existingByFy = existingById || donations.find(d =>
+    getNormalizedEntryCategory(d) === 'Zakath Obligation' && getFinancialYear(d.date) === fyVal
+  );
+
+  const actionLabel = existingByFy ? `update ${fyVal} Zakath Obligation` : `set ${fyVal} Zakath Obligation`;
+
+  requestPinAuthorization(
+    'Authorize Zakath Obligation',
+    `Enter Master PIN to ${actionLabel} (${formatINR(roundedAmt)})`,
+    () => {
+      if (existingByFy) {
+        const updatedOb = {
+          ...existingByFy,
+          date: anchorDate,
+          account: 'Combined',
+          category: 'Zakath Obligation',
+          amount: roundedAmt,
+          remarks: remVal
+        };
+        const idx = donations.findIndex(d => String(d.id) === String(existingByFy.id));
+        if (idx !== -1) donations[idx] = updatedOb;
+        saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
+        if (cloudScriptUrl) {
+          sendToSheet({ action: 'updateDonation', donation: updatedOb });
+        }
+      } else {
+        const newOb = {
+          id: `ZOB_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          date: anchorDate,
+          account: 'Combined',
+          category: 'Zakath Obligation',
+          amount: roundedAmt,
+          remarks: remVal
+        };
+        donations.push(newOb);
+        saveJsonStorage(DONATIONS_STORAGE_KEY, donations);
+        if (cloudScriptUrl) {
+          sendToSheet({ action: 'addDonation', donation: newOb });
+        }
+      }
+
+      bumpTxVersion();
+      closeZakathObligationModal();
+      populatePurificationFyOptions(getCachedEngineData().purificationLots);
+      renderPurificationView(getCachedEngineData());
+      refreshIcons();
+    }
+  );
+}
+
+// Event delegation for Editing & Deleting a Donation/Zakath/Obligation record (PIN-gated)
 document.addEventListener('click', (e) => {
   const editBtn = e.target.closest('[data-donation-edit-id]');
   if (editBtn) {
@@ -2128,9 +2418,14 @@ document.addEventListener('click', (e) => {
     if (!targetDon) return;
     const cat = getNormalizedEntryCategory(targetDon);
 
+    if (cat === 'Zakath Obligation') {
+      openZakathObligationModal(targetDon.id);
+      return;
+    }
+
     requestPinAuthorization(
       `Authorize ${cat} Edit`,
-      `Enter Master PIN to edit ${cat} entry of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+      `Enter Master PIN to edit ${cat} entry of ${formatINR(targetDon.amount)} on ${targetDon.date}`,
       () => {
         openRecordDonationModal(cat, targetDon);
       }
@@ -2144,10 +2439,13 @@ document.addEventListener('click', (e) => {
   const targetDon = donations.find(d => String(d.id) === donId);
   if (!targetDon) return;
   const cat = getNormalizedEntryCategory(targetDon);
+  const labelContext = cat === 'Zakath Obligation'
+    ? `${getFinancialYear(targetDon.date)} Zakath Obligation of ${formatINR(targetDon.amount)}`
+    : `${cat} entry of ${formatINR(targetDon.amount)} on ${targetDon.date}`;
 
   requestPinAuthorization(
     `Authorize ${cat} Deletion`,
-    `Enter Master PIN to delete ${cat} entry of ${formatINR(targetDon.amount)} (${targetDon.account}) on ${targetDon.date}`,
+    `Enter Master PIN to delete ${labelContext}`,
     async () => {
       const prevDonations = [...donations];
       const idx = donations.findIndex(d => String(d.id) === String(targetDon.id));
@@ -2224,12 +2522,16 @@ function openRecordDonationModal(presetCategory = 'Purification', existingEntry 
   const catInput = document.getElementById('donationCategory');
   const catLockedBadge = document.getElementById('donationCategoryLockedBadge');
   const catLockedText = document.getElementById('donationCategoryLockedText');
+  const topGrid = document.getElementById('donationTopFieldsGrid');
+  const acctGroup = document.getElementById('donationAccountFieldGroup');
 
   if (catInput) catInput.value = normalizedCat;
   if (catLockedText) catLockedText.innerText = normalizedCat;
 
   if (normalizedCat === 'Zakath') {
-    if (titleEl) titleEl.innerText = existingEntry ? 'Edit Zakath Entry' : 'Record Zakath';
+    if (acctGroup) acctGroup.classList.add('hidden');
+    if (topGrid) topGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+    if (titleEl) titleEl.innerText = existingEntry ? 'Edit Zakath Payment' : 'Record Zakath Payment (Combined)';
     if (submitBtn) {
       submitBtn.innerText = existingEntry ? 'Update Zakath' : 'Save Zakath';
       submitBtn.className = 'px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-2xs';
@@ -2237,6 +2539,8 @@ function openRecordDonationModal(presetCategory = 'Purification', existingEntry 
     if (iconWrap) iconWrap.className = 'h-9 w-9 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center';
     if (catLockedBadge) catLockedBadge.className = 'w-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-lg p-2 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-between select-none';
   } else {
+    if (acctGroup) acctGroup.classList.remove('hidden');
+    if (topGrid) topGrid.className = 'grid grid-cols-1 sm:grid-cols-3 gap-3';
     if (titleEl) titleEl.innerText = existingEntry ? 'Edit Purification Donation' : 'Record Purification Donation';
     if (submitBtn) {
       submitBtn.innerText = existingEntry ? 'Update Donation' : 'Save Donation';
@@ -2250,16 +2554,16 @@ function openRecordDonationModal(presetCategory = 'Purification', existingEntry 
   if (existingEntry) {
     if (editIdEl) editIdEl.value = existingEntry.id || '';
     document.getElementById('donationDate').value = existingEntry.date || todayLocalISO();
-    if (acctSelect) acctSelect.value = existingEntry.account || '';
+    if (acctSelect) acctSelect.value = normalizedCat === 'Zakath' ? 'Combined' : (existingEntry.account || '');
     document.getElementById('donationAmount').value = existingEntry.amount || '';
     document.getElementById('donationRemarks').value = existingEntry.remarks || '';
   } else {
     if (editIdEl) editIdEl.value = '';
     document.getElementById('donationDate').value = todayLocalISO();
     if (acctSelect) {
-      acctSelect.value = (currentPurificationAccountFilter && currentPurificationAccountFilter !== 'ALL')
-        ? currentPurificationAccountFilter
-        : '';
+      acctSelect.value = normalizedCat === 'Zakath'
+        ? 'Combined'
+        : ((currentPurificationAccountFilter && currentPurificationAccountFilter !== 'ALL') ? currentPurificationAccountFilter : '');
     }
     document.getElementById('donationAmount').value = '';
     document.getElementById('donationRemarks').value = '';
@@ -2285,8 +2589,8 @@ function handleDonationSubmit(e) {
   const catInput = document.getElementById('donationCategory');
 
   const date = dateEl ? String(dateEl.value || '').trim() : '';
-  const account = acctEl ? String(acctEl.value || '').trim() : '';
   const category = (catInput && catInput.value === 'Zakath') ? 'Zakath' : 'Purification';
+  const account = category === 'Zakath' ? 'Combined' : (acctEl ? String(acctEl.value || '').trim() : '');
   const amount = amtEl ? Number(amtEl.value) : NaN;
   const remarks = remEl ? String(remEl.value || '').trim() : '';
 
@@ -2302,7 +2606,7 @@ function handleDonationSubmit(e) {
 
   let hasError = false;
   if (!date) { markErr(dateEl, 'Date is required'); hasError = true; }
-  if (!account) { markErr(acctEl, 'Account is required'); hasError = true; }
+  if (category !== 'Zakath' && !account) { markErr(acctEl, 'Account is required'); hasError = true; }
   if (!Number.isFinite(amount) || amount <= 0) {
     markErr(amtEl, 'Enter a valid amount greater than ₹0');
     hasError = true;
@@ -4977,7 +5281,9 @@ return filtered.length > 0 ? filtered : points.slice(-2);
 }
 function getNormalizedEntryCategory(entry) {
   const clean = String((entry && entry.category) || '').trim().toLowerCase();
-  return (clean === 'zakath' || clean === 'zakat') ? 'Zakath' : 'Purification';
+  if (clean === 'zakath obligation' || clean === 'zakat obligation') return 'Zakath Obligation';
+  if (clean === 'zakath' || clean === 'zakat') return 'Zakath';
+  return 'Purification';
 }
 
 function buildFyStackedBreakdownSeries(computed) {
