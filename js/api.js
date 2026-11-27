@@ -357,12 +357,6 @@ cashCalibration.records = data.cashCalibration.records;
 saveJsonStorage(CASH_CALIB_KEY, cashCalibration);
 }
 
-if (data && Array.isArray(data.taxChallanLogs)) {
-  if (typeof applyRemoteTaxChallanLogs === 'function') {
-    applyRemoteTaxChallanLogs(data.taxChallanLogs);
-  }
-}
-
 if (data && Array.isArray(data.taxChallans)) {
   if (typeof applyRemoteTaxChallans === 'function') {
     applyRemoteTaxChallans(data.taxChallans);
