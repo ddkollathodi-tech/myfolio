@@ -224,6 +224,7 @@ return mergeRecordsById(incomingLedger, transactions, 'addTransaction', 'transac
 
 function normalizeDonationCategory(rawCat) {
   const clean = String(rawCat || '').trim().toLowerCase();
+  if (clean === 'zakath obligation' || clean === 'zakat obligation') return 'Zakath Obligation';
   if (clean === 'zakath' || clean === 'zakat') return 'Zakath';
   return 'Purification';
 }
